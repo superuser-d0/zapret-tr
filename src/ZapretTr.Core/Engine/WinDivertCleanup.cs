@@ -11,9 +11,14 @@ public sealed record CleanupStep(string Description, bool Succeeded, string? Det
 /// </summary>
 /// <remarks>
 /// "Tum ayarlari sifirla" dugmesinin arkasindaki is. Yikici oldugu icin davranisi
-/// sabit ve acik tutuldu: ne yaptigi adim adim raporlanir, kullanicinin DNS ayarlarina
-/// dokunulmaz (biz varsayilan olarak degistirmiyoruz, dolayisiyla geri almak da bize
-/// dusmez).
+/// sabit ve acik tutuldu: ne yaptigi adim adim raporlanir.
+///
+/// DNS ayari EN BASTA geri alinir. Bu dugmeye basan kullanici cogu zaman "bir seyler
+/// bozuldu" diye geliyor; sifreli DNS acikken uygulama duzgun kapanmadiysa sistem
+/// hala 127.0.0.1'i gosteriyor ve hicbir ad cozulmuyor olabilir. O durumda once
+/// ad cozumu duzelmeli, diger adimlar beklesin. Kullanicinin KENDI koydugu DNS
+/// ayarina dokunulmaz -- yalnizca bizim yaptigimiz degisiklik, diskteki yedekten
+/// geri yuklenir.
 ///
 /// Surucu kaldirma adimlari upstream'in kendi windivert_delete.cmd dosyasiyla ayni:
 /// sc stop windivert, sc delete windivert.
@@ -46,6 +51,11 @@ public static class WinDivertCleanup
     {
         var steps = new List<CleanupStep>();
 
+        // DNS EN BASTA geri aliniyor. Sifirlamayi calistiran kullanici cogu zaman
+        // "bir seyler bozuldu" diye buraya geliyor; ad cozumu calismiyorsa once o
+        // duzelmeli, diger adimlar beklesin.
+        steps.Add(await RestoreDnsAsync(cancellationToken).ConfigureAwait(false));
+        steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await RunScAsync("stop", ServiceName, "ZapretTR servisi durduruldu", cancellationToken).ConfigureAwait(false));
         steps.Add(await RunScAsync("delete", ServiceName, "ZapretTR servisi silindi", cancellationToken).ConfigureAwait(false));
@@ -60,6 +70,57 @@ public static class WinDivertCleanup
         steps.Add(await FlushDnsAsync(cancellationToken).ConfigureAwait(false));
 
         return steps;
+    }
+
+    private static async Task<CleanupStep> RestoreDnsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (!SystemDnsManager.HasBackup)
+            {
+                return new CleanupStep("Sistem DNS ayari", true, "degistirilmemis");
+            }
+
+            var restored = await SystemDnsManager.RestoreAsync(cancellationToken).ConfigureAwait(false);
+            return new CleanupStep("Sistem DNS ayari geri alindi", true, string.Join(", ", restored));
+        }
+        catch (Exception ex)
+        {
+            // Bu adimin sessizce gecmesi kabul edilemez: basarisiz olursa
+            // kullanicinin ad cozumu calismiyor olabilir ve bunu bilmesi gerekir.
+            return new CleanupStep("Sistem DNS ayari geri alinamadi", false, ex.Message);
+        }
+    }
+
+    private static async Task<CleanupStep> KillDnsCryptProcessesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var processes = Process.GetProcessesByName("dnscrypt-proxy");
+            if (processes.Length == 0)
+            {
+                return new CleanupStep("Calisan dnscrypt-proxy sureci", true, "yok");
+            }
+
+            foreach (var process in processes)
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            return new CleanupStep("Calisan dnscrypt-proxy sureci", true, $"{processes.Length} tanesi durduruldu");
+        }
+        catch (Exception ex)
+        {
+            return new CleanupStep("Calisan dnscrypt-proxy sureci", false, ex.Message);
+        }
     }
 
     private static async Task<CleanupStep> KillWinwsProcessesAsync(CancellationToken cancellationToken)

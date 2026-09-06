@@ -37,11 +37,22 @@ NASIL CALISTIRILIR
 NEDEN YONETICI YETKISI ISTIYOR
 ------------------------------
 
-Test, ag paketlerini incelemek zorunda. Windows bunun icin cekirdek seviyesinde
-calisan bir surucu (WinDivert) yuklenmesini sart kosuyor ve surucu yuklemek
-yonetici yetkisi gerektiriyor.
+Iki sebep var.
 
-Bu surucu gecici. TEMIZLIK.bat ile kaldiriliyor. Istersen once TEMIZLIK.bat'in
+Birincisi: test ag paketlerini incelemek zorunda. Windows bunun icin cekirdek
+seviyesinde calisan bir surucu (WinDivert) yuklenmesini sart kosuyor ve surucu
+yuklemek yonetici yetkisi gerektiriyor.
+
+Ikincisi: Turkiye'de engelleme cogu zaman once DNS katmaninda oluyor -- adres
+sorgusuna servis saglayicinin engel sunucusunun IP'si donuyor. Test bu katmani
+asmak icin sifreli DNS kullaniyor, bu da ag ayarina gecici olarak dokunmayi
+gerektiriyor.
+
+DNS ayarin degistirilmeden ONCE yedekleniyor ve test biter bitmez geri aliniyor.
+Program beklenmedik sekilde kapanirsa bile bir sonraki acilista kendiliginden
+duzeltiyor. Yine de emin olmak icin sonunda TEMIZLIK.bat calistir.
+
+Bu surucu ve DNS degisikligi gecici. TEMIZLIK.bat ile kaldiriliyor. Istersen once TEMIZLIK.bat'in
 ne yaptigina bakabilirsin, iki satirlik bir dosya.
 
 

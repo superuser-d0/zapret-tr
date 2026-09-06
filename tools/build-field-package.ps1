@@ -37,6 +37,7 @@ $DistDir = if ($OutputDirectory) { $OutputDirectory } else { Join-Path $RepoRoot
 $PackageDir = Join-Path $DistDir $PackageName
 $PublishDir = Join-Path $RepoRoot 'publish/cli'
 $VendorDir = Join-Path $RepoRoot 'vendor/zapret-winws'
+$DnsCryptDir = Join-Path $RepoRoot 'vendor/dnscrypt-proxy'
 $ProfilesDir = Join-Path $RepoRoot 'profiles'
 
 Write-Host ''
@@ -50,6 +51,10 @@ if (-not (Test-Path (Join-Path $VendorDir 'winws.exe'))) {
 
 if (-not (Test-Path (Join-Path $VendorDir 'cygwin1.dll'))) {
     throw "vendor/zapret-winws/cygwin1.dll yok. winws cygwin ile derlendigi icin bu dosya sart. tools/fetch-upstream.ps1 calistirin."
+}
+
+if (-not (Test-Path (Join-Path $DnsCryptDir 'dnscrypt-proxy.exe'))) {
+    throw "vendor/dnscrypt-proxy/dnscrypt-proxy.exe yok. tools/fetch-upstream.ps1 calistirin."
 }
 
 # --- Yayinla ------------------------------------------------------------------
@@ -74,6 +79,10 @@ Copy-Item $exePath (Join-Path $PackageDir 'zapret-tr-test.exe')
 Copy-Item $ProfilesDir (Join-Path $PackageDir 'profiles') -Recurse
 Copy-Item $VendorDir (Join-Path $PackageDir 'zapret-winws') -Recurse
 
+# dnscrypt-proxy zapret-winws'in KARDESI dizinde olmali; VendorPaths onu boyle
+# ariyor. Ic ice koymak sessizce bulunamamasina yol acardi.
+Copy-Item $DnsCryptDir (Join-Path $PackageDir 'dnscrypt-proxy') -Recurse
+
 # --- Calistirma kisayollari ---------------------------------------------------
 # Exe'nin manifesti requireAdministrator; cmd bunu dogrudan calistiramadigi icin
 # .bat kendini once yukseltiyor. Aksi halde kullanici "erisim engellendi" gorur.
@@ -90,7 +99,7 @@ if %errorlevel% neq 0 (
 )
 
 cd /d "%~dp0"
-zapret-tr-test.exe --isp superonline --max-candidates 25 --out "superonline-rapor.json"
+zapret-tr-test.exe --isp superonline --doh --max-candidates 25 --out "superonline-rapor.json"
 
 echo.
 echo ============================================================

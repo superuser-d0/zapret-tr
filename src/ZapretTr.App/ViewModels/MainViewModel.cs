@@ -42,6 +42,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly VendorPaths? _vendor;
     private readonly ProfileStore? _profiles;
     private readonly WinwsRunner? _runner;
+    private readonly DnsCryptRunner? _dnsRunner;
     private CancellationTokenSource? _testCancellation;
 
     private AppStatus _status = AppStatus.NotReady;
@@ -55,6 +56,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isProgressVisible;
     private bool _isLogExpanded;
     private string _customTarget = string.Empty;
+    private bool _isSecureDnsEnabled = true;
+    private bool _isSecureDnsActive;
 
     public MainViewModel()
     {
@@ -72,6 +75,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _runner = new WinwsRunner(_vendor);
             _runner.LogLineReceived += line => Append(line.Text, line.IsError);
             _runner.StateChanged += OnRunnerStateChanged;
+
+            _dnsRunner = new DnsCryptRunner(_vendor);
+            _dnsRunner.LogLineReceived += line => Append(line);
+
+            // Onceki calismada uygulama duzgun kapanmadiysa sistem DNS'i hala
+            // 127.0.0.1'i gosteriyor olabilir ve o durumda hicbir ad cozulmez.
+            // Kullaniciya sormadan duzeltiyoruz: internetin yokken onay beklemek
+            // yardim degil, engel.
+            _ = RecoverDnsIfNeededAsync();
 
             LoadIspChoices();
             SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
@@ -253,7 +265,36 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set => Set(ref _customTarget, value);
     }
 
-    public string EngineVersionText => "winws v72.13 · zapret-win-bundle";
+    public string EngineVersionText => "winws v72.13 · dnscrypt-proxy 2.1.18";
+
+    /// <summary>
+    /// Sifreli DNS kullanilsin mi. Varsayilan olarak ACIK.
+    /// </summary>
+    /// <remarks>
+    /// Varsayilanin acik olmasi olculmus bir gerekce tasiyor: bu makinede
+    /// discord.com, pornhub.com ve xvideos.com'un ucu de saglayicinin engel
+    /// sunucusuna cozumleniyordu. O katman asilmadan winws stratejisi hicbir sey
+    /// degistirmiyor -- trafik zaten gercek sunucuya gitmiyor. Kapali baslasaydi
+    /// kullanicilarin cogu "calismiyor" deyip birakirdi.
+    /// </remarks>
+    public bool IsSecureDnsEnabled
+    {
+        get => _isSecureDnsEnabled;
+        set
+        {
+            if (Set(ref _isSecureDnsEnabled, value))
+            {
+                UpdateStatusDetail();
+            }
+        }
+    }
+
+    /// <summary>Sifreli DNS su an gercekten devrede mi.</summary>
+    public bool IsSecureDnsActive
+    {
+        get => _isSecureDnsActive;
+        private set => Set(ref _isSecureDnsActive, value);
+    }
 
     // --- Eylemler ---------------------------------------------------------------
 
@@ -271,6 +312,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 await _runner.StopAsync().ConfigureAwait(true);
             }
 
+            // Sifreli DNS ONCE aciliyor. Ters sirada yapilsaydi winws, hala engel
+            // sunucusuna giden bir trafigi kurcalamis olurdu -- yani hicbir sey.
+            if (IsSecureDnsEnabled && _dnsRunner is not null && !_dnsRunner.IsRunning)
+            {
+                Append("Şifreli DNS başlatılıyor...");
+                await _dnsRunner.StartAsync().ConfigureAwait(true);
+                IsSecureDnsActive = true;
+            }
+
             var winners = BuildRuntimeSelection();
             var builder = new WinwsCommandBuilder(_vendor);
             var arguments = builder.BuildRuntimeCommand(winners);
@@ -282,6 +332,59 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Append(ex.Message, isError: true);
             SetStatus(AppStatus.Faulted, "BAŞLATILAMADI", ex.Message);
+
+            // Yarim kalmis bir baslatma DNS'i bizde birakmamali: winws acilmadiysa
+            // kullanicinin kazanci yok ama sistem DNS'i degistirilmis olur.
+            await StopSecureDnsAsync().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>Sifreli DNS'i kapatir ve sistem ayarini geri alir. Kapaliysa sessizce doner.</summary>
+    private async Task StopSecureDnsAsync()
+    {
+        if (_dnsRunner is null)
+        {
+            return;
+        }
+
+        if (!_dnsRunner.IsRunning && !SystemDnsManager.HasBackup)
+        {
+            return;
+        }
+
+        await _dnsRunner.StopAsync().ConfigureAwait(true);
+        IsSecureDnsActive = false;
+    }
+
+    /// <summary>
+    /// Onceki calismadan kalan DNS yonlendirmesini temizler.
+    /// </summary>
+    /// <remarks>
+    /// Uygulama duzgun kapanmadiysa sistem DNS'i hala 127.0.0.1'i gosteriyor ama
+    /// dnscrypt-proxy calismiyor olabilir. O durumda makine HICBIR adi cozemez.
+    /// Acilista sessizce duzeltiyoruz.
+    /// </remarks>
+    private async Task RecoverDnsIfNeededAsync()
+    {
+        try
+        {
+            if (!SystemDnsManager.HasBackup)
+            {
+                return;
+            }
+
+            var responding = await DnsCryptRunner.IsLocalResolverRespondingAsync().ConfigureAwait(true);
+            var recovered = await SystemDnsManager.TryRecoverAsync(responding).ConfigureAwait(true);
+
+            if (recovered.Count > 0)
+            {
+                Append("Önceki oturumdan kalan DNS yönlendirmesi geri alındı: "
+                       + string.Join(", ", recovered));
+            }
+        }
+        catch (Exception ex)
+        {
+            Append("DNS kurtarma denemesi başarısız: " + ex.Message, isError: true);
         }
     }
 
@@ -306,8 +409,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         await _runner.StopAsync().ConfigureAwait(true);
+
+        // Duraklatmak "korumayi gecici olarak kaldir" demek; DNS yonlendirmesi de
+        // korumanin parcasi. Onu acik birakmak, kullanicinin kapattigini sandigi
+        // bir seyin sistem ayarlarinda durmaya devam etmesi olurdu.
+        await StopSecureDnsAsync().ConfigureAwait(true);
+
         SetStatus(AppStatus.Paused, "DURAKLATILDI", "Yapılandırma korundu.");
-        Append("Duraklatıldı. Ayarlar korundu.");
+        Append("Duraklatıldı. Ayarlar korundu, sistem DNS'i geri alındı.");
     }
 
     private async Task RunTestAsync()
@@ -415,6 +524,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 await _runner.StopAsync().ConfigureAwait(true);
             }
 
+            await StopSecureDnsAsync().ConfigureAwait(true);
+
             var steps = await WinDivertCleanup.RunAsync().ConfigureAwait(true);
             foreach (var step in steps)
             {
@@ -438,6 +549,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Kapatılıyor, winws durduruluyor...");
             await _runner.StopAsync().ConfigureAwait(true);
         }
+
+        // DNS geri alinmadan cikmak, kullaniciyi ad cozemez bir makineyle
+        // birakmak demek. Cikis yolunda atlanabilecek bir adim degil.
+        await StopSecureDnsAsync().ConfigureAwait(true);
 
         Application.Current?.Shutdown();
     }
@@ -595,7 +710,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         var isp = SelectedIsp?.Profile?.DisplayName ?? "servis sağlayıcısı seçilmedi";
         var strategy = SelectedStrategy is null ? "strateji yok" : Describe(SelectedStrategy.Args);
-        StatusDetail = $"{isp} · {strategy}";
+        var dns = IsSecureDnsEnabled ? " · şifreli DNS" : string.Empty;
+        StatusDetail = $"{isp} · {strategy}{dns}";
     }
 
     private void RefreshCommands()

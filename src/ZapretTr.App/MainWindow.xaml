@@ -74,6 +74,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
@@ -97,11 +98,21 @@
                      Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
                      ToolTip="Testin gerçekten anlamlı olması için, sizde açılmayan bir adres girin. Boş bırakılırsa varsayılan hedefler kullanılır." />
 
+            <!-- Sifreli DNS anahtari. Varsayilan ACIK ve bu olculmus bir gerekceye
+                 dayaniyor: bu makinede discord.com, pornhub.com ve xvideos.com'un
+                 ucu de saglayicinin engel sunucusuna cozumleniyordu. O katman
+                 asilmadan winws stratejisi hicbir sey degistirmiyor - trafik
+                 zaten gercek sunucuya gitmiyor. -->
+            <CheckBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,8"
+                      IsChecked="{Binding IsSecureDnsEnabled}"
+                      Content="Şifreli DNS kullan (önerilir)"
+                      ToolTip="Servis sağlayıcınız DNS cevaplarını değiştiriyorsa, tek başına DPI atlatma yetmez. Bu seçenek dnscrypt-proxy'yi çalıştırır ve sistem DNS'ini ona yönlendirir. Uygulamayı kapattığınızda ayarınız eski haline döner." />
+
             <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
                  etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
                  "calisiyor" arasindaki farki gizlemek, ise yaramadiginda
                  guveni tumden yikardi. -->
-            <Border Grid.Row="3" Grid.Column="1"
+            <Border Grid.Row="4" Grid.Column="1"
                     Visibility="{Binding IsSelectedStrategyUnverified, Converter={StaticResource BoolToVis}}"
                     Background="{StaticResource WarningBackBrush}"
                     BorderBrush="#EBD6AE" BorderThickness="1"
