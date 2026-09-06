@@ -288,6 +288,7 @@ if (options.IspId is not null)
 Console.WriteLine("Servis sağlayıcı : " + (profile?.DisplayName ?? "(seçilmedi — genel arama)"));
 Console.WriteLine("Motor            : " + vendor.WinwsExe);
 Console.WriteLine("Mod              : " + (options.BaselineOnly ? "yalnızca mevcut durum taraması" : "tam test"));
+Console.WriteLine("DNS              : " + (options.UseSecureDns ? "şifreli (DoH)" : "sistem"));
 if (options.MaxCandidates is { } budget)
 {
     Console.WriteLine($"Bölüm başı bütçe : {budget} aday");
@@ -367,7 +368,7 @@ Console.CancelKeyPress += (_, e) =>
     cancellation.Cancel();
 };
 
-var prober = new StrategyProber(vendor, profiles, targets);
+var prober = new StrategyProber(vendor, profiles, targets, options.UseSecureDns);
 
 try
 {
@@ -590,6 +591,7 @@ internal sealed record CliOptions(
     string? Strategy,
     bool Cleanup,
     bool Apply,
+    bool UseSecureDns,
     bool AssumeYes,
     bool ShowHelp)
 {
@@ -604,6 +606,7 @@ internal sealed record CliOptions(
         var baselineOnly = false;
         var cleanup = false;
         var apply = false;
+        var useSecureDns = false;
         var assumeYes = false;
         var help = false;
         var extras = new List<string>();
@@ -619,7 +622,14 @@ internal sealed record CliOptions(
                     extras.Add(args[++i]);
                     break;
                 case "--out" when i + 1 < args.Length:
-                    output = args[++i];
+                    // Goreli yol verilirse EXE'nin yanina yaziyoruz. Yukseltilmis bir
+                    // surecin calisma dizini C:\Windows\System32 oluyor; goreli yolu
+                    // oldugu gibi kullanmak raporu oraya dusuruyordu ve kullanici
+                    // dosyayi bulamiyordu.
+                    var requested = args[++i];
+                    output = Path.IsPathRooted(requested)
+                        ? requested
+                        : Path.Combine(AppContext.BaseDirectory, requested);
                     break;
                 case "--max-candidates" when i + 1 < args.Length && int.TryParse(args[i + 1], out var parsed):
                     max = parsed;
@@ -643,6 +653,9 @@ internal sealed record CliOptions(
                 case "--apply":
                     apply = true;
                     break;
+                case "--doh":
+                    useSecureDns = true;
+                    break;
                 case "--yes":
                 case "-y":
                     assumeYes = true;
@@ -654,7 +667,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -670,6 +683,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
+        Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --apply                 Seçili ISS yapılandırmasını çalıştırıp önce/sonra farkını ölçer.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");

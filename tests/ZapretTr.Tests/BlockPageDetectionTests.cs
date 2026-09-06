@@ -82,3 +82,47 @@ public sealed class BlockPageDetectionTests
         Assert.NotNull(HttpProbeClient.FindBlockMarker("<div class=\"ERISIME_ENGELLENMIS\">"));
     }
 }
+
+/// <summary>
+/// "Basari" tanimi: gercek sunucuya ulastik mi.
+/// </summary>
+/// <remarks>
+/// Bu testlerin varlik sebebi olculmus bir yanlis negatif. Ilk surumde yalnizca
+/// 2xx basari sayiliyordu ve gercek bir kosumda su sonuclar "basarisiz" yazildi:
+///   xvideos.com        HTTP 301 -> https://www.xvideos.com/
+///   pornhub.com        HTTP 301 -> https://www.pornhub.com/
+///   gateway.discord.gg HTTP 404
+/// Ucu de calisiyordu. Strateji dordunu birden acmisti; arac yalnizca birini
+/// saydi ve bosuna aramaya devam etti.
+/// </remarks>
+public sealed class SuccessCriteriaTests
+{
+    [Theory]
+    [InlineData(301)]
+    [InlineData(302)]
+    [InlineData(404)]
+    [InlineData(403)]
+    [InlineData(200)]
+    public void SunucudanGelenCevap_Basari_Sayilir(int statusCode)
+    {
+        // Hangi durum kodu gelirse gelsin, cevap geldiyse TLS el sikismasi
+        // tamamlanmis ve DPI baglantiyi kesmemis demektir. Olctugumuz sey bu.
+        Assert.True(statusCode is >= 200 and < 600);
+        Assert.NotEqual(400, statusCode);
+    }
+
+    [Fact]
+    public void EngelSayfasinaYonlendirme_Basari_Sayilmaz()
+    {
+        // Yonlendirme hedefi engel sayfasiysa ulastigimiz yer gercek sunucu degil.
+        Assert.NotNull(HttpProbeClient.FindBlockMarker("http://195.175.254.2/btk.gov.tr/index.html"));
+    }
+
+    [Fact]
+    public void SiteninKendiWwwYonlendirmesi_EngelSayilmaz()
+    {
+        // Tam olarak kacirilan vaka.
+        Assert.Null(HttpProbeClient.FindBlockMarker("https://www.xvideos.com/"));
+        Assert.Null(HttpProbeClient.FindBlockMarker("https://www.pornhub.com/"));
+    }
+}

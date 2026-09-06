@@ -31,7 +31,8 @@ namespace ZapretTr.Prober;
 public sealed class StrategyProber(
     VendorPaths vendor,
     ProfileStore profiles,
-    IReadOnlyList<ProbeTarget> targets)
+    IReadOnlyList<ProbeTarget> targets,
+    bool useSecureDns = false)
 {
     private readonly WinwsCommandBuilder _commandBuilder = new(vendor);
 
@@ -159,6 +160,7 @@ public sealed class StrategyProber(
     {
         var results = new List<BaselineResult>();
         using var client = new HttpProbeClient();
+        using var resolver = useSecureDns ? new DohResolver() : null;
 
         for (var i = 0; i < targets.Count; i++)
         {
@@ -172,8 +174,17 @@ public sealed class StrategyProber(
                 targets.Count,
                 target.Label));
 
+            // Sifreli DNS istenmisse adresi ONCE oradan cozuyoruz. Sistem DNS'i
+            // kacirilmis oldugunda baglanti engel sunucusuna gider ve alttaki
+            // asil DPI katmani hic gorunmez -- her strateji basarisiz olur.
+            string? pinnedIp = null;
+            if (resolver is not null)
+            {
+                pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
+            }
+
             var outcome = await client
-                .TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp: null, cancellationToken)
+                .TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp, cancellationToken)
                 .ConfigureAwait(false);
 
             var status = outcome switch

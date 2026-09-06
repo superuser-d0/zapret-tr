@@ -197,6 +197,27 @@ public sealed class HttpProbeClient : IDisposable
             : $"{innermost.GetType().Name}: {innermost.Message}";
     }
 
+    /// <summary>
+    /// Gelen cevabin "gercek sunucuya ulastik" anlamina gelip gelmedigine karar verir.
+    /// </summary>
+    /// <remarks>
+    /// Olctugumuz sey sayfanin ICERIGI degil, DPI'in baglantiyi oldurup oldurmedigi.
+    /// Bu ayrimi kacirmak pahaliya mal oldu: ilk surumde yalnizca 2xx basari
+    /// sayiliyordu ve gercek bir kosumda su sonuclar "basarisiz" yazildi --
+    ///
+    ///   xvideos.com        HTTP 301 -> https://www.xvideos.com/
+    ///   pornhub.com        HTTP 301 -> https://www.pornhub.com/
+    ///   gateway.discord.gg HTTP 404
+    ///
+    /// Ucu de aslinda calisiyordu: ilk ikisi siradan bir www yonlendirmesi, ucuncusu
+    /// o adresin duz GET'e verdigi normal cevap. Strateji dordunu de acmisti ama arac
+    /// yalnizca birini saydi ve daha iyi bir aday aramaya devam etti.
+    ///
+    /// Dogru olcut: sunucudan HERHANGI bir gecerli HTTP cevabi geldiyse TLS el
+    /// sikismasi tamamlanmis ve DPI baglantiyi oldurmemis demektir. Iki istisna var:
+    /// engel sayfasi (yanlis sunucuya ulastik) ve HTTP 400 (sunucu bozuk istek aldi,
+    /// yani stratejinin kendisi paketi bozmus).
+    /// </remarks>
     private async Task<ProbeOutcome> EvaluateResponseAsync(
         HttpResponseMessage response, string resolvedIp, CancellationToken cancellationToken)
     {
@@ -208,7 +229,21 @@ public sealed class HttpProbeClient : IDisposable
             return new ProbeOutcome(false, "HTTP 400 -- sunucu bozuk istek aldi", resolvedIp);
         }
 
-        // Engel sayfasi 200 de donebilir, yonlendirme de yapabilir. Ikisinde de icerige bakiyoruz.
+        // Yonlendirme hedefi engel sayfasiysa, ulastigimiz yer gercek sunucu degil.
+        if (status is >= 300 and < 400)
+        {
+            var location = response.Headers.Location?.ToString() ?? string.Empty;
+            var locationMarker = FindBlockMarker(location);
+            if (locationMarker is not null)
+            {
+                return new ProbeOutcome(
+                    false, $"engel sayfasina yonlendirme ({locationMarker})", resolvedIp, IsBlockPage: true);
+            }
+
+            return new ProbeOutcome(true, $"HTTP {status} -> {location}", resolvedIp);
+        }
+
+        // Govde engel sayfasi mi? 200 de donebilecegi icin durum koduna guvenilmez.
         var body = await ReadPrefixAsync(response, cancellationToken).ConfigureAwait(false);
         var marker = FindBlockMarker(body);
         if (marker is not null)
@@ -216,28 +251,9 @@ public sealed class HttpProbeClient : IDisposable
             return new ProbeOutcome(false, $"engel sayfasi ({marker})", resolvedIp, Preview(body), IsBlockPage: true);
         }
 
-        if (status is >= 300 and < 400)
-        {
-            var location = response.Headers.Location?.ToString() ?? "(bos)";
-            var locationMarker = FindBlockMarker(location);
-            if (locationMarker is not null)
-            {
-                return new ProbeOutcome(false, $"engel sayfasina yonlendirme ({locationMarker})", resolvedIp, IsBlockPage: true);
-            }
-
-            // Alakasiz bir yonlendirme suphelidir ama kesin degil; basarisiz sayiyoruz
-            // ki yanlis pozitif uretmeyelim.
-            return new ProbeOutcome(false, $"HTTP {status} -> {location}", resolvedIp);
-        }
-
-        if (status is >= 200 and < 300)
-        {
-            // Govde onizlemesi teshis icin tasiniyor: engel sayfasi 200 dondurdugunde
-            // hangi metnin gectigini TAHMIN etmek yerine gormek gerekiyor.
-            return new ProbeOutcome(true, $"HTTP {status}", resolvedIp, Preview(body));
-        }
-
-        return new ProbeOutcome(false, $"HTTP {status}", resolvedIp);
+        // Buraya gelen her cevap gercek sunucudan geldi: 200 de, 403 de, 404 de.
+        // Hepsi ayni seyi kanitliyor -- DPI baglantiyi kesmedi.
+        return new ProbeOutcome(true, $"HTTP {status}", resolvedIp, Preview(body));
     }
 
     /// <summary>Govdenin basindan bir parca okur. Tamamini indirmek gereksiz ve yavas.</summary>
