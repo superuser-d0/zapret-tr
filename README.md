@@ -3,8 +3,9 @@
 Windows için GUI'li [zapret](https://github.com/bol-van/zapret) dağıtımı — Türkiye'deki servis
 sağlayıcılarına odaklanmış otomatik parametre bulma ile.
 
-> **Durum: geliştirme aşamasında.** Çekirdek katman ve profil veritabanı hazır, GUI henüz yok.
-> Aşağıdaki "Yol haritası" bölümü nerede olduğumuzu gösteriyor.
+> **Durum: geliştirme aşamasında.** Arayüz, test motoru ve profil veritabanı yazıldı ve derleniyor;
+> 37 test geçiyor. Ama **henüz gerçek bir bağlantıda çalıştırılmadı** — `winws.exe` bir kez bile
+> başlatılmış değil. Aşağıdaki "Yol haritası" nerede olduğumuzu gösteriyor.
 
 ---
 
@@ -86,12 +87,13 @@ tools/fetch-upstream.ps1  upstream ikili indirme + SHA256 doğrulama
 - [x] Repo iskeleti, upstream indirme + doğrulama
 - [x] ISP profil veritabanı (10 profil) + genel merdiven
 - [x] Komut kurucu, profil yükleyici, testler
-- [ ] winws süreç yönetimi + WinDivert temizliği
-- [ ] Paralel test izolasyonu doğrulaması (`--ipset-ip` spike)
-- [ ] Test motoru: baseline tarama, protokol sınıfı testleri, engel sayfası tespiti
+- [x] winws süreç yönetimi + WinDivert temizliği
+- [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
+- [x] WPF GUI (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
+- [ ] **Gerçek donanımda ilk çalıştırma** — henüz hiç winws başlatılmadı
+- [ ] Paralel test izolasyonu doğrulaması (`--ipset-ip` spike) — motor şu an sıralı
 - [ ] Superonline saha testi paketi
-- [ ] ASN otomatik tespiti
-- [ ] WPF GUI (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
+- [ ] ASN otomatik tespiti ("Bilmiyorum" akışı henüz profil önermiyor)
 - [ ] Servis kurulumu + Inno Setup installer
 
 ## Uyarılar
