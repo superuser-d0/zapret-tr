@@ -34,6 +34,114 @@ if (!ElevationGuard.IsElevated())
     return 2;
 }
 
+// --- Secili yapilandirmayi uygula ve olc -------------------------------------
+// Arayuzdeki "Baslat" dugmesinin urettigi BIRLESIK komutu calistirip once/sonra
+// farkini olcer. Tek bir adayi test etmekten farkli: gercekte kullanilan komut
+// dort bolumu --new ile birlestiriyor ve o birlesik halin calistigi ayrica
+// dogrulanmali.
+if (options.Apply)
+{
+    var applyVendor = VendorPaths.Locate();
+    var applyProfiles = ProfileStore.Load();
+
+    var applyProfile = options.IspId is null ? null : applyProfiles.FindById(options.IspId);
+    if (applyProfile is null)
+    {
+        Console.Error.WriteLine("--apply icin gecerli bir --isp gerekli.");
+        Console.Error.WriteLine("Mevcut olanlar: " + string.Join(", ", applyProfiles.Profiles.Select(x => x.Id)));
+        return 4;
+    }
+
+    // Arayuzdekiyle AYNI kural (RuntimeSelection): secilen HTTPS stratejisi +
+    // yalnizca dogrulanmis diger bolumler. Ikisi ayrisirsa arayuzde test edilen
+    // sey ile gercekte calisan sey farkli olur.
+    var primary = applyProfile.CandidatesFor(StrategySection.Tcp443).FirstOrDefault();
+    if (primary is null)
+    {
+        Console.Error.WriteLine($"{applyProfile.DisplayName} profilinde HTTPS adayi yok.");
+        return 4;
+    }
+
+    var winners = RuntimeSelection.Build(applyProfile, primary.Args);
+
+    var unprotected = RuntimeSelection.UnprotectedSections(applyProfile);
+    if (unprotected.Count > 0)
+    {
+        Console.WriteLine("Not: şu bölümlerde doğrulanmış strateji yok, dokunulmayacak:");
+        Console.WriteLine("     " + string.Join(", ", unprotected.Select(x => x.ToJsonName())));
+        Console.WriteLine("     (parametre testi çalıştırılınca doğrulanıp devreye girerler)");
+        Console.WriteLine();
+    }
+
+    var applyBuilder = new WinwsCommandBuilder(applyVendor);
+    var runtimeArgs = applyBuilder.BuildRuntimeCommand(winners);
+
+    Console.WriteLine("Servis sağlayıcı : " + applyProfile.DisplayName);
+    Console.WriteLine($"Bölüm sayısı     : {winners.Count}");
+    Console.WriteLine();
+    Console.WriteLine("Çalıştırılacak komut:");
+    Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(runtimeArgs));
+    Console.WriteLine();
+
+    var applyTargets = ProbeTargetStore.Load(applyProfiles.Root);
+
+    Console.WriteLine("Önce (winws kapalı):");
+    var before = new Dictionary<string, bool>();
+    using (var c = new HttpProbeClient())
+    {
+        foreach (var t in applyTargets)
+        {
+            var r = await c.TryReachAsync(t.Host, StrategyProber.ModeFor(t.Section));
+            before[t.Label] = r.Succeeded;
+            Console.WriteLine($"   {(r.Succeeded ? "açık " : "KAPALI")}  {t.Label,-34} {r.Detail}");
+        }
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("winws başlatılıyor...");
+    var applyRunner = new WinwsRunner(applyVendor);
+    applyRunner.Start(runtimeArgs);
+    await Task.Delay(2000);
+
+    Console.WriteLine();
+    Console.WriteLine("Sonra (winws açık):");
+    var fixedCount = 0;
+    var brokeCount = 0;
+    using (var c = new HttpProbeClient())
+    {
+        foreach (var t in applyTargets)
+        {
+            var r = await c.TryReachAsync(t.Host, StrategyProber.ModeFor(t.Section));
+            var was = before.TryGetValue(t.Label, out var b) && b;
+
+            var change = (was, r.Succeeded) switch
+            {
+                (false, true) => "  <<< DÜZELDİ",
+                (true, false) => "  <<< BOZULDU",
+                _ => string.Empty,
+            };
+
+            if (change.Contains("DÜZELDİ", StringComparison.Ordinal)) { fixedCount++; }
+            if (change.Contains("BOZULDU", StringComparison.Ordinal)) { brokeCount++; }
+
+            Console.WriteLine($"   {(r.Succeeded ? "açık " : "KAPALI")}  {t.Label,-34} {r.Detail}{change}");
+        }
+    }
+
+    await applyRunner.StopAsync();
+
+    Console.WriteLine();
+    Console.WriteLine($"Sonuç: {fixedCount} hedef düzeldi, {brokeCount} hedef bozuldu.");
+    if (brokeCount > 0)
+    {
+        // Calisan bir seyi bozmak, calismayan bir seyi duzeltmemekten kotu.
+        Console.WriteLine("UYARI: Daha önce açılan bir hedef bu yapılandırmayla kapandı.");
+    }
+
+    Console.WriteLine();
+    return fixedCount > 0 && brokeCount == 0 ? 0 : 1;
+}
+
 // --- Temizlik ---------------------------------------------------------------
 // Bu arac baska birinin makinesinde calisiyor ve calisirken cekirdek modunda bir
 // paket surucusu yukluyor. Onu kaldirabilmesi bir "ekstra" degil, sorumluluk.
@@ -481,6 +589,7 @@ internal sealed record CliOptions(
     string? EngageCheckHost,
     string? Strategy,
     bool Cleanup,
+    bool Apply,
     bool AssumeYes,
     bool ShowHelp)
 {
@@ -494,6 +603,7 @@ internal sealed record CliOptions(
         int? max = null;
         var baselineOnly = false;
         var cleanup = false;
+        var apply = false;
         var assumeYes = false;
         var help = false;
         var extras = new List<string>();
@@ -530,6 +640,9 @@ internal sealed record CliOptions(
                 case "--cleanup":
                     cleanup = true;
                     break;
+                case "--apply":
+                    apply = true;
+                    break;
                 case "--yes":
                 case "-y":
                     assumeYes = true;
@@ -541,7 +654,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -557,6 +670,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
+        Console.WriteLine("  --apply                 Seçili ISS yapılandırmasını çalıştırıp önce/sonra farkını ölçer.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");
         Console.WriteLine("  -h, --help              Bu yardım.");

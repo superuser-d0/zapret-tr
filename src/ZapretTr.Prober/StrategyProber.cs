@@ -475,7 +475,7 @@ public sealed class StrategyProber(
     /// en cok mudahale ettigi durum. TLS 1.3'te ServerHello sifreli oldugu icin bazi
     /// engellemeler devreye bile girmez ve test kolay gecerek yaniltir.
     /// </remarks>
-    private static ProbeMode ModeFor(StrategySection section) => section switch
+    public static ProbeMode ModeFor(StrategySection section) => section switch
     {
         StrategySection.Tcp80 => ProbeMode.PlainHttp,
         StrategySection.Tcp443 => ProbeMode.Tls12,

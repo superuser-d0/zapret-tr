@@ -286,40 +286,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Calistirilacak bolum -> strateji esleimesini kurar.
+    /// Calistirilacak bolum -> strateji eslesmesini kurar.
     /// </summary>
     /// <remarks>
-    /// Kullanici listeden tek bir strateji seciyor ama yalnizca onu uygulamak dogru
-    /// olmazdi: HTTPS stratejisiyle baslatmak QUIC ve Discord ses trafigini korumasiz
-    /// birakir, ve tarayicilar QUIC'e kendiliginden dustugu icin kullanici "acilmadi"
-    /// der. Bu yuzden secilen HTTPS stratejisinin yanina diger bolumlerin profildeki
-    /// en yuksek agirlikli adaylari da ekleniyor -- upstream'in kendi preset'i de
-    /// tam olarak boyle cok bolumlu.
+    /// Kural <see cref="RuntimeSelection"/> icinde: sorunu olmayan yere dokunma.
+    /// Kullanicinin sectigi HTTPS stratejisi ve yalnizca DOGRULANMIS diger bolumler
+    /// uygulanir. Denenmemis bir strateji calisan trafige uygulanmaz -- gercek bir
+    /// kosumda bunun bedeli olculdu: sorunsuz calisan QUIC baglantisi, uzerine
+    /// denenmemis bir QUIC stratejisi uygulanınca bozuldu.
     /// </remarks>
     private Dictionary<StrategySection, string> BuildRuntimeSelection()
-    {
-        var winners = new Dictionary<StrategySection, string>
-        {
-            [StrategySection.Tcp443] = SelectedStrategy!.Args,
-        };
-
-        var profile = SelectedIsp?.Profile;
-        if (profile is null)
-        {
-            return winners;
-        }
-
-        foreach (var section in new[] { StrategySection.Tcp80, StrategySection.Quic, StrategySection.DiscordVoice })
-        {
-            var best = profile.CandidatesFor(section).FirstOrDefault();
-            if (best is not null)
-            {
-                winners[section] = best.Args;
-            }
-        }
-
-        return winners;
-    }
+        => RuntimeSelection.Build(SelectedIsp?.Profile, SelectedStrategy!.Args);
 
     private async Task PauseAsync()
     {
