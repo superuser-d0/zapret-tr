@@ -45,7 +45,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private CancellationTokenSource? _testCancellation;
 
     private AppStatus _status = AppStatus.NotReady;
-    private string _statusHeadline = "BASLATILIYOR";
+    private string _statusHeadline = "BAŞLATILIYOR";
     private string _statusDetail = string.Empty;
     private IspChoice? _selectedIsp;
     private StrategyChoice? _selectedStrategy;
@@ -74,21 +74,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _runner.StateChanged += OnRunnerStateChanged;
 
             LoadIspChoices();
-            SetStatus(AppStatus.Ready, "SISTEM HAZIR");
-            Append("Profiller yuklendi: " + _profiles.Profiles.Count + " servis saglayicisi.");
+            SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
+            Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
             var missing = _vendor.FindMissingFiles();
             if (missing.Count > 0)
             {
-                SetStatus(AppStatus.NotReady, "EKSIK DOSYA",
-                    $"{missing.Count} upstream dosyasi eksik -- tools/fetch-upstream.ps1 calistirin.");
+                SetStatus(AppStatus.NotReady, "EKSİK DOSYA",
+                    $"{missing.Count} upstream dosyası eksik — tools/fetch-upstream.ps1 çalıştırın.");
             }
         }
         catch (Exception ex)
         {
             // Kurulum eksikse uygulama acilmali ve NEDEN acilamadigini soylemeli;
             // sessizce coken bir pencere kullaniciya hicbir sey anlatmaz.
-            SetStatus(AppStatus.NotReady, "KURULUM EKSIK", ex.Message);
+            SetStatus(AppStatus.NotReady, "KURULUM EKSİK", ex.Message);
             Append(ex.Message, isError: true);
         }
     }
@@ -153,9 +153,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// <summary>Ana dugmenin yazisi. Duraklatilmis durumdan devam etmek "baslat"tan farkli okunmali.</summary>
     public string PrimaryButtonText => Status switch
     {
-        AppStatus.Running => "ZAPRET CALISIYOR",
+        AppStatus.Running => "ZAPRET ÇALIŞIYOR",
         AppStatus.Paused => "DEVAM ET",
-        _ => "ZAPRET'I BASLAT",
+        _ => "ZAPRET'İ BAŞLAT",
     };
 
     public IspChoice? SelectedIsp
@@ -199,10 +199,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public string VerificationNote => SelectedStrategy?.Source switch
     {
-        CandidateSource.Verified => "Bu makinede dogrulandi.",
-        CandidateSource.CommunityUnverified => "Toplulukta bildirildi, henuz dogrulanmadi.",
-        CandidateSource.UpstreamPreset => "zapret ornek yapilandirmasindan, henuz dogrulanmadi.",
-        CandidateSource.Hypothesis => "Mekanizmadan turetildi, henuz denenmedi.",
+        CandidateSource.Verified => "Bu makinede doğrulandı.",
+        CandidateSource.CommunityUnverified => "Toplulukta bildirildi, henüz doğrulanmadı.",
+        CandidateSource.UpstreamPreset => "zapret örnek yapılandırmasından, henüz doğrulanmadı.",
+        CandidateSource.Hypothesis => "Mekanizmadan türetildi, henüz denenmedi.",
         _ => string.Empty,
     };
 
@@ -271,19 +271,54 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 await _runner.StopAsync().ConfigureAwait(true);
             }
 
-            var section = SectionOf(SelectedStrategy);
+            var winners = BuildRuntimeSelection();
             var builder = new WinwsCommandBuilder(_vendor);
-            var arguments = builder.BuildRuntimeCommand(
-                new Dictionary<StrategySection, string> { [section] = SelectedStrategy.Args });
+            var arguments = builder.BuildRuntimeCommand(winners);
 
-            Append("Baslatiliyor: " + WinwsCommandBuilder.ToDisplayString(arguments));
+            Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
             _runner.Start(arguments);
         }
         catch (Exception ex)
         {
             Append(ex.Message, isError: true);
-            SetStatus(AppStatus.Faulted, "BASLATILAMADI", ex.Message);
+            SetStatus(AppStatus.Faulted, "BAŞLATILAMADI", ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Calistirilacak bolum -> strateji esleimesini kurar.
+    /// </summary>
+    /// <remarks>
+    /// Kullanici listeden tek bir strateji seciyor ama yalnizca onu uygulamak dogru
+    /// olmazdi: HTTPS stratejisiyle baslatmak QUIC ve Discord ses trafigini korumasiz
+    /// birakir, ve tarayicilar QUIC'e kendiliginden dustugu icin kullanici "acilmadi"
+    /// der. Bu yuzden secilen HTTPS stratejisinin yanina diger bolumlerin profildeki
+    /// en yuksek agirlikli adaylari da ekleniyor -- upstream'in kendi preset'i de
+    /// tam olarak boyle cok bolumlu.
+    /// </remarks>
+    private Dictionary<StrategySection, string> BuildRuntimeSelection()
+    {
+        var winners = new Dictionary<StrategySection, string>
+        {
+            [StrategySection.Tcp443] = SelectedStrategy!.Args,
+        };
+
+        var profile = SelectedIsp?.Profile;
+        if (profile is null)
+        {
+            return winners;
+        }
+
+        foreach (var section in new[] { StrategySection.Tcp80, StrategySection.Quic, StrategySection.DiscordVoice })
+        {
+            var best = profile.CandidatesFor(section).FirstOrDefault();
+            if (best is not null)
+            {
+                winners[section] = best.Args;
+            }
+        }
+
+        return winners;
     }
 
     private async Task PauseAsync()
@@ -294,8 +329,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         await _runner.StopAsync().ConfigureAwait(true);
-        SetStatus(AppStatus.Paused, "DURAKLATILDI", "Yapilandirma korundu.");
-        Append("Duraklatildi. Ayarlar korundu.");
+        SetStatus(AppStatus.Paused, "DURAKLATILDI", "Yapılandırma korundu.");
+        Append("Duraklatıldı. Ayarlar korundu.");
     }
 
     private async Task RunTestAsync()
@@ -309,7 +344,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // olcecek, acik bir strateji olcumu kirletir.
         if (_runner is { IsRunning: true })
         {
-            Append("Test icin winws gecici olarak durduruluyor.");
+            Append("Test için winws geçici olarak durduruluyor.");
             await _runner.StopAsync().ConfigureAwait(true);
         }
 
@@ -317,7 +352,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         IsBusy = true;
         IsProgressVisible = true;
         IsLogExpanded = true;
-        SetStatus(AppStatus.Testing, "PARAMETRE TESTI", "Mevcut durum olculuyor...");
+        SetStatus(AppStatus.Testing, "PARAMETRE TESTİ", "Mevcut durum ölçülüyor...");
 
         try
         {
@@ -342,12 +377,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (OperationCanceledException)
         {
             Append("Test iptal edildi.");
-            SetStatus(AppStatus.Ready, "SISTEM HAZIR", "Test iptal edildi.");
+            SetStatus(AppStatus.Ready, "SİSTEM HAZIR", "Test iptal edildi.");
         }
         catch (Exception ex)
         {
             Append(ex.Message, isError: true);
-            SetStatus(AppStatus.Faulted, "TEST BASARISIZ", ex.Message);
+            SetStatus(AppStatus.Faulted, "TEST BAŞARISIZ", ex.Message);
         }
         finally
         {
@@ -369,14 +404,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // Yikici islem: onaysiz calistirilmamali ve tam olarak ne yapacagi
         // onceden soylenmeli.
         var confirmation = MessageBox.Show(
-            "Bu islem sunlari yapacak:\n\n" +
-            "  • Calisan winws surecini durdurur\n" +
+            "Bu işlem şunları yapacak:\n\n" +
+            "  • Çalışan winws sürecini durdurur\n" +
             "  • ZapretTR Windows servisini siler\n" +
-            "  • WinDivert surucusunu kaldirir\n" +
-            "  • Kaydedilmis yapilandirmayi ve ogrenilmis sonuclari siler\n" +
-            "  • DNS onbellegini temizler\n\n" +
-            "DNS ayarlariniza dokunulmaz.\n\nDevam edilsin mi?",
-            "Tum ayarlari sifirla",
+            "  • WinDivert sürücüsünü kaldırır\n" +
+            "  • Kaydedilmiş yapılandırmayı ve öğrenilmiş sonuçları siler\n" +
+            "  • DNS önbelleğini temizler\n\n" +
+            "DNS ayarlarınıza dokunulmaz.\n\nDevam edilsin mi?",
+            "Tüm ayarları sıfırla",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
@@ -403,7 +438,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append($"{mark} {step.Description}{detail}", isError: !step.Succeeded);
             }
 
-            SetStatus(AppStatus.Ready, "SIFIRLANDI", "Ilk kurulum durumuna donuldu.");
+            SetStatus(AppStatus.Ready, "SIFIRLANDI", "İlk kurulum durumuna dönüldü.");
         }
         finally
         {
@@ -415,7 +450,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (_runner is not null)
         {
-            Append("Kapatiliyor, winws durduruluyor...");
+            Append("Kapatılıyor, winws durduruluyor...");
             await _runner.StopAsync().ConfigureAwait(true);
         }
 
@@ -457,11 +492,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        foreach (var candidate in profile.Candidates.OrderBy(c => c.Section).ThenByDescending(c => c.Weight))
+        // Yalnizca HTTPS adaylari listeleniyor. Kullanicinin "strateji" derken
+        // kastettigi sey bu; diger bolumler (HTTP, QUIC, Discord ses) profilin en
+        // yuksek agirlikli adaylariyla otomatik dolduruluyor. Dort bolumun adaylarini
+        // tek bir listede karistirmak, kullanicinin farkinda olmadan yalnizca 80
+        // portunu koruyan bir secim yapmasina yol aciyordu.
+        foreach (var candidate in profile.CandidatesFor(StrategySection.Tcp443))
         {
             var badge = candidate.Source == CandidateSource.Verified ? "✓ " : string.Empty;
-            var display = $"{badge}{SectionLabel(candidate.Section)} · {Describe(candidate.Args)}";
-            StrategyChoices.Add(new StrategyChoice(candidate.Id, display, candidate.Args, candidate.Source));
+            StrategyChoices.Add(new StrategyChoice(
+                candidate.Id, badge + Describe(candidate.Args), candidate.Args, candidate.Source));
         }
 
         SelectedStrategy = StrategyChoices.FirstOrDefault();
@@ -477,7 +517,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private void ReportResult(ProbeReport report)
     {
         var blocked = report.Baseline.Count(b => b.Status == BaselineStatus.Blocked);
-        Append($"Baseline: {blocked}/{report.Baseline.Count} hedef engelli.");
+        Append($"Mevcut durum: {blocked}/{report.Baseline.Count} hedef engelli.");
 
         foreach (var item in report.Baseline)
         {
@@ -487,25 +527,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (blocked == 0)
         {
             SetStatus(AppStatus.Ready, "ENGEL BULUNAMADI",
-                "Test hedeflerinin hepsi zaten aciliyor. Kendi hedefinizi girip tekrar deneyin.");
-            Append("Hicbir hedef engelli degil. Bu durumda strateji testi anlamsiz olurdu -- " +
-                   "acilmayan bir adres girip tekrar calistirin.");
+                "Test hedeflerinin hepsi zaten açılıyor. Kendi hedefinizi girip tekrar deneyin.");
+            Append("Hiçbir hedef engelli değil. Bu durumda strateji testi anlamsız olurdu — " +
+                   "açılmayan bir adres girip tekrar çalıştırın.");
             return;
         }
 
         if (report.IsEmpty)
         {
-            SetStatus(AppStatus.Ready, "CALISAN STRATEJI YOK",
-                $"{report.Attempts.Count} aday denendi, hicbiri acmadi.");
-            Append($"{report.Attempts.Count} aday denendi, {report.Duration.TotalSeconds:F0} sn surdu. Sonuc yok.");
+            SetStatus(AppStatus.Ready, "ÇALIŞAN STRATEJİ YOK",
+                $"{report.Attempts.Count} aday denendi, hiçbiri açmadı.");
+            Append($"{report.Attempts.Count} aday denendi, {report.Duration.TotalSeconds:F0} sn sürdü. Sonuç yok.");
             return;
         }
 
-        Append($"Sonuc ({report.Duration.TotalSeconds:F0} sn):");
+        Append($"Sonuç ({report.Duration.TotalSeconds:F0} sn):");
         foreach (var winner in report.Winners)
         {
             Append($"   [+] {SectionLabel(winner.Section)}: {winner.Args}");
-            Append($"       acilan: {string.Join(", ", winner.VerifiedCategories)}");
+            Append($"       açılan: {string.Join(", ", winner.VerifiedCategories)}");
 
             // Kazanani secim listesine dogrulanmis olarak ekle.
             var choice = new StrategyChoice(
@@ -518,8 +558,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SelectedStrategy = choice;
         }
 
-        SetStatus(AppStatus.Ready, "STRATEJI BULUNDU",
-            $"{report.Winners.Count} bolum icin calisan parametre bulundu.");
+        SetStatus(AppStatus.Ready, "STRATEJİ BULUNDU",
+            $"{report.Winners.Count} bölüm için çalışan parametre bulundu.");
     }
 
     private void OnRunnerStateChanged(WinwsState state)
@@ -529,16 +569,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             switch (state)
             {
                 case WinwsState.Running:
-                    SetStatus(AppStatus.Running, "KORUMA AKTIF");
+                    SetStatus(AppStatus.Running, "KORUMA AKTİF");
                     break;
                 case WinwsState.Faulted:
-                    SetStatus(AppStatus.Faulted, "BEKLENMEDIK DURUS",
-                        "winws kendiliginden kapandi. Ayrintilar gunlukte.");
+                    SetStatus(AppStatus.Faulted, "BEKLENMEDİK DURUŞ",
+                        "winws kendiliğinden kapandı. Ayrıntılar günlükte.");
                     break;
                 case WinwsState.Stopped:
                     if (Status == AppStatus.Running)
                     {
-                        SetStatus(AppStatus.Ready, "SISTEM HAZIR");
+                        SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
                     }
 
                     break;
@@ -568,7 +608,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        var isp = SelectedIsp?.Profile?.DisplayName ?? "servis saglayicisi secilmedi";
+        var isp = SelectedIsp?.Profile?.DisplayName ?? "servis sağlayıcısı seçilmedi";
         var strategy = SelectedStrategy is null ? "strateji yok" : Describe(SelectedStrategy.Args);
         StatusDetail = $"{isp} · {strategy}";
     }
@@ -606,13 +646,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Application.Current.Dispatcher.Invoke(Add);
         }
-    }
-
-    private StrategySection SectionOf(StrategyChoice choice)
-    {
-        var profile = SelectedIsp?.Profile;
-        var match = profile?.Candidates.FirstOrDefault(c => c.Id == choice.Id);
-        return match?.Section ?? StrategySection.Tcp443;
     }
 
     private static string SectionLabel(StrategySection section) => section switch

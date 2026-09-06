@@ -14,3 +14,6 @@ installer/Output/
 # Local runtime state
 *.log
 saha-raporu-*.json
+
+# Gecici ekran goruntuleri
+*.png

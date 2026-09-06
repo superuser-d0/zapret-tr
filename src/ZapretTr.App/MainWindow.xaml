@@ -79,7 +79,7 @@
             <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
                  saglayicisi burada birinci sinif alan: aramayi hizlandiran
                  sey tam olarak bu secim. -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Saglayici:" Style="{StaticResource LabelText}" />
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Sağlayıcı:" Style="{StaticResource LabelText}" />
             <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
                       ItemsSource="{Binding IspChoices}"
                       SelectedItem="{Binding SelectedIsp}"
@@ -91,11 +91,11 @@
                       SelectedItem="{Binding SelectedStrategy}"
                       DisplayMemberPath="Display" />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Acilmayan site:" Style="{StaticResource LabelText}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Açılmayan site:" Style="{StaticResource LabelText}" />
             <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
                      VerticalContentAlignment="Center"
                      Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Testin gercekten anlamli olmasi icin, sizde acilmayan bir adres girin. Bos birakilirsa varsayilan hedefler kullanilir." />
+                     ToolTip="Testin gerçekten anlamlı olması için, sizde açılmayan bir adres girin. Boş bırakılırsa varsayılan hedefler kullanılır." />
 
             <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
                  etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
@@ -114,7 +114,7 @@
 
         <!-- ================= PARAMETRE TESTI ================= -->
         <StackPanel Grid.Row="3" Margin="0,0,0,12">
-            <Button Content="PARAMETRE TESTI YAP"
+            <Button Content="PARAMETRE TESTİ YAP"
                     Command="{Binding TestCommand}"
                     Style="{StaticResource PrimaryButton}"
                     Height="44" />
@@ -134,7 +134,7 @@
                              Minimum="0" Maximum="1"
                              Value="{Binding ProgressFraction, Mode=OneWay}" />
 
-                <Button Grid.Row="0" Grid.Column="1" Content="Iptal"
+                <Button Grid.Row="0" Grid.Column="1" Content="İptal"
                         Command="{Binding CancelTestCommand}"
                         Style="{StaticResource ActionButton}"
                         Height="22" Margin="8,0,0,0" Padding="8,0" FontSize="11" />
@@ -150,14 +150,14 @@
 
         <!-- ================= DIGER ISLEMLER ================= -->
         <StackPanel Grid.Row="4">
-            <Button Content="Servis Olarak Yukle (Otomatik Baslat)"
+            <Button Content="Servis Olarak Yükle (Otomatik Başlat)"
                     Style="{StaticResource ActionButton}"
                     IsEnabled="False"
-                    ToolTip="Henuz hazir degil." />
-            <Button Content="Tum Ayarlari Sifirla"
+                    ToolTip="Henüz hazır değil." />
+            <Button Content="Tüm Ayarları Sıfırla"
                     Command="{Binding ResetCommand}"
                     Style="{StaticResource DangerButton}" />
-            <Button Content="Cikis"
+            <Button Content="Çıkış"
                     Command="{Binding ExitCommand}"
                     Style="{StaticResource ActionButton}" />
         </StackPanel>
@@ -166,7 +166,7 @@
              Referans arayuzde yok. Burada var ve varsayilan olarak kapali:
              normalde gurultu, ama bir sey calismadiginda kullanicinin elindeki
              tek kanit bu. Testte kendiliginden aciliyor. -->
-        <Expander Grid.Row="5" Header="Ayrintilar" Margin="0,12,0,0"
+        <Expander Grid.Row="5" Header="Ayrıntılar" Margin="0,12,0,0"
                   IsExpanded="{Binding IsLogExpanded}">
             <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderBrushSoft}"
                     BorderThickness="1" CornerRadius="4" Margin="0,6,0,0">

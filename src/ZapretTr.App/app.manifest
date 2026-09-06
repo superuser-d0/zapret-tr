@@ -4,9 +4,13 @@
 
   <!--
     winws.exe kernel modunda calisan WinDivert surucusunu kullaniyor ve yukseltilmis
-    yetki olmadan hicbir sey yapmiyor (--help bile "requires elevation" ile dusuyor).
-    Yetkiyi sonradan istemek diye bir secenek olmadigi icin uygulama bastan yonetici
-    olarak baslatiliyor.
+    yetki olmadan hicbir sey yapmiyor: yardim ekranini acmak bile "requires elevation"
+    ile dusuyor. Yetkiyi sonradan istemek diye bir secenek olmadigi icin uygulama
+    bastan yonetici olarak baslatiliyor.
+
+    NOT: Bu dosyayi duzenlerken yorumlarin icinde cift tire kullanma. XML yorumlari
+    cift tire icermez; SxS yukleyicisi dosyayi reddeder ve uygulama "side-by-side
+    configuration is incorrect" ile hic acilmaz. Derleme bu hatayi YAKALAMAZ.
   -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
