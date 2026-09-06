@@ -1,0 +1,181 @@
+using System.Diagnostics;
+using System.Runtime.Versioning;
+
+namespace ZapretTr.Core.Engine;
+
+/// <summary>Bir temizlik adiminin sonucu. Arayuzde tek tek gosterilir.</summary>
+public sealed record CleanupStep(string Description, bool Succeeded, string? Detail = null);
+
+/// <summary>
+/// WinDivert surucusunu ve ZapretTR'nin biraktigi izleri kaldirir.
+/// </summary>
+/// <remarks>
+/// "Tum ayarlari sifirla" dugmesinin arkasindaki is. Yikici oldugu icin davranisi
+/// sabit ve acik tutuldu: ne yaptigi adim adim raporlanir, kullanicinin DNS ayarlarina
+/// dokunulmaz (biz varsayilan olarak degistirmiyoruz, dolayisiyla geri almak da bize
+/// dusmez).
+///
+/// Surucu kaldirma adimlari upstream'in kendi windivert_delete.cmd dosyasiyla ayni:
+/// sc stop windivert, sc delete windivert.
+/// </remarks>
+[SupportedOSPlatform("windows")]
+public static class WinDivertCleanup
+{
+    /// <summary>ZapretTR'nin kurdugu Windows servisinin adi.</summary>
+    public const string ServiceName = "ZapretTR";
+
+    /// <summary>WinDivert surucusunun servis adi.</summary>
+    public const string DriverServiceName = "windivert";
+
+    /// <summary>Yapilandirmanin tutuldugu dizin.</summary>
+    public static string ConfigDirectory => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+        "ZapretTR");
+
+    /// <summary>
+    /// Sifirlamayi yurutur ve her adimin sonucunu dondurur.
+    /// </summary>
+    /// <param name="removeConfig">
+    /// Yapilandirmayi ve ogrenilmis agirliklari da silsin mi. false verilirse yalnizca
+    /// calisan seyler durdurulur -- "internetim bozuldu" durumundan cikmak icin
+    /// kullanicinin profil secimlerini kaybetmesi gerekmiyor.
+    /// </param>
+    public static async Task<IReadOnlyList<CleanupStep>> RunAsync(
+        bool removeConfig = true,
+        CancellationToken cancellationToken = default)
+    {
+        var steps = new List<CleanupStep>();
+
+        steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
+        steps.Add(await RunScAsync("stop", ServiceName, "ZapretTR servisi durduruldu", cancellationToken).ConfigureAwait(false));
+        steps.Add(await RunScAsync("delete", ServiceName, "ZapretTR servisi silindi", cancellationToken).ConfigureAwait(false));
+        steps.Add(await RunScAsync("stop", DriverServiceName, "WinDivert surucusu durduruldu", cancellationToken).ConfigureAwait(false));
+        steps.Add(await RunScAsync("delete", DriverServiceName, "WinDivert surucusu kaldirildi", cancellationToken).ConfigureAwait(false));
+
+        if (removeConfig)
+        {
+            steps.Add(RemoveConfigDirectory());
+        }
+
+        steps.Add(await FlushDnsAsync(cancellationToken).ConfigureAwait(false));
+
+        return steps;
+    }
+
+    private static async Task<CleanupStep> KillWinwsProcessesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var processes = Process.GetProcessesByName("winws");
+            if (processes.Length == 0)
+            {
+                return new CleanupStep("Calisan winws sureci", true, "yok");
+            }
+
+            foreach (var process in processes)
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    process.Dispose();
+                }
+            }
+
+            return new CleanupStep("Calisan winws sureci", true, $"{processes.Length} tanesi durduruldu");
+        }
+        catch (Exception ex)
+        {
+            return new CleanupStep("Calisan winws sureci", false, ex.Message);
+        }
+    }
+
+    private static async Task<CleanupStep> RunScAsync(
+        string verb, string serviceName, string description, CancellationToken cancellationToken)
+    {
+        var (exitCode, output) = await RunProcessAsync("sc.exe", [verb, serviceName], cancellationToken)
+            .ConfigureAwait(false);
+
+        // 1060 = "belirtilen servis yuklu degil". Sifirlama acisindan bu basaridir:
+        // ortada kaldirilacak bir sey yok demek.
+        if (exitCode == 0)
+        {
+            return new CleanupStep(description, true);
+        }
+
+        if (output.Contains("1060", StringComparison.Ordinal))
+        {
+            return new CleanupStep(description, true, "zaten yoktu");
+        }
+
+        return new CleanupStep(description, false, output.Trim());
+    }
+
+    private static CleanupStep RemoveConfigDirectory()
+    {
+        try
+        {
+            if (!Directory.Exists(ConfigDirectory))
+            {
+                return new CleanupStep("Yapilandirma silindi", true, "zaten yoktu");
+            }
+
+            Directory.Delete(ConfigDirectory, recursive: true);
+            return new CleanupStep("Yapilandirma silindi", true, ConfigDirectory);
+        }
+        catch (Exception ex)
+        {
+            return new CleanupStep("Yapilandirma silindi", false, ex.Message);
+        }
+    }
+
+    private static async Task<CleanupStep> FlushDnsAsync(CancellationToken cancellationToken)
+    {
+        var (exitCode, output) = await RunProcessAsync("ipconfig.exe", ["/flushdns"], cancellationToken)
+            .ConfigureAwait(false);
+
+        return exitCode == 0
+            ? new CleanupStep("DNS onbellegi temizlendi", true)
+            : new CleanupStep("DNS onbellegi temizlendi", false, output.Trim());
+    }
+
+    private static async Task<(int ExitCode, string Output)> RunProcessAsync(
+        string fileName, string[] arguments, CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = fileName,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        try
+        {
+            using var process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return (-1, $"{fileName} baslatilamadi.");
+            }
+
+            var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+            var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            return (process.ExitCode, stdout + stderr);
+        }
+        catch (Exception ex)
+        {
+            return (-1, ex.Message);
+        }
+    }
+}

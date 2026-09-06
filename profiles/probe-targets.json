@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "notes": "Parametre testinin kullandigi hedefler. Bunlar 'engelli site listesi' DEGIL -- aday havuzu. Test once winws kapaliyken hepsini deneyip hangilerinin gercekten erisilemedigini belirler (baseline taramasi) ve yalnizca erisilemeyenlerle strateji test eder. Zaten acilan bir hedefle test yapilirsa her strateji 'calisiyor' gorunur. Kullanici arayuzden kendi hedefini ekleyebilir; asil dogru kullanim da budur, cunku kimin neye erisemedigi kisiye gore degisiyor.",
+
+  "targets": [
+    {
+      "host": "discord.com",
+      "label": "Discord (metin)",
+      "category": "discord",
+      "section": "tcp443"
+    },
+    {
+      "host": "gateway.discord.gg",
+      "label": "Discord (baglanti)",
+      "category": "discord",
+      "section": "tcp443"
+    },
+    {
+      "host": "www.youtube.com",
+      "label": "YouTube",
+      "category": "youtube",
+      "section": "tcp443"
+    },
+    {
+      "host": "www.youtube.com",
+      "label": "YouTube (QUIC)",
+      "category": "youtube",
+      "section": "quic"
+    },
+    {
+      "host": "discord.com",
+      "label": "Discord (QUIC)",
+      "category": "discord",
+      "section": "quic"
+    },
+    {
+      "host": "neverssl.com",
+      "label": "Duz HTTP kontrolu",
+      "category": "genel-web",
+      "section": "tcp80"
+    }
+  ]
+}

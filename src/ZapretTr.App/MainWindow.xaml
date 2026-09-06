@@ -1,12 +1,193 @@
-﻿<Window x:Class="ZapretTr.App.MainWindow"
+<Window x:Class="ZapretTr.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:ZapretTr.App.ViewModels"
         xmlns:local="clr-namespace:ZapretTr.App"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="ZapretTR" Height="720" Width="440"
+        MinHeight="600" MinWidth="420"
+        WindowStartupLocation="CenterScreen"
+        Background="#F4F6F9"
+        FontFamily="Segoe UI" FontSize="13">
 
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+
+    <Grid Margin="16,12,16,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />   <!-- durum bandi -->
+            <RowDefinition Height="Auto" />   <!-- ana dugme + duraklat -->
+            <RowDefinition Height="Auto" />   <!-- secimler -->
+            <RowDefinition Height="Auto" />   <!-- test + ilerleme -->
+            <RowDefinition Height="Auto" />   <!-- diger islemler -->
+            <RowDefinition Height="*" />      <!-- gunluk -->
+            <RowDefinition Height="Auto" />   <!-- alt bilgi -->
+        </Grid.RowDefinitions>
+
+        <!-- ================= DURUM BANDI =================
+             Ekrandaki referansta burasi yalnizca "SISTEM HAZIR" yaziyor.
+             Burada ek olarak hangi ISS ve hangi stratejinin secili oldugu ve
+             stratejinin dogrulanip dogrulanmadigi da gosteriliyor: kullanicinin
+             "acik mi, neyle acik, guveneyim mi" sorularinin ucune de tek bakista
+             cevap vermesi icin. -->
+        <Border Grid.Row="0" CornerRadius="6" Padding="14,12" Margin="0,0,0,14"
+                Background="{Binding StatusBrushKey, Converter={x:Static local:ResourceKeyConverter.Instance}}">
+            <StackPanel>
+                <TextBlock Text="{Binding StatusHeadline}"
+                           FontSize="19" FontWeight="Bold"
+                           HorizontalAlignment="Center" TextAlignment="Center" />
+                <TextBlock Text="{Binding StatusDetail}"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           HorizontalAlignment="Center" TextAlignment="Center"
+                           TextWrapping="Wrap" Margin="0,4,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- ================= ANA EYLEM ================= -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,14">
+            <Button Content="{Binding PrimaryButtonText}"
+                    Command="{Binding StartCommand}"
+                    Style="{StaticResource PrimaryButton}" />
+
+            <!-- Referans arayuzde durdurma ayri bir durum degil, tek dugme
+                 basla/durdur arasinda gidip geliyor. Burada duraklatma ayri:
+                 yapilandirmayi kaybetmeden gecici olarak kapatmak, "internetim
+                 bozuldu, bir seyi kapatayim" aninda en cok istenen sey. -->
+            <Button Content="Duraklat"
+                    Command="{Binding PauseCommand}"
+                    Style="{StaticResource ActionButton}"
+                    Margin="0,8,0,0" />
+        </StackPanel>
+
+        <!-- ================= SECIMLER ================= -->
+        <Grid Grid.Row="2" Margin="0,0,0,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
+                 saglayicisi burada birinci sinif alan: aramayi hizlandiran
+                 sey tam olarak bu secim. -->
+            <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Saglayici:" Style="{StaticResource LabelText}" />
+            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
+                      ItemsSource="{Binding IspChoices}"
+                      SelectedItem="{Binding SelectedIsp}"
+                      DisplayMemberPath="Display" />
+
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="Strateji:" Style="{StaticResource LabelText}" />
+            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
+                      ItemsSource="{Binding StrategyChoices}"
+                      SelectedItem="{Binding SelectedStrategy}"
+                      DisplayMemberPath="Display" />
+
+            <TextBlock Grid.Row="2" Grid.Column="0" Text="Acilmayan site:" Style="{StaticResource LabelText}" />
+            <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Testin gercekten anlamli olmasi icin, sizde acilmayan bir adres girin. Bos birakilirsa varsayilan hedefler kullanilir." />
+
+            <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
+                 etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
+                 "calisiyor" arasindaki farki gizlemek, ise yaramadiginda
+                 guveni tumden yikardi. -->
+            <Border Grid.Row="3" Grid.Column="1"
+                    Visibility="{Binding IsSelectedStrategyUnverified, Converter={StaticResource BoolToVis}}"
+                    Background="{StaticResource WarningBackBrush}"
+                    BorderBrush="#EBD6AE" BorderThickness="1"
+                    CornerRadius="4" Padding="8,5">
+                <TextBlock Text="{Binding VerificationNote}"
+                           Foreground="{StaticResource WarningBrush}"
+                           TextWrapping="Wrap" FontSize="12" />
+            </Border>
+        </Grid>
+
+        <!-- ================= PARAMETRE TESTI ================= -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,12">
+            <Button Content="PARAMETRE TESTI YAP"
+                    Command="{Binding TestCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    Height="44" />
+
+            <Grid Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}"
+                  Margin="0,8,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <ProgressBar Grid.Row="0" Grid.Column="0" Height="6"
+                             Minimum="0" Maximum="1"
+                             Value="{Binding ProgressFraction, Mode=OneWay}" />
+
+                <Button Grid.Row="0" Grid.Column="1" Content="Iptal"
+                        Command="{Binding CancelTestCommand}"
+                        Style="{StaticResource ActionButton}"
+                        Height="22" Margin="8,0,0,0" Padding="8,0" FontSize="11" />
+
+                <!-- Hangi asamada oldugunu yazmak, belirsiz bir cubuktan cok daha
+                     iyi: kullanici "ISS profilimde mi, genel aramada mi" bilirse
+                     beklemeye deger olup olmadigina kendisi karar verebilir. -->
+                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ProgressText}"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
+            </Grid>
+        </StackPanel>
+
+        <!-- ================= DIGER ISLEMLER ================= -->
+        <StackPanel Grid.Row="4">
+            <Button Content="Servis Olarak Yukle (Otomatik Baslat)"
+                    Style="{StaticResource ActionButton}"
+                    IsEnabled="False"
+                    ToolTip="Henuz hazir degil." />
+            <Button Content="Tum Ayarlari Sifirla"
+                    Command="{Binding ResetCommand}"
+                    Style="{StaticResource DangerButton}" />
+            <Button Content="Cikis"
+                    Command="{Binding ExitCommand}"
+                    Style="{StaticResource ActionButton}" />
+        </StackPanel>
+
+        <!-- ================= CANLI GUNLUK =================
+             Referans arayuzde yok. Burada var ve varsayilan olarak kapali:
+             normalde gurultu, ama bir sey calismadiginda kullanicinin elindeki
+             tek kanit bu. Testte kendiliginden aciliyor. -->
+        <Expander Grid.Row="5" Header="Ayrintilar" Margin="0,12,0,0"
+                  IsExpanded="{Binding IsLogExpanded}">
+            <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderBrushSoft}"
+                    BorderThickness="1" CornerRadius="4" Margin="0,6,0,0">
+                <ListBox ItemsSource="{Binding LogLines}"
+                         local:AutoScrollBehavior.AutoScroll="True"
+                         BorderThickness="0" Background="Transparent"
+                         FontFamily="Consolas" FontSize="11"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                         MinHeight="120">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="4,1" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                </ListBox>
+            </Border>
+        </Expander>
+
+        <!-- ================= ALT BILGI ================= -->
+        <TextBlock Grid.Row="6" Text="{Binding EngineVersionText}"
+                   Foreground="{StaticResource TextMutedBrush}"
+                   FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0" />
     </Grid>
 </Window>

@@ -11,6 +11,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>ZapretTR</AssemblyName>
   </PropertyGroup>
 
 </Project>
+
