@@ -1,0 +1,109 @@
+{
+  "$schema": "../profile.schema.json",
+  "id": "turk-telekom-mobil",
+  "displayName": "Turk Telekom Mobil",
+  "asns": [],
+  "orgKeywords": [
+    "turk telekom",
+    "avea",
+    "tt mobil"
+  ],
+  "engine": "winws",
+  "priority": 10,
+  "notes": "Sabit hat TTNET profilinden ayri: bildirilen TTL degeri farkli.",
+  "candidates": [
+    {
+      "id": "ttm-443-fake-ttl5",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=5",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 100,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "TT mobil icin bildirilen strateji."
+    },
+    {
+      "id": "ttm-443-fake-autottl",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-autottl=-1:3-20",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 85,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Otomatik TTL."
+    },
+    {
+      "id": "ttm-80-fake-fakedsplit",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "http"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream'in duz HTTP kurali."
+    },
+    {
+      "id": "ttm-80-multisplit-method",
+      "section": "tcp80",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=method+2",
+      "protocols": [
+        "http"
+      ],
+      "weight": 80,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Host basligini ayri segmente atar."
+    },
+    {
+      "id": "ttm-quic-fake-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi."
+    },
+    {
+      "id": "ttm-quic-fake-plain",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 90,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Hazir yuk olmadan sahte QUIC."
+    },
+    {
+      "id": "ttm-voice-fake",
+      "section": "discord-voice",
+      "args": "--dpi-desync=fake",
+      "protocols": [
+        "udp"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Discord ses/STUN bolumu. TCP stratejisinden bagimsiz test edilir."
+    }
+  ]
+}

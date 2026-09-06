@@ -1,0 +1,182 @@
+{
+  "$schema": "../profile.schema.json",
+  "id": "turk-telekom",
+  "displayName": "Turk Telekom / TTNET",
+  "asns": [
+    9121,
+    47331
+  ],
+  "orgKeywords": [
+    "turk telekom",
+    "ttnet",
+    "turk telekomunikasyon"
+  ],
+  "engine": "winws",
+  "priority": 2,
+  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket.",
+  "candidates": [
+    {
+      "id": "tt-443-fake-ttl4",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=4",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 100,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "TTNET icin en sik bildirilen deger."
+    },
+    {
+      "id": "tt-443-fake-ttl3",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=3",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 95,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Bildirilen alternatif TTL."
+    },
+    {
+      "id": "tt-443-fake-autottl",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-autottl=-1:3-20",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 90,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sabit TTL yerine hop sayisini olcup secer; farkli mesafedeki hedeflerde sabit TTL kirilgan."
+    },
+    {
+      "id": "tt-443-fake-multidisorder",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake,multidisorder --dpi-desync-split-pos=midsld --dpi-desync-repeats=6 --dpi-desync-fooling=badseq,md5sig",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 85,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream genel 443 kurali."
+    },
+    {
+      "id": "tt-443-multisplit-midsld",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=midsld",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 75,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sahte paket kullanmayan aile. DPI sahte paketleri eliyorsa tek calisan bu olur."
+    },
+    {
+      "id": "tt-443-multidisorder-pure",
+      "section": "tcp443",
+      "args": "--dpi-desync=multidisorder --dpi-desync-split-pos=1,midsld",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 70,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Saf bolmenin ters sirali hali."
+    },
+    {
+      "id": "tt-443-fake-badseq",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=badseq",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 65,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sunucudan bagimsiz fooling."
+    },
+    {
+      "id": "tt-80-fake-fakedsplit",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "http"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream'in duz HTTP kurali."
+    },
+    {
+      "id": "tt-80-multisplit-method",
+      "section": "tcp80",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=method+2",
+      "protocols": [
+        "http"
+      ],
+      "weight": 80,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Host basligini ayri segmente atar."
+    },
+    {
+      "id": "tt-quic-fake-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi."
+    },
+    {
+      "id": "tt-quic-fake-plain",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 90,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Hazir yuk olmadan sahte QUIC."
+    },
+    {
+      "id": "tt-voice-fake",
+      "section": "discord-voice",
+      "args": "--dpi-desync=fake",
+      "protocols": [
+        "udp"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Discord ses/STUN bolumu. TCP stratejisinden bagimsiz test edilir."
+    }
+  ]
+}

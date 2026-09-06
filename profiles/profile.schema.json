@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ZapretTR ISP profili",
+  "description": "Bir servis saglayicisi icin siralanmis aday strateji listesi. Prober bu listeyi weight'e gore sirali dener; ilk basari bulundugunda o bolum icin arama durur.",
+  "type": "object",
+  "required": ["id", "displayName", "engine", "candidates"],
+  "properties": {
+    "id":          { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "displayName": { "type": "string" },
+    "asns":        { "type": "array", "items": { "type": "integer" },
+                     "description": "Otomatik tespit icin ASN listesi. Bos olabilir; o zaman yalnizca orgKeywords ile eslesir." },
+    "orgKeywords": { "type": "array", "items": { "type": "string" },
+                     "description": "ASN kayit adinda aranacak kucuk harfli anahtar kelimeler. ASN listeleri eskidigi icin yedek eslesme yolu." },
+    "engine":      { "type": "string", "enum": ["winws"] },
+    "priority":    { "type": "integer", "description": "Tier 2 genislemede komsu profillerin denenme sirasi. Kucuk = once." },
+    "notes":       { "type": "string" },
+    "candidates":  { "type": "array", "items": { "$ref": "#/definitions/candidate" } }
+  },
+  "definitions": {
+    "candidate": {
+      "type": "object",
+      "required": ["id", "section", "args", "weight", "source"],
+      "properties": {
+        "id":      { "type": "string" },
+        "section": {
+          "type": "string",
+          "enum": ["tcp80", "tcp443", "quic", "discord-voice"],
+          "description": "winws komutunda hangi --filter bolumune yazilacagi. Her bolum bagimsiz test edilir ve bagimsiz kazanani olur; nihai komut bolumleri --new ile birlestirir."
+        },
+        "args":    { "type": "string",
+                     "description": "winws argumanlari. {FAKE_QUIC_GOOGLE} ve {FAKE_TLS_IANA} yer tutuculari vendor/ altindaki dosya yollariyla degistirilir." },
+        "protocols": { "type": "array", "items": { "type": "string", "enum": ["http", "tls12", "tls13", "quic", "udp"] } },
+        "weight":  { "type": "integer", "minimum": 0, "maximum": 100,
+                     "description": "Deneme sirasi. Buyuk once denenir. Kullanicinin kendi test sonuclari bu degeri yerelde gunceller." },
+        "source": {
+          "type": "string",
+          "enum": ["community-unverified", "hypothesis", "upstream-preset", "verified"],
+          "description": "community-unverified: TR toplulugunda bildirilmis ama bizim dogrulamadigimiz. hypothesis: belgelenen mekanizmadan turetilmis, hic bildirilmemis. upstream-preset: zapret'in kendi ornek preset'inden. verified: bizim saha testimizde gecti."
+        },
+        "verifiedFor": { "type": "array", "items": { "type": "string" },
+                         "description": "Hangi hedef siniflarinda dogrulandigi: genel-web, youtube, discord, discord-voice." },
+        "lastVerified": { "type": ["string", "null"], "format": "date" },
+        "note":    { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "notes": "Tier 3 genel arama uzayi. ISP profili ve komsu profiller tukendiginde kullanilir. Yuzlerce adayi tek tek JSON'a yazmak yerine kombinatoryal tarif olarak duruyor: Prober her aileyi sirayla alir, eksenlerin kartezyen carpimini uretir ve ilk basarida durur. Ilk eksen en yavas degisir, yani ayni fooling'in TTL varyantlari pes pese denenir -- bir fooling tamamen olmuyorsa hizlica bir sonraki aileye gecilir. Aile sirasi rastgele degil: TR sebekelerinde bildirilen basari sikligina gore siralandi.",
+
+  "sections": {
+    "tcp443": [
+      {
+        "family": "fake-fooling",
+        "note": "En yaygin aile. Sahte ClientHello gonderip DPI'i yaniltir. fooling, sahte paketin sunucuya ULASMAMASINI saglayan hiledir; hangisinin ise yaradigi hem DPI'a hem sunucuya bagli.",
+        "base": "--dpi-desync=fake",
+        "axes": [
+          { "name": "fooling", "values": [
+            "--dpi-desync-fooling=md5sig",
+            "--dpi-desync-fooling=badseq",
+            "--dpi-desync-fooling=badseq,md5sig",
+            "--dpi-desync-fooling=datanoack",
+            "--dpi-desync-fooling=badsum"
+          ]},
+          { "name": "ttl", "values": [
+            "",
+            "--dpi-desync-autottl=-1:3-20",
+            "--dpi-desync-ttl=1",
+            "--dpi-desync-ttl=2",
+            "--dpi-desync-ttl=3",
+            "--dpi-desync-ttl=4",
+            "--dpi-desync-ttl=5",
+            "--dpi-desync-ttl=6",
+            "--dpi-desync-ttl=8"
+          ]}
+        ]
+      },
+      {
+        "family": "fake-multidisorder",
+        "note": "Sahte paket ve ters sirali bolmeyi birlestirir. Upstream'in kendi preset'inin dayandigi aile.",
+        "base": "--dpi-desync=fake,multidisorder",
+        "axes": [
+          { "name": "splitpos", "values": [
+            "--dpi-desync-split-pos=midsld",
+            "--dpi-desync-split-pos=1,midsld",
+            "--dpi-desync-split-pos=sniext+1",
+            "--dpi-desync-split-pos=2"
+          ]},
+          { "name": "fooling", "values": [
+            "--dpi-desync-fooling=badseq,md5sig",
+            "--dpi-desync-fooling=md5sig",
+            "--dpi-desync-fooling=badseq"
+          ]},
+          { "name": "repeats", "values": ["", "--dpi-desync-repeats=6", "--dpi-desync-repeats=11"] }
+        ]
+      },
+      {
+        "family": "multisplit-pure",
+        "note": "Sahte paket YOK. DPI kutusu sahte paketleri eliyorsa (TTL/checksum dogruluyorsa) fake tabanli ailelerin hepsi coker ama bu calisir. Ayri bir mekanizma oldugu icin merdivende erken duruyor.",
+        "base": "--dpi-desync=multisplit",
+        "axes": [
+          { "name": "splitpos", "values": [
+            "--dpi-desync-split-pos=midsld",
+            "--dpi-desync-split-pos=1,midsld",
+            "--dpi-desync-split-pos=sniext+1",
+            "--dpi-desync-split-pos=1",
+            "--dpi-desync-split-pos=2",
+            "--dpi-desync-split-pos=3"
+          ]},
+          { "name": "seqovl", "values": ["", "--dpi-desync-split-seqovl=1", "--dpi-desync-split-seqovl=2"] }
+        ]
+      },
+      {
+        "family": "multidisorder-pure",
+        "note": "Saf bolmenin ters sirali hali. DPI yeniden birlestirme yapiyorsa duz bolme yetmez.",
+        "base": "--dpi-desync=multidisorder",
+        "axes": [
+          { "name": "splitpos", "values": [
+            "--dpi-desync-split-pos=midsld",
+            "--dpi-desync-split-pos=1,midsld",
+            "--dpi-desync-split-pos=sniext+1",
+            "--dpi-desync-split-pos=2"
+          ]},
+          { "name": "seqovl", "values": ["", "--dpi-desync-split-seqovl=1"] }
+        ]
+      },
+      {
+        "family": "fakedsplit",
+        "note": "Sahte ve gercek segmentleri ic ice gecirir. Onceki ailelerin ikisi de tek basina yetmediginde denenen melez.",
+        "base": "--dpi-desync=fakedsplit",
+        "axes": [
+          { "name": "splitpos", "values": [
+            "--dpi-desync-split-pos=midsld",
+            "--dpi-desync-split-pos=1,midsld",
+            "--dpi-desync-split-pos=2"
+          ]},
+          { "name": "fooling", "values": [
+            "--dpi-desync-fooling=badseq",
+            "--dpi-desync-fooling=md5sig",
+            "--dpi-desync-fooling=badseq,md5sig"
+          ]},
+          { "name": "mod", "values": ["", "--dpi-desync-fakedsplit-mod=altorder"] }
+        ]
+      },
+      {
+        "family": "fake-tls-mod",
+        "note": "Sahte ClientHello'nun icerigini degistirir: rastgele bayt, tekrarli session id, masum SNI. DPI sahte paketi icerigine bakarak eliyorsa bu aile gerekir.",
+        "base": "--dpi-desync=fake",
+        "axes": [
+          { "name": "tlsmod", "values": [
+            "--dpi-desync-fake-tls-mod=rnd",
+            "--dpi-desync-fake-tls-mod=rnd,dupsid",
+            "--dpi-desync-fake-tls-mod=rnd,dupsid,sni=www.google.com",
+            "--dpi-desync-fake-tls-mod=padencap"
+          ]},
+          { "name": "fooling", "values": [
+            "--dpi-desync-fooling=md5sig",
+            "--dpi-desync-fooling=badseq"
+          ]}
+        ]
+      },
+      {
+        "family": "syndata",
+        "note": "SYN paketine veri iliştirir. Nadiren calisir ama calistiginda cok ucuzdur; merdivenin sonunda son care olarak duruyor.",
+        "base": "--dpi-desync=syndata",
+        "axes": [
+          { "name": "fooling", "values": ["", "--dpi-desync-fooling=badseq", "--dpi-desync-fooling=md5sig"] }
+        ]
+      }
+    ],
+
+    "tcp80": [
+      {
+        "family": "fake-fakedsplit",
+        "note": "Duz HTTP'de SNI yok, Host basligi acikta. Upstream'in kendi HTTP kurali bu aileden.",
+        "base": "--dpi-desync=fake,fakedsplit",
+        "axes": [
+          { "name": "fooling", "values": [
+            "--dpi-desync-fooling=md5sig",
+            "--dpi-desync-fooling=badseq",
+            "--dpi-desync-fooling=badseq,md5sig"
+          ]},
+          { "name": "ttl", "values": ["--dpi-desync-autottl=2", "--dpi-desync-autottl=-1:3-20", "", "--dpi-desync-ttl=3"] }
+        ]
+      },
+      {
+        "family": "multisplit-http",
+        "note": "Host basligini ayri segmente atmak icin metot/host sinirlarindan bolme.",
+        "base": "--dpi-desync=multisplit",
+        "axes": [
+          { "name": "splitpos", "values": [
+            "--dpi-desync-split-pos=method+2",
+            "--dpi-desync-split-pos=host+1",
+            "--dpi-desync-split-pos=midsld",
+            "--dpi-desync-split-pos=2"
+          ]}
+        ]
+      },
+      {
+        "family": "fake-http",
+        "base": "--dpi-desync=fake",
+        "axes": [
+          { "name": "fooling", "values": ["--dpi-desync-fooling=md5sig", "--dpi-desync-fooling=badseq"] },
+          { "name": "ttl", "values": ["", "--dpi-desync-autottl=-1:3-20", "--dpi-desync-ttl=3", "--dpi-desync-ttl=4"] }
+        ]
+      }
+    ],
+
+    "quic": [
+      {
+        "family": "fake-quic",
+        "note": "UDP tasima katmaninda parcalanamadigi icin QUIC'te tek mekanizma sahte Initial paketi. Eksenler dar: ya hazir yuk kullanilir ya kullanilmaz, geri kalan tekrar sayisi.",
+        "base": "--dpi-desync=fake",
+        "axes": [
+          { "name": "payload", "values": ["--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}", ""] },
+          { "name": "repeats", "values": ["--dpi-desync-repeats=11", "--dpi-desync-repeats=6", "--dpi-desync-repeats=2", ""] }
+        ]
+      },
+      {
+        "family": "udplen",
+        "note": "QUIC Initial paketinin boyutunu degistirir. DPI sabit boyut imzasina bakiyorsa ise yarar.",
+        "base": "--dpi-desync=udplen",
+        "axes": [
+          { "name": "increment", "values": ["--dpi-desync-udplen-increment=2", "--dpi-desync-udplen-increment=-2", "--dpi-desync-udplen-increment=8"] }
+        ]
+      },
+      {
+        "family": "ipfrag",
+        "note": "IP katmaninda parcalama. UDP'de tasima katmani parcalanamadigi icin geriye kalan tek gercek bolme yolu.",
+        "base": "--dpi-desync=ipfrag2",
+        "axes": [
+          { "name": "pos", "values": ["", "--dpi-desync-ipfrag-pos-udp=8", "--dpi-desync-ipfrag-pos-udp=16", "--dpi-desync-ipfrag-pos-udp=24"] }
+        ]
+      }
+    ],
+
+    "discord-voice": [
+      {
+        "family": "fake-voice",
+        "note": "Discord ses trafigi (--filter-l7=discord,stun). TCP tarafiyla hicbir ilgisi yok, tamamen ayri test edilir.",
+        "base": "--dpi-desync=fake",
+        "axes": [
+          { "name": "repeats", "values": ["", "--dpi-desync-repeats=6", "--dpi-desync-repeats=11"] }
+        ]
+      },
+      {
+        "family": "udplen-voice",
+        "base": "--dpi-desync=udplen",
+        "axes": [
+          { "name": "increment", "values": ["--dpi-desync-udplen-increment=2", "--dpi-desync-udplen-increment=-2"] }
+        ]
+      }
+    ]
+  }
+}

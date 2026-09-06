@@ -1,0 +1,225 @@
+{
+  "$schema": "../profile.schema.json",
+  "id": "superonline",
+  "displayName": "Turkcell Superonline",
+  "asns": [34984],
+  "orgKeywords": ["superonline", "tellcom", "turkcell superonline"],
+  "engine": "winws",
+  "priority": 1,
+  "notes": "Oncelikli profil. Toplulukta bildirilen cekirdek yontem fooling=md5sig. ONEMLI: upstream belgesine gore md5sig yalnizca sunucunun TCP MD5 secenegini reddettigi durumda ise yarar (pratikte cogunlukla Linux sunucular). Yani md5sig hedefe gore calisip calismayabilir -- bu yuzden merdivende hemen ardindan sunucudan bagimsiz alternatifler (badseq, saf split) geliyor. Bolumler birbirinden bagimsiz test edilir: Discord'u acan parametre YouTube'u acmayabilir.",
+
+  "candidates": [
+    {
+      "id": "sol-443-fake-md5sig",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig",
+      "protocols": ["tls12", "tls13"],
+      "weight": 100,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Superonline icin en sik bildirilen strateji. Ilk denenecek."
+    },
+    {
+      "id": "sol-443-fake-md5sig-ttl3",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-ttl=3",
+      "protocols": ["tls12", "tls13"],
+      "weight": 95,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Ayni yontem sabit TTL ile. DPI kutusu ile sunucu arasindaki hop sayisi kisaysa gerekir."
+    },
+    {
+      "id": "sol-443-fake-badseq",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=badseq",
+      "protocols": ["tls12", "tls13"],
+      "weight": 90,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "md5sig'in sunucu bagimliligi olmayan karsiligi. TR forumlarindaki 'md5sig'de SSL hatasi alirsan badseq'e gec' tavsiyesi tam olarak bu durumun belirtisi: sahte paket sunucu tarafindan dusurulmuyor ve baglanti bozuluyor."
+    },
+    {
+      "id": "sol-443-fake-multidisorder-both",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake,multidisorder --dpi-desync-split-pos=midsld --dpi-desync-repeats=6 --dpi-desync-fooling=badseq,md5sig",
+      "protocols": ["tls12", "tls13"],
+      "weight": 85,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "zapret'in kendi preset1_example.cmd dosyasindaki genel 443 kurali. Iki fooling'i birden kullanir, yani md5sig tutmayan hedeflerde badseq devreye girer."
+    },
+    {
+      "id": "sol-443-fake-multidisorder-sni",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake,multidisorder --dpi-desync-split-pos=1,midsld --dpi-desync-repeats=11 --dpi-desync-fooling=md5sig --dpi-desync-fake-tls-mod=rnd,dupsid,sni=www.google.com",
+      "protocols": ["tls12", "tls13"],
+      "weight": 80,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream'in YouTube kurali. Sahte ClientHello'yu rastgelelestirip SNI'sini masum bir alan adiyla doldurur. Sahte TLS yuku icin ayri .bin dosyasi gerekmez, fake-tls-mod runtime'da uretir."
+    },
+    {
+      "id": "sol-443-multisplit-midsld",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=midsld",
+      "protocols": ["tls12", "tls13"],
+      "weight": 70,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sahte paket yok, sadece ClientHello'yu SLD ortasindan bolme. DPI kutusu sahte paketleri eliyorsa (TTL/checksum dogrulamasi yapiyorsa) fake tabanli yontemlerin hepsi coker ama saf bolme calisir. Merdivende ayri bir aile oldugu icin onemli."
+    },
+    {
+      "id": "sol-443-multidisorder-pure",
+      "section": "tcp443",
+      "args": "--dpi-desync=multidisorder --dpi-desync-split-pos=1,midsld",
+      "protocols": ["tls12", "tls13"],
+      "weight": 68,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Saf bolmenin ters sirali hali. DPI yeniden birlestirme yapiyorsa multisplit yetmez, sira bozma gerekir."
+    },
+    {
+      "id": "sol-443-multisplit-seqovl",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=1,midsld --dpi-desync-split-seqovl=1",
+      "protocols": ["tls12", "tls13"],
+      "weight": 65,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sekans ustustelemesi: ilk segment bir bayt geriye tasar, DPI yanlis birlestirir ama sunucu dogru toplar."
+    },
+    {
+      "id": "sol-443-fake-autottl",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-autottl=-1:3-20",
+      "protocols": ["tls12", "tls13"],
+      "weight": 60,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sabit TTL tahmini yerine hop sayisini otomatik olcup TTL'i ona gore secer. Farkli hedeflerin farkli mesafede olmasi sabit TTL'i kirilgan yapiyor; bu onu esnetir."
+    },
+    {
+      "id": "sol-443-fake-ttl2",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=2",
+      "protocols": ["tls12", "tls13"],
+      "weight": 55,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Superonline icin bildirilen alternatif TTL degeri."
+    },
+    {
+      "id": "sol-443-fakedsplit-badseq",
+      "section": "tcp443",
+      "args": "--dpi-desync=fakedsplit --dpi-desync-split-pos=midsld --dpi-desync-fooling=badseq",
+      "protocols": ["tls12", "tls13"],
+      "weight": 50,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sahte ve gercek segmentleri ic ice gecirir. fake ve multisplit ailelerinin ikisi de tek basina yetmediginde denenecek melez."
+    },
+
+    {
+      "id": "sol-80-fake-fakedsplit-md5sig",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig",
+      "protocols": ["http"],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream'in duz HTTP kurali. HTTP'de SNI yok, Host basligi acikta -- bu yuzden 443'ten farkli bir strateji gerekiyor."
+    },
+    {
+      "id": "sol-80-multisplit-method",
+      "section": "tcp80",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=method+2",
+      "protocols": ["http"],
+      "weight": 80,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "HTTP metodunun (GET/POST) hemen ardindan bolerek Host basligini ayri segmente atar."
+    },
+    {
+      "id": "sol-80-fake-badseq",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=badseq",
+      "protocols": ["http"],
+      "weight": 70,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sunucudan bagimsiz fooling alternatifi."
+    },
+
+    {
+      "id": "sol-quic-fake-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": ["quic"],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "UDP parcalanamadigi icin QUIC'te tek secenek sahte Initial paketi. Hazir google yuku kullanilir."
+    },
+    {
+      "id": "sol-quic-fake-plain",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11",
+      "protocols": ["quic"],
+      "weight": 90,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Hazir yuk olmadan sahte QUIC. Upstream preset'inde hostlist'siz genel kural olarak boyle kullaniliyor."
+    },
+    {
+      "id": "sol-quic-fake-few-repeats",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=6 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": ["quic"],
+      "weight": 60,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Daha az tekrar: 11 tekrar bazi baglantilarda gecikme/paket kaybi yaratiyor. Calisiyorsa tercih edilmeli."
+    },
+
+    {
+      "id": "sol-voice-fake",
+      "section": "discord-voice",
+      "args": "--dpi-desync=fake",
+      "protocols": ["udp"],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Discord sesli gorusme (--filter-l7=discord,stun bolumu). Superonline'da en sik sikayet konusu; TCP stratejisinden tamamen bagimsiz calisir ve ayri test edilir."
+    },
+    {
+      "id": "sol-voice-fake-repeats",
+      "section": "discord-voice",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=6",
+      "protocols": ["udp"],
+      "weight": 80,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Sahte paketi tekrarlar. UDP'de kayip yuksekse tek sahte paket DPI'a ulasmayabiliyor."
+    }
+  ]
+}

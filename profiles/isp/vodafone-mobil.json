@@ -1,0 +1,107 @@
+{
+  "$schema": "../profile.schema.json",
+  "id": "vodafone-mobil",
+  "displayName": "Vodafone Mobil",
+  "asns": [],
+  "orgKeywords": [
+    "vodafone"
+  ],
+  "engine": "winws",
+  "priority": 9,
+  "notes": "Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
+  "candidates": [
+    {
+      "id": "vfm-443-multisplit-pos2",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=2",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 100,
+      "source": "community-unverified",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Vodafone mobil icin bildirilen strateji. Sahte paket yok -- mobil sebekede sahte paketler suzuluyor olabilir."
+    },
+    {
+      "id": "vfm-443-multisplit-midsld",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=midsld",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 85,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Ayni ailenin SLD ortasindan bolen hali."
+    },
+    {
+      "id": "vfm-80-fake-fakedsplit",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "http"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Upstream'in duz HTTP kurali."
+    },
+    {
+      "id": "vfm-80-multisplit-method",
+      "section": "tcp80",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=method+2",
+      "protocols": [
+        "http"
+      ],
+      "weight": 80,
+      "source": "hypothesis",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Host basligini ayri segmente atar."
+    },
+    {
+      "id": "vfm-quic-fake-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi."
+    },
+    {
+      "id": "vfm-quic-fake-plain",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 90,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Hazir yuk olmadan sahte QUIC."
+    },
+    {
+      "id": "vfm-voice-fake",
+      "section": "discord-voice",
+      "args": "--dpi-desync=fake",
+      "protocols": [
+        "udp"
+      ],
+      "weight": 100,
+      "source": "upstream-preset",
+      "verifiedFor": [],
+      "lastVerified": null,
+      "note": "Discord ses/STUN bolumu. TCP stratejisinden bagimsiz test edilir."
+    }
+  ]
+}
