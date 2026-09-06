@@ -58,6 +58,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _customTarget = string.Empty;
     private bool _isSecureDnsEnabled = true;
     private bool _isSecureDnsActive;
+    private bool _isServiceInstalled;
 
     public MainViewModel()
     {
@@ -67,11 +68,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CancelTestCommand = new RelayCommand(CancelTestAsync, () => Status == AppStatus.Testing);
         ResetCommand = new RelayCommand(ResetAsync, () => !IsBusy);
         ExitCommand = new RelayCommand(ExitAsync);
+        ServiceCommand = new RelayCommand(ToggleServiceAsync, () => !IsBusy && IsReady);
 
         try
         {
             _vendor = VendorPaths.Locate();
-            _profiles = ProfileStore.Load();
+
+            // Kullanicinin kendi dogruladiklari dagitim profillerinin uzerine
+            // bindiriliyor: parametre testinde bulunan strateji bir sonraki
+            // acilista "dogrulanmis" olarak hazir gelsin.
+            _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
             _runner = new WinwsRunner(_vendor);
             _runner.LogLineReceived += line => Append(line.Text, line.IsError);
             _runner.StateChanged += OnRunnerStateChanged;
@@ -86,6 +92,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _ = RecoverDnsIfNeededAsync();
 
             LoadIspChoices();
+            RestoreSavedSelection();
+            _ = RefreshServiceStatusAsync();
             SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
             Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
@@ -115,6 +123,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public RelayCommand CancelTestCommand { get; }
     public RelayCommand ResetCommand { get; }
     public RelayCommand ExitCommand { get; }
+    public RelayCommand ServiceCommand { get; }
 
     // --- Baglanan ozellikler ----------------------------------------------------
 
@@ -285,9 +294,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (Set(ref _isSecureDnsEnabled, value))
             {
                 UpdateStatusDetail();
+                SaveSelection();
             }
         }
     }
+
+    /// <summary>Otomatik baslatma servisi kurulu mu.</summary>
+    public bool IsServiceInstalled
+    {
+        get => _isServiceInstalled;
+        private set
+        {
+            if (Set(ref _isServiceInstalled, value))
+            {
+                Notify(nameof(ServiceButtonText));
+            }
+        }
+    }
+
+    public string ServiceButtonText => IsServiceInstalled
+        ? "Otomatik Başlatmayı Kaldır"
+        : "Servis Olarak Yükle (Otomatik Başlat)";
 
     /// <summary>Sifreli DNS su an gercekten devrede mi.</summary>
     public bool IsSecureDnsActive
@@ -327,6 +354,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
             _runner.Start(arguments);
+            SaveSelection();
         }
         catch (Exception ex)
         {
@@ -336,6 +364,168 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // Yarim kalmis bir baslatma DNS'i bizde birakmamali: winws acilmadiysa
             // kullanicinin kazanci yok ama sistem DNS'i degistirilmis olur.
             await StopSecureDnsAsync().ConfigureAwait(true);
+        }
+    }
+
+    /// <summary>Kayitli secimleri geri yukler.</summary>
+    /// <remarks>
+    /// Strateji once id ile, bulunamazsa argumanla aranir. Id'ler profil surumleri
+    /// arasinda degisebiliyor; kullanicinin calisan ayarinin sirf id eslesmedi diye
+    /// kaybolmasi kabul edilemez.
+    /// </remarks>
+    private void RestoreSavedSelection()
+    {
+        var config = ConfigStore.Load();
+
+        IsSecureDnsEnabled = config.SecureDnsEnabled;
+        CustomTarget = config.CustomTarget ?? string.Empty;
+
+        if (config.SelectedIspId is not null)
+        {
+            var isp = IspChoices.FirstOrDefault(c =>
+                string.Equals(c.Profile?.Id, config.SelectedIspId, StringComparison.OrdinalIgnoreCase));
+
+            if (isp is not null)
+            {
+                SelectedIsp = isp;
+            }
+        }
+
+        var strategy = StrategyChoices.FirstOrDefault(c => c.Id == config.SelectedStrategyId)
+                       ?? StrategyChoices.FirstOrDefault(c =>
+                           string.Equals(c.Args, config.SelectedStrategyArgs, StringComparison.Ordinal));
+
+        if (strategy is not null)
+        {
+            SelectedStrategy = strategy;
+            Append("Kayıtlı ayarlar geri yüklendi.");
+        }
+    }
+
+    /// <summary>Secimleri diske yazar. Her degisiklikte degil, anlamli anlarda cagrilir.</summary>
+    private void SaveSelection()
+    {
+        try
+        {
+            ConfigStore.Save(new AppConfig
+            {
+                SelectedIspId = SelectedIsp?.Profile?.Id,
+                SelectedStrategyId = SelectedStrategy?.Id,
+                SelectedStrategyArgs = SelectedStrategy?.Args,
+                SecureDnsEnabled = IsSecureDnsEnabled,
+                CustomTarget = string.IsNullOrWhiteSpace(CustomTarget) ? null : CustomTarget,
+            });
+        }
+        catch (Exception ex)
+        {
+            // Kaydedememek calismayi engellememeli; yalnizca bir sonraki acilista
+            // ayarlar geri gelmez.
+            Append("Ayarlar kaydedilemedi: " + ex.Message, isError: true);
+        }
+    }
+
+    private async Task RefreshServiceStatusAsync()
+    {
+        try
+        {
+            var status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
+            IsServiceInstalled = status.AnyInstalled;
+        }
+        catch (Exception)
+        {
+            IsServiceInstalled = false;
+        }
+    }
+
+    /// <summary>Otomatik baslatmayi kurar ya da kaldirir.</summary>
+    private async Task ToggleServiceAsync()
+    {
+        if (_vendor is null || SelectedStrategy is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        IsLogExpanded = true;
+
+        try
+        {
+            if (IsServiceInstalled)
+            {
+                var removed = await ServiceManager.UninstallAsync().ConfigureAwait(true);
+                foreach (var step in removed)
+                {
+                    Append((step.Succeeded ? "[+] " : "[!] ") + step.Description
+                           + (string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail),
+                           isError: !step.Succeeded);
+                }
+
+                SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KAPATILDI");
+            }
+            else
+            {
+                var dnsNote = IsSecureDnsEnabled
+                    ? """
+                      Şifreli DNS de servis olarak kurulacak ve sistem DNS ayarınız kalıcı olarak
+                      ona yönlendirilecek. Bu ayar, otomatik başlatmayı kaldırdığınızda geri alınır.
+
+
+                      """
+                    : string.Empty;
+
+                var confirmation = MessageBox.Show(
+                    """
+                    ZapretTR Windows servisi olarak kurulacak ve bilgisayar her açıldığında
+                    kendiliğinden çalışacak.
+
+                    Şu anki ayarınız kullanılacak:
+
+                    """
+                    + $"   {Describe(SelectedStrategy.Args)}"
+                    + Environment.NewLine + Environment.NewLine
+                    + dnsNote
+                    + "Devam edilsin mi?",
+                    "Otomatik başlatma",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (confirmation != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                // Servise, arayuzun calistirdigi komutun AYNISI veriliyor. Ayrisirsa
+                // kullanicinin test edip begendigi sey ile acilista calisan sey
+                // farkli olur.
+                var winners = BuildRuntimeSelection();
+                var builder = new WinwsCommandBuilder(_vendor);
+                var arguments = builder.BuildRuntimeCommand(winners);
+
+                var installed = await ServiceManager
+                    .InstallAsync(_vendor, arguments, IsSecureDnsEnabled).ConfigureAwait(true);
+
+                foreach (var step in installed)
+                {
+                    Append((step.Succeeded ? "[+] " : "[!] ") + step.Description
+                           + (string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail),
+                           isError: !step.Succeeded);
+                }
+
+                SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KURULDU",
+                    "Bilgisayar açıldığında kendiliğinden çalışacak.");
+            }
+
+            await RefreshServiceStatusAsync().ConfigureAwait(true);
+            SaveSelection();
+        }
+        catch (Exception ex)
+        {
+            Append(ex.Message, isError: true);
+            SetStatus(AppStatus.Faulted, "SERVİS İŞLEMİ BAŞARISIZ", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -658,8 +848,47 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SelectedStrategy = choice;
         }
 
+        PersistLearned(report);
+
         SetStatus(AppStatus.Ready, "STRATEJİ BULUNDU",
             $"{report.Winners.Count} bölüm için çalışan parametre bulundu.");
+    }
+
+    /// <summary>
+    /// Testte dogrulanan stratejileri diske yazar.
+    /// </summary>
+    /// <remarks>
+    /// Bu olmadan test her acilista bastan kosulmak zorundaydi: kullanici 2-3
+    /// dakika bekleyip calisan bir strateji buluyor, uygulamayi kapatiyor ve
+    /// bulunan her sey kayboluyordu.
+    /// </remarks>
+    private void PersistLearned(ProbeReport report)
+    {
+        var ispId = SelectedIsp?.Profile?.Id;
+        if (ispId is null || report.Winners.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            ConfigStore.AddLearned(report.Winners.Select(w => new LearnedCandidate
+            {
+                IspId = ispId,
+                CandidateId = w.CandidateId,
+                Section = w.Section.ToJsonName(),
+                Args = w.Args,
+                VerifiedFor = w.VerifiedCategories,
+                LastVerified = DateTime.Now.ToString("yyyy-MM-dd"),
+            }));
+
+            SaveSelection();
+            Append("Sonuçlar kaydedildi; bir sonraki açılışta hazır olacak.");
+        }
+        catch (Exception ex)
+        {
+            Append("Sonuçlar kaydedilemedi: " + ex.Message, isError: true);
+        }
     }
 
     private void OnRunnerStateChanged(WinwsState state)

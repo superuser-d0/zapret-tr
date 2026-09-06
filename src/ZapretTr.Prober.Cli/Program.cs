@@ -170,6 +170,84 @@ if (options.Apply)
     return fixedCount > 0 && brokeCount == 0 ? 0 : 1;
 }
 
+// --- Otomatik baslatma servisi ----------------------------------------------
+if (options.ServiceCommand is { } serviceCommand)
+{
+    var svcVendor = VendorPaths.Locate();
+
+    switch (serviceCommand)
+    {
+        case "durum":
+        case "status":
+        {
+            var status = await ServiceManager.GetStatusAsync();
+            Console.WriteLine($"winws servisi      : {(status.WinwsInstalled ? "kurulu" : "yok")}");
+            Console.WriteLine($"DNS servisi        : {(status.DnsInstalled ? "kurulu" : "yok")}");
+            Console.WriteLine($"DNS yonlendirmesi  : {SystemDnsManager.BackupOwner ?? "yok"}");
+            return 0;
+        }
+
+        case "kur":
+        case "install":
+        {
+            var svcProfiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
+            var svcProfile = options.IspId is null ? null : svcProfiles.FindById(options.IspId);
+            if (svcProfile is null)
+            {
+                Console.Error.WriteLine("--service kur icin gecerli bir --isp gerekli.");
+                return 4;
+            }
+
+            var primaryCandidate = svcProfile.CandidatesFor(StrategySection.Tcp443).FirstOrDefault();
+            if (primaryCandidate is null)
+            {
+                Console.Error.WriteLine($"{svcProfile.DisplayName} profilinde HTTPS adayi yok.");
+                return 4;
+            }
+
+            var svcWinners = RuntimeSelection.Build(svcProfile, primaryCandidate.Args);
+            var svcArgs = new WinwsCommandBuilder(svcVendor).BuildRuntimeCommand(svcWinners);
+
+            Console.WriteLine("Kurulacak komut:");
+            Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(svcArgs));
+            Console.WriteLine();
+
+            foreach (var step in await ServiceManager.InstallAsync(svcVendor, svcArgs, options.UseSecureDns))
+            {
+                var mark = step.Succeeded ? "[+]" : "[!]";
+                var detail = string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail;
+                Console.WriteLine($"   {mark} {step.Description}{detail}");
+            }
+
+            return 0;
+        }
+
+        case "kaldir":
+        case "uninstall":
+        {
+            var removed = await ServiceManager.UninstallAsync();
+            if (removed.Count == 0)
+            {
+                Console.WriteLine("Kaldirilacak servis yok.");
+                return 0;
+            }
+
+            foreach (var step in removed)
+            {
+                var mark = step.Succeeded ? "[+]" : "[!]";
+                var detail = string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail;
+                Console.WriteLine($"   {mark} {step.Description}{detail}");
+            }
+
+            return 0;
+        }
+
+        default:
+            Console.Error.WriteLine($"Bilinmeyen servis komutu: {serviceCommand} (kur | kaldir | durum)");
+            return 4;
+    }
+}
+
 // --- Sifreli DNS ------------------------------------------------------------
 // Turkiye'de engelleme cogu zaman once DNS katmaninda; o katman asilmadan DPI
 // stratejisi ise yaramiyor. Bu mod dnscrypt-proxy'yi calistirip sistem DNS'ini
@@ -755,6 +833,7 @@ internal sealed record CliOptions(
     bool Apply,
     bool UseSecureDns,
     string? DnsCommand,
+    string? ServiceCommand,
     bool AssumeYes,
     bool ShowHelp)
 {
@@ -771,6 +850,7 @@ internal sealed record CliOptions(
         var apply = false;
         var useSecureDns = false;
         string? dnsCommand = null;
+        string? serviceCommand = null;
         var assumeYes = false;
         var help = false;
         var extras = new List<string>();
@@ -823,6 +903,9 @@ internal sealed record CliOptions(
                 case "--dns" when i + 1 < args.Length:
                     dnsCommand = args[++i].ToLowerInvariant();
                     break;
+                case "--service" when i + 1 < args.Length:
+                    serviceCommand = args[++i].ToLowerInvariant();
+                    break;
                 case "--yes":
                 case "-y":
                     assumeYes = true;
@@ -834,7 +917,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, dnsCommand, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -853,6 +936,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");
         Console.WriteLine("  --dns test              Tam döngüyü dener ve sistemi mutlaka eski haline döndürür.");
+        Console.WriteLine("  --service kur|kaldir|durum   Otomatik başlatma servisi (--isp ve --doh ile).");
         Console.WriteLine("  --apply                 Seçili ISS yapılandırmasını çalıştırıp önce/sonra farkını ölçer.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");

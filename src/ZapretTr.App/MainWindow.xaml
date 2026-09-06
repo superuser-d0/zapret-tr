@@ -161,10 +161,10 @@
 
         <!-- ================= DIGER ISLEMLER ================= -->
         <StackPanel Grid.Row="4">
-            <Button Content="Servis Olarak Yükle (Otomatik Başlat)"
+            <Button Content="{Binding ServiceButtonText}"
+                    Command="{Binding ServiceCommand}"
                     Style="{StaticResource ActionButton}"
-                    IsEnabled="False"
-                    ToolTip="Henüz hazır değil." />
+                    ToolTip="Bilgisayar açıldığında ZapretTR kendiliğinden çalışsın. Şu anki ayarınız kullanılır; sonradan değiştirirseniz servisi yeniden kurmanız gerekir." />
             <Button Content="Tüm Ayarları Sıfırla"
                     Command="{Binding ResetCommand}"
                     Style="{StaticResource DangerButton}" />

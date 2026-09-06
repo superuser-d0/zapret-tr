@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ZapretTr.Core.Engine;
 
 namespace ZapretTr.Core.Profiles;
 
@@ -29,7 +30,13 @@ public sealed class ProfileStore
 
     public GenericLadder Ladder { get; }
 
-    public static ProfileStore Load(string? profilesDirectory = null)
+    /// <param name="learned">
+    /// Kullanicinin kendi testlerinde dogruladigi adaylar. Dagitimla gelen
+    /// profillerin uzerine bindirilir.
+    /// </param>
+    public static ProfileStore Load(
+        string? profilesDirectory = null,
+        IReadOnlyList<LearnedCandidate>? learned = null)
     {
         var root = profilesDirectory ?? LocateProfilesDirectory();
 
@@ -66,6 +73,11 @@ public sealed class ProfileStore
 
         var ladder = JsonSerializer.Deserialize<GenericLadder>(File.ReadAllText(ladderPath), JsonOptions)
                      ?? throw new InvalidDataException("generic-ladder.json bos cozumlendi.");
+
+        if (learned is { Count: > 0 })
+        {
+            profiles = profiles.Select(p => p.WithLearned(learned)).ToList();
+        }
 
         return new ProfileStore(
             profiles.OrderBy(p => p.Priority).ThenBy(p => p.Id, StringComparer.Ordinal).ToList(),

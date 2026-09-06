@@ -7,6 +7,16 @@ using Microsoft.Win32;
 
 namespace ZapretTr.Core.Engine;
 
+/// <summary>DNS yonlendirmesinin sahibi.</summary>
+public static class DnsBackupOwner
+{
+    /// <summary>Calisan uygulama yapti; uygulama kapanirken geri alir.</summary>
+    public const string App = "app";
+
+    /// <summary>Kurulu servis yapti; yalnizca servis kaldirilirken geri alinir.</summary>
+    public const string Service = "service";
+}
+
 /// <summary>Bir ag arayuzunun DNS ayarinin degistirilmeden onceki hali.</summary>
 public sealed class DnsBackupEntry
 {
@@ -37,6 +47,19 @@ public sealed class DnsBackup
 {
     [JsonPropertyName("createdAt")]
     public string CreatedAt { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Bu yonlendirmeyi kim yapti: calisan uygulama mi, yoksa kurulu servis mi.
+    /// </summary>
+    /// <remarks>
+    /// Ayrim sart. Servis kuruldugunda DNS yonlendirmesi acilistan acilisa
+    /// SUREKLI olmali; uygulama kapanirken onu geri alirsa kullanici "otomatik
+    /// baslatmayi kurdum" der ama makine yeniden baslatildiginda DNS eski haline
+    /// donmus olur ve engellemeler geri gelir. Uygulama yalnizca KENDI yaptigi
+    /// yonlendirmeyi geri alir.
+    /// </remarks>
+    [JsonPropertyName("owner")]
+    public string Owner { get; init; } = DnsBackupOwner.App;
 
     [JsonPropertyName("entries")]
     public IReadOnlyList<DnsBackupEntry> Entries { get; init; } = Array.Empty<DnsBackupEntry>();
@@ -77,10 +100,42 @@ public static class SystemDnsManager
     public static bool HasBackup => File.Exists(BackupPath);
 
     /// <summary>
+    /// Mevcut yonlendirmenin sahibi. Yedek yoksa null.
+    /// </summary>
+    public static string? BackupOwner
+    {
+        get
+        {
+            try
+            {
+                if (!File.Exists(BackupPath))
+                {
+                    return null;
+                }
+
+                return JsonSerializer.Deserialize<DnsBackup>(File.ReadAllText(BackupPath))?.Owner;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+    }
+
+    /// <summary>Yonlendirmeyi kurulu servis yaptiysa true; uygulama buna dokunmamali.</summary>
+    public static bool IsOwnedByService
+        => string.Equals(BackupOwner, DnsBackupOwner.Service, StringComparison.Ordinal);
+
+    /// <summary>
     /// Aktif arayuzlerin DNS ayarini yedekleyip <see cref="LocalResolver"/>'a cevirir.
     /// </summary>
     /// <exception cref="InvalidOperationException">Uygun bir arayuz bulunamazsa.</exception>
+    /// <param name="owner">
+    /// Yonlendirmeyi kim yapiyor. <see cref="DnsBackupOwner.Service"/> verildiginde
+    /// uygulama kapanirken geri ALMAZ.
+    /// </param>
     public static async Task<IReadOnlyList<string>> RedirectToLocalAsync(
+        string owner = DnsBackupOwner.App,
         CancellationToken cancellationToken = default)
     {
         ElevationGuard.EnsureElevated();
@@ -100,6 +155,7 @@ public static class SystemDnsManager
             var backup = new DnsBackup
             {
                 CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
+                Owner = owner,
                 Entries = interfaces.Select(Capture).ToList(),
             };
 

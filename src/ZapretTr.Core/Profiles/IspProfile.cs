@@ -1,3 +1,4 @@
+using ZapretTr.Core.Engine;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -118,6 +119,76 @@ public sealed class IspProfile
 
     [JsonPropertyName("candidates")]
     public IReadOnlyList<StrategyCandidate> Candidates { get; init; } = Array.Empty<StrategyCandidate>();
+
+    /// <summary>
+    /// Bu profilin adaylarini, kullanicinin kendi dogruladiklariyle birlestirilmis
+    /// yeni bir profil doner.
+    /// </summary>
+    /// <remarks>
+    /// Dogrulanmis adaylar listenin BASINA gecer (agirlik 200) cunku "bu makinede
+    /// gercekten calisti" bilgisi, toplulukta bildirilmis ya da mekanizmadan
+    /// turetilmis her seyden daha guclu bir kanit. Merdivende zaten var olan bir
+    /// aday dogrulanmissa yerine gecer, yoksa yeni aday olarak eklenir -- genel
+    /// aramada bulunan kazananlar bu ikinci yoldan giriyor.
+    /// </remarks>
+    public IspProfile WithLearned(IEnumerable<LearnedCandidate> learned)
+    {
+        var mine = learned
+            .Where(l => string.Equals(l.IspId, Id, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (mine.Count == 0)
+        {
+            return this;
+        }
+
+        var candidates = Candidates.ToList();
+
+        foreach (var entry in mine)
+        {
+            if (!StrategySectionExtensions.TryParseJsonName(entry.Section, out var section))
+            {
+                continue;
+            }
+
+            var verified = new StrategyCandidate
+            {
+                Id = entry.CandidateId,
+                Section = section,
+                Args = entry.Args,
+                Protocols = [],
+                Weight = 200,
+                Source = CandidateSource.Verified,
+                VerifiedFor = entry.VerifiedFor,
+                LastVerified = entry.LastVerified,
+                Note = "Bu baglantida parametre testiyle dogrulandi.",
+            };
+
+            var existingIndex = candidates.FindIndex(c =>
+                c.Section == section && string.Equals(c.Args, entry.Args, StringComparison.Ordinal));
+
+            if (existingIndex >= 0)
+            {
+                candidates[existingIndex] = verified;
+            }
+            else
+            {
+                candidates.Add(verified);
+            }
+        }
+
+        return new IspProfile
+        {
+            Id = Id,
+            DisplayName = DisplayName,
+            Asns = Asns,
+            OrgKeywords = OrgKeywords,
+            Engine = Engine,
+            Priority = Priority,
+            Notes = Notes,
+            Candidates = candidates,
+        };
+    }
 
     /// <summary>
     /// Bir bolumun adaylarini deneme sirasina gore verir (agirligi buyuk once).

@@ -57,7 +57,13 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     /// </summary>
     /// <exception cref="FileNotFoundException">Ikili ya da yapilandirma yoksa.</exception>
     /// <exception cref="InvalidOperationException">Proxy cevap vermezse.</exception>
-    public async Task StartAsync(CancellationToken cancellationToken = default)
+    /// <param name="owner">
+    /// Yonlendirmenin sahibi. Servis kurulumu sirasinda
+    /// <see cref="DnsBackupOwner.Service"/> verilir; o zaman uygulama kapanirken
+    /// DNS geri ALINMAZ, cunku yonlendirme acilistan acilisa surekli olmali.
+    /// </param>
+    public async Task StartAsync(
+        string owner = DnsBackupOwner.App, CancellationToken cancellationToken = default)
     {
         ElevationGuard.EnsureElevated();
 
@@ -114,7 +120,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
                 "Sistem DNS ayarina DOKUNULMADI.");
         }
 
-        var changed = await SystemDnsManager.RedirectToLocalAsync(cancellationToken).ConfigureAwait(false);
+        var changed = await SystemDnsManager
+            .RedirectToLocalAsync(owner, cancellationToken).ConfigureAwait(false);
         _dnsRedirected = true;
         Publish($"Sistem DNS'i yonlendirildi: {string.Join(", ", changed)}");
     }
@@ -128,7 +135,13 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     /// </remarks>
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        if (_dnsRedirected || SystemDnsManager.HasBackup)
+        // Yonlendirmenin sahibi kurulu servisse dokunmuyoruz: kullanici otomatik
+        // baslatmayi kurdu, uygulamanin kapanmasi onu bozmamali.
+        if (SystemDnsManager.IsOwnedByService)
+        {
+            _dnsRedirected = false;
+        }
+        else if (_dnsRedirected || SystemDnsManager.HasBackup)
         {
             try
             {
