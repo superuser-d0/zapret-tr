@@ -84,17 +84,29 @@ tools/fetch-upstream.ps1  upstream ikili indirme + SHA256 doğrulama
 
 ## Yol haritası
 
-- [x] Repo iskeleti, upstream indirme + doğrulama
-- [x] ISP profil veritabanı (10 profil) + genel merdiven
+Tamamlananlar:
+
+- [x] Repo iskeleti, upstream indirme + SHA256 doğrulama
+- [x] ISP profil veritabanı (10 profil) + genel kombinatoryal merdiven
 - [x] Komut kurucu, profil yükleyici, testler
 - [x] winws süreç yönetimi + WinDivert temizliği
 - [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
 - [x] WPF GUI (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
-- [ ] **Gerçek donanımda ilk çalıştırma** — henüz hiç winws başlatılmadı
-- [ ] Paralel test izolasyonu doğrulaması (`--ipset-ip` spike) — motor şu an sıralı
-- [ ] Superonline saha testi paketi
-- [ ] ASN otomatik tespiti ("Bilmiyorum" akışı henüz profil önermiyor)
-- [ ] Servis kurulumu + Inno Setup installer
+- [x] Gerçek donanımda uçtan uca doğrulama — TTNET'te Discord, Pornhub, XVideos açıldı
+- [x] `--ipset-ip` izolasyonunun çalıştığı doğrulandı (winws `--debug=1` çıktısıyla)
+- [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
+- [x] Superonline saha testi paketi (taşınabilir, tek dosya, kendi kendini temizler)
+
+Kalanlar, etkiye göre sıralı:
+
+- [ ] **Kalıcılık.** Şu an hiç yok. Parametre testi çalıştırıp strateji bulunuyor,
+      uygulama kapanınca kayboluyor. Günlük kullanım için en kritik eksik.
+- [ ] **Otomatik başlatma / Windows servisi.** Arayüzdeki düğme devre dışı.
+- [ ] **ASN otomatik tespiti.** "Bilmiyorum" seçeneği şu an hiçbir şey yapmıyor.
+- [ ] **Kurulum paketi** (Inno Setup).
+- [ ] **Paralel test.** İzolasyon mekanizması doğrulandı ama motor hâlâ sıralı.
+- [ ] Profil doğrulama kapsamı: 97 adayın yalnızca 1'i gerçek bir hatta doğrulandı.
+- [ ] QUIC ve Discord-ses bölümlerinde hiç doğrulanmış strateji yok.
 
 ## Uyarılar
 
