@@ -34,6 +34,28 @@ if (!ElevationGuard.IsElevated())
     return 2;
 }
 
+// --- Temizlik ---------------------------------------------------------------
+// Bu arac baska birinin makinesinde calisiyor ve calisirken cekirdek modunda bir
+// paket surucusu yukluyor. Onu kaldirabilmesi bir "ekstra" degil, sorumluluk.
+if (options.Cleanup)
+{
+    Console.WriteLine("Temizlik yapılıyor...");
+    Console.WriteLine();
+
+    // removeConfig: false -- buradaki amac surucuyu ve calisan sureci kaldirmak,
+    // kullanicinin ayarlarini silmek degil.
+    var steps = await WinDivertCleanup.RunAsync(removeConfig: false);
+    foreach (var step in steps)
+    {
+        var mark = step.Succeeded ? "[+]" : "[!]";
+        var detail = string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail;
+        Console.WriteLine($"   {mark} {step.Description}{detail}");
+    }
+
+    Console.WriteLine();
+    return steps.All(s => s.Succeeded) ? 0 : 1;
+}
+
 // --- Teshis modu ------------------------------------------------------------
 // Tek bir adresi dort protokolle de deneyip ham sonucu basar. Destek istegi
 // geldiginde "su komutun ciktisini gonder" diyebilecegimiz sey.
@@ -58,6 +80,60 @@ if (options.DiagnoseHost is { } diagnoseHost)
         }
 
         Console.WriteLine();
+    }
+
+    return 0;
+}
+
+// --- Motor devrede mi kontrolu ----------------------------------------------
+// "Strateji calismadi" ile "winws trafige hic dokunmadi" birbirinden cok farkli
+// iki sonuc, ama disaridan ikisi de zaman asimi olarak gorunuyor. Bu mod winws'i
+// --debug=1 ile calistirip paketleri gercekten gordugunu gosteriyor.
+if (options.EngageCheckHost is { } engageHost)
+{
+    var engageVendor = VendorPaths.Locate();
+    var engageProfiles = ProfileStore.Load();
+
+    var strategy = options.Strategy
+                   ?? engageProfiles.FindById("turk-telekom")?
+                       .CandidatesFor(StrategySection.Tcp80).FirstOrDefault()?.Args
+                   ?? "--dpi-desync=fake,fakedsplit --dpi-desync-fooling=md5sig";
+
+    Console.WriteLine($"Hedef    : {engageHost}");
+    Console.WriteLine($"Strateji : {strategy}");
+    Console.WriteLine();
+
+    var addresses = await System.Net.Dns.GetHostAddressesAsync(engageHost);
+    var ip = addresses.First(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString();
+
+    var engageBuilder = new WinwsCommandBuilder(engageVendor);
+    var engageArgs = engageBuilder.BuildProbeCommand(StrategySection.Tcp80, strategy, ip).ToList();
+    engageArgs.Add("--debug=1");
+
+    var log = new List<string>();
+    var runner = new WinwsRunner(engageVendor);
+    runner.LogLineReceived += line => { lock (log) { log.Add(line.Text); } };
+
+    runner.Start(engageArgs);
+    await Task.Delay(1500);
+
+    using (var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8)))
+    {
+        var engageResult = await engageClient.TryReachAsync(engageHost, ProbeMode.PlainHttp, ip);
+        Console.WriteLine($"Probe sonucu: {(engageResult.Succeeded ? "BAŞARILI" : "başarısız")} — {engageResult.Detail}");
+    }
+
+    await Task.Delay(500);
+    await runner.StopAsync();
+
+    Console.WriteLine();
+    Console.WriteLine($"winws günlüğü ({log.Count} satır):");
+    lock (log)
+    {
+        foreach (var line in log.Take(40))
+        {
+            Console.WriteLine("   " + line);
+        }
     }
 
     return 0;
@@ -166,7 +242,22 @@ try
         Console.WriteLine($"   {mark} {item.Target.Label,-24} {item.Detail}");
     }
 
-    var blockedCount = baseline.Count(b => b.Status == BaselineStatus.Blocked);
+    // Kontrol hedefi engellenmemesi BEKLENEN bir adres. Erisilemiyorsa sorun
+    // DPI'da degil olcum yolumuzda ya da baglantida demektir; bu durumda tum
+    // baseline sonuclari supheli ve strateji aramasi anlamsiz olur.
+    var control = baseline.FirstOrDefault(b => b.Target.Category == "kontrol");
+    if (control is not null && control.Status != BaselineStatus.Accessible)
+    {
+        Console.WriteLine();
+        Console.WriteLine("UYARI: Kontrol hedefi de açılmıyor.");
+        Console.WriteLine($"  {control.Target.Host} engellenmemesi beklenen bir adres ({control.Detail}).");
+        Console.WriteLine("  Bu, sonuçların DPI engellemesini değil bir bağlantı/ölçüm sorununu");
+        Console.WriteLine("  yansıttığı anlamına gelebilir. İnternet bağlantınızı kontrol edin.");
+        Console.WriteLine();
+    }
+
+    var blockedCount = baseline.Count(b => b.Status == BaselineStatus.Blocked
+                                           && b.Target.Category != "kontrol");
     var redirectedCount = baseline.Count(b => b.Status == BaselineStatus.DnsRedirected);
 
     Console.WriteLine();
@@ -208,7 +299,8 @@ try
     var lastLine = string.Empty;
     var progress = new Progress<ProbeProgress>(p =>
     {
-        var line = $"   {p.TierLabel} · {p.Completed + 1}/{p.Total} · {p.CurrentDescription}";
+        var shown = Math.Min(p.Completed + 1, Math.Max(p.Total, 1));
+        var line = $"   {p.TierLabel} · {shown}/{p.Total} · {p.CurrentDescription}";
         if (line == lastLine)
         {
             return;
@@ -223,6 +315,9 @@ try
         progress,
         stopAtFirstSuccess: true,
         maxCandidatesPerSection: options.MaxCandidates,
+        // Yukarida zaten tarandi; tekrar taramak hem bir dakikadan fazla surer
+        // hem de farkli siniflandirma uretip yanlis bolumlerde arama baslatir.
+        knownBaseline: baseline,
         cancellationToken: cancellation.Token);
 
     Console.WriteLine();
@@ -339,6 +434,9 @@ internal sealed record CliOptions(
     IReadOnlyList<string> ExtraTargets,
     string? OutputPath,
     string? DiagnoseHost,
+    string? EngageCheckHost,
+    string? Strategy,
+    bool Cleanup,
     bool ShowHelp)
 {
     public static CliOptions Parse(string[] args)
@@ -346,8 +444,11 @@ internal sealed record CliOptions(
         string? isp = null;
         string? output = null;
         string? diagnose = null;
+        string? engage = null;
+        string? strategy = null;
         int? max = null;
         var baselineOnly = false;
+        var cleanup = false;
         var help = false;
         var extras = new List<string>();
 
@@ -371,8 +472,17 @@ internal sealed record CliOptions(
                 case "--diagnose" when i + 1 < args.Length:
                     diagnose = args[++i];
                     break;
+                case "--engage-check" when i + 1 < args.Length:
+                    engage = args[++i];
+                    break;
+                case "--strategy" when i + 1 < args.Length:
+                    strategy = args[++i];
+                    break;
                 case "--baseline-only":
                     baselineOnly = true;
+                    break;
+                case "--cleanup":
+                    cleanup = true;
                     break;
                 case "-h":
                 case "--help":
@@ -381,7 +491,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, help);
     }
 
     public static void PrintUsage()
@@ -395,6 +505,9 @@ internal sealed record CliOptions(
         Console.WriteLine("  --max-candidates <n>    Bölüm başına denenecek en fazla aday.");
         Console.WriteLine("  --out <dosya.json>      Sonuç raporunu yazar (kişisel veri içermez).");
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
+        Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
+        Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
+        Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -h, --help              Bu yardım.");
         Console.WriteLine();
         Console.WriteLine("Yönetici yetkisi gerekir.");

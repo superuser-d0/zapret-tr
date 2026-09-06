@@ -38,6 +38,9 @@ public sealed class StrategyProber(
     /// <summary>Bir adayin uygulanmasindan sonra ag yiginin oturmasi icin beklenen sure.</summary>
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(400);
 
+    /// <summary>Dogrulama tekrari oncesi beklenen sure.</summary>
+    private static readonly TimeSpan ConfirmationGap = TimeSpan.FromMilliseconds(300);
+
     /// <summary>Testi calistirir.</summary>
     /// <param name="profile">
     /// Kullanicinin sectigi ISP profili. null verilirse Tier 1 atlanir ve dogrudan
@@ -53,11 +56,23 @@ public sealed class StrategyProber(
     /// Butun tier'lar boyunca ortak bir butce olarak sayilir, boylece Tier 3'un
     /// 180 adayi kullaniciyi belirsiz sure bekletemez.
     /// </param>
+    /// <param name="knownBaseline">
+    /// Daha once hesaplanmis mevcut durum taramasi. Verilirse yeniden taranmaz.
+    /// </param>
+    /// <remarks>
+    /// <paramref name="knownBaseline"/> yalnizca hiz icin degil DOGRULUK icin de var:
+    /// tarama iki kez kosuldugunda ayni hedef iki farkli sonuc verebiliyor (DNS
+    /// cevabi ya da zaman asimi degisince engel sayfasi yerine zaman asimi gorunuyor),
+    /// ve ikinci sonuc birincisini sessizce eziyor. Ilk gercek kosumda tam bu oldu:
+    /// DNS yonlendirmesi olarak dogru siniflanmis hedefler ikinci taramada "DPI
+    /// engeli" sayilip bosuna dort dakika strateji arandi.
+    /// </remarks>
     public async Task<ProbeReport> RunAsync(
         IspProfile? profile,
         IProgress<ProbeProgress>? progress = null,
         bool stopAtFirstSuccess = true,
         int? maxCandidatesPerSection = null,
+        IReadOnlyList<BaselineResult>? knownBaseline = null,
         CancellationToken cancellationToken = default)
     {
         ElevationGuard.EnsureElevated();
@@ -65,7 +80,8 @@ public sealed class StrategyProber(
         var startedAt = DateTimeOffset.Now;
         var stopwatch = Stopwatch.StartNew();
 
-        var baseline = await RunBaselineAsync(progress, cancellationToken).ConfigureAwait(false);
+        var baseline = knownBaseline
+                       ?? await RunBaselineAsync(progress, cancellationToken).ConfigureAwait(false);
 
         var attempts = new List<CandidateResult>();
         var winners = new List<SectionWinner>();
@@ -156,6 +172,46 @@ public sealed class StrategyProber(
         progress?.Report(new ProbeProgress(
             ProbeTier.Baseline, "Mevcut durum taraniyor", targets.Count, targets.Count, "tamamlandi"));
 
+        return PropagateDnsRedirection(results);
+    }
+
+    /// <summary>
+    /// Bir hedefin herhangi bir bolumde DNS yonlendirmesi tespit edildiyse, ayni
+    /// alan adinin diger bolumlerini de oyle isaretler.
+    /// </summary>
+    /// <remarks>
+    /// DNS yonlendirmesi alan adi bazinda olur, protokol bazinda degil: cevap
+    /// degistirildiginde TCP de UDP de ayni yanlis sunucuya gider. Ama belirti
+    /// protokole gore degisiyor -- engel sunucusu HTTPS'i karsilayip engel sayfasi
+    /// donerken QUIC'i hic cevaplamiyor, bu da zaman asimi olarak gorunup "DPI
+    /// engeli" sanilmasina yol aciyor. O bolumde yapilacak strateji aramasi
+    /// bastan kayip: hicbir aday calismaz cunku sorun DPI degil.
+    /// </remarks>
+    private static List<BaselineResult> PropagateDnsRedirection(List<BaselineResult> results)
+    {
+        var redirectedHosts = results
+            .Where(r => r.Status == BaselineStatus.DnsRedirected)
+            .Select(r => r.Target.Host)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (redirectedHosts.Count == 0)
+        {
+            return results;
+        }
+
+        for (var i = 0; i < results.Count; i++)
+        {
+            var result = results[i];
+            if (result.Status == BaselineStatus.Blocked && redirectedHosts.Contains(result.Target.Host))
+            {
+                results[i] = result with
+                {
+                    Status = BaselineStatus.DnsRedirected,
+                    Detail = $"{result.Detail} (ayni alan adi baska bir protokolde DNS yonlendirmesi gosterdi)",
+                };
+            }
+        }
+
         return results;
     }
 
@@ -171,6 +227,9 @@ public sealed class StrategyProber(
     {
         SectionWinner? best = null;
         var remaining = budget ?? int.MaxValue;
+
+        // Arama sirasinda engel sayfasi dondugu icin vazgecilen hedefler.
+        var abandoned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var (tier, label, candidates) in BuildTiers(section, profile))
         {
@@ -195,7 +254,7 @@ public sealed class StrategyProber(
                     tier, label, i, candidateList.Count, $"{section.ToJsonName()} · {candidate.Id}"));
 
                 var verified = await TryCandidateAsync(
-                    section, candidate, blockedTargets, attempts, cancellationToken).ConfigureAwait(false);
+                    section, candidate, blockedTargets, attempts, abandoned, cancellationToken).ConfigureAwait(false);
 
                 if (verified.Count == 0)
                 {
@@ -213,7 +272,7 @@ public sealed class StrategyProber(
                 if (stopAtFirstSuccess)
                 {
                     progress?.Report(new ProbeProgress(
-                        tier, label, candidateList.Count, candidateList.Count, $"bulundu: {candidate.Id}"));
+                        tier, label, i + 1, candidateList.Count, $"bulundu: {candidate.Id}"));
                     return best;
                 }
             }
@@ -230,6 +289,7 @@ public sealed class StrategyProber(
         ProbeCandidate candidate,
         IReadOnlyList<BaselineResult> blockedTargets,
         List<CandidateResult> attempts,
+        HashSet<string> abandoned,
         CancellationToken cancellationToken)
     {
         var opened = new List<string>();
@@ -238,7 +298,7 @@ public sealed class StrategyProber(
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (blocked.ResolvedIp is null)
+            if (blocked.ResolvedIp is null || abandoned.Contains(blocked.Target.Host))
             {
                 continue;
             }
@@ -289,9 +349,31 @@ public sealed class StrategyProber(
                     outcome.Detail,
                     stopwatch.Elapsed));
 
+                if (outcome.IsBlockPage)
+                {
+                    // Engel sayfasi geldi: baglanti kuruldu ama yanlis sunucuya.
+                    // Bu DNS yonlendirmesidir ve hicbir desync stratejisi duzeltemez.
+                    // Bu hedefte kalan adaylari denemek zaman kaybi.
+                    abandoned.Add(blocked.Target.Host);
+                }
+
                 if (outcome.Succeeded && !opened.Contains(blocked.Target.Category))
                 {
-                    opened.Add(blocked.Target.Category);
+                    // Tek basarili deneme yeterli DEGIL. Ilk gercek kosumda bir aday
+                    // calisti, ayni aday sonraki kosumda calismadi -- ag kosullari
+                    // gurultulu ve tek olcum bunu ayirt edemiyor. Kullaniciya
+                    // "bulundu" deyip sonra calismamasi, hic bulamamaktan kotu.
+                    if (await ConfirmAsync(section, blocked, cancellationToken).ConfigureAwait(false))
+                    {
+                        opened.Add(blocked.Target.Category);
+                    }
+                    else
+                    {
+                        attempts.Add(new CandidateResult(
+                            candidate.Id, candidate.Args, section,
+                            blocked.Target.Host, blocked.Target.Category,
+                            false, "dogrulama tekrarinda basarisiz (kararsiz)", stopwatch.Elapsed));
+                    }
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -309,6 +391,27 @@ public sealed class StrategyProber(
         }
 
         return opened;
+    }
+
+    /// <summary>
+    /// Basarili bulunan bir denemeyi, winws hala calisirken bir kez daha dogrular.
+    /// </summary>
+    /// <remarks>
+    /// Ag kosullari gurultulu; tek bir basarili istek stratejinin calistigini
+    /// kanitlamiyor. Iki ust uste basari, kullaniciya "bulundu" demek icin
+    /// gereken en az kanit.
+    /// </remarks>
+    private static async Task<bool> ConfirmAsync(
+        StrategySection section, BaselineResult target, CancellationToken cancellationToken)
+    {
+        await Task.Delay(ConfirmationGap, cancellationToken).ConfigureAwait(false);
+
+        using var client = new HttpProbeClient();
+        var outcome = await client
+            .TryReachAsync(target.Target.Host, ModeFor(section), target.ResolvedIp, cancellationToken)
+            .ConfigureAwait(false);
+
+        return outcome.Succeeded;
     }
 
     /// <summary>Bir bolum icin denenecek adaylari tier sirasinda uretir.</summary>

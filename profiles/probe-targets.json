@@ -1,8 +1,13 @@
 {
   "version": 1,
-  "notes": "Parametre testinin kullandigi hedefler. Bunlar 'engelli site listesi' DEGIL -- aday havuzu. Test once winws kapaliyken hepsini deneyip hangilerinin gercekten erisilemedigini belirler (baseline taramasi) ve yalnizca erisilemeyenlerle strateji test eder. Zaten acilan bir hedefle test yapilirsa her strateji 'calisiyor' gorunur. Kullanici arayuzden kendi hedefini ekleyebilir; asil dogru kullanim da budur, cunku kimin neye erisemedigi kisiye gore degisiyor.",
-
+  "notes": "Parametre testinin kullandigi hedefler. Bunlar 'engelli site listesi' DEGIL -- aday havuzu. Test once winws kapaliyken hepsini deneyip hangilerinin gercekten erisilemedigini belirler (baseline taramasi) ve yalnizca erisilemeyenlerle strateji test eder. Zaten acilan bir hedefle test yapilirsa her strateji 'calisiyor' gorunur. Kullanici arayuzden kendi hedefini ekleyebilir; asil dogru kullanim da budur, cunku kimin neye erisemedigi kisiye gore degisiyor. Listedeki 'kontrol' kategorisindeki hedef engellenmemesi BEKLENEN bir adrestir: o da erisilemiyorsa sorun DPI'da degil bizim olcum yolumuzda ya da internet baglantisindadir. Bu ayrimi yapamayan bir arac, kendi hatasini engelleme sanar. neverssl.com bir sure varsayilan tcp80 hedefiydi ve KALDIRILDI: winws --debug=1 ciktisi o hedefte TCP el sikismasinin tamamlanmadigini (SYN gonderiliyor, SYN-ACK gelmiyor) gosterdi. Desync stratejileri yuk paketi uzerinde calisir; el sikisma kurulmuyorsa DPI'in gorecegi bir Host basligi da yoktur, dolayisiyla hicbir aday yardimci olamaz. Ustelik hedef kararsiz oldugu icin arada bir kendiliginden calisiyor ve bu, aslinda hicbir sey asmamis bir adayin 'kazanan' ilan edilmesine yol aciyordu.",
   "targets": [
+    {
+      "host": "example.com",
+      "label": "Kontrol (engelli olmamali)",
+      "category": "kontrol",
+      "section": "tcp80"
+    },
     {
       "host": "discord.com",
       "label": "Discord (metin)",
@@ -32,12 +37,6 @@
       "label": "Discord (QUIC)",
       "category": "discord",
       "section": "quic"
-    },
-    {
-      "host": "neverssl.com",
-      "label": "Duz HTTP kontrolu",
-      "category": "genel-web",
-      "section": "tcp80"
     }
   ]
 }
