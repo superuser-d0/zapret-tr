@@ -1,8 +1,9 @@
 ﻿{
     "bundleCommit":  "32fbbebf29be855566faef0961ac85627a3a4aeb",
     "zapretTag":  "v72.13",
-    "generated":  "2026-09-06T12:53:55Z",
+    "generated":  "2026-09-06T13:51:37Z",
     "files":  {
+                  "cygwin1.dll":  "103104a52e5293ce418944725df19e2bf81ad9269b9a120d71d39028e821499b",
                   "files/quic_initial_www_google_com.bin":  "f4589c57749f956bb30538197a521d7005f8b0a8723b4707e72405e51ddac50a",
                   "files/tls_clienthello_iana_org.bin":  "9db8772636bb332f1970e8767bc7d628bfa640714bd0b7e699fbe92d559e666e",
                   "LICENSE.upstream.txt":  "dcf5abd3e5d876c1065982871c0cec7368c0e61fc795c541798729516bb6b54f",

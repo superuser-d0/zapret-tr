@@ -42,12 +42,19 @@ $BundleBase = "https://raw.githubusercontent.com/bol-van/zapret-win-bundle/$Bund
 $ZapretBase = "https://raw.githubusercontent.com/bol-van/zapret/$ZapretTag"
 
 # --- Indirilecek dosyalar -----------------------------------------------------
-# Kasitli olarak dar tutuldu. Ihtiyac duymadigimiz seyleri (cygwin1.dll ~3MB,
-# winws2.exe, lua/, ornek preset .cmd dosyalari) indirmiyoruz: kullanmadigimiz
-# bir seyi dagitmak hem gereksiz yer kaplar hem de guvenlik yuzeyini genisletir.
+# Liste dar tutuldu (winws2.exe, lua/ ve ornek preset .cmd dosyalari alinmiyor),
+# ama DARLIK BAGIMLILIK ATLAMAK DEGIL. Ilk surumde cygwin1.dll "gereksiz 3MB"
+# diye cikarilmisti; winws.exe cygwin ile derlendigi icin o dosya olmadan hic
+# baslamiyor ve "cygwin1.dll was not found" diye MODAL bir hata penceresi
+# aciyor -- surec olmedigi icin cagiran taraf da sonsuza kadar bekliyor.
+#
+# Bu listeyi budarken once bagimliliklari dogrula:
+#   winws.exe -> ADVAPI32, KERNEL32, ole32, OLEAUT32, wlanapi  (Windows sistem)
+#                cygwin1.dll, WinDivert.dll                     (bundle icinden)
 $Files = @(
     # Motor ve surucu
     @{ Url = "$BundleBase/winws.exe";        Dest = 'winws.exe' }
+    @{ Url = "$BundleBase/cygwin1.dll";      Dest = 'cygwin1.dll' }
     @{ Url = "$BundleBase/WinDivert.dll";    Dest = 'WinDivert.dll' }
     @{ Url = "$BundleBase/WinDivert64.sys";  Dest = 'WinDivert64.sys' }
 

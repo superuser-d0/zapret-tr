@@ -2,6 +2,27 @@ using ZapretTr.Core.Profiles;
 
 namespace ZapretTr.Prober;
 
+/// <summary>Bir hedefin hangi protokolle sinanacagi.</summary>
+/// <remarks>
+/// Bolume gore secilir. Yanlis secim sessizce yanlis sonuc uretir: duz HTTP sunan
+/// bir hedefe HTTPS ile gitmek onu "engelli" gosterir, QUIC hedefini TCP uzerinden
+/// olcmek ise QUIC'i hic olcmemis olur.
+/// </remarks>
+public enum ProbeMode
+{
+    /// <summary>Duz HTTP, 80 portu.</summary>
+    PlainHttp,
+
+    /// <summary>TLS 1.2 zorlanir. Sertifika DPI'a acik gorunur; en cok mudahale edilen durum.</summary>
+    Tls12,
+
+    /// <summary>TLS 1.3 zorlanir. ServerHello sifreli oldugu icin DPI'in gordugu sey farkli.</summary>
+    Tls13,
+
+    /// <summary>HTTP/3 zorlanir. QUIC'i gercekten olcmenin tek yolu.</summary>
+    Http3,
+}
+
 /// <summary>Test edilecek hedef.</summary>
 /// <param name="Host">Alan adi.</param>
 /// <param name="Label">Kullaniciya gosterilen ad.</param>
@@ -17,6 +38,18 @@ public enum BaselineStatus
 
     /// <summary>Engelli. Test icin anlamli hedef.</summary>
     Blocked,
+
+    /// <summary>
+    /// Baglanti kuruldu ama karsi taraf engel sayfasi dondurdu.
+    /// </summary>
+    /// <remarks>
+    /// Bu DPI engellemesi DEGIL: trafik zaten dogru sunucuya gitmiyor, cogunlukla
+    /// DNS yonlendirmesi yuzunden engel sunucusuna gidiyor. zapret paketleri
+    /// kurcalayarak bunu cozemez -- cozum DNS tarafinda (DoH/DoT). Bu hedefler
+    /// strateji aramasindan CIKARILIR, yoksa hicbiri calismayacak yuzlerce aday
+    /// bosuna denenir.
+    /// </remarks>
+    DnsRedirected,
 
     /// <summary>Cozumlenemedi ya da baska bir sebeple karar verilemedi.</summary>
     Inconclusive,

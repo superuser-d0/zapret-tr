@@ -17,3 +17,10 @@ saha-raporu-*.json
 
 # Gecici ekran goruntuleri
 *.png
+
+# Yerel test ciktilari
+diag.txt
+baseline.txt
+tam-test.txt
+rapor.json
+*.bat

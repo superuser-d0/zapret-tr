@@ -369,7 +369,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var progress = new Progress<ProbeProgress>(OnProbeProgress);
 
             var report = await prober
-                .RunAsync(SelectedIsp?.Profile, progress, stopAtFirstSuccess: true, _testCancellation.Token)
+                .RunAsync(
+                    SelectedIsp?.Profile,
+                    progress,
+                    stopAtFirstSuccess: true,
+                    // Arayuzden calisan testte bolum basina butce koyuyoruz: Tier 3'un
+                    // 180 adayini sonuna kadar denemek kullaniciyi belirsiz sure
+                    // bekletir. Sinira takilirsa "daha genis ara" ayri bir eylem olmali.
+                    maxCandidatesPerSection: 60,
+                    cancellationToken: _testCancellation.Token)
                 .ConfigureAwait(true);
 
             ReportResult(report);

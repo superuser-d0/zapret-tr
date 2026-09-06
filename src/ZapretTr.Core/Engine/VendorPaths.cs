@@ -34,6 +34,15 @@ public sealed class VendorPaths
     }
 
     public string WinwsExe => Path.Combine(Root, "winws.exe");
+
+    /// <summary>
+    /// winws.exe cygwin ile derlendigi icin bu DLL olmadan hic baslamiyor.
+    /// Eksikse Windows modal bir hata penceresi acar ve surec olmez; yani
+    /// cagiran taraf hata almak yerine SONSUZA KADAR BEKLER. Bu yuzden
+    /// varligi calistirmadan once kontrol ediliyor.
+    /// </summary>
+    public string CygwinDll => Path.Combine(Root, "cygwin1.dll");
+
     public string WinDivertDll => Path.Combine(Root, "WinDivert.dll");
     public string WinDivertSys => Path.Combine(Root, "WinDivert64.sys");
 
@@ -114,7 +123,7 @@ public sealed class VendorPaths
     {
         var required = new[]
         {
-            WinwsExe, WinDivertDll, WinDivertSys,
+            WinwsExe, CygwinDll, WinDivertDll, WinDivertSys,
             FakeQuicGoogle, DiscordMediaFilter, StunFilter, QuicInitialFilter,
         };
 

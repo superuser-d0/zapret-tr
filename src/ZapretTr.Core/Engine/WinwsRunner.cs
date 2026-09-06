@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace ZapretTr.Core.Engine;
@@ -73,12 +74,24 @@ public sealed class WinwsRunner : IAsyncDisposable
 
         ElevationGuard.EnsureElevated();
 
-        if (!File.Exists(_vendor.WinwsExe))
+        // Eksik dosyalari BASLATMADAN once yakala. Eksik bir DLL ile winws.exe
+        // baslatilirsa Windows modal bir hata penceresi acar; surec olmedigi icin
+        // biz de hata almayiz, sonsuza kadar bekleriz. Bu tam olarak yasandi:
+        // cygwin1.dll indirme listesinden cikarilmisti.
+        var missing = _vendor.FindMissingFiles();
+        if (missing.Count > 0)
         {
             throw new FileNotFoundException(
-                $"winws.exe bulunamadi: {_vendor.WinwsExe}. tools/fetch-upstream.ps1 calistirildi mi?",
-                _vendor.WinwsExe);
+                "winws calistirilamaz, eksik dosya(lar): " +
+                string.Join(", ", missing.Select(Path.GetFileName)) +
+                ". Depo kokunden 'tools/fetch-upstream.ps1' calistirin.",
+                missing[0]);
         }
+
+        // Cocuk surec ana surecin hata modunu miras alir. SEM_FAILCRITICALERRORS
+        // ile eksik DLL gibi yukleyici hatalarinda pencere acilmaz, surec dogrudan
+        // duser -- yani hata bize gorunur bir bicimde ulasir.
+        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
 
         lock (_gate)
         {
@@ -122,12 +135,99 @@ public sealed class WinwsRunner : IAsyncDisposable
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
+            // Erken olum kontrolu: winws gecersiz bir arguman aldiginda ya da
+            // surucuyu acamadiginda hemen cikiyor. Bunu burada yakalamazsak
+            // arayuz "calisiyor" gosterir ve kullanici korundugunu saniir.
+            if (process.WaitForExit(StartupGraceMilliseconds))
+            {
+                var exitCode = process.ExitCode;
+                process.Dispose();
+                throw new InvalidOperationException(
+                    $"winws baslar baslamaz {exitCode} koduyla kapandi. " +
+                    "Ayrintilar icin gunluge bakin.");
+            }
+
             _process = process;
             CurrentArguments = arguments;
         }
 
         SetState(WinwsState.Running);
     }
+
+    /// <summary>
+    /// Argumanlari winws'in kendisine dogrulatir; surucuye DOKUNMAZ.
+    /// </summary>
+    /// <returns>
+    /// Gecerliyse null, degilse winws'in yazdigi hata metni.
+    /// </returns>
+    /// <remarks>
+    /// winws'in <c>--dry-run</c> secenegi "parametreleri dogrula ve basariliysa 0
+    /// ile cik" diyor. Test motoru icin bu buyuk kazanc: gecersiz bir aday tam
+    /// baslatma + ag zaman asimi (~7 sn) yerine bir surec baslatma (~50 ms)
+    /// maliyetiyle eleniyor, ustelik "zaman asimi" gibi bilgisiz bir sonuc yerine
+    /// winws'in kendi hata mesajini aliyoruz.
+    /// </remarks>
+    public async Task<string?> ValidateAsync(
+        IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(arguments);
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = _vendor.WinwsExe,
+            WorkingDirectory = _vendor.Root,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        startInfo.ArgumentList.Add("--dry-run");
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return "winws baslatilamadi.";
+        }
+
+        var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        var stderr = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+        if (process.ExitCode == 0)
+        {
+            return null;
+        }
+
+        // Hem \r hem \n ayraci: winws ciktisi CRLF kullaniyor ve yalnizca \n ile
+        // bolmek her satirin sonunda gorunmez bir \r birakirdi.
+        var message = (stderr + stdout)
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .LastOrDefault(line => !line.StartsWith("github version", StringComparison.OrdinalIgnoreCase));
+
+        return string.IsNullOrWhiteSpace(message)
+            ? $"winws parametreleri reddetti (kod {process.ExitCode})"
+            : message;
+    }
+
+    /// <summary>
+    /// Baslatmadan sonra erken olumu yakalamak icin beklenen sure.
+    /// </summary>
+    /// <remarks>
+    /// Kisa tutuldu: test motoru her aday icin bir winws baslatiyor, dolayisiyla
+    /// buradaki her milisaniye aday sayisiyla carpiliyor.
+    /// </remarks>
+    private const int StartupGraceMilliseconds = 250;
+
+    private const uint SEM_FAILCRITICALERRORS = 0x0001;
+    private const uint SEM_NOOPENFILEERRORBOX = 0x8000;
+
+    [DllImport("kernel32.dll")]
+    private static extern uint SetErrorMode(uint uMode);
 
     /// <summary>
     /// winws'i durdurur. Zaten durmussa sessizce doner.

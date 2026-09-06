@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
-using System.Security.Authentication;
 using ZapretTr.Core.Engine;
 using ZapretTr.Core.Profiles;
 
@@ -49,10 +48,16 @@ public sealed class StrategyProber(
     /// false ise tum tier'lar taranip en iyi aday secilir -- kullanici "daha iyisini
     /// ara" dediginde kullanilir.
     /// </param>
+    /// <param name="maxCandidatesPerSection">
+    /// Bir bolumde denenecek en fazla aday sayisi. null ise sinirsiz.
+    /// Butun tier'lar boyunca ortak bir butce olarak sayilir, boylece Tier 3'un
+    /// 180 adayi kullaniciyi belirsiz sure bekletemez.
+    /// </param>
     public async Task<ProbeReport> RunAsync(
         IspProfile? profile,
         IProgress<ProbeProgress>? progress = null,
         bool stopAtFirstSuccess = true,
+        int? maxCandidatesPerSection = null,
         CancellationToken cancellationToken = default)
     {
         ElevationGuard.EnsureElevated();
@@ -83,6 +88,7 @@ public sealed class StrategyProber(
                 attempts,
                 progress,
                 stopAtFirstSuccess,
+                maxCandidatesPerSection,
                 cancellationToken).ConfigureAwait(false);
 
             if (winner is not null)
@@ -130,11 +136,15 @@ public sealed class StrategyProber(
                 target.Label));
 
             var outcome = await client
-                .TryReachAsync(target.Host, TlsFor(target.Section), pinnedIp: null, cancellationToken)
+                .TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp: null, cancellationToken)
                 .ConfigureAwait(false);
 
             var status = outcome switch
             {
+                // Engel sayfasi kontrolu basari kontrolunden ONCE gelmeli: engel
+                // sayfasi HTTP 200 donduruyor, dolayisiyla sirayi ters kurmak onu
+                // "aciliyor" olarak isaretlerdi.
+                { IsBlockPage: true } => BaselineStatus.DnsRedirected,
                 { Succeeded: true } => BaselineStatus.Accessible,
                 { ResolvedIp: null } => BaselineStatus.Inconclusive,
                 _ => BaselineStatus.Blocked,
@@ -156,13 +166,20 @@ public sealed class StrategyProber(
         List<CandidateResult> attempts,
         IProgress<ProbeProgress>? progress,
         bool stopAtFirstSuccess,
+        int? budget,
         CancellationToken cancellationToken)
     {
         SectionWinner? best = null;
+        var remaining = budget ?? int.MaxValue;
 
         foreach (var (tier, label, candidates) in BuildTiers(section, profile))
         {
-            var candidateList = candidates.ToList();
+            if (remaining <= 0)
+            {
+                break;
+            }
+
+            var candidateList = candidates.Take(remaining).ToList();
             if (candidateList.Count == 0)
             {
                 continue;
@@ -172,6 +189,7 @@ public sealed class StrategyProber(
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var candidate = candidateList[i];
+                remaining--;
 
                 progress?.Report(new ProbeProgress(
                     tier, label, i, candidateList.Count, $"{section.ToJsonName()} · {candidate.Id}"));
@@ -231,6 +249,22 @@ public sealed class StrategyProber(
             try
             {
                 var arguments = _commandBuilder.BuildProbeCommand(section, candidate.Args, blocked.ResolvedIp);
+
+                // Once winws'in kendisine dogrulat. Gecersiz bir aday burada
+                // ~50 ms'de elenir; yoksa surucu acilir, ag istegi zaman asimina
+                // ugrar ve sonuc "zaman asimi" olarak kaydedilir -- yani gercekte
+                // parametre hatasi olan bir sey engelleme sanilir.
+                var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
+                if (validationError is not null)
+                {
+                    stopwatch.Stop();
+                    attempts.Add(new CandidateResult(
+                        candidate.Id, candidate.Args, section,
+                        blocked.Target.Host, blocked.Target.Category,
+                        false, "gecersiz parametre: " + validationError, stopwatch.Elapsed));
+                    continue;
+                }
+
                 runner.Start(arguments);
 
                 // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
@@ -240,7 +274,7 @@ public sealed class StrategyProber(
 
                 using var client = new HttpProbeClient();
                 var outcome = await client
-                    .TryReachAsync(blocked.Target.Host, TlsFor(section), blocked.ResolvedIp, cancellationToken)
+                    .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
                     .ConfigureAwait(false);
 
                 stopwatch.Stop();
@@ -306,17 +340,24 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Bolum icin zorlanacak TLS surumu.
+    /// Bolum icin kullanilacak sinama protokolu.
     /// </summary>
     /// <remarks>
-    /// TLS 1.2 kasitli secildi: sertifika DPI'a acik gorunur, yani DPI'in en cok
-    /// mudahale ettigi durum. TLS 1.3'te ServerHello sifreli oldugu icin bazi
-    /// engellemeler zaten devreye girmez ve test kolay gecerek yaniltici olur.
+    /// Bu eslemeyi yanlis yapmak sessizce yanlis sonuc uretir; ilk saha kosumunda
+    /// tam da bu oldu: duz HTTP sunan bir hedefe HTTPS ile gidilmis ve hedef
+    /// "engelli" sayilmisti.
+    ///
+    /// tcp443 icin TLS 1.2 kasitli secildi: sertifika DPI'a acik gorunur, yani DPI'in
+    /// en cok mudahale ettigi durum. TLS 1.3'te ServerHello sifreli oldugu icin bazi
+    /// engellemeler devreye bile girmez ve test kolay gecerek yaniltir.
     /// </remarks>
-    private static SslProtocols TlsFor(StrategySection section) => section switch
+    private static ProbeMode ModeFor(StrategySection section) => section switch
     {
-        StrategySection.Tcp443 => SslProtocols.Tls12,
-        _ => SslProtocols.None,
+        StrategySection.Tcp80 => ProbeMode.PlainHttp,
+        StrategySection.Tcp443 => ProbeMode.Tls12,
+        StrategySection.Quic => ProbeMode.Http3,
+        StrategySection.DiscordVoice => ProbeMode.Http3,
+        _ => ProbeMode.Tls12,
     };
 
     private readonly record struct ProbeCandidate(string Id, string Args);
