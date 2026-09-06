@@ -37,6 +37,10 @@ Set-StrictMode -Version Latest
 $BundleCommit = '32fbbebf29be855566faef0961ac85627a3a4aeb'
 # Ana zapret deposu, lisans metni ve sahte TLS yukleri icin.
 $ZapretTag    = 'v72.13'
+# dnscrypt-proxy: DNS kacirmasini asmak icin. Turkiye'de engelleme cogu zaman
+# once DNS katmaninda oluyor ve o katman asilmadan DPI stratejisi ise yaramiyor.
+$DnsCryptVersion = '2.1.18'
+$DnsCryptSha256  = '15f0c8f1f40620a54ddfd8752c327dabe1146f84618d68874f79c4f52490b396'
 
 $BundleBase = "https://raw.githubusercontent.com/bol-van/zapret-win-bundle/$BundleCommit/zapret-winws"
 $ZapretBase = "https://raw.githubusercontent.com/bol-van/zapret/$ZapretTag"
@@ -87,12 +91,15 @@ Write-Host "  zapret-win-bundle @ $($BundleCommit.Substring(0,12))"
 Write-Host "  zapret            @ $ZapretTag"
 Write-Host ''
 
+# Bu kontrol YALNIZCA winws indirmesini atlar. Erken return kullanmak, sonradan
+# eklenen dnscrypt-proxy adiminin hic calismamasina yol acmisti: winws zaten
+# indirilmis oldugu icin script daha oraya varmadan donuyordu.
+$skipWinws = $false
 if ((Test-Path $VendorDir) -and -not $Force -and -not $UpdateManifest) {
     $existing = @(Get-ChildItem -Path $VendorDir -Recurse -File)
     if ($existing.Count -ge $Files.Count) {
-        Write-Host 'vendor/ zaten dolu. Yeniden indirmek icin -Force kullan.' -ForegroundColor Yellow
-        Write-Host ''
-        return
+        Write-Host 'winws dosyalari zaten yerinde (yeniden indirmek icin -Force).' -ForegroundColor Yellow
+        $skipWinws = $true
     }
 }
 
@@ -100,7 +107,7 @@ New-Item -ItemType Directory -Force -Path $VendorDir | Out-Null
 
 # --- Indirme ------------------------------------------------------------------
 $downloaded = @{}
-foreach ($file in $Files) {
+foreach ($file in $(if ($skipWinws) { @() } else { $Files })) {
     $destPath = Join-Path $VendorDir $file.Dest
     $destDir  = Split-Path -Parent $destPath
     if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
@@ -118,6 +125,53 @@ foreach ($file in $Files) {
 Write-Host ''
 
 # --- Manifest uretimi ya da dogrulama -----------------------------------------
+# --- dnscrypt-proxy ----------------------------------------------------------
+# Tek dosya degil zip oldugu icin ayri ele aliniyor. Zip'in SHA256'si script'te
+# sabit; indirme sonrasi dogrulanmadan acilmaz.
+$dnsDir = Join-Path $RepoRoot 'vendor/dnscrypt-proxy'
+$dnsExe = Join-Path $dnsDir 'dnscrypt-proxy.exe'
+
+if ($Force -or $UpdateManifest -or -not (Test-Path $dnsExe)) {
+    $dnsUrl = "https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/$DnsCryptVersion/dnscrypt-proxy-win64-$DnsCryptVersion.zip"
+    $dnsZip = Join-Path ([IO.Path]::GetTempPath()) "dnscrypt-proxy-$DnsCryptVersion.zip"
+
+    Write-Step "indiriliyor: dnscrypt-proxy $DnsCryptVersion"
+    try {
+        Invoke-WebRequest -Uri $dnsUrl -OutFile $dnsZip -UseBasicParsing -TimeoutSec 180
+    } catch {
+        throw "dnscrypt-proxy indirilemedi: $($_.Exception.Message)"
+    }
+
+    $actual = (Get-FileHash -Path $dnsZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $DnsCryptSha256) {
+        Remove-Item $dnsZip -Force -ErrorAction SilentlyContinue
+        throw "dnscrypt-proxy SHA256 uyusmuyor.`n  beklenen: $DnsCryptSha256`n  gelen   : $actual"
+    }
+
+    if (Test-Path $dnsDir) { Remove-Item $dnsDir -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $dnsDir | Out-Null
+
+    # Zip'in tamami degil, yalnizca ihtiyacimiz olanlar aciliyor: ornek listeler
+    # ve servis .bat dosyalari bizim akisimizda kullanilmiyor.
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    $archive = [IO.Compression.ZipFile]::OpenRead($dnsZip)
+    try {
+        foreach ($wanted in @('win64/dnscrypt-proxy.exe', 'win64/LICENSE')) {
+            $entry = $archive.Entries | Where-Object { $_.FullName -eq $wanted }
+            if (-not $entry) { throw "Zip icinde beklenen dosya yok: $wanted" }
+            $target = Join-Path $dnsDir ([IO.Path]::GetFileName($wanted))
+            [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $target, $true)
+        }
+    } finally {
+        $archive.Dispose()
+        Remove-Item $dnsZip -Force -ErrorAction SilentlyContinue
+    }
+
+    Write-Step "dnscrypt-proxy hazir: vendor/dnscrypt-proxy/"
+}
+
+Write-Host ''
+
 if ($UpdateManifest) {
     $manifest = [ordered]@{
         bundleCommit = $BundleCommit
@@ -130,6 +184,15 @@ if ($UpdateManifest) {
     $manifest | ConvertTo-Json -Depth 5 | Set-Content -Path $ManifestPath -Encoding utf8
     Write-Host "Manifest yeniden uretildi: tools/upstream-manifest.json" -ForegroundColor Green
     Write-Host 'Commit etmeden once farki incele - bu dosya tedarik zinciri guvencemiz.' -ForegroundColor Yellow
+    Write-Host ''
+    return
+}
+
+# winws indirmesi atlandiysa dogrulanacak bir sey de yok. Bu dal olmadan script
+# sonunda "SHA256 dogrulandi - 0 dosya" yaziyordu: hicbir sey dogrulanmadigi halde
+# dogrulama mesaji basmak, yanlis guvence vermenin ta kendisi.
+if ($skipWinws) {
+    Write-Host 'winws dogrulamasi atlandi (dosyalar zaten yerinde, indirme yapilmadi).' -ForegroundColor Yellow
     Write-Host ''
     return
 }

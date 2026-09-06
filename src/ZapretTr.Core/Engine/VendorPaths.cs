@@ -43,6 +43,13 @@ public sealed class VendorPaths
     /// </summary>
     public string CygwinDll => Path.Combine(Root, "cygwin1.dll");
 
+    /// <summary>
+    /// dnscrypt-proxy. zapret-winws'in KARDESI dizinde duruyor, icinde degil:
+    /// ayri bir projeden geliyor ve ayri bir surumle sabitleniyor.
+    /// </summary>
+    public string DnsCryptExe => Path.Combine(
+        Path.GetDirectoryName(Root) ?? Root, "dnscrypt-proxy", "dnscrypt-proxy.exe");
+
     public string WinDivertDll => Path.Combine(Root, "WinDivert.dll");
     public string WinDivertSys => Path.Combine(Root, "WinDivert64.sys");
 

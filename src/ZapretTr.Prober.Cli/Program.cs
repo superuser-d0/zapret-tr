@@ -83,7 +83,28 @@ if (options.Apply)
     Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(runtimeArgs));
     Console.WriteLine();
 
-    var applyTargets = ProbeTargetStore.Load(applyProfiles.Root);
+    var applyTargets = ProbeTargetStore.Load(applyProfiles.Root).ToList();
+    foreach (var extraHost in options.ExtraTargets)
+    {
+        var parsedExtra = ProbeTargetStore.TryParseUserTarget(extraHost);
+        if (parsedExtra is not null)
+        {
+            applyTargets.Insert(0, parsedExtra);
+        }
+    }
+
+    // Sifreli DNS istege bagli ama Turkiye'de cogu zaman SART: DNS kacirilmisken
+    // baglanti zaten engel sunucusuna gider ve winws stratejisi hicbir sey
+    // degistirmez. Ikisini birlikte olcmek, gercek kullanim senaryosu.
+    DnsCryptRunner? applyDns = null;
+    if (options.UseSecureDns)
+    {
+        applyDns = new DnsCryptRunner(applyVendor);
+        Console.WriteLine("Şifreli DNS başlatılıyor...");
+        await applyDns.StartAsync();
+        Console.WriteLine("   [+] sistem DNS'i dnscrypt-proxy'ye yönlendirildi");
+        Console.WriteLine();
+    }
 
     Console.WriteLine("Önce (winws kapalı):");
     var before = new Dictionary<string, bool>();
@@ -130,6 +151,13 @@ if (options.Apply)
 
     await applyRunner.StopAsync();
 
+    if (applyDns is not null)
+    {
+        await applyDns.StopAsync();
+        Console.WriteLine();
+        Console.WriteLine("Şifreli DNS kapatıldı, sistem DNS'i geri alındı.");
+    }
+
     Console.WriteLine();
     Console.WriteLine($"Sonuç: {fixedCount} hedef düzeldi, {brokeCount} hedef bozuldu.");
     if (brokeCount > 0)
@@ -140,6 +168,140 @@ if (options.Apply)
 
     Console.WriteLine();
     return fixedCount > 0 && brokeCount == 0 ? 0 : 1;
+}
+
+// --- Sifreli DNS ------------------------------------------------------------
+// Turkiye'de engelleme cogu zaman once DNS katmaninda; o katman asilmadan DPI
+// stratejisi ise yaramiyor. Bu mod dnscrypt-proxy'yi calistirip sistem DNS'ini
+// ona yonlendirir.
+if (options.DnsCommand is { } dnsCommand)
+{
+    var dnsVendor = VendorPaths.Locate();
+    var dnsRunner = new DnsCryptRunner(dnsVendor);
+    dnsRunner.LogLineReceived += line => Console.WriteLine("   " + line);
+
+    switch (dnsCommand)
+    {
+        case "durum":
+        case "status":
+        {
+            var responding = await DnsCryptRunner.IsLocalResolverRespondingAsync();
+            Console.WriteLine($"Yerel çözümleyici : {(responding ? "cevap veriyor" : "cevap vermiyor")}");
+            Console.WriteLine($"DNS yedeği        : {(SystemDnsManager.HasBackup ? "VAR (sistem DNS'i bize yönlendirilmiş)" : "yok")}");
+
+            // Yedek var ama proxy cevap vermiyorsa makine su an ad cozemiyor.
+            if (SystemDnsManager.HasBackup && !responding)
+            {
+                Console.WriteLine();
+                Console.WriteLine("UYARI: DNS bize yönlendirilmiş ama çözümleyici çalışmıyor.");
+                Console.WriteLine("Bu durumda hiçbir adres çözülemez. Kurtarılıyor...");
+                var recovered = await SystemDnsManager.TryRecoverAsync(localResolverResponds: false);
+                Console.WriteLine("Geri alındı: " + string.Join(", ", recovered));
+            }
+
+            return 0;
+        }
+
+        case "ac":
+        case "on":
+        {
+            Console.WriteLine("dnscrypt-proxy başlatılıyor...");
+            Console.WriteLine("(sistem DNS'i, çözümleyicinin cevap verdiği DOĞRULANDIKTAN sonra değiştirilecek)");
+            Console.WriteLine();
+
+            await dnsRunner.StartAsync();
+
+            Console.WriteLine();
+            Console.WriteLine("Şifreli DNS aktif. Kapatmak için: --dns kapat");
+            Console.WriteLine("Bu pencere kapanırsa DNS otomatik geri alınır.");
+            Console.WriteLine();
+            Console.WriteLine("Kapatmak için Enter'a basın...");
+            Console.ReadLine();
+
+            await dnsRunner.StopAsync();
+            return 0;
+        }
+
+        case "kapat":
+        case "off":
+        {
+            var restored = await SystemDnsManager.RestoreAsync();
+            Console.WriteLine(restored.Count > 0
+                ? "DNS geri alındı: " + string.Join(", ", restored)
+                : "Geri alınacak bir DNS yedeği yok.");
+
+            foreach (var stale in System.Diagnostics.Process.GetProcessesByName("dnscrypt-proxy"))
+            {
+                try { stale.Kill(); } catch { /* zaten olmus */ }
+                finally { stale.Dispose(); }
+            }
+
+            return 0;
+        }
+
+        case "test":
+        {
+            // Tam dongu, kendi kendini geri alarak. Amac guvenlik yolunu
+            // dogrulamak: DNS degistirilebiliyor mu VE her kosulda geri
+            // alinabiliyor mu. Test sonunda sistem mutlaka eski haline doner.
+            Console.WriteLine("DNS güvenlik testi — sistem sonunda eski haline döndürülecek.");
+            Console.WriteLine();
+
+            var ok = true;
+            try
+            {
+                Console.WriteLine("1) dnscrypt-proxy başlatılıyor ve doğrulanıyor...");
+                await dnsRunner.StartAsync();
+                Console.WriteLine("   [+] çözümleyici cevap veriyor, sistem DNS'i yönlendirildi");
+
+                Console.WriteLine();
+                Console.WriteLine("2) Şifreli DNS üzerinden çözümleme deneniyor...");
+                foreach (var probe in new[] { "discord.com", "pornhub.com", "example.com" })
+                {
+                    try
+                    {
+                        var addresses = await System.Net.Dns.GetHostAddressesAsync(probe);
+                        var v4 = addresses.FirstOrDefault(a =>
+                            a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
+                        var hijacked = v4 is not null && v4.ToString().StartsWith("195.175.254.", StringComparison.Ordinal);
+                        Console.WriteLine($"   {probe,-18} {v4}{(hijacked ? "   <<< HALA ENGEL SUNUCUSU" : "   (gerçek adres)")}");
+                        if (hijacked) { ok = false; }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"   {probe,-18} çözümlenemedi: {ex.Message}");
+                        ok = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("   [!] " + ex.Message);
+                ok = false;
+            }
+            finally
+            {
+                Console.WriteLine();
+                Console.WriteLine("3) Geri alınıyor...");
+                await dnsRunner.StopAsync();
+
+                // Geri alma gercekten oldu mu, yedegin yoklugundan degil
+                // sistemin kendisinden dogrulaniyor.
+                var after = SystemDnsManager.HasBackup;
+                Console.WriteLine(after
+                    ? "   [!] DNS yedeği hâlâ duruyor — geri alma tamamlanmadı!"
+                    : "   [+] DNS eski haline döndü, yedek temizlendi");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine(ok ? "SONUÇ: şifreli DNS çalışıyor." : "SONUÇ: sorun var, yukarıya bakın.");
+            return ok ? 0 : 1;
+        }
+
+        default:
+            Console.Error.WriteLine($"Bilinmeyen DNS komutu: {dnsCommand} (ac | kapat | durum | test)");
+            return 4;
+    }
 }
 
 // --- Temizlik ---------------------------------------------------------------
@@ -592,6 +754,7 @@ internal sealed record CliOptions(
     bool Cleanup,
     bool Apply,
     bool UseSecureDns,
+    string? DnsCommand,
     bool AssumeYes,
     bool ShowHelp)
 {
@@ -607,6 +770,7 @@ internal sealed record CliOptions(
         var cleanup = false;
         var apply = false;
         var useSecureDns = false;
+        string? dnsCommand = null;
         var assumeYes = false;
         var help = false;
         var extras = new List<string>();
@@ -656,6 +820,9 @@ internal sealed record CliOptions(
                 case "--doh":
                     useSecureDns = true;
                     break;
+                case "--dns" when i + 1 < args.Length:
+                    dnsCommand = args[++i].ToLowerInvariant();
+                    break;
                 case "--yes":
                 case "-y":
                     assumeYes = true;
@@ -667,7 +834,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, dnsCommand, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -684,6 +851,8 @@ internal sealed record CliOptions(
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
+        Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");
+        Console.WriteLine("  --dns test              Tam döngüyü dener ve sistemi mutlaka eski haline döndürür.");
         Console.WriteLine("  --apply                 Seçili ISS yapılandırmasını çalıştırıp önce/sonra farkını ölçer.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");

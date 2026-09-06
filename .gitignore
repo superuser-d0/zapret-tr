@@ -28,3 +28,7 @@ rapor.json
 # Yayin ciktilari (30MB zip git icin uygun degil)
 dist/
 publish/
+
+# dnscrypt-proxy calisma dosyalari
+public-resolvers.md*
+zapret-tr-dnscrypt.toml
