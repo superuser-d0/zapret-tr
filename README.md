@@ -99,14 +99,24 @@ Tamamlananlar:
 
 Kalanlar, etkiye göre sıralı:
 
-- [ ] **Kalıcılık.** Şu an hiç yok. Parametre testi çalıştırıp strateji bulunuyor,
-      uygulama kapanınca kayboluyor. Günlük kullanım için en kritik eksik.
-- [ ] **Otomatik başlatma / Windows servisi.** Arayüzdeki düğme devre dışı.
-- [ ] **ASN otomatik tespiti.** "Bilmiyorum" seçeneği şu an hiçbir şey yapmıyor.
-- [ ] **Kurulum paketi** (Inno Setup).
+- [ ] **Kurulum paketi** (Inno Setup). Şu an servisler depo ağacındaki
+      `vendor/` klasörünü işaret ediyor; depo taşınır ya da silinirse servisler
+      açılışta başlayamaz ve dnscrypt-proxy çalışmayınca hiçbir adres çözülemez.
+      Kalıcı kullanım için ikililerin sabit bir kurulum dizininde olması şart.
+- [ ] **Servis kaldırma yolunun doğrulanması.** Kurulum gerçek koşumda doğrulandı,
+      kaldırma henüz denenmedi.
+- [ ] **ASN otomatik tespiti.** "Bilmiyorum" seçeneği hâlâ hiçbir şey yapmıyor.
 - [ ] **Paralel test.** İzolasyon mekanizması doğrulandı ama motor hâlâ sıralı.
-- [ ] Profil doğrulama kapsamı: 97 adayın yalnızca 1'i gerçek bir hatta doğrulandı.
-- [ ] QUIC ve Discord-ses bölümlerinde hiç doğrulanmış strateji yok.
+- [ ] Profil doğrulama kapsamı: 89 adayın yalnızca 1'i gerçek bir hatta doğrulandı.
+- [ ] QUIC ve Discord-ses bölümlerinde hiç doğrulanmış strateji yok; Discord sesli
+      görüşme muhtemelen hâlâ çalışmıyor.
+- [ ] Saha testi paketi 34.3 MB — paylaşım limitlerinin üstünde. `PublishTrimmed`
+      ile küçültülebilir.
+
+Tamamlananlara eklenenler:
+
+- [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\`
+- [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
 
 ## Uyarılar
 
