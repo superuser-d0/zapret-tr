@@ -1,0 +1,16 @@
+# Build
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Upstream binaries — fetched by tools/fetch-upstream.ps1, never committed
+vendor/
+
+# Installer output
+installer/Output/
+
+# Local runtime state
+*.log
+saha-raporu-*.json

@@ -1,0 +1,17 @@
+﻿{
+    "bundleCommit":  "32fbbebf29be855566faef0961ac85627a3a4aeb",
+    "zapretTag":  "v72.13",
+    "generated":  "2026-09-06T12:53:55Z",
+    "files":  {
+                  "files/quic_initial_www_google_com.bin":  "f4589c57749f956bb30538197a521d7005f8b0a8723b4707e72405e51ddac50a",
+                  "files/tls_clienthello_iana_org.bin":  "9db8772636bb332f1970e8767bc7d628bfa640714bd0b7e699fbe92d559e666e",
+                  "LICENSE.upstream.txt":  "dcf5abd3e5d876c1065982871c0cec7368c0e61fc795c541798729516bb6b54f",
+                  "WinDivert.dll":  "16abd6a029e65557c6a309bea7b13bf81fff4e193567582e1cddbf6719f323e0",
+                  "windivert.filter/README.txt":  "be9ad4622296c463f1cf278c4f97be0c7eabaff9e79ad36262a8255fafd2b216",
+                  "windivert.filter/windivert_part.discord_media.txt":  "2f2deaf49ed68eb684258497134181753188f2b475161deb244488a53872b7c5",
+                  "windivert.filter/windivert_part.quic_initial_ietf.txt":  "f243ddc22758b9e04838211a3815e43fb3abe615e6be29e6a812ae4c72b392e0",
+                  "windivert.filter/windivert_part.stun.txt":  "2a14f470b00cd9704003e0cade500086398f9222c858d9ae944bdeb89f520595",
+                  "WinDivert64.sys":  "8da085332782708d8767bcace5327a6ec7283c17cfb85e40b03cd2323a90ddc2",
+                  "winws.exe":  "2da71e80878dc270ac83f5893ecbb841f9752a57f1da8ff9325636b4346bc632"
+              }
+}
