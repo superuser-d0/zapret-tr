@@ -43,25 +43,39 @@ public sealed class HttpProbeClient : IDisposable
     /// BTK/erisim engeli sayfalarinda gecen ifadeler. Sayfa 200 dondurdugu icin
     /// durum kodu yetmiyor, icerige bakmak gerekiyor.
     /// </summary>
-    private static readonly string[] BlockPageMarkers =
+    /// <summary>
+    /// Tek basina engel sayfasi kaniti sayilan ifadeler. Normal bir sayfada
+    /// bulunmalari pratikte imkansiz: sinif adlari ve kurum alan adlari.
+    /// </summary>
+    private static readonly string[] StrongBlockMarkers =
     [
         // Turk Telekom / TTNET engel sayfasindan DOGRUDAN alindi (--diagnose ile
         // 195.175.254.2 uzerinden gozlemlendi). Onceki listede bu ifade "erisime
         // engellenmi" olarak, yani BOSLUKLA yaziliydi ve gercek sayfadaki alt
-        // cizgili sinif adiyla hic eslesmiyordu: engel sayfasi 200 donduruyor,
-        // dolayisiyla tespit kacinca hedef "aciliyor" sayiliyordu.
+        // cizgili sinif adiyla hic eslesmiyordu.
         "erisime_engellenmis",
-
-        // Diger saglayicilarda ve eski sayfalarda gorulen ifadeler.
         "btk.gov.tr",
         "tib.gov.tr",
+    ];
+
+    /// <summary>
+    /// Engel sayfalarinda sik gecen ama normal iceriklerde de gecebilen ifadeler.
+    /// </summary>
+    /// <remarks>
+    /// Bunlar TEK BASINA yeterli sayilmaz. "koruma tedbiri" ya da "5651 say" gibi
+    /// ifadeler sansuru anlatan bir haber sayfasinda da gecer; tek eslesmeyi kanit
+    /// saymak, acilan bir siteyi engelli gostermek demek olur. Bu yanlis yon daha
+    /// tehlikeli: hedefi DNS yonlendirmesi sanip strateji aramasindan cikaririz ve
+    /// gercekten asilabilir bir engeli hic denemeyiz. En az iki eslesme aranir.
+    /// </remarks>
+    private static readonly string[] WeakBlockMarkers =
+    [
         "bilgi teknolojileri ve i",
         "internet sitesine erisim",
         "koruma tedbiri",
         "5651 say",
         "erisime engellenmi",
     ];
-
     private readonly TimeSpan _timeout;
 
     public HttpProbeClient(TimeSpan? timeout = null)
@@ -255,7 +269,11 @@ public sealed class HttpProbeClient : IDisposable
         return flattened.Length <= 400 ? flattened : flattened[..400];
     }
 
-    private static string? FindBlockMarker(string text)
+    /// <summary>
+    /// Metnin engel sayfasi olup olmadigina karar verir; eslesen isareti dondurur.
+    /// </summary>
+    /// <returns>Eslesen isaret, yoksa null.</returns>
+    public static string? FindBlockMarker(string text)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -263,7 +281,15 @@ public sealed class HttpProbeClient : IDisposable
         }
 
         var haystack = text.ToLowerInvariant();
-        return BlockPageMarkers.FirstOrDefault(m => haystack.Contains(m, StringComparison.Ordinal));
+
+        var strong = StrongBlockMarkers.FirstOrDefault(m => haystack.Contains(m, StringComparison.Ordinal));
+        if (strong is not null)
+        {
+            return strong;
+        }
+
+        var weak = WeakBlockMarkers.Where(m => haystack.Contains(m, StringComparison.Ordinal)).ToList();
+        return weak.Count >= 2 ? string.Join(" + ", weak) : null;
     }
 
     /// <summary>

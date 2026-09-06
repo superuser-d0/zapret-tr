@@ -24,3 +24,7 @@ baseline.txt
 tam-test.txt
 rapor.json
 *.bat
+
+# Yayin ciktilari (30MB zip git icin uygun degil)
+dist/
+publish/

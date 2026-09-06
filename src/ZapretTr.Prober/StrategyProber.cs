@@ -41,6 +41,12 @@ public sealed class StrategyProber(
     /// <summary>Dogrulama tekrari oncesi beklenen sure.</summary>
     private static readonly TimeSpan ConfirmationGap = TimeSpan.FromMilliseconds(300);
 
+    /// <summary>
+    /// Engellenmemesi beklenen hedeflerin kategori adi. Bir bolumun kontrol hedefi
+    /// acilmiyorsa o bolumun sonuclari guvenilmez ve arama yapilmaz.
+    /// </summary>
+    public const string ControlCategory = "kontrol";
+
     /// <summary>Testi calistirir.</summary>
     /// <param name="profile">
     /// Kullanicinin sectigi ISP profili. null verilirse Tier 1 atlanir ve dogrudan
@@ -86,10 +92,25 @@ public sealed class StrategyProber(
         var attempts = new List<CandidateResult>();
         var winners = new List<SectionWinner>();
 
+        // Kontrol hedefi acilmayan bolumler aranmaz. Kontrol, engellenmemesi
+        // BEKLENEN bir adres; o da acilmiyorsa olcum yolunda ya da baglantida bir
+        // sorun var demektir ve o bolumun "engelli" sonuclari guvenilmez.
+        // Ilk saha kosumunda QUIC bolumunde tam bu oldu: butun hedefler "HTTP/3
+        // baglantisi kurulamadi" verdi ve bu engelleme sanilip 40 aday bosuna
+        // denendi. Oysa ayni hata QUIC'in makinede hic calismamasi durumunda da
+        // ciktigi icin ikisi ayirt edilemiyordu.
+        var unreliableSections = baseline
+            .Where(b => b.Target.Category == ControlCategory && b.Status != BaselineStatus.Accessible)
+            .Select(b => b.Target.Section)
+            .ToHashSet();
+
         // Yalnizca gercekten engelli hedefi olan bolumler aranir. Engelli hedefi
         // olmayan bir bolumu aramak anlamsiz: her aday "basarili" gorunurdu.
+        // Kontrol hedefleri de aranmaz -- onlar zaten acilmasi beklenen adresler.
         var sectionsToSearch = baseline
-            .Where(b => b.Status == BaselineStatus.Blocked)
+            .Where(b => b.Status == BaselineStatus.Blocked
+                        && b.Target.Category != ControlCategory
+                        && !unreliableSections.Contains(b.Target.Section))
             .GroupBy(b => b.Target.Section)
             .ToList();
 

@@ -12,7 +12,15 @@
     <Nullable>enable</Nullable>
     <AssemblyName>zapret-tr-test</AssemblyName>
     <RootNamespace>ZapretTr.Prober.Cli</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
 </Project>
+
 

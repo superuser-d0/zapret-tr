@@ -207,9 +207,46 @@ Console.WriteLine();
 // soylemek, sonradan aciklamaktan farkli bir sey.
 if (options.OutputPath is not null)
 {
-    Console.WriteLine("Rapor dosyası yazılacak: " + options.OutputPath);
-    Console.WriteLine("İçeriği: ISS adı, test edilen adresler, denenen parametreler ve sonuçları,");
-    Console.WriteLine("         süreler. IP adresiniz, bilgisayar adınız veya kullanıcı adınız YAZILMAZ.");
+    Console.WriteLine("Bu test sırasında olacaklar:");
+    Console.WriteLine();
+    Console.WriteLine("  1. Birkaç adrese bağlanıp hangilerinin açıldığı ölçülecek.");
+    Console.WriteLine("  2. winws.exe çalıştırılacak. Bu, WinDivert adlı bir ağ sürücüsünü");
+    Console.WriteLine("     geçici olarak yükler. Test bitince kaldırabilirsiniz:");
+    Console.WriteLine("     bu programı --cleanup ile çalıştırmanız yeterli.");
+    Console.WriteLine("  3. Sonuçlar şu dosyaya yazılacak:");
+    Console.WriteLine("     " + options.OutputPath);
+    Console.WriteLine();
+    Console.WriteLine("  Rapora YAZILANLAR   : servis sağlayıcı adı, test edilen adresler,");
+    Console.WriteLine("                        denenen parametreler ve sonuçları, süreler.");
+    Console.WriteLine("  Rapora YAZILMAYANLAR: IP adresiniz, bilgisayar adınız, kullanıcı adınız,");
+    Console.WriteLine("                        gezdiğiniz siteler, başka hiçbir kişisel bilgi.");
+    Console.WriteLine();
+    Console.WriteLine("  Rapor hiçbir yere GÖNDERİLMEZ; yalnızca diske yazılır. Ne yapacağına");
+    Console.WriteLine("  siz karar verirsiniz — dosyayı açıp okuyabilirsiniz, düz metindir.");
+    Console.WriteLine();
+
+    if (!options.AssumeYes)
+    {
+        Console.Write("Devam edilsin mi? (E/h): ");
+        var answer = Console.ReadLine()?.Trim();
+
+        // Bos cevap (dogrudan Enter) onay SAYILMAZ. Baskasinin makinesinde
+        // calisan ve cekirdek surucusu yukleyen bir arac icin varsayilan "hayir"
+        // olmali; kullanici bilerek "evet" demeli.
+        var accepted = answer is not null
+                       && (answer.Equals("e", StringComparison.OrdinalIgnoreCase)
+                           || answer.Equals("evet", StringComparison.OrdinalIgnoreCase)
+                           || answer.Equals("y", StringComparison.OrdinalIgnoreCase)
+                           || answer.Equals("yes", StringComparison.OrdinalIgnoreCase));
+
+        if (!accepted)
+        {
+            Console.WriteLine();
+            Console.WriteLine("İptal edildi. Hiçbir değişiklik yapılmadı.");
+            return 0;
+        }
+    }
+
     Console.WriteLine();
 }
 
@@ -245,19 +282,26 @@ try
     // Kontrol hedefi engellenmemesi BEKLENEN bir adres. Erisilemiyorsa sorun
     // DPI'da degil olcum yolumuzda ya da baglantida demektir; bu durumda tum
     // baseline sonuclari supheli ve strateji aramasi anlamsiz olur.
-    var control = baseline.FirstOrDefault(b => b.Target.Category == "kontrol");
-    if (control is not null && control.Status != BaselineStatus.Accessible)
+    var failedControls = baseline
+        .Where(b => b.Target.Category == StrategyProber.ControlCategory
+                    && b.Status != BaselineStatus.Accessible)
+        .ToList();
+
+    foreach (var control in failedControls)
     {
         Console.WriteLine();
-        Console.WriteLine("UYARI: Kontrol hedefi de açılmıyor.");
+        Console.WriteLine($"UYARI: {control.Target.Section.ToJsonName()} kontrol hedefi de açılmıyor.");
         Console.WriteLine($"  {control.Target.Host} engellenmemesi beklenen bir adres ({control.Detail}).");
-        Console.WriteLine("  Bu, sonuçların DPI engellemesini değil bir bağlantı/ölçüm sorununu");
-        Console.WriteLine("  yansıttığı anlamına gelebilir. İnternet bağlantınızı kontrol edin.");
+        Console.WriteLine("  Bu bölümün sonuçları DPI engellemesini değil bir bağlantı/ölçüm");
+        Console.WriteLine("  sorununu yansıtıyor olabilir, o yüzden bu bölümde strateji");
+        Console.WriteLine("  ARANMAYACAK. Ayırt edemediğimiz bir şey için dakikalarca aday");
+        Console.WriteLine("  denemenin anlamı yok.");
         Console.WriteLine();
     }
 
     var blockedCount = baseline.Count(b => b.Status == BaselineStatus.Blocked
-                                           && b.Target.Category != "kontrol");
+                                           && b.Target.Category != StrategyProber.ControlCategory
+                                           && !failedControls.Any(c => c.Target.Section == b.Target.Section));
     var redirectedCount = baseline.Count(b => b.Status == BaselineStatus.DnsRedirected);
 
     Console.WriteLine();
@@ -437,6 +481,7 @@ internal sealed record CliOptions(
     string? EngageCheckHost,
     string? Strategy,
     bool Cleanup,
+    bool AssumeYes,
     bool ShowHelp)
 {
     public static CliOptions Parse(string[] args)
@@ -449,6 +494,7 @@ internal sealed record CliOptions(
         int? max = null;
         var baselineOnly = false;
         var cleanup = false;
+        var assumeYes = false;
         var help = false;
         var extras = new List<string>();
 
@@ -484,6 +530,10 @@ internal sealed record CliOptions(
                 case "--cleanup":
                     cleanup = true;
                     break;
+                case "--yes":
+                case "-y":
+                    assumeYes = true;
+                    break;
                 case "-h":
                 case "--help":
                     help = true;
@@ -491,7 +541,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -508,6 +558,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
+        Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");
         Console.WriteLine("  -h, --help              Bu yardım.");
         Console.WriteLine();
         Console.WriteLine("Yönetici yetkisi gerekir.");

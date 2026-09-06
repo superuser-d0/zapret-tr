@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="ZapretTR.ProberCli" />
+
+  <!--
+    winws.exe cekirdek modunda calisan WinDivert surucusunu kullaniyor ve
+    yukseltilmis yetki olmadan baslatilamiyor. Yetkiyi sonradan istemek diye bir
+    secenek olmadigi icin arac bastan yonetici olarak baslatiliyor: saha testini
+    yapan kisi "neden calismadi" diye ugrasmasin, UAC penceresi dogrudan ciksin.
+
+    NOT: Bu dosyayi duzenlerken yorumlarin icinde cift tire kullanma. XML
+    yorumlari cift tire iceremez; SxS yukleyicisi dosyayi reddeder ve uygulama
+    "side-by-side configuration is incorrect" ile hic acilmaz. Derleme bu hatayi
+    YAKALAMAZ.
+  -->
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 ve 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+    </application>
+  </compatibility>
+</assembly>

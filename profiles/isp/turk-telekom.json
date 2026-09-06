@@ -13,7 +13,7 @@
   ],
   "engine": "winws",
   "priority": 2,
-  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket.",
+  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket. DOGRULANMIS PROFIL: bu dosya artik elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ. Sebebi, icinde gercek saha dogrulamasi tasimasi -- yeniden uretim o veriyi silerdi.",
   "candidates": [
     {
       "id": "tt-443-fake-ttl4",
@@ -24,10 +24,12 @@
         "tls13"
       ],
       "weight": 100,
-      "source": "community-unverified",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "TTNET icin en sik bildirilen deger."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-06",
+      "note": "TTNET icin en sik bildirilen deger. DOGRULANDI: gercek bir TTNET hattinda, baseline'da RST ile sifirlanan discord.com baglantisini acti ve dogrulama tekrarini gecti. Profilin ilk adayi oldugu icin arama saniyeler icinde sonuclandi."
     },
     {
       "id": "tt-443-fake-ttl3",

@@ -7,8 +7,10 @@ Neden script? Superonline disindaki profillerin buyuk kismi ayni tabani paylasiy
 Bunlari elle kopyalamak, birinde duzeltme yapip digerlerini unutmaya davetiye.
 Tablo burada tek yerde duruyor, ciktilar profiles/isp/ altina yaziliyor ve commit ediliyor.
 
-Superonline elle yazildi ve bu script ONA DOKUNMAZ -- oncelikli profil oldugu icin
-derinlestirilmis, elle bakim gorecek bir dosya.
+Bir profil gercek saha dogrulamasi tasimaya basladigi anda buradan CIKARILIR ve
+elle bakima gecer; yeniden uretim o veriyi silerdi. Su an elle bakim gorenler:
+  - superonline  (oncelikli profil, derinlestirilmis)
+  - turk-telekom (tt-443-fake-ttl4 gercek bir hatta dogrulandi)
 
 Kullanim (depo kokunden):  python tools/gen-seed-profiles.py
 """
@@ -63,26 +65,6 @@ def http_base(prefix):
 # asns bos olan ISP'lerde ASN sorgusu sonuc vermedi. Numara uydurmak yerine
 # orgKeywords eslesmesine birakildi: "turknet" gibi adlar org kaydinda benzersiz.
 ISPS = [
-    ("turk-telekom", "Turk Telekom / TTNET", [9121, 47331],
-     ["turk telekom", "ttnet", "turk telekomunikasyon"], 2,
-     "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca "
-     "dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket.",
-     [("tt-443-fake-ttl4", "--dpi-desync=fake --dpi-desync-ttl=4", 100, "community-unverified",
-       "TTNET icin en sik bildirilen deger."),
-      ("tt-443-fake-ttl3", "--dpi-desync=fake --dpi-desync-ttl=3", 95, "community-unverified",
-       "Bildirilen alternatif TTL."),
-      ("tt-443-fake-autottl", "--dpi-desync=fake --dpi-desync-autottl=-1:3-20", 90, "hypothesis",
-       "Sabit TTL yerine hop sayisini olcup secer; farkli mesafedeki hedeflerde sabit TTL kirilgan."),
-      ("tt-443-fake-multidisorder", UPSTREAM_443, 85, "upstream-preset",
-       "Upstream genel 443 kurali."),
-      ("tt-443-multisplit-midsld", "--dpi-desync=multisplit --dpi-desync-split-pos=midsld", 75, "hypothesis",
-       "Sahte paket kullanmayan aile. DPI sahte paketleri eliyorsa tek calisan bu olur."),
-      ("tt-443-multidisorder-pure", "--dpi-desync=multidisorder --dpi-desync-split-pos=1,midsld", 70, "hypothesis",
-       "Saf bolmenin ters sirali hali."),
-      ("tt-443-fake-badseq", "--dpi-desync=fake --dpi-desync-fooling=badseq", 65, "hypothesis",
-       "Sunucudan bagimsiz fooling."),
-      ]),
-
     ("vodafone-net", "Vodafone Net", [], ["vodafone"], 3,
      "ASN dogrulanamadi; org adi anahtar kelimesiyle eslesir. Bildirilen strateji sahte paket ve "
      "bolmeyi birlikte kullaniyor.",
