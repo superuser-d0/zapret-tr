@@ -28,6 +28,11 @@ NASIL CALISTIRILIR
 6. Son olarak  TEMIZLIK.bat  dosyasina cift tikla. Bu, testin yukledigi
    ag surucusunu kaldirir ve makineni eski haline dondurur.
 
+   ONEMLI: Bu klasoru silmek istersen ONCE TEMIZLIK.bat calistir. Surucu
+   yukluyken klasordeki dosyalardan biri Windows tarafindan kilitli tutulur
+   ve "erisim reddedildi" hatasi alirsin. Temizlikten sonra klasor normal
+   sekilde silinir.
+
 
 NEDEN YONETICI YETKISI ISTIYOR
 ------------------------------
