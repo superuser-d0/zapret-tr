@@ -177,6 +177,7 @@ public sealed class StrategyProber(
         var results = new List<BaselineResult>();
         using var client = new HttpProbeClient();
         using var resolver = useSecureDns ? new DohResolver() : null;
+        var stun = new StunProbeClient();
 
         for (var i = 0; i < targets.Count; i++)
         {
@@ -199,9 +200,12 @@ public sealed class StrategyProber(
                 pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
             }
 
-            var outcome = await client
-                .TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp, cancellationToken)
-                .ConfigureAwait(false);
+            // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.
+            var outcome = target.Section == StrategySection.DiscordVoice
+                ? await stun.TryReachAsync(target.Host, pinnedIp: pinnedIp, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+                : await client.TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp, cancellationToken)
+                    .ConfigureAwait(false);
 
             var status = outcome switch
             {
@@ -449,9 +453,13 @@ public sealed class StrategyProber(
             await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
 
             using var client = new HttpProbeClient();
-            var outcome = await client
-                .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
-                .ConfigureAwait(false);
+            var outcome = section == StrategySection.DiscordVoice
+                ? await new StunProbeClient()
+                    .TryReachAsync(blocked.Target.Host, pinnedIp: blocked.ResolvedIp,
+                                   cancellationToken: cancellationToken).ConfigureAwait(false)
+                : await client
+                    .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
+                    .ConfigureAwait(false);
 
             if (!outcome.Succeeded)
             {
@@ -507,6 +515,14 @@ public sealed class StrategyProber(
         StrategySection section, BaselineResult target, CancellationToken cancellationToken)
     {
         await Task.Delay(ConfirmationGap, cancellationToken).ConfigureAwait(false);
+
+        if (section == StrategySection.DiscordVoice)
+        {
+            var stunOutcome = await new StunProbeClient()
+                .TryReachAsync(target.Target.Host, pinnedIp: target.ResolvedIp,
+                               cancellationToken: cancellationToken).ConfigureAwait(false);
+            return stunOutcome.Succeeded;
+        }
 
         using var client = new HttpProbeClient();
         var outcome = await client

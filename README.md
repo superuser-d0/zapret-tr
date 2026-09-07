@@ -97,26 +97,28 @@ Tamamlananlar:
 - [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
 - [x] Superonline saha testi paketi (taşınabilir, tek dosya, kendi kendini temizler)
 
-Kalanlar, etkiye göre sıralı:
+Kalanlar:
 
-- [ ] **Kurulum paketi** (Inno Setup). Şu an servisler depo ağacındaki
-      `vendor/` klasörünü işaret ediyor; depo taşınır ya da silinirse servisler
-      açılışta başlayamaz ve dnscrypt-proxy çalışmayınca hiçbir adres çözülemez.
-      Kalıcı kullanım için ikililerin sabit bir kurulum dizininde olması şart.
-- [ ] **Servis kaldırma yolunun doğrulanması.** Kurulum gerçek koşumda doğrulandı,
-      kaldırma henüz denenmedi.
-- [ ] **ASN otomatik tespiti.** "Bilmiyorum" seçeneği hâlâ hiçbir şey yapmıyor.
-- [ ] **Paralel test.** İzolasyon mekanizması doğrulandı ama motor hâlâ sıralı.
-- [ ] Profil doğrulama kapsamı: 89 adayın yalnızca 1'i gerçek bir hatta doğrulandı.
-- [ ] QUIC ve Discord-ses bölümlerinde hiç doğrulanmış strateji yok; Discord sesli
-      görüşme muhtemelen hâlâ çalışmıyor.
-- [ ] Saha testi paketi 34.3 MB — paylaşım limitlerinin üstünde. `PublishTrimmed`
-      ile küçültülebilir.
+- [ ] **Doğrulama kapsamı.** 89 adayın 1'i gerçek bir hatta doğrulandı. Bu bir kod
+      eksiği değil saha verisi eksiği; kullanıcılar test çalıştırdıkça doluyor.
+- [ ] **QUIC için çalışan strateji yok.** Discord QUIC bu hatta engelli ama
+      merdivendeki 15 QUIC adayının hiçbiri açmadı. Yeni aday ailesi gerekiyor.
+- [ ] **Superonline saha testi** — paket hazır, test kullanıcısında.
+- [ ] Saha paketi 34 MB. `PublishTrimmed` denendi ve GERİ ALINDI: JSON yansımayla
+      çalıştığı için kırpma, DNS yedeğinin geri yüklenmesi gibi güvenlik kritik
+      yolları sessizce bozabiliyor. Güvenli hale getirmek profil yükleyicisi dahil
+      tüm JSON yollarının kaynak üretimine taşınmasını gerektiriyor; 15 MB için
+      alınacak risk değil.
 
 Tamamlananlara eklenenler:
 
 - [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\`
 - [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
+- [x] Servis kaldırma yolu gerçek koşumda doğrulandı
+- [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
+- [x] Kurulum paketi (Inno Setup, 53 MB, kendi kendine yeten)
+- [x] Paralel hedef sınaması
+- [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
 
 ## Uyarılar
 

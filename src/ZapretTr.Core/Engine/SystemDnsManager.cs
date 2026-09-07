@@ -92,8 +92,6 @@ public static class SystemDnsManager
     /// <summary>dnscrypt-proxy'nin dinledigi adres.</summary>
     public const string LocalResolver = "127.0.0.1";
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
     private static string BackupPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "dns-backup.json");
 
     /// <summary>Diskte bir yedek duruyor mu (yani DNS bizim tarafimizdan degistirilmis mi).</summary>
@@ -113,7 +111,7 @@ public static class SystemDnsManager
                     return null;
                 }
 
-                return JsonSerializer.Deserialize<DnsBackup>(File.ReadAllText(BackupPath))?.Owner;
+                return JsonSerializer.Deserialize(File.ReadAllText(BackupPath), CoreJsonContext.Default.DnsBackup)?.Owner;
             }
             catch (Exception)
             {
@@ -161,7 +159,7 @@ public static class SystemDnsManager
 
             Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
             await File.WriteAllTextAsync(
-                BackupPath, JsonSerializer.Serialize(backup, JsonOptions), cancellationToken)
+                BackupPath, JsonSerializer.Serialize(backup, CoreJsonContext.Default.DnsBackup), cancellationToken)
                 .ConfigureAwait(false);
         }
 
@@ -201,8 +199,9 @@ public static class SystemDnsManager
         DnsBackup? backup;
         try
         {
-            backup = JsonSerializer.Deserialize<DnsBackup>(
-                await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false));
+            backup = JsonSerializer.Deserialize(
+                await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false),
+                CoreJsonContext.Default.DnsBackup);
         }
         catch (Exception ex)
         {

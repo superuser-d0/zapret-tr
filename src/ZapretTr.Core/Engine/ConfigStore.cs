@@ -77,11 +77,6 @@ public sealed class LearnedCandidate
 [SupportedOSPlatform("windows")]
 public static class ConfigStore
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-    };
 
     public static string ConfigPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "config.json");
 
@@ -97,7 +92,7 @@ public static class ConfigStore
                 return new AppConfig();
             }
 
-            return JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(ConfigPath), JsonOptions)
+            return JsonSerializer.Deserialize(File.ReadAllText(ConfigPath), CoreJsonContext.Default.AppConfig)
                    ?? new AppConfig();
         }
         catch (Exception)
@@ -112,7 +107,7 @@ public static class ConfigStore
         ArgumentNullException.ThrowIfNull(config);
 
         Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
-        File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config, JsonOptions));
+        File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config, CoreJsonContext.Default.AppConfig));
     }
 
     /// <summary>Ogrenilmis dogrulamalari okur. Yoksa ya da bozuksa bos liste doner.</summary>
@@ -125,8 +120,8 @@ public static class ConfigStore
                 return [];
             }
 
-            return JsonSerializer.Deserialize<List<LearnedCandidate>>(
-                       File.ReadAllText(LearnedPath), JsonOptions) ?? [];
+            return JsonSerializer.Deserialize(
+                       File.ReadAllText(LearnedPath), CoreJsonContext.Default.ListLearnedCandidate) ?? [];
         }
         catch (Exception)
         {
@@ -165,6 +160,6 @@ public static class ConfigStore
         }
 
         Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
-        File.WriteAllText(LearnedPath, JsonSerializer.Serialize(merged, JsonOptions));
+        File.WriteAllText(LearnedPath, JsonSerializer.Serialize(merged, CoreJsonContext.Default.ListLearnedCandidate));
     }
 }
