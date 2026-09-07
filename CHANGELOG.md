@@ -8,6 +8,35 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.3]
+
+### Değişti
+
+- **Genel arama artık aileleri sırayla dolaşıyor: önce her aileden birer aday,
+  sonra derinleşiyor.** Önceden aileler peş peşe, her aile sonuna kadar
+  deneniyordu. Bütçe sınırsız olsa sıra önemsizdi; ama arayüz bölüm başına 60
+  aday deniyor ve sonuç ölçüldü — başka bir TTNET hattında **176 aday denendi,
+  1105 saniye sürdü, hiçbiri tutmadı.** Sebep: `tcp443` genel aramasında ilk aile
+  (`fake-fooling`) tek başına 45 varyant ve genel aramaya kalan ~33 bütçenin
+  tamamını yiyordu. Aynı bütçeyle denenen aile sayısı:
+
+  | Bölüm | Önce | Sonra |
+  |---|---|---|
+  | tcp443 | **1** aile | **7** aile |
+  | quic | 5 aile | 6 aile |
+
+  `multisplit`, `multidisorder`, `fakedsplit`, `fake-tls-mod` ve `syndata`
+  aileleri hiç denenmiyordu — aralarında sahte paket üretmeyenler bile var, yani
+  mekanizma olarak tamamen farklı şeyler. Aile **içindeki** sıra değişmedi;
+  o `generic-ladder.json`'da profil yazarının kararı.
+
+### Düzeltildi
+
+- **DoH çözümlemesi önbelleklenmiyordu.** Hedef listesinde 10 girdi ama 7
+  benzersiz adres var (`discord.com` üç bölümde, `www.youtube.com` iki bölümde);
+  aynı ad tekrar tekrar soruluyordu. Baseline taraması sıralı olduğu için bu
+  doğrudan gecikmeye biniyordu: yavaş bir hatta 3-6 saniye boşa gidiyordu.
+
 ## [0.1.2]
 
 ### Düzeltildi
@@ -136,7 +165,8 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.2...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.3
 [0.1.2]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.2
 [0.1.1]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.0

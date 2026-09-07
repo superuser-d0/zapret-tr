@@ -612,11 +612,7 @@ public sealed class StrategyProber(
         yield return (
             ProbeTier.GenericLadder,
             "Genel arama",
-            profiles.Ladder.Expand(section)
-                .DistinctBy(c => NormalizeArgs(c.Args), StringComparer.Ordinal)
-                .GroupBy(c => c.Family, StringComparer.Ordinal)
-                .SelectMany(family => family.Select((c, index) =>
-                    new ProbeCandidate($"ladder/{c.Family}#{index + 1}", c.Args))));
+            InterleaveFamilies(profiles.Ladder.Expand(section)));
     }
 
     /// <summary>
@@ -688,6 +684,61 @@ public sealed class StrategyProber(
     };
 
     /// <summary>
+    /// Merdiven adaylarini AILELER ARASINDA sirayla dizer: once her ailenin ilk
+    /// varyanti, sonra ikincileri, sonra ucunculeri...
+    /// </summary>
+    /// <remarks>
+    /// Onceden aileler pes pese, her aile sonuna kadar deneniyordu. Butce sinirsiz
+    /// olsaydi sira onemsizdi; ama butce var (arayuzde bolum basina 60) ve sonuc
+    /// olculdu: BASKA bir TTNET hattinda 176 aday denendi, 1105 saniye surdu ve
+    /// hicbiri tutmadi. `tcp443` genel aramasinda 7 aile / 136 varyant var ve ilk
+    /// aile (`fake-fooling`) tek basina 45 varyant -- genel aramaya kalan ~33
+    /// butcenin tamamini yiyor. Yani `multisplit-pure`, `multidisorder-pure`,
+    /// `fakedsplit`, `fake-tls-mod` ve `syndata` aileleri HIC DENENMEDI. Oysa bunlar
+    /// mekanizma olarak tamamen farkli seyler; aralarinda sahte paket hic uretmeyenler
+    /// bile var.
+    ///
+    /// Bir ailenin ilk varyanti tutmuyorsa o ailenin TTL/fooling varyasyonlarini
+    /// tuketmek, hic denenmemis bir mekanizmayi denemekten daha az bilgi veriyor.
+    /// Bu yuzden once genislik, sonra derinlik.
+    ///
+    /// Aile ICINDEKI eksen sirasi degismedi -- o `generic-ladder.json`'da profil
+    /// yazarinin karari ve `GenericLadder.Expand` orada birakildi. Burasi aramanin
+    /// stratejisi, merdivenin icerigi degil.
+    /// </remarks>
+    public static IReadOnlyList<ProbeCandidate> InterleaveFamilies(IEnumerable<LadderCandidate> expanded)
+    {
+        var families = expanded
+            .DistinctBy(c => NormalizeArgs(c.Args), StringComparer.Ordinal)
+            .GroupBy(c => c.Family, StringComparer.Ordinal)
+            .Select(group => group
+                .Select((c, index) => new ProbeCandidate($"ladder/{c.Family}#{index + 1}", c.Args))
+                .ToList())
+            .ToList();
+
+        if (families.Count == 0)
+        {
+            return [];
+        }
+
+        var ordered = new List<ProbeCandidate>();
+        var deepest = families.Max(f => f.Count);
+
+        for (var round = 0; round < deepest; round++)
+        {
+            foreach (var family in families)
+            {
+                if (round < family.Count)
+                {
+                    ordered.Add(family[round]);
+                }
+            }
+        }
+
+        return ordered;
+    }
+
+    /// <summary>
     /// Tekillestirme anahtari: bayraklar siralanmis halde. YALNIZCA karsilastirma
     /// icin; winws'e her zaman adayin kendi yazimi veriliyor.
     /// </summary>
@@ -696,5 +747,6 @@ public sealed class StrategyProber(
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .OrderBy(part => part, StringComparer.Ordinal));
 
-    private readonly record struct ProbeCandidate(string Id, string Args);
+    /// <summary>Denenecek tek bir aday: gorunur kimligi ve winws argumanlari.</summary>
+    public readonly record struct ProbeCandidate(string Id, string Args);
 }

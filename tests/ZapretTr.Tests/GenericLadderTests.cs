@@ -1,4 +1,5 @@
 using ZapretTr.Core.Profiles;
+using ZapretTr.Prober;
 
 namespace ZapretTr.Tests;
 
@@ -100,5 +101,57 @@ public sealed class GenericLadderTests
         // budanmali, kullaniciyi belirsiz sure bekletmek cozum degil.
         var total = Enum.GetValues<StrategySection>().Sum(Ladder.CountFor);
         Assert.InRange(total, 50, 300);
+    }
+
+    [Fact]
+    public void GenelArama_Aileleri_Sirayla_Dolasiyor()
+    {
+        // Butce sinirli oldugu icin SIRA sonucu belirliyor. Gercek bir kullanicida
+        // olculdu: TTNET hattinda 176 aday denendi, 1105 sn surdu, hicbiri tutmadi.
+        // Sebep, genel aramanin aileleri pes pese tuketmesiydi -- tcp443'te ilk aile
+        // (fake-fooling) 45 varyant ve genel aramaya kalan ~33 butcenin tamamini
+        // yiyordu; multisplit, multidisorder, fakedsplit, tls-mod ve syndata
+        // aileleri HIC denenmiyordu.
+        //
+        // Bu test o davranisin geri gelmesini engelliyor: ilk turda her aileden
+        // BIRER aday gelmeli.
+        var expanded = Ladder.Expand(StrategySection.Tcp443).ToList();
+        var familyCount = expanded.Select(c => c.Family).Distinct(StringComparer.Ordinal).Count();
+        Assert.True(familyCount > 1, "Test anlamli olmasi icin birden fazla aile gerekiyor.");
+
+        var ordered = StrategyProber.InterleaveFamilies(expanded);
+
+        // Ilk N aday, N ailenin her birinden tam olarak birer tane olmali.
+        var firstRound = ordered
+            .Take(familyCount)
+            .Select(c => c.Id.Split('#')[0])
+            .ToList();
+
+        Assert.Equal(familyCount, firstRound.Distinct(StringComparer.Ordinal).Count());
+
+        // Hicbir aday kaybolmamali: siralama degisti, icerik degismedi.
+        Assert.Equal(
+            expanded.Select(c => c.Args).Distinct(StringComparer.Ordinal).Count(),
+            ordered.Select(c => c.Args).Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void GenelArama_Aile_Icinde_Sirayi_Koruyor()
+    {
+        // Aileler arasinda dolasiyoruz ama aile ICINDEKI sira profil yazarinin
+        // karari ve degismemeli.
+        var expanded = Ladder.Expand(StrategySection.Quic).ToList();
+        var ordered = StrategyProber.InterleaveFamilies(expanded);
+
+        foreach (var family in expanded.Select(c => c.Family).Distinct(StringComparer.Ordinal))
+        {
+            var beklenen = expanded.Where(c => c.Family == family).Select(c => c.Args).ToList();
+            var gelen = ordered
+                .Where(c => c.Id.StartsWith($"ladder/{family}#", StringComparison.Ordinal))
+                .Select(c => c.Args)
+                .ToList();
+
+            Assert.Equal(beklenen, gelen);
+        }
     }
 }
