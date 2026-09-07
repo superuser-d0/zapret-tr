@@ -70,9 +70,24 @@ $Files = @(
     @{ Url = "$BundleBase/windivert.filter/README.txt"                           ; Dest = 'windivert.filter/README.txt' }
 
     # Sahte paket yukleri. TLS icin ayri dosyaya gerek yok: --dpi-desync-fake-tls-mod
-    # ile SNI runtime'da uretilebiliyor. QUIC icin hazir yuk sart.
+    # ile SNI runtime'da uretilebiliyor. QUIC icin hazir yuk sart -- upstream'de
+    # --dpi-desync-fake-quic-mod diye bir karsiligi YOK, tek eksen hazir yukun kendisi.
     @{ Url = "$BundleBase/files/quic_initial_www_google_com.bin" ; Dest = 'files/quic_initial_www_google_com.bin' }
     @{ Url = "$ZapretBase/files/fake/tls_clienthello_iana_org.bin" ; Dest = 'files/tls_clienthello_iana_org.bin' }
+
+    # QUIC sahte yuk cesitleri. Tek bir yukle sinirli kalmak arama uzayini yapay
+    # olarak daraltiyordu: hangi yukun ise yaradigi DPI kutusunun neyi dogruladigina
+    # bagli ve bunlar farkli QUIC yiginlarindan (Chrome, mvfst, quiche) uretilmis.
+    # kyber varyantlari buyuk ClientHello uretenler icin; Discord istemcisi Chromium
+    # tabanli ve olculdugu kadariyla ClientHello'yu 2.5 KB'a yayiyor.
+    @{ Url = "$ZapretBase/files/fake/quic_initial_facebook_com.bin"       ; Dest = 'files/quic_initial_facebook_com.bin' }
+    @{ Url = "$ZapretBase/files/fake/quic_initial_vk_com.bin"             ; Dest = 'files/quic_initial_vk_com.bin' }
+    @{ Url = "$ZapretBase/files/fake/quic_initial_rutracker_org_kyber_1.bin" ; Dest = 'files/quic_initial_rutracker_org_kyber_1.bin' }
+    @{ Url = "$ZapretBase/files/fake/quic_short_header.bin"               ; Dest = 'files/quic_short_header.bin' }
+
+    # --dpi-desync-udplen-pattern icin dolgu deseni. Varsayilan dolgu sifir; DPI
+    # sifir dolguyu eleyip paketi yine tanryorsa desenin degismesi gerekiyor.
+    @{ Url = "$ZapretBase/files/fake/zero_512.bin" ; Dest = 'files/zero_512.bin' }
 
     # MIT lisans metni - dagitimda yaninda gitmek zorunda.
     @{ Url = "$ZapretBase/docs/LICENSE.txt" ; Dest = 'LICENSE.upstream.txt' }
@@ -91,26 +106,39 @@ Write-Host "  zapret-win-bundle @ $($BundleCommit.Substring(0,12))"
 Write-Host "  zapret            @ $ZapretTag"
 Write-Host ''
 
-# Bu kontrol YALNIZCA winws indirmesini atlar. Erken return kullanmak, sonradan
-# eklenen dnscrypt-proxy adiminin hic calismamasina yol acmisti: winws zaten
-# indirilmis oldugu icin script daha oraya varmadan donuyordu.
-$skipWinws = $false
-if ((Test-Path $VendorDir) -and -not $Force -and -not $UpdateManifest) {
-    $existing = @(Get-ChildItem -Path $VendorDir -Recurse -File)
-    if ($existing.Count -ge $Files.Count) {
-        Write-Host 'winws dosyalari zaten yerinde (yeniden indirmek icin -Force).' -ForegroundColor Yellow
-        $skipWinws = $true
+New-Item -ItemType Directory -Force -Path $VendorDir | Out-Null
+
+# Mevcut manifest, artimli indirme icin okunuyor.
+$existingHashes = @{}
+if (Test-Path $ManifestPath) {
+    $existingManifest = Get-Content -Path $ManifestPath -Raw | ConvertFrom-Json
+    foreach ($property in $existingManifest.files.PSObject.Properties) {
+        $existingHashes[$property.Name] = $property.Value
     }
 }
 
-New-Item -ItemType Directory -Force -Path $VendorDir | Out-Null
-
 # --- Indirme ------------------------------------------------------------------
+# Indirme ARTIMLI: yerinde duran ve manifest'teki ozetiyle birebir ayni olan dosya
+# yeniden indirilmez. Onceki hali "dosya sayisi yeterliyse hepsini atla, degilse
+# hepsini indir" seklindeydi ve listeye YENI bir dosya eklemek butun listeyi
+# yeniden indirmeyi zorunlu kiliyordu. Bu, WinDivert64.sys bir test kosumundan
+# sonra hala cekirdege yuklu oldugunda (servis silinse bile surucu goruntusu
+# kaldirilana kadar kilitli kalir) "dosya baska bir surec tarafindan kullaniliyor"
+# ile basarisiz oluyor ve tek cozum yeniden baslatmak oluyordu.
 $downloaded = @{}
-foreach ($file in $(if ($skipWinws) { @() } else { $Files })) {
+foreach ($file in $Files) {
     $destPath = Join-Path $VendorDir $file.Dest
     $destDir  = Split-Path -Parent $destPath
     if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Force -Path $destDir | Out-Null }
+
+    if (-not $Force -and (Test-Path $destPath) -and $existingHashes.ContainsKey($file.Dest)) {
+        $current = (Get-FileHash -Path $destPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($current -eq $existingHashes[$file.Dest]) {
+            Write-Step "yerinde    : $($file.Dest)"
+            $downloaded[$file.Dest] = $current
+            continue
+        }
+    }
 
     Write-Step "indiriliyor: $($file.Dest)"
     try {

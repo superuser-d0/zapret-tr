@@ -114,10 +114,16 @@ public sealed class RuntimeSelectionTests
     }
 
     [Fact]
-    public void GercekTurkTelekomProfili_QuicBolumune_Dokunmuyor()
+    public void GercekTurkTelekomProfili_QuicBolumune_Yalnizca_DogrulanmisStratejiyle_Dokunuyor()
     {
-        // Gercek veriye karsi: turk-telekom profilinde yalnizca tcp443 dogrulandi,
-        // dolayisiyla QUIC komuta girmemeli. Bu tam olarak olculmus zarar vakasi.
+        // Gercek veriye karsi kosuluyor. Kural "QUIC'e hic dokunma" DEGIL, "yalnizca
+        // DOGRULANMIS stratejiyle dokun": olculmus zarar, sorunsuz calisan bir QUIC
+        // baglantisinin uzerine DENENMEMIS bir strateji uygulanmasindan gelmisti.
+        //
+        // Bu test bir sure "QUIC komuta hic girmemeli" diye duruyordu, cunku profilde
+        // dogrulanmis QUIC adayi yoktu. Artik var (tt-quic-anyproto-cutoff, gercek
+        // TTNET hattinda 3/3). Testin oncülü degisti, korudugu kural degismedi --
+        // bu yuzden silinmedi, dogrulanmisligi ACIKCA kontrol edecek sekilde yazildi.
         var store = ProfileStore.Load();
         var tt = store.FindById("turk-telekom");
         Assert.NotNull(tt);
@@ -125,7 +131,14 @@ public sealed class RuntimeSelectionTests
         var primary = tt.CandidatesFor(StrategySection.Tcp443).First();
         var selection = RuntimeSelection.Build(tt, primary.Args);
 
-        Assert.False(selection.ContainsKey(StrategySection.Quic),
-            "QUIC bolumu dogrulanmamis bir stratejiyle komuta girdi.");
+        Assert.True(selection.ContainsKey(StrategySection.Quic),
+            "Dogrulanmis QUIC adayi var ama bolum komuta girmedi.");
+
+        var verifiedQuic = tt.CandidatesFor(StrategySection.Quic)
+            .Where(c => c.Source == CandidateSource.Verified)
+            .Select(c => c.Args)
+            .ToList();
+
+        Assert.Contains(selection[StrategySection.Quic], verifiedQuic);
     }
 }

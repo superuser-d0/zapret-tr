@@ -442,21 +442,60 @@ if (options.EngageCheckHost is { } engageHost)
     var engageVendor = VendorPaths.Locate();
     var engageProfiles = ProfileStore.Load();
 
+    // Bolum secilebilir olmali. Sabit tcp80 ile QUIC hic teshis edilemiyordu:
+    // winws QUIC Initial'i cozup SNI bulamazsa stratejiyi HIC uygulamiyor ve
+    // disaridan bu, "strateji ise yaramadi" ile birebir ayni gorunuyor.
+    var engageSection = StrategySection.Tcp80;
+    if (options.Section is { } sectionName)
+    {
+        if (!StrategySectionExtensions.TryParseJsonName(sectionName, out engageSection))
+        {
+            Console.Error.WriteLine($"Bilinmeyen bölüm: '{sectionName}'. Beklenen: tcp80, tcp443, quic, discord-voice.");
+            return 4;
+        }
+    }
+
     var strategy = options.Strategy
                    ?? engageProfiles.FindById("turk-telekom")?
-                       .CandidatesFor(StrategySection.Tcp80).FirstOrDefault()?.Args
+                       .CandidatesFor(engageSection).FirstOrDefault()?.Args
+                   ?? engageProfiles.Ladder.Expand(engageSection).FirstOrDefault().Args
                    ?? "--dpi-desync=fake,fakedsplit --dpi-desync-fooling=md5sig";
 
+    var engageMode = StrategyProber.ModeFor(engageSection);
+
     Console.WriteLine($"Hedef    : {engageHost}");
+    Console.WriteLine($"Bölüm    : {engageSection.ToJsonName()} ({engageMode})");
     Console.WriteLine($"Strateji : {strategy}");
     Console.WriteLine();
 
-    var addresses = await System.Net.Dns.GetHostAddressesAsync(engageHost);
-    var ip = addresses.First(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString();
+    // Sistem DNS'i kacirilmissa hedef IP engel sunucusunu gosterir ve olcum
+    // DPI'i degil DNS katmanini olcer. --doh verildiginde cozumleme sifreli
+    // yoldan yapiliyor; boylece alttaki DPI katmani gorunur hale geliyor.
+    string? ip = null;
+    if (options.UseSecureDns)
+    {
+        using var engageDoh = new DohResolver();
+        ip = await engageDoh.ResolveIPv4Async(engageHost);
+        if (ip is null)
+        {
+            Console.Error.WriteLine($"Şifreli DNS ile çözümlenemedi: {engageHost}");
+            return 5;
+        }
+    }
+    else
+    {
+        var addresses = await System.Net.Dns.GetHostAddressesAsync(engageHost);
+        ip = addresses.First(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork).ToString();
+    }
+
+    Console.WriteLine($"Hedef IP : {ip} ({(options.UseSecureDns ? "şifreli DNS" : "sistem DNS")})");
 
     var engageBuilder = new WinwsCommandBuilder(engageVendor);
-    var engageArgs = engageBuilder.BuildProbeCommand(StrategySection.Tcp80, strategy, ip).ToList();
+    var engageArgs = engageBuilder.BuildProbeCommand(engageSection, strategy, ip).ToList();
     engageArgs.Add("--debug=1");
+
+    Console.WriteLine("Komut    : " + WinwsCommandBuilder.ToDisplayString(engageArgs));
+    Console.WriteLine();
 
     var log = new List<string>();
     var runner = new WinwsRunner(engageVendor);
@@ -465,24 +504,90 @@ if (options.EngageCheckHost is { } engageHost)
     runner.Start(engageArgs);
     await Task.Delay(1500);
 
-    using (var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8)))
+    // QUIC olcumu HttpProbeClient ile YAPILAMAZ: HTTP/3 IP'ye sabitlenemedigi icin
+    // baglanti sistem DNS'inin verdigi adrese gider ve winws'in --ipset-ip kontrolu
+    // her pakette negatif doner. Ham QUIC istemcisi IP ile SNI'yi ayri verebiliyor.
+    if (engageSection == StrategySection.Quic)
     {
-        var engageResult = await engageClient.TryReachAsync(engageHost, ProbeMode.PlainHttp, ip);
+        var quicResult = await new QuicProbeClient(TimeSpan.FromSeconds(8)).TryReachAsync(engageHost, ip);
+        Console.WriteLine($"Probe sonucu: {(quicResult.Succeeded ? "BAŞARILI" : "başarısız")} — {quicResult.Detail}");
+    }
+    else
+    {
+        using var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8));
+        var engageResult = await engageClient.TryReachAsync(engageHost, engageMode, ip);
         Console.WriteLine($"Probe sonucu: {(engageResult.Succeeded ? "BAŞARILI" : "başarısız")} — {engageResult.Detail}");
     }
 
     await Task.Delay(500);
     await runner.StopAsync();
 
-    Console.WriteLine();
-    Console.WriteLine($"winws günlüğü ({log.Count} satır):");
+    string[] engageSnapshot;
     lock (log)
     {
-        foreach (var line in log.Take(40))
-        {
-            Console.WriteLine("   " + line);
-        }
+        engageSnapshot = [.. log];
     }
+
+    // winws'in kendi karar satirlari. "Paketi gordu mu" ile "gordugu paketi
+    // degistirdi mi" ayri sorular; ikincisi sessizce hayir olabiliyor ve
+    // gunlugun tamami icinde kaybolmasin diye ayrica ozetleniyor.
+    var verdictMarkers = new[]
+    {
+        "packet contains QUIC initial",
+        "QUIC initial decryption failed",
+        "QUIC initial defrag CRYPTO failed",
+        "QUIC initial fragmented CRYPTO",
+        "QUIC initial without ClientHello",
+        "without hostname in the SNI",
+        "not applying tampering",
+        "applying tampering",
+        "desync",
+    };
+
+    // Global WinDivert filtresi butun udp/443 trafigini yakaladigi icin gunluk
+    // makinedeki her QUIC baglantisini iceriyor -- on binlerce satir. Teshis icin
+    // anlamli olan yalnizca HEDEF IP'ye ait olanlar; gerisi ekrani doldurup asil
+    // satirlarin kaybolmasina yol aciyordu.
+    var engageRelevant = engageSnapshot
+        .Where(l => l.Contains(ip, StringComparison.Ordinal))
+        .ToList();
+
+    var verdicts = engageSnapshot
+        .Where(l => verdictMarkers.Any(m => l.Contains(m, StringComparison.OrdinalIgnoreCase)))
+        .ToList();
+
+    // Tam gunluk her zaman diske yazilir: bir teshis kosumunu yalnizca ciktiyi
+    // kirptigi icin tekrarlamak, yonetici onayi gerektirdigi icin pahali.
+    var engageLogPath = options.OutputPath
+                        ?? Path.Combine(AppContext.BaseDirectory, "engage-check.log");
+    File.WriteAllLines(engageLogPath, engageSnapshot);
+
+    Console.WriteLine();
+    Console.WriteLine($"Hedef IP'ye ait satırlar ({engageRelevant.Count}):");
+    if (engageRelevant.Count == 0)
+    {
+        Console.WriteLine("   (yok — winws bu hedefe giden hiçbir paket görmedi)");
+    }
+
+    foreach (var line in engageRelevant.Take(60))
+    {
+        Console.WriteLine("   " + line);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Karar satırları ({verdicts.Count}):");
+    if (verdicts.Count == 0)
+    {
+        Console.WriteLine("   (yok — winws bu trafiğe dair hiçbir karar kaydetmedi)");
+    }
+
+    foreach (var line in verdicts.Take(40))
+    {
+        Console.WriteLine("   " + line);
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"winws günlüğü: {engageSnapshot.Length} satır → {engageLogPath}");
 
     return 0;
 }
@@ -829,6 +934,7 @@ internal sealed record CliOptions(
     string? DiagnoseHost,
     string? EngageCheckHost,
     string? Strategy,
+    string? Section,
     bool Cleanup,
     bool Apply,
     bool UseSecureDns,
@@ -844,6 +950,7 @@ internal sealed record CliOptions(
         string? diagnose = null;
         string? engage = null;
         string? strategy = null;
+        string? section = null;
         int? max = null;
         var baselineOnly = false;
         var cleanup = false;
@@ -888,6 +995,9 @@ internal sealed record CliOptions(
                 case "--strategy" when i + 1 < args.Length:
                     strategy = args[++i];
                     break;
+                case "--section" when i + 1 < args.Length:
+                    section = args[++i].ToLowerInvariant();
+                    break;
                 case "--baseline-only":
                     baselineOnly = true;
                     break;
@@ -917,7 +1027,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, section, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -933,6 +1043,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
+        Console.WriteLine("  --section <ad>          --engage-check bölümü: tcp80 (varsayılan), tcp443, quic, discord-voice.");
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");
         Console.WriteLine("  --dns test              Tam döngüyü dener ve sistemi mutlaka eski haline döndürür.");

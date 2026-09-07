@@ -162,19 +162,45 @@
 
     "quic": [
       {
+        "family": "fake-quic-anyproto",
+        "note": "DOGRULANMIS AILE, merdivende ilk sirada. Olculen sey: winws --debug=1 ciktisinda discord.com'un ILK Initial paketi sorunsuz ayrisiyor (hostname bulunuyor) ama ClientHello ~2.5 KB'a yayildigi icin DEVAM paketlerinde 'QUIC initial defrag CRYPTO failed' / 'decryption failed' cikiyor ve winws bunlari 'not applying tampering because desync_any_proto is not set' diyerek atliyor -- yani strateji paketlerin bir kismina hic uygulanmiyor. any-protocol o kapiyi aciyor; gercek bir TTNET hattinda bu aile 3/3 basarili, any-protocol'suz ayni aday 2/2 zaman asimi verdi. cutoff ZORUNLU: winws'in kendi uyarisi (--dpi-desync-any-protocol without --dpi-desync-cutoff) cutoff'suz kullanimda baglantinin TUM paketlerine mudahale edilecegini soyluyor ve calisan bir baglantiyi bozmak, acmayan bir baglantiyi acamamaktan daha kotu.",
+        "base": "--dpi-desync=fake --dpi-desync-any-protocol=1",
+        "axes": [
+          { "name": "cutoff", "values": ["--dpi-desync-cutoff=n2", "--dpi-desync-cutoff=n3", "--dpi-desync-cutoff=d2"] },
+          { "name": "payload", "values": ["--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}", "--dpi-desync-fake-quic={FAKE_QUIC_KYBER}", ""] }
+        ]
+      },
+      {
         "family": "fake-quic",
-        "note": "UDP tasima katmaninda parcalanamadigi icin QUIC'te tek mekanizma sahte Initial paketi. Eksenler dar: ya hazir yuk kullanilir ya kullanilmaz, geri kalan tekrar sayisi.",
+        "note": "Sahte Initial paketi, any-protocol olmadan. Yuk ekseni genis tutuldu: hangi yukun ise yaradigi DPI kutusunun paketin NEYINI dogruladigina bagli ve bu yukler farkli QUIC yiginlarindan (Chrome, mvfst, quiche) uretilmis. Upstream'de --dpi-desync-fake-tls-mod'un QUIC karsiligi YOK -- yuk runtime'da uretilemiyor, tek eksen hazir dosyanin kendisi.",
         "base": "--dpi-desync=fake",
         "axes": [
-          { "name": "payload", "values": ["--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}", ""] },
+          { "name": "payload", "values": [
+            "--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+            "--dpi-desync-fake-quic={FAKE_QUIC_FACEBOOK}",
+            "--dpi-desync-fake-quic={FAKE_QUIC_VK}",
+            "--dpi-desync-fake-quic={FAKE_QUIC_KYBER}",
+            "--dpi-desync-fake-quic={QUIC_SHORT_HEADER}",
+            ""
+          ]},
           { "name": "repeats", "values": ["--dpi-desync-repeats=11", "--dpi-desync-repeats=6", "--dpi-desync-repeats=2", ""] }
         ]
       },
       {
         "family": "udplen",
-        "note": "QUIC Initial paketinin boyutunu degistirir. DPI sabit boyut imzasina bakiyorsa ise yarar.",
+        "note": "QUIC Initial paketinin boyutunu degistirir. DPI sabit boyut imzasina bakiyorsa ise yarar. Dolgu deseni ayri bir eksen: varsayilan dolgu sifir ve sifir dolguyu eleyip paketi yine taniyan bir DPI'a karsi desenin degismesi gerekiyor.",
         "base": "--dpi-desync=udplen",
         "axes": [
+          { "name": "increment", "values": ["--dpi-desync-udplen-increment=2", "--dpi-desync-udplen-increment=-2", "--dpi-desync-udplen-increment=8", "--dpi-desync-udplen-increment=64"] },
+          { "name": "pattern", "values": ["", "--dpi-desync-udplen-pattern=@{ZERO_512}"] }
+        ]
+      },
+      {
+        "family": "fake-udplen",
+        "note": "Sahte paket ve boyut degistirmeyi BIRLIKTE uygular. winws dilbilgisi --dpi-desync=[<mode0>,]<mode>[,<mode2>] seklinde; onceki merdiven bu aileleri birbirini disliyor sanip hep tek basina denemisti. Ikisi farkli mekanizma oldugu icin birlesimleri ayri bir sans.",
+        "base": "--dpi-desync=fake,udplen",
+        "axes": [
+          { "name": "payload", "values": ["--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}", ""] },
           { "name": "increment", "values": ["--dpi-desync-udplen-increment=2", "--dpi-desync-udplen-increment=-2", "--dpi-desync-udplen-increment=8"] }
         ]
       },
@@ -183,7 +209,16 @@
         "note": "IP katmaninda parcalama. UDP'de tasima katmani parcalanamadigi icin geriye kalan tek gercek bolme yolu.",
         "base": "--dpi-desync=ipfrag2",
         "axes": [
-          { "name": "pos", "values": ["", "--dpi-desync-ipfrag-pos-udp=8", "--dpi-desync-ipfrag-pos-udp=16", "--dpi-desync-ipfrag-pos-udp=24"] }
+          { "name": "pos", "values": ["", "--dpi-desync-ipfrag-pos-udp=8", "--dpi-desync-ipfrag-pos-udp=16", "--dpi-desync-ipfrag-pos-udp=24", "--dpi-desync-ipfrag-pos-udp=32"] }
+        ]
+      },
+      {
+        "family": "fake-ipfrag",
+        "note": "Sahte paket + IP parcalama birlesimi. fake-udplen ile ayni gerekce.",
+        "base": "--dpi-desync=fake,ipfrag2",
+        "axes": [
+          { "name": "payload", "values": ["--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}", ""] },
+          { "name": "pos", "values": ["", "--dpi-desync-ipfrag-pos-udp=24"] }
         ]
       }
     ],

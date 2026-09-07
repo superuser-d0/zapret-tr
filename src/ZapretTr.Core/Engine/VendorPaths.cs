@@ -14,6 +14,16 @@ public sealed class VendorPaths
     public const string FakeQuicGooglePlaceholder = "{FAKE_QUIC_GOOGLE}";
     public const string FakeTlsIanaPlaceholder = "{FAKE_TLS_IANA}";
 
+    // QUIC sahte yuk cesitleri. Hangisinin ise yaradigi DPI kutusunun neyi
+    // dogruladigina bagli oldugu icin merdivende ayri bir eksen olarak duruyorlar.
+    public const string FakeQuicFacebookPlaceholder = "{FAKE_QUIC_FACEBOOK}";
+    public const string FakeQuicVkPlaceholder = "{FAKE_QUIC_VK}";
+    public const string FakeQuicKyberPlaceholder = "{FAKE_QUIC_KYBER}";
+    public const string QuicShortHeaderPlaceholder = "{QUIC_SHORT_HEADER}";
+
+    /// <summary>--dpi-desync-udplen-pattern icin dolgu deseni.</summary>
+    public const string Zero512Placeholder = "{ZERO_512}";
+
     private VendorPaths(string root) => Root = root;
 
     /// <summary>vendor/zapret-winws dizini.</summary>
@@ -55,6 +65,12 @@ public sealed class VendorPaths
 
     public string FakeQuicGoogle => Path.Combine(Root, "files", "quic_initial_www_google_com.bin");
     public string FakeTlsIana => Path.Combine(Root, "files", "tls_clienthello_iana_org.bin");
+
+    public string FakeQuicFacebook => Path.Combine(Root, "files", "quic_initial_facebook_com.bin");
+    public string FakeQuicVk => Path.Combine(Root, "files", "quic_initial_vk_com.bin");
+    public string FakeQuicKyber => Path.Combine(Root, "files", "quic_initial_rutracker_org_kyber_1.bin");
+    public string QuicShortHeader => Path.Combine(Root, "files", "quic_short_header.bin");
+    public string Zero512 => Path.Combine(Root, "files", "zero_512.bin");
 
     public string DiscordMediaFilter => Path.Combine(Root, "windivert.filter", "windivert_part.discord_media.txt");
     public string StunFilter => Path.Combine(Root, "windivert.filter", "windivert_part.stun.txt");
@@ -123,7 +139,12 @@ public sealed class VendorPaths
     /// </remarks>
     public string ResolvePlaceholders(string argument) => argument
         .Replace(FakeQuicGooglePlaceholder, FakeQuicGoogle, StringComparison.Ordinal)
-        .Replace(FakeTlsIanaPlaceholder, FakeTlsIana, StringComparison.Ordinal);
+        .Replace(FakeTlsIanaPlaceholder, FakeTlsIana, StringComparison.Ordinal)
+        .Replace(FakeQuicFacebookPlaceholder, FakeQuicFacebook, StringComparison.Ordinal)
+        .Replace(FakeQuicVkPlaceholder, FakeQuicVk, StringComparison.Ordinal)
+        .Replace(FakeQuicKyberPlaceholder, FakeQuicKyber, StringComparison.Ordinal)
+        .Replace(QuicShortHeaderPlaceholder, QuicShortHeader, StringComparison.Ordinal)
+        .Replace(Zero512Placeholder, Zero512, StringComparison.Ordinal);
 
     /// <summary>Indirilmesi gereken dosyalardan eksik olanlari listeler. Bos liste = her sey yerinde.</summary>
     public IReadOnlyList<string> FindMissingFiles()
@@ -132,6 +153,7 @@ public sealed class VendorPaths
         {
             WinwsExe, CygwinDll, WinDivertDll, WinDivertSys,
             FakeQuicGoogle, DiscordMediaFilter, StunFilter, QuicInitialFilter,
+            FakeQuicFacebook, FakeQuicVk, FakeQuicKyber, QuicShortHeader, Zero512,
         };
 
         return required.Where(p => !File.Exists(p)).ToList();

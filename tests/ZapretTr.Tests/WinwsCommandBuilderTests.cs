@@ -185,4 +185,33 @@ public sealed class WinwsCommandBuilderTests
         Assert.Contains("\"", display, StringComparison.Ordinal);
         Assert.Contains("--ipset-ip=1.2.3.4", display, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ProbeKomutu_CokHedefi_TekIpsetTe_Birlestirir()
+    {
+        // Paralel sinamanin temeli. Hedef basina AYRI winws ornegi calismiyor:
+        // --ipset-ip global WinDivert filtresine girmedigi icin iki ornek birebir
+        // ayni filtreyi kuruyor ve winws ikincisini "A copy of winws is already
+        // running with the same filter" diyerek oldurur. Bu sessiz bir hataydi --
+        // aday hedeflerin yalnizca birinde olculuyordu.
+        var args = Builder.BuildProbeCommand(
+            StrategySection.Quic, "--dpi-desync=fake", ["1.2.3.4", "5.6.7.8"]);
+
+        Assert.Contains("--ipset-ip=1.2.3.4,5.6.7.8", args);
+
+        // Tekrarli bayrak DEGIL: winws --ipset-ip=<ip_list> bekliyor.
+        Assert.Equal(1, args.Count(a => a.StartsWith("--ipset-ip=", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void ProbeKomutu_HedefsizIpseti_Reddeder()
+    {
+        // Bos ipset butun trafige dokunurdu; "sorunu olmayan bolume dokunma"
+        // kuralinin en sert ihlali.
+        Assert.Throws<ArgumentException>(() =>
+            Builder.BuildProbeCommand(StrategySection.Quic, "--dpi-desync=fake", Array.Empty<string>()));
+
+        Assert.Throws<ArgumentException>(() =>
+            Builder.BuildProbeCommand(StrategySection.Quic, "--dpi-desync=fake", ["1.2.3.4", "  "]));
+    }
 }

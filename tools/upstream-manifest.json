@@ -1,11 +1,16 @@
 ﻿{
     "bundleCommit":  "32fbbebf29be855566faef0961ac85627a3a4aeb",
     "zapretTag":  "v72.13",
-    "generated":  "2026-09-06T13:51:37Z",
+    "generated":  "2026-09-07T08:02:22Z",
     "files":  {
                   "cygwin1.dll":  "103104a52e5293ce418944725df19e2bf81ad9269b9a120d71d39028e821499b",
+                  "files/quic_initial_facebook_com.bin":  "d6504305e15e6f63930d24ced9045001e345d3c1aeb56b1b4c329d51c7dea274",
+                  "files/quic_initial_rutracker_org_kyber_1.bin":  "e0ae5ed5e3018512c8ab8ba8d7097607a65f17fa258bbd0b50596abe85f71264",
+                  "files/quic_initial_vk_com.bin":  "f86d488593a65132c10e7e5b5e02f32ff8e0862988b30bebc6a671c5380f3976",
                   "files/quic_initial_www_google_com.bin":  "f4589c57749f956bb30538197a521d7005f8b0a8723b4707e72405e51ddac50a",
+                  "files/quic_short_header.bin":  "ec07b86d54395a3620569d786846c2062f5d30fe8847ecb862703a623c4176ab",
                   "files/tls_clienthello_iana_org.bin":  "9db8772636bb332f1970e8767bc7d628bfa640714bd0b7e699fbe92d559e666e",
+                  "files/zero_512.bin":  "076a27c79e5ace2a3d47f9dd2e83e4ff6ea8872b3c2218f66c92b89b55f36560",
                   "LICENSE.upstream.txt":  "dcf5abd3e5d876c1065982871c0cec7368c0e61fc795c541798729516bb6b54f",
                   "WinDivert.dll":  "16abd6a029e65557c6a309bea7b13bf81fff4e193567582e1cddbf6719f323e0",
                   "windivert.filter/README.txt":  "be9ad4622296c463f1cf278c4f97be0c7eabaff9e79ad36262a8255fafd2b216",

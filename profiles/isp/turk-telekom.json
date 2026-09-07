@@ -142,6 +142,21 @@
       "note": "Host basligini ayri segmente atar."
     },
     {
+      "id": "tt-quic-anyproto-cutoff",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n2 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 110,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI: gercek bir TTNET hattinda discord.com QUIC el sikismasini acti (3/3 basarili; any-protocol'suz ayni aday 2/2 zaman asimi). Neden gerekli: winws --debug=1 ciktisina gore discord.com'un ILK Initial paketi sorunsuz ayrisiyor ama ClientHello ~2.5 KB'a yayildigi icin devam paketlerinde 'QUIC initial defrag CRYPTO failed' cikiyor ve winws bunlari 'not applying tampering because desync_any_proto is not set' diyerek atliyordu. cutoff ZORUNLU: cutoff'suz any-protocol baglantinin tum paketlerine mudahale eder."
+    },
+    {
       "id": "tt-quic-fake-google",
       "section": "quic",
       "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
@@ -152,7 +167,7 @@
       "source": "upstream-preset",
       "verifiedFor": [],
       "lastVerified": null,
-      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi."
+      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi. OLCULDU: bu hatta acmiyor -- devam paketlerine hic uygulanmiyor, tt-quic-anyproto-cutoff'un notuna bak."
     },
     {
       "id": "tt-quic-fake-plain",

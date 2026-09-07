@@ -28,33 +28,64 @@ Depo: https://github.com/superuser-d0/zapret-tr (private)
 - Kurulum paketi (Inno Setup) — tam yaşam döngüsü koşuldu
 - Paralel hedef sınaması
 - Discord ses (UDP/STUN) ölçümü
+- **QUIC** — ölçüm yolu ve çalışan strateji (aşağıda)
 
 **Ölçülmüş sonuç (TTNET, gerçek hat):** şifreli DNS + `--dpi-desync=fake
 --dpi-desync-ttl=4` ile discord.com, pornhub.com, xvideos.com açılıyor.
+
+**Ölçülmüş sonuç — QUIC (TTNET, gerçek hat):**
+
+```
+--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n2 \
+--dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}
+```
+
+discord.com QUIC el sıkışmasını açıyor (kontrollü tekrar: 3/3 başarılı;
+`any-protocol`'süz birebir aynı aday 2/2 zaman aşımı). Profilde
+`tt-quic-anyproto-cutoff` olarak `verified`. Tam koşumda profilin ilk QUIC adayı
+olarak saniyeler içinde bulunuyor.
+
+**Neden `any-protocol` gerekiyor** (winws `--debug=1` çıktısından): discord.com'un
+İLK Initial paketi sorunsuz ayrışıyor — `hostname: discord.com` bulunuyor. Ama
+Discord istemcisi Chromium tabanlı ve Kyber anahtar paylaşımıyla ClientHello'yu
+~2.5 KB'a yayıyor; DEVAM paketlerinde `QUIC initial defrag CRYPTO failed` /
+`decryption failed` çıkıyor ve winws bunları
+`not applying tampering because desync_any_proto is not set` diyerek atlıyor.
+Yani strateji paketlerin bir kısmına hiç uygulanmıyordu.
+
+`--dpi-desync-cutoff` ZORUNLU. winws'in kendi uyarısı:
+`WARNING !!! ... --dpi-desync-any-protocol without --dpi-desync-cutoff`.
+Cutoff'suz any-protocol bağlantının TÜM paketlerine müdahale eder — çalışan bir
+bağlantıyı bozmak, açmayan bir bağlantıyı açamamaktan kötü.
 
 ---
 
 ## Yapılacaklar
 
-### 1. QUIC için çalışan strateji yok — tek gerçek işlevsel açık
+### 1. YouTube QUIC hâlâ açılmıyor
 
-Discord QUIC bu hatta engelli (zaman aşımı) ama `generic-ladder.json`'daki
-15 QUIC adayının **hiçbiri** açmıyor. Mevcut aileler: `fake-quic` (sahte Initial
-paketi, hazır yükle/yüksüz, farklı tekrar sayıları), `udplen`, `ipfrag`.
+Discord QUIC çözüldü ama `www.youtube.com` QUIC'i aynı stratejiyle açılmıyor:
+zaman aşımı değil **`QUIC hatasi: TransportError`** veriyor — yani el sıkışması
+başlıyor ve karşı taraftan taşıma katmanı hatası dönüyor. Zaman aşımından farklı
+bir belirti, muhtemelen farklı bir mekanizma. Bölüm kazananı discord üzerinden
+belirlendiği için bu koşumu bloke etmiyor.
 
-Yapılacak: yeni aday ailesi türetmek. Bakılacak yerler — upstream'in
-`--dpi-desync-fake-quic` için ürettiği farklı yükler (`files/fake/` altında
-`quic_initial_*` varyantları var, şu an yalnızca `www_google_com` indiriliyor),
-`--dpi-desync-udplen-pattern`, `--dpi-desync-fake-tls-mod` benzeri QUIC
-karşılıkları, ve `--dpi-desync-repeats` ile birlikte `--dpi-desync-cutoff`.
+İlk bakılacak yer: `TransportError`'ın alt kodu. `QuicProbeClient` şu an yalnızca
+`ex.QuicError` yazıyor; `QuicException.TransportErrorCode` de rapora eklenirse
+"DPI müdahalesi" ile "sunucu ALPN/sürüm reddi" ayırt edilebilir.
 
-Doğrulama: `zapret-tr-test.exe --doh --isp turk-telekom --max-candidates 40`
+Doğrulama: `zapret-tr-test.exe --engage-check www.youtube.com --section quic --doh`
 
-### 2. Doğrulama kapsamı — 89 adayın 1'i doğrulanmış
+### 2. Doğrulama kapsamı — 2 aday doğrulanmış
 
-Kod eksiği değil saha verisi eksiği. Yalnızca `tt-443-fake-ttl4` gerçek bir hatta
-doğrulandı. Kullanıcılar test çalıştırdıkça `%ProgramData%\ZapretTR\learned.json`
-doluyor ve profillerin üzerine bindiriliyor.
+Kod eksiği değil saha verisi eksiği. Gerçek bir hatta doğrulanan adaylar:
+`tt-443-fake-ttl4` (tcp443) ve `tt-quic-anyproto-cutoff` (quic). Kullanıcılar test
+çalıştırdıkça `%ProgramData%\ZapretTR\learned.json` doluyor ve profillerin üzerine
+bindiriliyor.
+
+Not: paralel sınama hatası düzeltilene kadar QUIC sonuçları kararsızdı (tuzaklar
+bölümüne bak). Bu düzeltmeden ÖNCE toplanmış `learned.json` verisi varsa QUIC
+bölümü için güvenilmez.
 
 Hızlandırmak için: bu makinede `--max-candidates` yüksek tutup `stopAtFirstSuccess`
 kapalı koşumlar yapılabilir (şu an CLI'da bunun bayrağı yok, eklenebilir).
@@ -77,6 +108,47 @@ yolları zaten taşındı (`CoreJsonContext`).
 ---
 
 ## Tuzaklar — hepsi bir kez ısırdı
+
+**HTTP/3 IP'ye SABİTLENEMİYOR ve bu QUIC ölçümünü tümüyle geçersiz kılmıştı.**
+`SocketsHttpHandler.ConnectCallback` yalnızca TCP bağlantılarında çağrılıyor;
+HTTP/3 adresi kendisi, **sistem DNS'i** ile çözüyor. Sonuç: `--doh` ile gerçek IP
+bulunup winws'e `--ipset-ip` olarak veriliyordu ama QUIC bağlantısı kaçırılmış
+sistem DNS'inin verdiği engel sunucusuna (`195.175.254.2`) gidiyordu. winws'in
+ipset kontrolü her pakette `negative` dönüyor, strateji hiç uygulanmıyor, paket
+`reinject unmodified` geçiyordu. Dışarıdan bu "strateji işe yaramadı" ile birebir
+aynı görüntü — **15 QUIC adayının tamamı birbirinin aynı işlemsiz koşumdu.**
+Çözüm: `QuicProbeClient`, IP ile SNI'yi ayrı verebilen ham `QuicConnection`.
+HttpClient QUIC ölçümü için bir daha kullanılmamalı.
+
+**winws, filtresi birebir aynı olan ikinci bir örneği reddediyor.**
+`A copy of winws is already running with the same filter`. `--ipset-ip` GLOBAL
+WinDivert filtresine girmiyor — yalnızca süreç içindeki profil eşleşmesinde
+kullanılıyor. Dolayısıyla paralel hedef sınamasında her iki işçi de aynı filtreyi
+kuruyordu ve ikincisi anında 1 koduyla ölüyordu. Belirti sessizdi: aday
+hedeflerin yalnızca birinde ölçülüyor, diğerinde "çalıştırılamadı" yazıyordu.
+**Aynı strateji bir koşumda başarısız, bir koşumda başarılı görünüyordu** —
+ölçülen şey aslında hangi işçinin önce başladığıydı. Çözüm: hedef başına ayrı
+örnek yerine, bölümün bütün hedeflerini kapsayan TEK örnek
+(`--ipset-ip=<ip_list>` virgüllü liste alıyor). Aynı aday zaten bütün hedeflere
+aynı stratejiyi uyguluyor, dolayısıyla anlam değişmiyor.
+
+**`winws.exe --help` bile yönetici yetkisi istiyor.** Seçenek listesini öğrenmek
+için UAC harcamaya gerek yok: ikiliden ASCII dizgi çıkarmak yeterli ve daha
+eksiksiz sonuç veriyor (yardımda görünmeyen karar satırları da çıkıyor).
+Bu oturumdaki bütün teşhis oradan geldi.
+
+**`--dpi-desync-fake-quic-mod` diye bir şey YOK (v72.13).** `--dpi-desync-fake-tls-mod`
+SNI'yi runtime'da üretebiliyor ama QUIC'te karşılığı yok; tek eksen hazır yük
+dosyasının kendisi. Bu yüzden `files/fake/` altındaki `quic_initial_*`
+varyantları indiriliyor. Aramadan önce ikilide `strings` ile doğrula.
+
+**`fetch-upstream.ps1` artık artımlı.** Eskiden "dosya sayısı yeterliyse hepsini
+atla, değilse hepsini indir" idi; listeye yeni bir dosya eklemek bütün listeyi
+yeniden indirmeyi zorunlu kılıyordu ve `WinDivert64.sys` bir test koşumundan
+sonra hâlâ çekirdeğe yüklüyken (servis silinse bile sürücü görüntüsü
+kaldırılana kadar kilitli kalır) "dosya başka bir süreç tarafından kullanılıyor"
+ile patlıyordu. Artık her dosya manifest özetiyle karşılaştırılıyor. Bu duruma
+düşersen çözüm yeniden başlatmak değil, `--cleanup`.
 
 **XML yorumlarında çift tire yasak.** `app.manifest` içinde `--help` yazmıştım;
 uygulama "side-by-side configuration is incorrect" ile **hiç açılmadı** ve
@@ -127,7 +199,14 @@ durdukça hiçbir strateji işe yaramaz. Test `--doh` olmadan koşulursa alttaki
 katman hiç görünmez.
 
 **Paralellik hedef bazında, aday bazında değil.** Aynı hedefe iki strateji birden
-uygulanamaz; ikisi de aynı paketleri görür ve sonuç belirsizleşir.
+uygulanamaz; ikisi de aynı paketleri görür ve sonuç belirsizleşir. Ama paralel
+olan yalnızca AĞ İSTEKLERİ: winws tek örnek olarak, bütün hedefleri kapsayan tek
+ipset ile çalışıyor (sebebi tuzaklar bölümünde).
+
+**"Başarı" QUIC'te el sıkışmasının tamamlanması**, HTTP isteğinin dönmesi değil.
+DPI müdahalesi Initial paketinde oluyor; el sıkışması tamamlanıyorsa DPI aşılmış
+demektir. Ölçümü dar tutmak yanlış sinyali azaltıyor — HTTP/3 isteği ayrıca
+sunucu tarafı sebeplerle de başarısız olabilir ve bu DPI'a yazılırdı.
 
 ---
 
@@ -143,7 +222,12 @@ dotnet test tests/ZapretTr.Tests
 # CLI (yönetici gerekir) — bin/Debug/net8.0-windows/win-x64/
 zapret-tr-test.exe --doh --isp turk-telekom --max-candidates 20 -y
 zapret-tr-test.exe --diagnose discord.com     # tek adres, dört protokol
-zapret-tr-test.exe --engage-check discord.com # winws paketleri görüyor mu
+
+# winws paketleri görüyor mu VE gördüğünü değiştiriyor mu (ikisi ayrı soru).
+# --section olmadan tcp80 varsayılır; QUIC teşhisi için şart.
+# --out verilirse tam winws günlüğü oraya yazılır (ekran çıktısı kırpılıyor).
+zapret-tr-test.exe --engage-check discord.com --section quic --doh --out quic.log
+zapret-tr-test.exe --engage-check discord.com --section quic --doh --strategy "<args>"
 zapret-tr-test.exe --dns test                 # DNS döngüsü, kendini geri alır
 zapret-tr-test.exe --service kur|kaldir|durum
 zapret-tr-test.exe --cleanup                  # sürücüyü kaldır, DNS'i geri al
@@ -160,8 +244,11 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-Temiz: kurulum kaldırıldı, servis yok, DNS `192.168.8.1` (DHCP), süreç yok,
-internet normal. `%ProgramData%\ZapretTR\config.json` duruyor (kullanıcı ayarı,
-kaldırma bunu silmiyor).
+Temiz: `--cleanup` koşuldu — WinDivert sürücüsü durduruldu ve kaldırıldı, servis
+yok, DNS değiştirilmemiş, winws/dnscrypt süreci yok, internet normal.
+`%ProgramData%\ZapretTR\config.json` duruyor (kullanıcı ayarı, kaldırma bunu
+silmiyor).
 
 Test hattı: Türk Telekom / AS9121, VPN yok. Superonline erişimi yok.
+
+Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).

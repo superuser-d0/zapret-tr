@@ -73,15 +73,49 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
     /// sirali moda duser; ISP kisayolu sayesinde ozellik yine hizli kalir.
     /// </remarks>
     public IReadOnlyList<string> BuildProbeCommand(StrategySection section, string strategyArgs, string targetIp)
+        => BuildProbeCommand(section, strategyArgs, [targetIp]);
+
+    /// <summary>
+    /// Test komutu: tek bir bolum, tek bir strateji, BIRDEN COK hedef IP.
+    /// </summary>
+    /// <remarks>
+    /// Cok hedefli hal, paralel sinamanin dogru yolu. Once her hedef icin AYRI bir
+    /// winws ornegi baslatiliyordu; winws bunu reddediyor:
+    ///
+    ///   "A copy of winws is already running with the same filter"
+    ///
+    /// --ipset-ip GLOBAL WinDivert FILTRESINE GIRMIYOR -- yalnizca surec icindeki
+    /// profil eslesmesinde kullaniliyor. Dolayisiyla ayni bolumun iki isçisi birebir
+    /// ayni filtreyi kuruyor ve ikincisi hemen 1 koduyla oluyordu. Sonuc sessizdi:
+    /// aday, hedeflerin yalnizca birinde olculuyor, digerinde "calistirilamadi"
+    /// yaziliyordu. Ayni strateji bir kosumda basarisiz bir kosumda basarili
+    /// gorunuyordu -- olculen sey aslinda hangi isçinin once basladigiydi.
+    ///
+    /// Dogru cozum tek ornek: ayni ADAY zaten butun hedeflere ayni stratejiyi
+    /// uyguluyor, dolayisiyla hedefleri tek bir ipset'te toplamak anlam olarak
+    /// ayni sey. Bolumun "ayni hedefe iki strateji birden uygulanamaz" kurali
+    /// bozulmuyor: burada tek strateji, cok hedef var.
+    /// </remarks>
+    public IReadOnlyList<string> BuildProbeCommand(
+        StrategySection section, string strategyArgs, IReadOnlyList<string> targetIps)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(strategyArgs);
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetIp);
+        ArgumentNullException.ThrowIfNull(targetIps);
+
+        if (targetIps.Count == 0 || targetIps.Any(string.IsNullOrWhiteSpace))
+        {
+            throw new ArgumentException(
+                "En az bir gecerli hedef IP gerekli; hedefsiz ipset butun trafige dokunur.",
+                nameof(targetIps));
+        }
 
         var args = new List<string>();
         AddGlobalFilters(args, [section]);
 
         args.Add(section.ToWinwsFilter());
-        args.Add($"--ipset-ip={targetIp}");
+
+        // --ipset-ip liste aliyor (<ip_list>), tekrarli bayrak degil.
+        args.Add($"--ipset-ip={string.Join(',', targetIps)}");
         args.AddRange(SplitAndResolve(strategyArgs));
 
         return args;

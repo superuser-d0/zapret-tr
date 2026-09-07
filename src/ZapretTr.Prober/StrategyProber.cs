@@ -32,6 +32,14 @@ namespace ZapretTr.Prober;
 /// discord.com, gateway.discord.gg, kullanicinin kendi adresi) hissediliyor.
 /// Adaylari paralellestirmek cazip gorunuyor ama sessizce yanlis sonuc uretirdi --
 /// yavas olmaktan cok daha kotu.
+///
+/// Paralel olan yalnizca AG ISTEKLERI. winws TEK ornek olarak, bolumun butun
+/// hedeflerini kapsayan tek bir ipset ile calisiyor. Hedef basina ayri ornek
+/// baslatmak denendi ve winws bunu reddediyor ("A copy of winws is already running
+/// with the same filter"): --ipset-ip global WinDivert filtresine girmedigi icin
+/// iki isçi birebir ayni filtreyi kuruyor. Bu hata SESSIZDI -- her adayda
+/// isçilerden biri oluyor, aday hedeflerin yalnizca birinde olculuyordu ve ayni
+/// strateji kosumdan kosuma farkli sonuc veriyordu.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class StrategyProber(
@@ -49,9 +57,9 @@ public sealed class StrategyProber(
     /// Ayni anda kac hedefin sinanacagi.
     /// </summary>
     /// <remarks>
-    /// Her isci bir winws sureci ve bir WinDivert tutamagi demek. Sinirsiz
-    /// birakmak, hedef sayisi arttiginda makineyi surec acmakla mesgul eder ve
-    /// olcumun kendisini bozar -- hizlandirmak icin yapilan sey yavaslatir.
+    /// Isçiler artik surec baslatmiyor, yalnizca ag istegi atiyor. Sinir yine de
+    /// duruyor: ayni anda cok sayida istek atmak olcumun kendisini bozar (istekler
+    /// birbirinin gecikmesini etkiler ve zaman asimi esigi anlamsizlasir).
     /// </remarks>
     private const int MaxParallelProbes = 3;
 
@@ -177,7 +185,6 @@ public sealed class StrategyProber(
         var results = new List<BaselineResult>();
         using var client = new HttpProbeClient();
         using var resolver = useSecureDns ? new DohResolver() : null;
-        var stun = new StunProbeClient();
 
         for (var i = 0; i < targets.Count; i++)
         {
@@ -200,12 +207,8 @@ public sealed class StrategyProber(
                 pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
             }
 
-            // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.
-            var outcome = target.Section == StrategySection.DiscordVoice
-                ? await stun.TryReachAsync(target.Host, pinnedIp: pinnedIp, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false)
-                : await client.TryReachAsync(target.Host, ModeFor(target.Section), pinnedIp, cancellationToken)
-                    .ConfigureAwait(false);
+            var outcome = await ProbeAsync(target.Section, target.Host, pinnedIp, client, cancellationToken)
+                .ConfigureAwait(false);
 
             var status = outcome switch
             {
@@ -346,14 +349,11 @@ public sealed class StrategyProber(
     {
         var opened = new List<string>();
 
-        // Ayrik hedefler es zamanli sinaniyor. Ayni hedefe iki strateji birden
-        // uygulanmadigi surece izolasyon gecerli: her winws ornegi --ipset-ip ile
-        // yalnizca kendi hedefine dokunuyor, digerlerini dokunmadan geciriyor.
-        var candidates = blockedTargets
+        var targets = blockedTargets
             .Where(b => b.ResolvedIp is not null && !abandoned.Contains(b.Target.Host))
             .ToList();
 
-        if (candidates.Count == 0)
+        if (targets.Count == 0)
         {
             return opened;
         }
@@ -361,36 +361,86 @@ public sealed class StrategyProber(
         var results = new List<CandidateResult>();
         var lockObject = new object();
 
-        await Parallel.ForEachAsync(
-            candidates,
-            new ParallelOptions
-            {
-                // Sinir kasitli: her isci bir winws sureci ve bir WinDivert
-                // tutamagi demek. Sinirsiz birakmak, hedef sayisi arttiginda
-                // makineyi surec acmakla mesgul eder ve olcumu bozar.
-                MaxDegreeOfParallelism = MaxParallelProbes,
-                CancellationToken = cancellationToken,
-            },
-            async (blocked, token) =>
-            {
-                var (result, openedCategory, isBlockPage) =
-                    await ProbeSingleTargetAsync(section, candidate, blocked, token).ConfigureAwait(false);
+        // TEK winws ornegi, butun hedefleri kapsayan ipset. Hedef basina ayri ornek
+        // baslatmak winws tarafindan reddediliyor ("A copy of winws is already
+        // running with the same filter") cunku --ipset-ip global WinDivert
+        // filtresine girmiyor -- iki isçi birebir ayni filtreyi kuruyor.
+        // Ayrintili gerekce WinwsCommandBuilder.BuildProbeCommand'da.
+        var runner = new WinwsRunner(vendor);
+        var stopwatch = Stopwatch.StartNew();
 
-                lock (lockObject)
+        CandidateResult Failure(BaselineResult target, string detail) => new(
+            candidate.Id, candidate.Args, section,
+            target.Target.Host, target.Target.Category,
+            false, detail, stopwatch.Elapsed);
+
+        try
+        {
+            var arguments = _commandBuilder.BuildProbeCommand(
+                section, candidate.Args, [.. targets.Select(t => t.ResolvedIp!)]);
+
+            // Once winws'in kendisine dogrulat. Gecersiz bir aday burada ~50 ms'de
+            // elenir; yoksa surucu acilir, ag istegi zaman asimina ugrar ve sonuc
+            // "zaman asimi" olarak kaydedilir -- yani gercekte parametre hatasi
+            // olan bir sey engelleme sanilir.
+            var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
+            if (validationError is not null)
+            {
+                attempts.AddRange(targets
+                    .Select(t => Failure(t, "gecersiz parametre: " + validationError))
+                    .OrderBy(r => r.TargetHost, StringComparer.Ordinal));
+                return opened;
+            }
+
+            runner.Start(arguments);
+
+            // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
+            // atarsak strateji henuz devrede olmaz ve calisan bir aday basarisiz
+            // gorunur.
+            await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
+
+            // Artik yalnizca AG ISTEKLERI paralel. Surec baslatma tek sefer
+            // yapildigi icin isçiler arasinda paylasilan hicbir surec durumu yok.
+            await Parallel.ForEachAsync(
+                targets,
+                new ParallelOptions
                 {
-                    results.Add(result);
+                    MaxDegreeOfParallelism = MaxParallelProbes,
+                    CancellationToken = cancellationToken,
+                },
+                async (blocked, token) =>
+                {
+                    var (result, openedCategory, isBlockPage) =
+                        await ProbeSingleTargetAsync(section, candidate, blocked, stopwatch.Elapsed, token)
+                            .ConfigureAwait(false);
 
-                    if (isBlockPage)
+                    lock (lockObject)
                     {
-                        abandoned.Add(blocked.Target.Host);
-                    }
+                        results.Add(result);
 
-                    if (openedCategory is not null && !opened.Contains(openedCategory))
-                    {
-                        opened.Add(openedCategory);
+                        if (isBlockPage)
+                        {
+                            abandoned.Add(blocked.Target.Host);
+                        }
+
+                        if (openedCategory is not null && !opened.Contains(openedCategory))
+                        {
+                            opened.Add(openedCategory);
+                        }
                     }
-                }
-            }).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            attempts.AddRange(targets
+                .Select(t => Failure(t, "calistirilamadi: " + ex.Message))
+                .OrderBy(r => r.TargetHost, StringComparer.Ordinal));
+            return opened;
+        }
+        finally
+        {
+            await runner.StopAsync(cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
 
         // Sonuclar deterministik sirada eklensin: paralel kosumda tamamlanma
         // sirasi degisken ve rapor her seferinde farkli siralanirsa
@@ -411,16 +461,23 @@ public sealed class StrategyProber(
     /// Paralel cagrilabilmesi icin PAYLASILAN DURUMA DOKUNMUYOR: sonuclari
     /// listelere kendisi eklemek yerine geri donduruyor. Cagiran taraf onlari
     /// kilit altinda topluyor.
+    ///
+    /// winws SURECINI BASLATMAZ. Surec, bolumun butun hedeflerini kapsayan tek bir
+    /// ornek olarak cagiran tarafta baslatiliyor; hedef basina ayri ornek winws
+    /// tarafindan reddediliyor (ayrintili gerekce
+    /// <see cref="WinwsCommandBuilder.BuildProbeCommand(StrategySection, string, IReadOnlyList{string})"/>).
     /// </remarks>
     private async Task<(CandidateResult Result, string? OpenedCategory, bool IsBlockPage)>
         ProbeSingleTargetAsync(
             StrategySection section,
             ProbeCandidate candidate,
             BaselineResult blocked,
+            TimeSpan elapsedBeforeProbe,
             CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var runner = new WinwsRunner(vendor);
+
+        TimeSpan Elapsed() => elapsedBeforeProbe + stopwatch.Elapsed;
 
         CandidateResult Failure(string detail)
         {
@@ -428,38 +485,15 @@ public sealed class StrategyProber(
             return new CandidateResult(
                 candidate.Id, candidate.Args, section,
                 blocked.Target.Host, blocked.Target.Category,
-                false, detail, stopwatch.Elapsed);
+                false, detail, Elapsed());
         }
 
         try
         {
-            var arguments = _commandBuilder.BuildProbeCommand(section, candidate.Args, blocked.ResolvedIp!);
-
-            // Once winws'in kendisine dogrulat. Gecersiz bir aday burada ~50 ms'de
-            // elenir; yoksa surucu acilir, ag istegi zaman asimina ugrar ve sonuc
-            // "zaman asimi" olarak kaydedilir -- yani gercekte parametre hatasi
-            // olan bir sey engelleme sanilir.
-            var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
-            if (validationError is not null)
-            {
-                return (Failure("gecersiz parametre: " + validationError), null, false);
-            }
-
-            runner.Start(arguments);
-
-            // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
-            // atarsak strateji henuz devrede olmaz ve calisan bir aday basarisiz
-            // gorunur.
-            await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
-
             using var client = new HttpProbeClient();
-            var outcome = section == StrategySection.DiscordVoice
-                ? await new StunProbeClient()
-                    .TryReachAsync(blocked.Target.Host, pinnedIp: blocked.ResolvedIp,
-                                   cancellationToken: cancellationToken).ConfigureAwait(false)
-                : await client
-                    .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
-                    .ConfigureAwait(false);
+            var outcome = await ProbeAsync(
+                    section, blocked.Target.Host, blocked.ResolvedIp, client, cancellationToken)
+                .ConfigureAwait(false);
 
             if (!outcome.Succeeded)
             {
@@ -468,7 +502,7 @@ public sealed class StrategyProber(
                     new CandidateResult(
                         candidate.Id, candidate.Args, section,
                         blocked.Target.Host, blocked.Target.Category,
-                        false, outcome.Detail, stopwatch.Elapsed),
+                        false, outcome.Detail, Elapsed()),
                     null,
                     outcome.IsBlockPage);
             }
@@ -478,28 +512,25 @@ public sealed class StrategyProber(
             // gurultulu ve tek olcum bunu ayirt edemiyor. Kullaniciya "bulundu"
             // deyip sonra calismamasi, hic bulamamaktan kotu.
             var confirmed = await ConfirmAsync(section, blocked, cancellationToken).ConfigureAwait(false);
-            stopwatch.Stop();
 
             if (!confirmed)
             {
                 return (Failure("dogrulama tekrarinda basarisiz (kararsiz)"), null, false);
             }
 
+            stopwatch.Stop();
+
             return (
                 new CandidateResult(
                     candidate.Id, candidate.Args, section,
                     blocked.Target.Host, blocked.Target.Category,
-                    true, outcome.Detail, stopwatch.Elapsed),
+                    true, outcome.Detail, Elapsed()),
                 blocked.Target.Category,
                 false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return (Failure("calistirilamadi: " + ex.Message), null, false);
-        }
-        finally
-        {
-            await runner.StopAsync(cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
     }
 
@@ -516,17 +547,9 @@ public sealed class StrategyProber(
     {
         await Task.Delay(ConfirmationGap, cancellationToken).ConfigureAwait(false);
 
-        if (section == StrategySection.DiscordVoice)
-        {
-            var stunOutcome = await new StunProbeClient()
-                .TryReachAsync(target.Target.Host, pinnedIp: target.ResolvedIp,
-                               cancellationToken: cancellationToken).ConfigureAwait(false);
-            return stunOutcome.Succeeded;
-        }
-
         using var client = new HttpProbeClient();
-        var outcome = await client
-            .TryReachAsync(target.Target.Host, ModeFor(section), target.ResolvedIp, cancellationToken)
+        var outcome = await ProbeAsync(
+                section, target.Target.Host, target.ResolvedIp, client, cancellationToken)
             .ConfigureAwait(false);
 
         return outcome.Succeeded;
@@ -572,6 +595,42 @@ public sealed class StrategyProber(
     /// en cok mudahale ettigi durum. TLS 1.3'te ServerHello sifreli oldugu icin bazi
     /// engellemeler devreye bile girmez ve test kolay gecerek yaniltir.
     /// </remarks>
+    /// <summary>
+    /// Bir bolumu kendi protokoluyle olcer.
+    /// </summary>
+    /// <remarks>
+    /// Bolume gore istemci secimi TEK YERDE tutuluyor. Uc ayri cagri yerinde
+    /// tekrarlaniyordu ve QUIC istemcisi eklenirken birine yazip digerini atlamak,
+    /// sessizce yanlis olcen bir kod yolu birakirdi -- bu bolumde tam olarak bu tur
+    /// bir hata zaten bir kez yasandi.
+    ///
+    /// QUIC'in ayri istemcisi olmasinin sebebi: <see cref="HttpProbeClient"/> HTTP/3'u
+    /// cozumlenmis IP'ye SABITLEYEMIYOR (ConnectCallback yalnizca TCP'de calisir).
+    /// DNS kacirmasi olan bir hatta baglanti engel sunucusuna gidiyor, winws'in
+    /// --ipset-ip kontrolu negatif donuyor ve strateji hic uygulanmadan paket geciyor.
+    /// </remarks>
+    private static async Task<ProbeOutcome> ProbeAsync(
+        StrategySection section,
+        string host,
+        string? pinnedIp,
+        HttpProbeClient httpClient,
+        CancellationToken cancellationToken)
+        => section switch
+        {
+            // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.
+            StrategySection.DiscordVoice => await new StunProbeClient()
+                .TryReachAsync(host, pinnedIp: pinnedIp, cancellationToken: cancellationToken)
+                .ConfigureAwait(false),
+
+            StrategySection.Quic => await new QuicProbeClient()
+                .TryReachAsync(host, pinnedIp, cancellationToken: cancellationToken)
+                .ConfigureAwait(false),
+
+            _ => await httpClient
+                .TryReachAsync(host, ModeFor(section), pinnedIp, cancellationToken)
+                .ConfigureAwait(false),
+        };
+
     public static ProbeMode ModeFor(StrategySection section) => section switch
     {
         StrategySection.Tcp80 => ProbeMode.PlainHttp,
