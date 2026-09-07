@@ -347,6 +347,24 @@ Kontrolün başka bir işletmeciden olması şart — Google'ın stun/stun1/stun
 üçü de aynı IP'ye (74.125.250.129) çözülüyor, dolayısıyla birbirinin kontrolü olamazlar.
 Bunun için hedeflere `port` alanı eklendi; Google 19302, geri kalan herkes 3478 kullanıyor.
 
+**TTNET'te Discord SESİ, ses bölümüne hiç dokunulmadan çalışıyor — ölçüldü.**
+Gerçek kullanımda sınandı ve ses kuruldu. Bunun "discord-voice stratejimiz
+doğrulandı" ANLAMINA GELMEDİĞİNE dikkat: koşan winws komutunda o bölüm hiç yok.
+Komut üç bölümden ibaretti (`--filter-tcp=80`, `--filter-tcp=443`,
+`--filter-l7=quic`); global filtre `--wf-tcp=80,443 --wf-udp=443`, yani Discord
+medya port aralıkları (50000-50099 / 19294-19344) ve STUN filtresi hiç yüklenmedi.
+
+Doğru okuma: bu hatta ses zaten engelli değil, metin/gateway engeli aşılınca
+kendiliğinden kuruluyor. Genel STUN ölçümü de bunu destekliyor (koruma açıkken
+Google 19302 ve Cloudflare 3478 ikisi de cevap veriyor).
+
+Bu aynı zamanda "sorunu olmayan bölüme dokunma" kuralının işe yaradığının kanıtı:
+`RuntimeSelection` yalnızca doğrulanmış adayları ekliyor, discord-voice'ta
+doğrulanmış aday olmadığı için bölüm komuta girmedi ve çalışan ses trafiği
+denenmemiş bir UDP stratejisiyle bozulmadı. Bu projede tam tersi bir zarar
+kayıtlı: sorunsuz çalışan bir QUIC bağlantısı, üzerine denenmemiş bir QUIC
+stratejisi uygulanınca bozulmuştu.
+
 **Aday tekilleştirmesi tier'ların İÇİNDE vardı, ARASINDA yoktu.** Profiller
 birbirinden türediği ve genel merdiven de aynı kombinasyonları ürettiği için aynı
 komut farklı adla ikinci kez deneniyordu. Ölçüldü: TTNET kapsamlı taramasında

@@ -63,8 +63,15 @@ araçla geri alabilirsiniz:
 ```
 Kaldırma (Program Ekle/Kaldır) da aynı temizliği yapar.
 
-**Sesli görüşme (Discord voice) çalışıyor mu?** Bilmiyoruz — ve bilmediğimizi söylüyoruz.
-O bölüm hiçbir hatta doğrulanamadı; sebebi [aşağıda](#yol-haritası).
+**Sesli görüşme (Discord voice) çalışıyor mu?** Türk Telekom hattında **çalışıyor** — ve
+ilginç olan şu: ZapretTR ses trafiğine **hiç dokunmadan** çalışıyor. O hatta ses zaten engelli
+değil; metin ve bağlantı engeli aşılınca ses kendiliğinden kuruluyor. Araç bunu görüp o bölümü
+komuta hiç eklemiyor ("sorunu olmayan bölüme dokunma" kuralı).
+
+Sizde ses **çalışmıyorsa** dürüst cevap: o durum için doğrulanmış bir stratejimiz yok ve araç
+size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP-keşif
+protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulamalı bir ses oturumundan alınıyor,
+dolayısıyla dışarıdan ölçemiyoruz.
 
 ---
 
