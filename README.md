@@ -3,11 +3,68 @@
 Windows için GUI'li [zapret](https://github.com/bol-van/zapret) dağıtımı — Türkiye'deki servis
 sağlayıcılarına odaklanmış otomatik parametre bulma ile.
 
-> **Durum: çalışıyor, saha verisi toplanıyor.** Uygulama, test motoru ve kurulum paketi gerçek
-> donanımda uçtan uca koşuldu; 116 test geçiyor. İki hatta (Türk Telekom / AS9121 ve Turkcell
-> Mobil / AS16135) çalışan stratejiler **ölçümle** doğrulandı. Eksik olan kod değil **kapsam**:
-> 10 profilin 8'inde henüz tek bir doğrulanmış aday yok, çünkü o hatlara erişimimiz yok.
-> Aşağıdaki "Yol haritası" nerede olduğumuzu gösteriyor.
+> **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
+> kullanıcı akışıyla kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu ve
+> Başlat'tan sonra engelli adresler açıldı — bağımsız bir istemciyle (`curl`) doğrulandı, ölçüm
+> motorunun kendi raporuyla değil. Türk Telekom / AS9121 hattında **25 aday** doğrulanmış durumda.
+> Eksik olan kod değil **kapsam**: 10 profilin 8'inde henüz saha verisi yok, çünkü o hatlara
+> erişimimiz yok.
+
+---
+
+## Kolay kullanım
+
+**1. İndir.** [Releases](https://github.com/superuser-d0/zapret-tr/releases) sayfasından
+`ZapretTR-Setup-<sürüm>.exe` dosyasını indirin.
+
+**2. Kur.** Dosyaya çift tıklayın.
+
+- Windows **"bilgisayarınızı korudu"** uyarısı verirse: bu **beklenen**. Paket imzalı değil
+  (kod imzalama sertifikamız yok). "Ek bilgi" → "Yine de çalıştır".
+- **Yönetici izni** ister. Gerekli: uygulama çekirdek modunda çalışan bir ağ sürücüsü kullanıyor.
+- İndirdiğiniz dosyanın bu yayından geldiğini doğrulamak isterseniz yayındaki `SHA256SUMS.txt`
+  ile karşılaştırın:
+  ```powershell
+  Get-FileHash .\ZapretTR-Setup-<sürüm>.exe -Algorithm SHA256
+  ```
+
+**3. Üç tıkla kullan.** Uygulama açıldığında:
+
+| Adım | Ne yapacaksınız | Ne göreceksiniz |
+|---|---|---|
+| 1 | Hiçbir şeyi değiştirmeyin | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı |
+| 2 | **PARAMETRE TESTİ YAP** | Hattınız tespit edilir, çalışan parametre aranır (**birkaç dakika**) |
+| 3 | **ZAPRET'İ BAŞLAT** | Test bitince "STRATEJİ BULUNDU" yazar ve Başlat açılır |
+
+Hepsi bu. **"Şifreli DNS kullan" işaretli kalsın** — Türkiye'de engelleme çoğu zaman iki katmanlı
+ve o kutu kapalıyken alttaki katman aşılamaz.
+
+**Açılmayan kendi adresiniz varsa** "Açılmayan site" kutusuna yazıp testi öyle çalıştırın. Asıl
+doğru kullanım budur: kimin neye erişemediği kişiye göre değişiyor.
+
+**Her açılışta çalışsın istiyorsanız** "Servis Olarak Yükle" düğmesi Windows servisi kurar.
+
+### Sık sorulanlar
+
+**Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçülüyor.
+Sonuç kaydedilir; bir sonraki açılışta test tekrar gerekmez.
+
+**"ENGEL BULUNAMADI" derse?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde açılmayan
+adresi "Açılmayan site" kutusuna girip tekrar deneyin.
+
+**Antivirüs uyarırsa?** Paket sürücüsü + imzasız derleme birleşimi false-positive üretebilir.
+Windows Defender bu paketi işaretlemiyor (ölçüldü), diğerleri için garanti veremeyiz.
+
+**İnternetim gitti / adresler çözülmüyor?** Uygulama şifreli DNS için sistem DNS'ini kendine
+yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa, kurulum klasöründeki
+araçla geri alabilirsiniz:
+```powershell
+& "$env:ProgramFiles\ZapretTR\ZapretTR.exe" --uninstall-services
+```
+Kaldırma (Program Ekle/Kaldır) da aynı temizliği yapar.
+
+**Sesli görüşme (Discord voice) çalışıyor mu?** Bilmiyoruz — ve bilmediğimizi söylüyoruz.
+O bölüm hiçbir hatta doğrulanamadı; sebebi [aşağıda](#yol-haritası).
 
 ---
 
@@ -37,6 +94,21 @@ Kullanıcı ISP'sini bilmiyorsa ASN/kuruluş adından otomatik tespit edilir.
 Tasarımın merkezindeki gözlem şu: `--dpi-desync-fooling=md5sig` yalnızca hedef sunucu TCP MD5
 seçeneğini reddettiğinde işe yarar. Yani **çalışan strateji ISP'nin olduğu kadar hedef sunucunun da
 fonksiyonu** — aynı bağlantıda Discord'u açan parametre YouTube'u açmayabilir.
+
+Bu, doğrulanmış adayların ne kadar genellenebildiğini de bir soru haline getiriyor: hedeflerimizin
+çoğu Cloudflare arkasında, dolayısıyla "doğrulandı" damgası yalnızca tek bir sunucu ailesini
+yansıtıyor olabilirdi. TTNET hattında ölçüldü ve öyle değil — aynı strateji, farklı barındırıcılarda
+da gerçek sunucuya ulaştırıyor:
+
+| Hedef | Barındıran | Koruma açıkken |
+|---|---|---|
+| discord.com | Cloudflare | HTTP 200 |
+| pornhub.com | Cloudflare **değil** | HTTP 301 |
+| xvideos.com | Cloudflare **değil** | HTTP 301 |
+| www.youtube.com | Google (engelli değil) | HTTP 200 — etkilenmedi |
+
+Bu yüzden hedef listesi kasıtlı olarak dar tutuluyor: hedef eklemek her adayın süresini uzatıyor ve
+ölçüm bu maliyeti haklı çıkaracak yeni bilgi vermedi.
 
 Bu yüzden adaylar bölümlere ayrılmış durumda (`tcp80`, `tcp443`, `quic`, `discord-voice`), her bölüm
 bağımsız test edilip bağımsız kazananını buluyor, ve nihai komut bölümleri `--new` ile birleştiriyor —

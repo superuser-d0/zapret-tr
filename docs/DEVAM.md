@@ -15,7 +15,7 @@ sabitlenmiş sürümden indirilip SHA256 ile doğrulanıyor, `vendor/` git'e gir
 Asıl değer `blockcheck.sh`'ın yerine geçen test motorunda: arama, ISP profiliyle
 5-19 adaya iniyor, tutmazsa kademeli genişliyor.
 
-Depo: https://github.com/superuser-d0/zapret-tr (private)
+Depo: https://github.com/superuser-d0/zapret-tr (public)
 
 ---
 
@@ -118,6 +118,25 @@ yöne işaret ediyor.
 Ayrıca `any-protocol` ailesinde **cutoff değeri belirleyici değil**: n2, n3 ve d2
 üçü de, yüklü ve yüksüz halleriyle, 3/3 geçti. Belirleyici olan `any-protocol`'ün
 kendisi.
+
+**Doğrulanmış adaylar barındırıcıya aşırı uymuş DEĞİL — ölçüldü.** Endişe gerçekti:
+engelli hedeflerimizin çoğu Cloudflare arkasında (discord.com, gateway.discord.gg,
+xhamster.com), dolayısıyla 25 "doğrulanmış" aday tek bir sunucu ailesini yansıtıyor
+olabilirdi. Üstelik tcp80'de doğrulanan altı adayın altısında da `md5sig` var ve
+`md5sig` tam olarak sunucu davranışına bağlı bir eksen.
+
+Koruma açıkken Cloudflare DIŞI iki engelli hedefle sınandı:
+
+| Hedef | IP | Barındıran | Sonuç |
+|---|---|---|---|
+| discord.com | 162.159.135.232 | Cloudflare | 200 |
+| pornhub.com | 66.254.114.41 | değil | 301 |
+| xvideos.com | 89.222.127.12 | değil | 301 |
+| www.youtube.com | 142.251.153.4 | engelli değil | 200, etkilenmedi |
+
+Yani strateji barındırıcıdan bağımsız çalışıyor. **Sonuç: hedef listesine yeni hedef
+EKLENMEDİ.** Hedef eklemek her adayın süresini uzatıyor ve bu ölçüm, maliyeti haklı
+çıkaracak yeni bilgi üretmedi. Aynı soru ileride tekrar sorulursa cevabı burada.
 
 **Mobil, sabit hattan gerçekten farklı — türetilemez.** İki somut fark:
 
