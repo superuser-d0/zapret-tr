@@ -604,17 +604,22 @@ public sealed class StrategyProber(
     /// sessizce yanlis olcen bir kod yolu birakirdi -- bu bolumde tam olarak bu tur
     /// bir hata zaten bir kez yasandi.
     ///
+    /// public olmasinin sebebi teshis yolu (--engage-check): teshisin, arama
+    /// motorunun olctugu SEYIN AYNISINI olcmesi gerekiyor. Ayri bir dallanma
+    /// yazilmisti ve discord-voice'u STUN yerine HTTP/3 ile olcuyordu -- yani
+    /// teshis, motorun gordugunden baska bir sey gosteriyordu.
+    ///
     /// QUIC'in ayri istemcisi olmasinin sebebi: <see cref="HttpProbeClient"/> HTTP/3'u
     /// cozumlenmis IP'ye SABITLEYEMIYOR (ConnectCallback yalnizca TCP'de calisir).
     /// DNS kacirmasi olan bir hatta baglanti engel sunucusuna gidiyor, winws'in
     /// --ipset-ip kontrolu negatif donuyor ve strateji hic uygulanmadan paket geciyor.
     /// </remarks>
-    private static async Task<ProbeOutcome> ProbeAsync(
+    public static async Task<ProbeOutcome> ProbeAsync(
         StrategySection section,
         string host,
         string? pinnedIp,
         HttpProbeClient httpClient,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
         => section switch
         {
             // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.

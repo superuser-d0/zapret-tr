@@ -62,21 +62,7 @@ bağlantıyı bozmak, açmayan bir bağlantıyı açamamaktan kötü.
 
 ## Yapılacaklar
 
-### 1. YouTube QUIC hâlâ açılmıyor
-
-Discord QUIC çözüldü ama `www.youtube.com` QUIC'i aynı stratejiyle açılmıyor:
-zaman aşımı değil **`QUIC hatasi: TransportError`** veriyor — yani el sıkışması
-başlıyor ve karşı taraftan taşıma katmanı hatası dönüyor. Zaman aşımından farklı
-bir belirti, muhtemelen farklı bir mekanizma. Bölüm kazananı discord üzerinden
-belirlendiği için bu koşumu bloke etmiyor.
-
-İlk bakılacak yer: `TransportError`'ın alt kodu. `QuicProbeClient` şu an yalnızca
-`ex.QuicError` yazıyor; `QuicException.TransportErrorCode` de rapora eklenirse
-"DPI müdahalesi" ile "sunucu ALPN/sürüm reddi" ayırt edilebilir.
-
-Doğrulama: `zapret-tr-test.exe --engage-check www.youtube.com --section quic --doh`
-
-### 2. Doğrulama kapsamı — 2 aday doğrulanmış
+### 1. Doğrulama kapsamı — 2 aday doğrulanmış
 
 Kod eksiği değil saha verisi eksiği. Gerçek bir hatta doğrulanan adaylar:
 `tt-443-fake-ttl4` (tcp443) ve `tt-quic-anyproto-cutoff` (quic). Kullanıcılar test
@@ -90,13 +76,31 @@ bölümü için güvenilmez.
 Hızlandırmak için: bu makinede `--max-candidates` yüksek tutup `stopAtFirstSuccess`
 kapalı koşumlar yapılabilir (şu an CLI'da bunun bayrağı yok, eklenebilir).
 
-### 3. Superonline saha testi — dış bağımlılık
+### 2. Superonline saha testi — dış bağımlılık
 
-Paket hazır: `dist/zapret-tr-saha-testi.zip` (34 MB). Test kullanıcısında.
+Paket hazır: `dist/zapret-tr-saha-testi.zip`. Test kullanıcısında.
 Rapor gelince `learned.json`'a aktarılıp `profiles/isp/superonline.json`
 `verified`e çekilecek. Superonline'ın 19 adayının hiçbiri doğrulanmadı.
 
-### 4. Paket boyutu (düşük öncelik)
+**Turkcell Mobil hotspot bunun yerine GEÇMEZ.** Aynı şirket ama ayrı ağ ve ayrı
+ASN: Superonline AS34984 (sabit), Turkcell Mobil AS16135. `turkcell-mobil.json`
+zaten "mobil şebekeler sabit hatlardan farklı DPI davranışı gösterebiliyor" diye
+ayrı tutuluyor. Hotspot ile toplanan veri `turkcell-mobil` profiline yazılmalı,
+`superonline`a değil.
+
+Yine de değerli: `turkcell-mobil`'in 7 adayının da hiçbiri doğrulanmadı ve
+Windows uygulaması + mobil internet zaten pratikte tethering demek, yani ölçülen
+şey gerçek kullanım şekli. ASN otomatik tespiti AS16135'i görüp doğru profili
+seçer.
+
+Uyarı — **hotspot bir hop ekliyor.** Sabit TTL'li stratejiler (`--dpi-desync-ttl=N`)
+buna duyarlı: telefon doğrudan bağlansaydı paket operatör ağına bir fazla TTL ile
+girerdi. Hotspot üzerinden bulunan sabit TTL değeri USB modem/dongle ile birebir
+aynı olmayabilir. `--dpi-desync-autottl` hop sayısını ölçüp seçtiği için bundan
+etkilenmiyor; mobil profilde autottl sonuçları daha taşınabilir. Ölçüm yapılırsa
+aday notuna "tethering üzerinden ölçüldü" yazılmalı.
+
+### 3. Paket boyutu (düşük öncelik)
 
 Saha paketi 34 MB, paylaşım limitlerinin üstünde. `PublishTrimmed` **denendi ve
 geri alındı**: JSON yansımayla çalıştığı için kırpma, DNS yedeğinin geri
@@ -119,6 +123,27 @@ ipset kontrolü her pakette `negative` dönüyor, strateji hiç uygulanmıyor, p
 aynı görüntü — **15 QUIC adayının tamamı birbirinin aynı işlemsiz koşumdu.**
 Çözüm: `QuicProbeClient`, IP ile SNI'yi ayrı verebilen ham `QuicConnection`.
 HttpClient QUIC ölçümü için bir daha kullanılmamalı.
+
+**QUIC istemcisi akış sınırlarını ilan etmezse sunucu bağlantıyı ANINDA kapatır —
+ve bu DPI engeliyle karıştırılır.** HTTP/3 sunucusu el sıkışmasından hemen sonra
+üç tek yönlü akış açmak zorunda (kontrol, QPACK encoder, QPACK decoder).
+`QuicClientConnectionOptions.MaxInboundUnidirectionalStreams` varsayılan olarak 0
+geliyor; o zaman sunucu akışlarını açamıyor ve bağlantıyı taşıma hatasıyla
+kapatıyor. Belirti: **~35 ms'de `TransportError`**.
+
+Bu, `www.youtube.com` QUIC'inin **engelli sanılmasına** yol açtı — bir süre
+"çözülmemiş iş" olarak bu dosyada durdu. Google uçları kuralı sıkı uyguluyor,
+Cloudflare uygulamıyordu; dolayısıyla iki Cloudflare hedefi (kontrol ve discord)
+çalışıp tek Google hedefi hep başarısız olunca tablo tutarlı görünüyordu.
+
+**Ayırt etme kuralı: gerçek DPI engeli bu hatta ~10 sn ZAMAN AŞIMI olarak
+görünüyor, anlık protokol hatası olarak değil.** Milisaniyelerde dönen bir QUIC
+hatası neredeyse her zaman bizim tarafımızdaki bir kusurdur. Şüphelenince
+engelli OLMADIĞI bilinen bir adresle (`www.google.com`) karşılaştır:
+
+```
+zapret-tr-test.exe --diagnose www.google.com --doh
+```
 
 **winws, filtresi birebir aynı olan ikinci bir örneği reddediyor.**
 `A copy of winws is already running with the same filter`. `--ipset-ip` GLOBAL

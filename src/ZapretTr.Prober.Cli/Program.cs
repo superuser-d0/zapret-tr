@@ -412,11 +412,30 @@ if (options.DiagnoseHost is { } diagnoseHost)
     Console.WriteLine($"Teşhis: {diagnoseHost}");
     Console.WriteLine();
 
+    // --doh verilirse cozumleme sifreli yoldan yapilir. DNS kacirmasi olan bir
+    // hatta sistem DNS'i engel sunucusunu dondurur ve teshis, DPI katmanini degil
+    // DNS katmanini olcer.
+    string? diagnoseIp = null;
+    if (options.UseSecureDns)
+    {
+        using var diagnoseDoh = new DohResolver();
+        diagnoseIp = await diagnoseDoh.ResolveIPv4Async(diagnoseHost);
+        Console.WriteLine($"   şifreli DNS: {diagnoseIp ?? "çözümlenemedi"}");
+        Console.WriteLine();
+    }
+
     using var diagnostic = new HttpProbeClient(TimeSpan.FromSeconds(10));
     foreach (var mode in Enum.GetValues<ProbeMode>())
     {
         var started = System.Diagnostics.Stopwatch.StartNew();
-        var result = await diagnostic.TryReachAsync(diagnoseHost, mode);
+
+        // Http3 slotu HttpProbeClient ile OLCULEMEZ: HTTP/3 IP'ye sabitlenemedigi
+        // icin adres sistem DNS'i ile cozulur ve --doh sessizce etkisiz kalir.
+        // Ham QUIC istemcisi IP ile SNI'yi ayri verebiliyor.
+        var result = mode == ProbeMode.Http3
+            ? await new QuicProbeClient(TimeSpan.FromSeconds(10)).TryReachAsync(diagnoseHost, diagnoseIp)
+            : await diagnostic.TryReachAsync(diagnoseHost, mode, diagnoseIp);
+
         started.Stop();
 
         var verdict = result.Succeeded ? "BAŞARILI" : "başarısız";
@@ -464,7 +483,16 @@ if (options.EngageCheckHost is { } engageHost)
     var engageMode = StrategyProber.ModeFor(engageSection);
 
     Console.WriteLine($"Hedef    : {engageHost}");
-    Console.WriteLine($"Bölüm    : {engageSection.ToJsonName()} ({engageMode})");
+    // Bolumun NASIL olculdugu yaziliyor, ProbeMode degil: quic ve discord-voice
+    // HttpProbeClient kullanmiyor, dolayisiyla ProbeMode orada anlamsiz bir deger.
+    var engageHow = engageSection switch
+    {
+        StrategySection.Quic => "ham QUIC el sıkışması",
+        StrategySection.DiscordVoice => "STUN (UDP)",
+        _ => engageMode.ToString(),
+    };
+
+    Console.WriteLine($"Bölüm    : {engageSection.ToJsonName()} ({engageHow})");
     Console.WriteLine($"Strateji : {strategy}");
     Console.WriteLine();
 
@@ -504,18 +532,12 @@ if (options.EngageCheckHost is { } engageHost)
     runner.Start(engageArgs);
     await Task.Delay(1500);
 
-    // QUIC olcumu HttpProbeClient ile YAPILAMAZ: HTTP/3 IP'ye sabitlenemedigi icin
-    // baglanti sistem DNS'inin verdigi adrese gider ve winws'in --ipset-ip kontrolu
-    // her pakette negatif doner. Ham QUIC istemcisi IP ile SNI'yi ayri verebiliyor.
-    if (engageSection == StrategySection.Quic)
+    // Teshis, arama motorunun olctugu seyin AYNISINI olcmeli. Bu yuzden bolume
+    // gore istemci secimi burada tekrar yazilmiyor, motorun kendi dagitimi
+    // cagriliyor: QUIC ham QuicConnection ile, discord-voice STUN ile olculur.
+    using (var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8)))
     {
-        var quicResult = await new QuicProbeClient(TimeSpan.FromSeconds(8)).TryReachAsync(engageHost, ip);
-        Console.WriteLine($"Probe sonucu: {(quicResult.Succeeded ? "BAŞARILI" : "başarısız")} — {quicResult.Detail}");
-    }
-    else
-    {
-        using var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8));
-        var engageResult = await engageClient.TryReachAsync(engageHost, engageMode, ip);
+        var engageResult = await StrategyProber.ProbeAsync(engageSection, engageHost, ip, engageClient);
         Console.WriteLine($"Probe sonucu: {(engageResult.Succeeded ? "BAŞARILI" : "başarısız")} — {engageResult.Detail}");
     }
 

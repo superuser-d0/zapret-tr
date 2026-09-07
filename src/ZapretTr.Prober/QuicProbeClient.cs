@@ -95,6 +95,19 @@ public sealed class QuicProbeClient
                 RemoteEndPoint = new IPEndPoint(IPAddress.Parse(resolvedIp), port),
                 DefaultStreamErrorCode = 0,
                 DefaultCloseErrorCode = 0,
+
+                // HTTP/3 sunucusu el sikismasindan hemen sonra UC tek yonlu akis
+                // acmak zorunda: kontrol akisi, QPACK encoder ve QPACK decoder.
+                // Bu sinir varsayilan olarak 0 geliyor; o zaman sunucu akislarini
+                // acamiyor ve baglantiyi ANINDA taşima hatasiyla kapatiyor.
+                //
+                // Belirtisi yaniltici: ~35 ms'de "TransportError" -- yani DPI
+                // engeliyle KARISTIRILABILIR bir hata. Gercek DPI engeli bu hatta
+                // 10 saniyelik zaman asimi olarak gorunuyor. Google ucları bu
+                // kurali sikica uyguluyor, Cloudflare uygulamiyordu; sonuc olarak
+                // engelli OLMAYAN www.google.com bile "engelli" olculuyordu.
+                MaxInboundUnidirectionalStreams = 3,
+                MaxInboundBidirectionalStreams = 0,
                 ClientAuthenticationOptions = new SslClientAuthenticationOptions
                 {
                     // SNI. DPI'in gordugu ve uzerinden karar verdigi alan.
@@ -128,7 +141,23 @@ public sealed class QuicProbeClient
         }
         catch (QuicException ex)
         {
-            return new ProbeOutcome(false, $"QUIC hatasi: {ex.QuicError}", resolvedIp);
+            // Yalnizca QuicError yazmak yetmiyor: "TransportError" hem DPI
+            // mudahalesini hem de sunucunun ALPN/surum reddini ayni sekilde
+            // gosteriyor ve ikisi tamamen farkli sonuclar. Alt kod ve msquic'in
+            // kendi metni ayrimi yapabilmek icin gerekli.
+            var detail = $"QUIC hatasi: {ex.QuicError}";
+
+            if (ex.ApplicationErrorCode is { } appCode)
+            {
+                detail += $" (uygulama kodu 0x{appCode:X})";
+            }
+
+            if (!string.IsNullOrWhiteSpace(ex.Message))
+            {
+                detail += $" — {ex.Message.Trim()}";
+            }
+
+            return new ProbeOutcome(false, detail, resolvedIp);
         }
         catch (Exception ex)
         {
