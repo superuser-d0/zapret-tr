@@ -8,7 +8,43 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
-## [0.1.0] — ilk yayın
+## [0.1.1]
+
+0.1.0 hiç yayımlanmadı: kurulum paketi üretildi, gerçek bir makineye kuruldu ve
+**normal bir kullanıcı gibi çalıştırıldığında iki ciddi hata ortaya çıktı.** İkisi
+de bu sürümde düzeltildi ve aynı hatta ölçümle doğrulandı.
+
+### Düzeltildi
+
+- **HTTPS bölümüne yanlış strateji uygulanıyordu.** Parametre testi bitince her
+  bölümün kazananı HTTPS strateji listesine ekleniyor ve seçili strateji her turda
+  üzerine yazılıyordu; bölümler `tcp80 → tcp443 → quic` sırasında geldiği için
+  **sonuncusu, yani QUIC komutu, HTTPS stratejisi olarak** kalıyordu. Ölçülen sonuç:
+  winws `--filter-tcp=443 --dpi-desync=fake --dpi-desync-any-protocol=1
+  --dpi-desync-cutoff=n2 --dpi-desync-fake-quic=...` ile çalışıyordu — TCP bölümüne
+  QUIC komutu. Kullanıcı "3 bölüm için çalışan parametre bulundu" görüyor, Başlat'a
+  basıyor, düz HTTP açılıyor ama `discord.com` HTTPS'te RST almaya devam ediyordu.
+  Düzeltmeden sonra aynı hatta `curl https://discord.com` → **HTTP 200**.
+- **Pencereyi X ile kapatmak hiçbir şeyi temizlemiyordu.** Temizlik yalnızca "Çıkış"
+  düğmesinin içindeydi; pencere kapanma işleyicisi yoktu. Gerçek makinede ölçüldü:
+  koruma açıkken pencere kapatıldığında `winws` ve `dnscrypt-proxy` öksüz kaldı,
+  sistem DNS'i `127.0.0.1`'de kaldı ve DNS yedeği diskte "geri alınmamış" olarak
+  durdu. dnscrypt sonradan ölürse makine hiçbir adı çözemez. Artık iki çıkış yolu
+  da aynı yerden geçiyor: "Çıkış" düğmesi de pencereyi kapatıyor, temizlik kapanma
+  yolunda çalışıyor.
+- **Kurulum, çalışan uygulamayı zorla öldürüyordu.** `taskkill /F`, uygulamanın
+  kendi temizlik yolunu tümüyle atlıyordu; koruma açıkken yükseltme yapan bir
+  kullanıcıda yukarıdakiyle aynı sonuç doğuyordu. Artık önce nazikçe kapatılıyor
+  (uygulamanın kapanma yolu çalışsın diye), zorla öldürme yalnızca son çare.
+- **Arayüzün parametre testi şifreli DNS'i kullanmıyordu.** "Şifreli DNS kullan"
+  işaretli olsa bile ölçüm hedefleri sistem DNS'iyle çözüyordu. Türkiye'de o katman
+  çoğu zaman kaçırılmış durumda olduğundan `discord.com` engel sunucusuna çözülüyor,
+  ölçüm "engel sayfası" görüyor ve bölüm hiç aranmıyordu. Gerçek makinede ölçüldü:
+  arayüz **"ENGEL BULUNAMADI"** diyordu, aynı hatta aynı anda CLI `--doh` ile 22
+  çalışan strateji buluyordu. Yani ürünün ana yüzeyi, DNS kaçırması olan her hatta
+  kullanılamaz haldeydi.
+
+## [0.1.0] — ilk yayın (yayımlanmadı)
 
 İlk kamuya açık sürüm.
 
@@ -88,5 +124,6 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.0...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.0

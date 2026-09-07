@@ -344,6 +344,43 @@ aynı adla yazıldı ve hangisinin çalıştığı okunamaz hale geldi. Artık a
 sıra numarası var (`ladder/fake-quic-anyproto#3`). Asıl kimlik yine argümanlar —
 `ConfigStore.AddLearned` de onu anahtar alıyor — ad yalnızca okunabilirlik için.
 
+**Kurulum paketini kurup uygulamayı NORMAL KULLANICI gibi çalıştırmak, üç ayrı
+hata ortaya çıkardı — hiçbiri testlerde görünmüyordu.** Sırasıyla:
+
+1. **Arayüzün parametre testi şifreli DNS'i kullanmıyordu.**
+   `MainViewModel` proberi `new StrategyProber(_vendor, _profiles, targets)` ile
+   kuruyordu; dördüncü parametre `useSecureDns` varsayılan `false`. "Şifreli DNS
+   kullan" kutusu işaretli olsa bile ölçüm sistem DNS'iyle çözüyordu. Sonuç: arayüz
+   **"ENGEL BULUNAMADI"** diyor ve kullanıcıya "kendi hedefinizi girin" öneriyordu;
+   aynı hatta aynı anda CLI `--doh` ile 22 çalışan strateji buluyordu. Belirti tam
+   olarak DEVAM'ın kendi uyarısı: DoH'suz koşumda alt katman hiç görünmüyor.
+
+2. **HTTPS bölümüne QUIC stratejisi uygulanıyordu.** Test bitiminde her bölümün
+   kazananı HTTPS listesine ekleniyor ve `SelectedStrategy` her turda eziliyordu;
+   sıra `tcp80 → tcp443 → quic` olduğu için sonuncusu kalıyordu. winws gerçekten
+   `--filter-tcp=443 --dpi-desync=fake --dpi-desync-any-protocol=1
+   --dpi-desync-cutoff=n2 --dpi-desync-fake-quic=...` ile koşuyordu.
+   Ayırt edici belirti: **tcp80 açılıyor, tcp443 açılmıyor.** Bu bulunmadan önce
+   TLS sürümünden şüphelenildi; `curl --tlsv1.2` ve `--tlsv1.3` ikisi de RST
+   verince o yol elendi. Doğru teşhis winws'in KOMUT SATIRINI okumaktan geldi
+   (yükseltilmiş süreç, `Get-CimInstance Win32_Process` de yükseltilmiş olmalı).
+
+3. **Pencereyi X ile kapatmak hiçbir şeyi temizlemiyordu.** `MainWindow`'da
+   kapanma işleyicisi yoktu; temizlik yalnızca "Çıkış" düğmesinin içindeydi.
+   Koruma açıkken kapatınca winws ve dnscrypt öksüz kaldı, DNS `127.0.0.1`'de
+   kaldı, `dns-backup.json` "geri alınmamış" olarak diskte durdu. Aynı sınıftan
+   dördüncü bir yol da `setup.iss` içindeydi: kurulum, çalışan uygulamayı
+   `taskkill /F` ile öldürüyordu.
+
+Ortak ders: **bu üç hatanın hiçbiri birim testiyle yakalanamazdı** ve üçü de
+"ölçüm motoru doğru çalışıyor" ile "kullanıcının eline geçen şey doğru çalışıyor"
+arasındaki boşlukta duruyordu. Yayın öncesi kurulum + gerçek kullanım turu
+zorunlu; atlanırsa bu sınıf hatalar kullanıcıya gider.
+
+Doğrulama şekli de not: ölçüm motorunun kendi raporu YETMEZ. Bağımsız bir
+istemciyle bakıldı — `curl https://discord.com` düzeltmeden önce 78 ms'de RST,
+sonra **HTTP 200**.
+
 **Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin
 kurulabildiğini ve yerleşimin hesaplandığını doğruluyor; bunların hepsi geçerken
 uygulama **yanlış servis sağlayıcıyı seçili gösteriyordu**. Kurulum paketi üretilip

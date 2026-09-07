@@ -71,6 +71,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </remarks>
     private bool _isRestoring;
 
+    /// <summary>Temizlik bir kez kosulduysa tekrar kosmasin.</summary>
+    private bool _shutdownCompleted;
+
     public MainViewModel()
     {
         StartCommand = new RelayCommand(StartAsync, () => CanStart);
@@ -758,7 +761,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("Kendi hedefiniz eklendi: " + custom.Host);
             }
 
-            var prober = new StrategyProber(_vendor, _profiles, targets);
+            // Sifreli DNS secimi OLCUME de gecmeli. Gecmedigi surece hedefler sistem
+            // DNS'iyle cozuluyordu ve Turkiye'de o katman cogu zaman kacirilmis
+            // durumda: discord.com engel sunucusuna cozuluyor, olcum "engel sayfasi"
+            // goruyor, bolum DnsRedirected isaretleniyor ve strateji aranmiyor.
+            //
+            // Gercek makinede olculdu (TTNET, kurulum paketiyle): arayuz
+            // "ENGEL BULUNAMADI" diyordu ve kullaniciya "kendi hedefinizi girin"
+            // oneriyordu; ayni hatta ayni anda CLI --doh ile 22 calisan strateji
+            // buluyordu. Yani urunun ana yuzeyi, DNS kacirmasi olan her hatta
+            // -- ki bu Turkiye'de olagan durum -- kullanilamaz haldeydi.
+            var prober = new StrategyProber(_vendor, _profiles, targets, IsSecureDnsEnabled);
             var progress = new Progress<ProbeProgress>(OnProbeProgress);
 
             var report = await prober
@@ -849,8 +862,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task ExitAsync()
+    /// <summary>
+    /// winws'i durdurur ve sifreli DNS'i geri alir. BUTUN cikis yollarinin ortak adimi.
+    /// </summary>
+    /// <remarks>
+    /// Ayri bir metot olmasinin sebebi olculmus bir hata: temizlik yalnizca "Çıkış"
+    /// dugmesinin icindeydi, pencereyi X ile kapatmanin hicbir islevi yoktu. Gercek
+    /// makinede koruma acikken pencere kapatildiginda winws ve dnscrypt-proxy oksuz
+    /// kaldi ve sistem DNS'i 127.0.0.1'i gostermeye devam etti. Bu, projedeki en kotu
+    /// sonuca acilan yol: dnscrypt sonradan olurse (yeniden baslatma, gorev yoneticisi,
+    /// cokme) makine hicbir adi cozemez. Kullanicilarin cogu pencereyi X ile kapatir.
+    ///
+    /// Birden fazla kez cagrilabilir; ikinci cagri hicbir sey yapmaz.
+    /// </remarks>
+    public async Task ShutdownAsync()
     {
+        if (_shutdownCompleted)
+        {
+            return;
+        }
+
+        _shutdownCompleted = true;
+
         if (_runner is not null)
         {
             Append("Kapatılıyor, winws durduruluyor...");
@@ -860,8 +893,26 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // DNS geri alinmadan cikmak, kullaniciyi ad cozemez bir makineyle
         // birakmak demek. Cikis yolunda atlanabilecek bir adim degil.
         await StopSecureDnsAsync().ConfigureAwait(true);
+    }
 
-        Application.Current?.Shutdown();
+    /// <summary>
+    /// "Çıkış" dugmesi. Temizligi KENDISI yapmiyor: pencereyi kapatiyor ve temizlik
+    /// pencerenin kapanma yolunda calisiyor. Boylece dugme ile X ayni yoldan gecer --
+    /// ikisi ayri olunca biri temizlerken digeri temizlemiyordu.
+    /// </summary>
+    private Task ExitAsync()
+    {
+        var window = Application.Current?.MainWindow;
+        if (window is not null)
+        {
+            window.Close();
+        }
+        else
+        {
+            Application.Current?.Shutdown();
+        }
+
+        return Task.CompletedTask;
     }
 
     // --- Yardimcilar ------------------------------------------------------------
@@ -968,7 +1019,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append($"   [+] {SectionLabel(winner.Section)}: {winner.Args}");
             Append($"       açılan: {string.Join(", ", winner.VerifiedCategories)}");
 
-            // Kazanani secim listesine dogrulanmis olarak ekle.
+            // YALNIZCA tcp443 kazanani secim listesine girer. Bu liste HTTPS
+            // strateji listesi; diger bolumlerin kazananlari kullanicinin sectigi
+            // sey degil, RuntimeSelection'in profilden otomatik ekledigi sey.
+            //
+            // Onceden dongu her kazanan icin SelectedStrategy'yi eziyordu ve
+            // bolumler tcp80 -> tcp443 -> quic sirasinda geldigi icin SONUNCUSU,
+            // yani QUIC stratejisi, HTTPS stratejisi olarak secili kaliyordu.
+            // Gercek makinede olculdu: winws "--filter-tcp=443 --dpi-desync=fake
+            // --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n2
+            // --dpi-desync-fake-quic=..." ile calisiyordu -- TCP bolumune QUIC
+            // komutu. Sonuc: test "3 bolum icin calisan parametre bulundu" diyor,
+            // Baslat'a basiliyor, tcp80 aciliyor ama discord.com HTTPS'te RST
+            // almaya devam ediyor. Yani kullanicinin gordugu sey ile uygulanan
+            // sey birbirinden ayrilmisti.
+            if (winner.Section != StrategySection.Tcp443)
+            {
+                continue;
+            }
+
             var choice = new StrategyChoice(
                 winner.CandidateId,
                 $"✓ {SectionLabel(winner.Section)} · {Describe(winner.Args)} (test edildi)",

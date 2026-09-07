@@ -15,7 +15,7 @@
 ; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
 ; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
 #ifndef AppVersion
-  #define AppVersion "0.1.0"
+  #define AppVersion "0.1.1"
 #endif
 #define AppPublisher "ZapretTR contributors"
 #define AppUrl "https://github.com/superuser-d0/zapret-tr"
@@ -98,10 +98,27 @@ Type: filesandordirs; Name: "{app}\zapret-winws"
 [Code]
 // Kurulum baslamadan once calisan bir surum varsa kapat: acik bir uygulama
 // dosyalari kilitler ve kurulum yarim kalir.
+//
+// ONCE NAZIKCE. Eskiden dogrudan "taskkill /F" vardi ve bu, uygulamanin kendi
+// temizlik yolunu tamamen atliyordu: koruma acikken yukseltme yapan bir
+// kullanicida winws ve dnscrypt-proxy oksuz kaliyor, sistem DNS'i 127.0.0.1'de
+// kaliyordu. dnscrypt sonradan olurse makine hicbir adi cozemez.
+//
+// /F'siz taskkill WM_CLOSE gonderiyor; uygulamanin pencere kapanma yolu winws'i
+// durdurup DNS'i geri aliyor. Zorla oldurme yalnizca kapanmayan bir surec icin,
+// son care olarak kaliyor -- kurulumun dosya kilidi yuzunden yarim kalmasi da
+// kabul edilebilir degil.
 function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
 begin
+  Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe',
+       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Temizligin bitmesi icin sure taniniyor: winws'in durmasi ve DNS'in geri
+  // alinmasi anlik degil.
+  Sleep(4000);
+
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe /F',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := True;
