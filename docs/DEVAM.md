@@ -79,6 +79,17 @@ quic   : --dpi-desync=fake --dpi-desync-repeats=11
 Yani sahte yük seçimi hatta göre değişen bir eksen; "google yükü hep iyidir"
 varsayımı yanlış.
 
+**Turkcell Mobil'de DNS kaçırma VAR — şifreli DNS bu hatta isteğe bağlı değil.**
+`--apply --isp turkcell-mobil` (DoH'suz) koşulduğunda discord.com **engel sayfası**
+(`erisime_engellenmis`) döndürüyor ve winws hiçbir şey değiştiremiyor:
+`0 hedef düzeldi`. Aynı komut `--doh` ile: `3 hedef düzeldi, 0 bozuldu` —
+Discord'un metin, bağlantı ve QUIC bölümlerinin üçü de açılıyor.
+
+İki katmanlı engellemenin en temiz kanıtı bu: üstteki DNS katmanı durdukça
+alttaki DPI stratejisi ne kadar doğru olursa olsun sonuç değişmiyor.
+`tcp443` bölümünde bu fark belirti olarak da görünüyor — DoH varken
+**zaman aşımı** (gerçek DPI), DoH yokken **engel sayfası** (DNS kaçırma).
+
 ---
 
 ## Yapılacaklar
@@ -165,6 +176,20 @@ engelli OLMADIĞI bilinen bir adresle (`www.google.com`) karşılaştır:
 ```
 zapret-tr-test.exe --diagnose www.google.com --doh
 ```
+
+**Bölüme göre ölçüm seçimi DÖRT ayrı yerde tekrarlanıyordu ve hepsi tek tek
+ısırdı.** `quic` ham `QuicConnection`, `discord-voice` STUN, gerisi
+`HttpProbeClient` ister. Bu dallanma baseline'da, aday denemesinde, doğrulama
+tekrarında, `--engage-check`'te, `--diagnose`'da ve `--apply`'da ayrı ayrı
+yazılmıştı; her biri sırayla yanlış çıktı. Belirtisi hep aynı ve sessiz:
+ölçüm çalışıyor gibi görünüyor ama başka bir şey ölçüyor — örneğin `--apply`
+QUIC hedefleri için `HTTP 200` yazıyordu, oysa QUIC ölçümü hiçbir zaman
+"HTTP 200" dönmez.
+
+Artık tek yer var: `StrategyProber.ProbeAsync`. **Yeni bir ölçüm yolu
+eklerken kendi dallanmanı yazma, bunu çağır.** Çıktıda bir bölüm kendi
+protokolüne ait olmayan bir detay yazıyorsa (QUIC'te "HTTP ...", ses
+bölümünde "HTTP ...") o yol bu fonksiyonu atlıyordur.
 
 **winws, filtresi birebir aynı olan ikinci bir örneği reddediyor.**
 `A copy of winws is already running with the same filter`. `--ipset-ip` GLOBAL

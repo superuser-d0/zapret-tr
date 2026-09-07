@@ -106,13 +106,21 @@ if (options.Apply)
         Console.WriteLine();
     }
 
+    // Olcum bolume gore secilmeli: QUIC ham QuicConnection ile, discord-voice
+    // STUN ile. Burada duz HttpProbeClient kullaniliyordu ve QUIC hedefleri
+    // HTTP uzerinden olculup "HTTP 200" donuyordu -- yani QUIC hic olculmuyordu.
+    //
+    // IP SABITLENMIYOR (pinnedIp: null) ve bu kasitli: --apply'in olctugu sey
+    // "gercekten calisiyor mu", yani kullanicinin uygulamasinin gordugu yol.
+    // --doh verildiginde dnscrypt zaten SISTEM DNS'ini yonlendiriyor, dolayisiyla
+    // sistem cozumlemesi de sifreli oluyor.
     Console.WriteLine("Önce (winws kapalı):");
     var before = new Dictionary<string, bool>();
     using (var c = new HttpProbeClient())
     {
         foreach (var t in applyTargets)
         {
-            var r = await c.TryReachAsync(t.Host, StrategyProber.ModeFor(t.Section));
+            var r = await StrategyProber.ProbeAsync(t.Section, t.Host, null, c);
             before[t.Label] = r.Succeeded;
             Console.WriteLine($"   {(r.Succeeded ? "açık " : "KAPALI")}  {t.Label,-34} {r.Detail}");
         }
@@ -132,7 +140,7 @@ if (options.Apply)
     {
         foreach (var t in applyTargets)
         {
-            var r = await c.TryReachAsync(t.Host, StrategyProber.ModeFor(t.Section));
+            var r = await StrategyProber.ProbeAsync(t.Section, t.Host, null, c);
             var was = before.TryGetValue(t.Label, out var b) && b;
 
             var change = (was, r.Succeeded) switch
