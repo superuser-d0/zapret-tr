@@ -216,14 +216,12 @@ if ($UpdateManifest) {
     return
 }
 
-# winws indirmesi atlandiysa dogrulanacak bir sey de yok. Bu dal olmadan script
-# sonunda "SHA256 dogrulandi - 0 dosya" yaziyordu: hicbir sey dogrulanmadigi halde
-# dogrulama mesaji basmak, yanlis guvence vermenin ta kendisi.
-if ($skipWinws) {
-    Write-Host 'winws dogrulamasi atlandi (dosyalar zaten yerinde, indirme yapilmadi).' -ForegroundColor Yellow
-    Write-Host ''
-    return
-}
+# Not: burada bir zamanlar "$skipWinws ise dogrulamayi atla" dali vardi. Indirme
+# hepsi-ya-hicbiri iken anlamliydi; artimli hale gelince o degisken kalkti ama dal
+# kaldi ve StrictMode altinda script HER kosumda tam bu noktada patladi -- yani
+# dosyalar iniyor, SHA256 dogrulamasi hicbir zaman kosmuyordu. Artimli akista
+# atlanacak bir sey yok: yerinde duran dosyanin ozeti de $downloaded'a yaziliyor,
+# dolayisiyla asagidaki dongu her zaman TUM dosyalari dogruluyor.
 
 if (-not (Test-Path $ManifestPath)) {
     throw "Manifest yok: $ManifestPath`nIlk uretim icin: .\tools\fetch-upstream.ps1 -UpdateManifest"

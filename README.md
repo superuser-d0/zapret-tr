@@ -3,9 +3,11 @@
 Windows için GUI'li [zapret](https://github.com/bol-van/zapret) dağıtımı — Türkiye'deki servis
 sağlayıcılarına odaklanmış otomatik parametre bulma ile.
 
-> **Durum: geliştirme aşamasında.** Arayüz, test motoru ve profil veritabanı yazıldı ve derleniyor;
-> 37 test geçiyor. Ama **henüz gerçek bir bağlantıda çalıştırılmadı** — `winws.exe` bir kez bile
-> başlatılmış değil. Aşağıdaki "Yol haritası" nerede olduğumuzu gösteriyor.
+> **Durum: çalışıyor, saha verisi toplanıyor.** Uygulama, test motoru ve kurulum paketi gerçek
+> donanımda uçtan uca koşuldu; 116 test geçiyor. İki hatta (Türk Telekom / AS9121 ve Turkcell
+> Mobil / AS16135) çalışan stratejiler **ölçümle** doğrulandı. Eksik olan kod değil **kapsam**:
+> 10 profilin 8'inde henüz tek bir doğrulanmış aday yok, çünkü o hatlara erişimimiz yok.
+> Aşağıdaki "Yol haritası" nerede olduğumuzu gösteriyor.
 
 ---
 
@@ -70,6 +72,9 @@ dotnet build
 dotnet test
 ```
 
+Sıra önemli: arayüz duman testleri `vendor/` içindeki ikilileri arıyor, dolayısıyla
+`fetch-upstream.ps1` çalıştırılmadan `dotnet test` iki testte başarısız olur.
+
 ## Depo yapısı
 
 ```
@@ -87,38 +92,40 @@ tools/fetch-upstream.ps1  upstream ikili indirme + SHA256 doğrulama
 Tamamlananlar:
 
 - [x] Repo iskeleti, upstream indirme + SHA256 doğrulama
-- [x] ISP profil veritabanı (10 profil) + genel kombinatoryal merdiven
-- [x] Komut kurucu, profil yükleyici, testler
+- [x] ISP profil veritabanı (10 profil) + genel kombinatoryal merdiven (221 aday)
+- [x] Komut kurucu, profil yükleyici, testler (116 test)
 - [x] winws süreç yönetimi + WinDivert temizliği
 - [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
 - [x] WPF GUI (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
 - [x] Gerçek donanımda uçtan uca doğrulama — TTNET'te Discord, Pornhub, XVideos açıldı
 - [x] `--ipset-ip` izolasyonunun çalıştığı doğrulandı (winws `--debug=1` çıktısıyla)
 - [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
-- [x] Superonline saha testi paketi (taşınabilir, tek dosya, kendi kendini temizler)
-
-Kalanlar:
-
-- [ ] **Doğrulama kapsamı.** 89 adayın 1'i gerçek bir hatta doğrulandı. Bu bir kod
-      eksiği değil saha verisi eksiği; kullanıcılar test çalıştırdıkça doluyor.
-- [ ] **QUIC için çalışan strateji yok.** Discord QUIC bu hatta engelli ama
-      merdivendeki 15 QUIC adayının hiçbiri açmadı. Yeni aday ailesi gerekiyor.
-- [ ] **Superonline saha testi** — paket hazır, test kullanıcısında.
-- [ ] Saha paketi 34 MB. `PublishTrimmed` denendi ve GERİ ALINDI: JSON yansımayla
-      çalıştığı için kırpma, DNS yedeğinin geri yüklenmesi gibi güvenlik kritik
-      yolları sessizce bozabiliyor. Güvenli hale getirmek profil yükleyicisi dahil
-      tüm JSON yollarının kaynak üretimine taşınmasını gerektiriyor; 15 MB için
-      alınacak risk değil.
-
-Tamamlananlara eklenenler:
-
+- [x] Superonline saha testi paketi (taşınabilir, kendi kendini temizler)
 - [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\`
 - [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
 - [x] Servis kaldırma yolu gerçek koşumda doğrulandı
 - [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
-- [x] Kurulum paketi (Inno Setup, 53 MB, kendi kendine yeten)
+- [x] Kurulum paketi (Inno Setup, kendi kendine yeten) — tam yaşam döngüsü koşuldu
 - [x] Paralel hedef sınaması
 - [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
+- [x] **QUIC.** Hem ölçüm yolu hem çalışan strateji bulundu. Uzun süre "engelli"
+      sanılan şeyin bir kısmı bizim ölçüm hatamızmış; ayrıntısı `docs/DEVAM.md`'de.
+- [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak
+      üretimine taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
+
+Kalanlar:
+
+- [ ] **Doğrulama kapsamı — asıl eksik bu.** Gerçek bir hatta doğrulanmış aday
+      sayısı 17: turk-telekom'da 15 (tcp443 8, quic 7), turkcell-mobil'de 2.
+      Kalan 8 profilde sıfır. Kod eksiği değil, saha verisi eksiği.
+- [ ] **`tcp80` ve `discord-voice` hiçbir profilde doğrulanmadı.** Hedef listesinde
+      o bölümlerde engelli bir adres yok; yeni hedef eklenmeden ölçülemezler.
+- [ ] **Superonline saha testi** — paket hazır, test kullanıcısında. Turkcell Mobil
+      hotspot bunun yerine geçmiyor: ayrı ağ, ayrı ASN, ölçülen davranışı da farklı.
+- [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir
+      makinede sıcak ve soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor
+      (sistem DNS'ine dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini
+      söylemesi için hata mesajı artık süreç ve port durumunu taşıyor.
 
 ## Uyarılar
 

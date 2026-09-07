@@ -112,12 +112,16 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         }
 
         // Cevap verdigini DOGRULAMADAN sistem DNS'ine dokunmuyoruz.
-        if (!await WaitUntilRespondingAsync(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false))
+        var wait = TimeSpan.FromSeconds(15);
+        if (!await WaitUntilRespondingAsync(wait, cancellationToken).ConfigureAwait(false))
         {
+            // Teshis, surec oldurulmeden ONCE toplaniyor: StopAsync'ten sonra
+            // "surec yasiyor muydu" sorusunun cevabi kalmiyor.
+            var diagnosis = DescribeStartupFailure(wait);
             await StopAsync(CancellationToken.None).ConfigureAwait(false);
             throw new InvalidOperationException(
                 "dnscrypt-proxy baslatildi ama DNS sorgularina cevap vermedi. " +
-                "Sistem DNS ayarina DOKUNULMADI.");
+                "Sistem DNS ayarina DOKUNULMADI. " + diagnosis);
         }
 
         var changed = await SystemDnsManager
@@ -223,6 +227,68 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Baslatma dogrulamasi basarisiz oldugunda "neden" sorusuna cevap uretir.
+    /// </summary>
+    /// <remarks>
+    /// Bu yol bir kez gercekten yasandi ve teshis edilemedi: bir makinede
+    /// dnscrypt-proxy aciliyor, cozumleyicilere baglaniyor (gunlukte
+    /// "OK (DNSCrypt) rtt: ...") ama bizim dogrulama sorgumuz cevapsiz kaliyordu.
+    /// Guvenli davranis dogru calisti -- sistem DNS'ine dokunulmadi -- ama elde
+    /// yalnizca "cevap vermedi" cumlesi kaldigi icin sebep bulunamadi. Baska bir
+    /// hatta ve baska bir makinede, hem sicak hem SOGUK baslangicta yeniden
+    /// uretilemedi (ikisi de saniyeler icinde gecti).
+    ///
+    /// Bu yuzden burada ayirt edici iki bilgi toplaniyor:
+    ///   - surec hala yasiyor mu (yasamiyorsa cikis kodu),
+    ///   - 127.0.0.1:53'u dinleyen BIRI var mi.
+    /// Ikisi birlikte uc farkli durumu ayiriyor: surec olmus, surec yasiyor ama
+    /// portu hic baglayamamis (baska bir servis tutuyor olabilir), ve port bagli
+    /// ama sorgu cevapsiz (asil bilinmeyen durum).
+    /// </remarks>
+    private string DescribeStartupFailure(TimeSpan waited)
+    {
+        var parts = new List<string> { $"{waited.TotalSeconds:F0} sn beklendi." };
+
+        Process? process;
+        lock (_gate)
+        {
+            process = _process;
+        }
+
+        try
+        {
+            parts.Add(process is null || process.HasExited
+                ? $"Surec yasamiyor (cikis kodu: {(process is null ? "yok" : process.ExitCode.ToString())})."
+                : "Surec hala calisiyor.");
+        }
+        catch (InvalidOperationException)
+        {
+            parts.Add("Surec durumu okunamadi.");
+        }
+
+        try
+        {
+            var listening = System.Net.NetworkInformation.IPGlobalProperties
+                .GetIPGlobalProperties()
+                .GetActiveUdpListeners()
+                .Any(e => e.Port == 53
+                          && (e.Address.Equals(IPAddress.Parse(SystemDnsManager.LocalResolver))
+                              || e.Address.Equals(IPAddress.Any)));
+
+            parts.Add(listening
+                ? $"{SystemDnsManager.LocalResolver}:53 dinleniyor, yani port bagli ama sorgu cevapsiz kaldi."
+                : $"{SystemDnsManager.LocalResolver}:53 dinlenmiyor -- port baglanamamis olabilir (baska bir DNS servisi tutuyor olabilir).");
+        }
+        catch (Exception)
+        {
+            // Teshis, asil hatanin onune gecmemeli.
+            parts.Add("Port durumu okunamadi.");
+        }
+
+        return string.Join(' ', parts);
     }
 
     private async Task<bool> WaitUntilRespondingAsync(TimeSpan timeout, CancellationToken cancellationToken)

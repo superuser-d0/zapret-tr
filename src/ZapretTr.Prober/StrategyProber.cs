@@ -286,6 +286,15 @@ public sealed class StrategyProber(
         // Arama sirasinda engel sayfasi dondugu icin vazgecilen hedefler.
         var abandoned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // Tier'lar arasi tekrar: her tier kendi icinde argumana gore tekillestiriliyordu
+        // ama TIER'LAR ARASINDA degil. Profiller birbirinden turedigi ve merdiven de
+        // ayni kombinasyonlari uretebildigi icin ayni strateji farkli adla ikinci kez
+        // deneniyordu. Olculdu: TTNET'te 40 denemenin 8'i (%20) birebir ayni argumanin
+        // tekrariydi -- ornegin "tt-quic-fake-plain" ile "superonline/sol-quic-fake-plain"
+        // ayni komut. Butce sinirli oldugu icin bunun bedeli dogrudan: denenmeyen
+        // 8 gercek aday.
+        var triedArgs = new HashSet<string>(StringComparer.Ordinal);
+
         foreach (var (tier, label, candidates) in BuildTiers(section, profile))
         {
             if (remaining <= 0)
@@ -293,7 +302,14 @@ public sealed class StrategyProber(
                 break;
             }
 
-            var candidateList = candidates.Take(remaining).ToList();
+            // Where'in yan etkisi kasitli: Take tembel oldugu icin yalnizca listeye
+            // GERCEKTEN giren adaylar "denendi" diye isaretleniyor. Butce yuzunden hic
+            // cekilmeyen bir aday isaretlenmis olsaydi, ayni argumani tasiyan baska bir
+            // aday sonradan sessizce elenirdi.
+            var candidateList = candidates
+                .Where(c => triedArgs.Add(c.Args))
+                .Take(remaining)
+                .ToList();
             if (candidateList.Count == 0)
             {
                 continue;
@@ -575,12 +591,23 @@ public sealed class StrategyProber(
                 .SelectMany(p => p.CandidatesFor(section).Select(c => new ProbeCandidate($"{p.Id}/{c.Id}", c.Args)))
                 .DistinctBy(c => c.Args, StringComparer.Ordinal));
 
+        // Aile adi tek basina KIMLIK DEGIL: bir aile eksenlerin kartezyen carpimi
+        // kadar aday uretiyor, dolayisiyla "ladder/fake-quic-anyproto" adinda
+        // onlarca farkli aday oluyordu. Ilerleme satirlarinda ayni ad pes pese
+        // tekrarliyor ve -- asil sorun -- dogrulanan bir aday learned.json'a bu
+        // adla yazilinca hangi varyantin calistigi kayboluyordu. Aile icinde
+        // sira numarasi veriyoruz; asil kimlik yine argumanlar, ad okunabilirlik icin.
+        //
+        // GroupBy burada siralamayi bozmuyor: Expand bir ailenin butun
+        // kombinasyonlarini pes pese uretiyor, yani aileler zaten bitisik geliyor.
         yield return (
             ProbeTier.GenericLadder,
             "Genel arama",
             profiles.Ladder.Expand(section)
-                .Select(c => new ProbeCandidate($"ladder/{c.Family}", c.Args))
-                .DistinctBy(c => c.Args, StringComparer.Ordinal));
+                .DistinctBy(c => c.Args, StringComparer.Ordinal)
+                .GroupBy(c => c.Family, StringComparer.Ordinal)
+                .SelectMany(family => family.Select((c, index) =>
+                    new ProbeCandidate($"ladder/{c.Family}#{index + 1}", c.Args))));
     }
 
     /// <summary>

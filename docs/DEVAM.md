@@ -74,6 +74,41 @@ projede ilk kez bir profil bu düzeyde teyit edildi. `--apply --doh` aynı anda
 `3 hedef düzeldi, 0 hedef bozuldu` verdi; "0 bozuldu" ayrıca önemli, YouTube ve
 kontrol hedefleri etkilenmedi.
 
+**Ölçülmüş sonuç — TTNET kapsamlı tarama (2026-09-07, AS9121, yeni makine):**
+
+Aynı komut (`--isp turk-telekom --doh --exhaustive --max-candidates 20`) üç kez
+bağımsız koşuldu. Her koşum 60 deneme / ~5.5 dakika. Sonuç şaşırtıcı derecede
+kararlı: **32 ortak adayın 14'ü üçünde de çalıştı**, biri (`vf-443-fake-multisplit-badseq`)
+yalnızca 1/3 — tekrarın gerekçesi tam olarak o tek aday.
+
+3/3 geçenler `profiles/isp/turk-telekom.json`'a `verified` olarak işlendi:
+tcp443'te 8, quic'te 7 doğrulanmış aday. Yabancı profillerden gelenler (md5sig
+ailesi Superonline'dan, ttl1+autottl3 Turkcell Mobil'den) `tt-` kimliğiyle
+kopyalandı — **kaynak profillerinde durumları değişmedi**, çünkü orada değil
+burada doğrulandılar.
+
+**`--exhaustive` ilk koşumunda hemen bir şey buldu: `tt-quic-fake-plain`.**
+`--dpi-desync=fake --dpi-desync-repeats=11` — sahte yük yok, `any-protocol` yok —
+TTNET'te Discord QUIC'ini açıyor, 3/3. Bu aday profilde en baştan beri duruyordu
+ama **TTNET'te bir kez bile denenmemişti**: arama ilk başarıda duruyor ve
+profilin ilk QUIC adayı (`tt-quic-anyproto-cutoff`) hep hemen tutuyordu. Yani
+bulunamamış olmasının sebebi hattın davranışı değil, arama stratejisiydi.
+
+Bu, `tt-quic-anyproto-cutoff` notundaki "any-protocol'süz aynı aday 2/2 zaman
+aşımı" ölçümüyle ÇELİŞMİYOR — o ölçüm google yüklü + cutoff'lu adaydan yalnızca
+`any-protocol`'ü çıkarmıştı. İkisi farklı adaylar.
+
+**Yük eksenine dair aynı hatta üçüncü kez kanıt:** `tt-quic-fake-google`
+(google yükü, `any-protocol` YOK) bu hatta **3/3 zaman aşımı** verdi. Aynı yük
+`any-protocol` ile birlikte verildiğinde çalışıyor. Yani yük tek başına zarar
+veriyor, `any-protocol` ile birlikte fayda sağlıyor. Ağırlığı doğrulanmışların
+altına (60) çekildi. Mobil hattaki "yüklü aday 0/2, yüksüz 3/3" gözlemiyle aynı
+yöne işaret ediyor.
+
+Ayrıca `any-protocol` ailesinde **cutoff değeri belirleyici değil**: n2, n3 ve d2
+üçü de, yüklü ve yüksüz halleriyle, 3/3 geçti. Belirleyici olan `any-protocol`'ün
+kendisi.
+
 **Mobil, sabit hattan gerçekten farklı — türetilemez.** İki somut fark:
 
 1. Discord TCP: TTNET'te **RST**, Turkcell Mobil'de **zaman aşımı**.
@@ -100,28 +135,36 @@ alttaki DPI stratejisi ne kadar doğru olursa olsun sonuç değişmiyor.
 
 ## Yapılacaklar
 
-### 1. Doğrulama kapsamı — 4 aday doğrulanmış
+### 1. Doğrulama kapsamı — 17 aday doğrulanmış, 8 profil hâlâ boş
 
 Kod eksiği değil saha verisi eksiği. Gerçek hatta doğrulanan adaylar:
 
-| Profil | Bölüm | Aday |
+| Profil | Bölüm | Doğrulanmış aday |
 |---|---|---|
-| turk-telekom (AS9121) | tcp443 | `tt-443-fake-ttl4` |
-| turk-telekom (AS9121) | quic | `tt-quic-anyproto-cutoff` |
-| turkcell-mobil (AS16135) | tcp443 | `tcm-443-fake-autottl` |
-| turkcell-mobil (AS16135) | quic | `tcm-quic-fake-plain` |
+| turk-telekom (AS9121) | tcp443 | 8 (`tt-443-fake-ttl4` başta) |
+| turk-telekom (AS9121) | quic | 7 (`tt-quic-anyproto-cutoff` başta) |
+| turkcell-mobil (AS16135) | tcp443 | 1 (`tcm-443-fake-autottl`) |
+| turkcell-mobil (AS16135) | quic | 1 (`tcm-quic-fake-plain`) |
 
-Hiçbir profilde `tcp80` ve `discord-voice` doğrulanmadı — o bölümler bu iki hatta
-zaten engelli değil, dolayısıyla buradan ölçülemezler. Kullanıcılar test
-çalıştırdıkça `%ProgramData%\ZapretTR\learned.json` doluyor ve profillerin üzerine
-bindiriliyor.
+Kalan 8 profilde sıfır. Hiçbir profilde `tcp80` ve `discord-voice` doğrulanmadı —
+`profiles/probe-targets.json` içinde o bölümlerde engelli bir hedef yok (tcp80'de
+yalnızca kontrol hedefi var), dolayısıyla bu hatlardan ölçülemezler. Yeni bir
+tcp80 hedefi eklenmeden bu bölüm hiçbir hatta doğrulanamaz.
+
+Kullanıcılar test çalıştırdıkça `%ProgramData%\ZapretTR\learned.json` doluyor ve
+profillerin üzerine bindiriliyor. **CLI bunu 2026-09-07'ye kadar hiç yazmıyordu**
+— yalnızca WPF yazıyordu, yani `zapret-tr-test.exe` ile bulunan her doğrulama
+rapor dosyasında kalıp arayüze/servise hiç geçmiyordu. Artık `--save-learned` var
+(bayrakla, çünkü bu araç başkasının makinesinde de koşuyor ve oradaki söz
+"sonuçlar yalnızca rapor dosyasına yazılır").
 
 Not: paralel sınama hatası düzeltilene kadar QUIC sonuçları kararsızdı (tuzaklar
 bölümüne bak). Bu düzeltmeden ÖNCE toplanmış `learned.json` verisi varsa QUIC
 bölümü için güvenilmez.
 
-Hızlandırmak için: bu makinede `--max-candidates` yüksek tutup `stopAtFirstSuccess`
-kapalı koşumlar yapılabilir (şu an CLI'da bunun bayrağı yok, eklenebilir).
+Kapsamı genişletmenin yolu artık bir bayrak: `--exhaustive` ilk başarıda durmaz,
+bütçe bitene kadar dener. Doğrulama verisi toplamak için olan tek şey bu;
+normal kullanımda gereksiz ve yavaş.
 
 ### 2. Superonline saha testi — dış bağımlılık
 
@@ -245,6 +288,22 @@ hedeflerin yalnızca birinde ölçülüyor, diğerinde "çalıştırılamadı" y
 (`--ipset-ip=<ip_list>` virgüllü liste alıyor). Aynı aday zaten bütün hedeflere
 aynı stratejiyi uyguluyor, dolayısıyla anlam değişmiyor.
 
+**Aday tekilleştirmesi tier'ların İÇİNDE vardı, ARASINDA yoktu.** Profiller
+birbirinden türediği ve genel merdiven de aynı kombinasyonları ürettiği için aynı
+komut farklı adla ikinci kez deneniyordu. Ölçüldü: TTNET kapsamlı taramasında
+40 denemenin 8'i (%20) birebir aynı argümanın tekrarıydı — örneğin
+`tt-quic-fake-plain` ile `superonline/sol-quic-fake-plain` aynı komut. Bütçe
+sınırlı olduğu için bedeli doğrudan: denenmeyen 8 gerçek aday. Artık
+`SearchSectionAsync` bölüm boyunca görülen argümanları tutuyor.
+
+**Merdiven adaylarının kimliği aile adıydı, yani kimlik değildi.** Bir aile
+eksenlerin kartezyen çarpımı kadar aday üretiyor; hepsi `ladder/fake-quic-anyproto`
+adını taşıyordu. İlerleme satırlarında aynı ad peş peşe tekrarlıyordu, ama asıl
+zarar `--save-learned` ile görüldü: doğrulanan altı farklı varyant `learned.json`'a
+aynı adla yazıldı ve hangisinin çalıştığı okunamaz hale geldi. Artık aile içinde
+sıra numarası var (`ladder/fake-quic-anyproto#3`). Asıl kimlik yine argümanlar —
+`ConfigStore.AddLearned` de onu anahtar alıyor — ad yalnızca okunabilirlik için.
+
 **`winws.exe --help` bile yönetici yetkisi istiyor.** Seçenek listesini öğrenmek
 için UAC harcamaya gerek yok: ikiliden ASCII dizgi çıkarmak yeterli ve daha
 eksiksiz sonuç veriyor (yardımda görünmeyen karar satırları da çıkıyor).
@@ -254,6 +313,22 @@ Bu oturumdaki bütün teşhis oradan geldi.
 SNI'yi runtime'da üretebiliyor ama QUIC'te karşılığı yok; tek eksen hazır yük
 dosyasının kendisi. Bu yüzden `files/fake/` altındaki `quic_initial_*`
 varyantları indiriliyor. Aramadan önce ikilide `strings` ile doğrula.
+
+**`fetch-upstream.ps1`'in SHA256 doğrulaması bir süre HİÇ koşmadı.** Artımlı
+indirmeye geçiş `$skipWinws` değişkenini kaldırmış ama onu kullanan
+`if ($skipWinws) { ... return }` dalı dosyada kalmıştı. `Set-StrictMode -Version
+Latest` altında tanımsız değişkene erişmek hata; dolayısıyla betik **her koşumda**
+tam o noktada, yani dosyalar indikten sonra ama doğrulama döngüsünden önce
+patlıyordu. Belirtisi yanıltıcı: bütün dosyalar iniyor, `vendor/` dolu ve çalışır
+görünüyor, sadece en sondaki kırmızı satır okunmazsa hiçbir şey ters görünmüyor.
+Kaybedilen şey projenin tedarik zinciri güvencesinin tamamıydı.
+
+Temiz bir makinede yeniden kurulurken yakalandı; düzeltmeden sonra 16 dosyanın
+16'sı manifest özetiyle eşleşti, yani inen ikililer doğruydu — ama bu ancak
+doğrulama koştuktan sonra bilinebilirdi.
+
+Ders: `return` ile biten bir "atla" dalı, atlanan şey bir güvenlik kontrolüyse
+sessizce her şeyi atlayabilir. Bu betikte artık öyle bir dal yok.
 
 **`fetch-upstream.ps1` artık artımlı.** Eskiden "dosya sayısı yeterliyse hepsini
 atla, değilse hepsini indir" idi; listeye yeni bir dosya eklemek bütün listeyi
@@ -337,6 +412,13 @@ zapret-tr-test.exe --doh --isp turk-telekom --max-candidates 20 -y
 zapret-tr-test.exe --detect-isp               # hangi hattayım + eşleşen profiller
 zapret-tr-test.exe --diagnose discord.com     # tek adres, dört protokol
 
+# Doğrulama verisi toplamak için: ilk başarıda durma, çalışan HER adayı bul ve
+# bulunanları learned.json'a yaz (--save-learned, --isp gerektirir).
+# Üç kez koşup kesişimini almak tek koşumun gürültüsünü ayıklıyor: 2026-09-07'de
+# 32 ortak adayın 14'ü 3/3, biri 1/3 çıktı.
+zapret-tr-test.exe --isp turk-telekom --doh --exhaustive --max-candidates 20 \
+                   --save-learned --out rapor.json -y
+
 # winws paketleri görüyor mu VE gördüğünü değiştiriyor mu (ikisi ayrı soru).
 # --section olmadan tcp80 varsayılır; QUIC teşhisi için şart.
 # --out verilirse tam winws günlüğü oraya yazılır (ekran çıktısı kırpılıyor).
@@ -358,25 +440,29 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
+**DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
+değil. Belirtileri: .NET SDK yoktu (yalnızca 8.0.30 runtime),
+`%ProgramData%\ZapretTR` yoktu, `vendor/` boştu. Aşağıdakiler bu yeni makine için
+geçerli.
+
 Temiz ve **bağımsız doğrulandı** (`--cleanup` çıktısına güvenilmedi, ayrıca
 kontrol edildi): winws/dnscrypt/ZapretTR süreci yok, WinDivert ve ZapretTR
-servisi yok, DNS gerçek sunuculara dönmüş (dnscrypt'in `127.0.0.1`'i değil),
-`example.com` HTTP 200.
+servisi yok, DNS yönlendiriciye dönmüş (`192.168.8.1`, dnscrypt'in `127.0.0.1`'i
+değil), `example.com` çözülüyor.
 
-WPF uygulaması `CloseMainWindow` ile kapatıldı, `TerminateProcess` ile değil —
-DNS'i kendi çıkış yolundan geri alsın diye. Nitekim sonraki `--cleanup`
-"Sistem DNS ayarı — değiştirilmemiş" dedi, yani uygulama işini yapmıştı.
-Yükseltilmiş süreç olduğu için bu ancak yükseltilmiş bir oturumdan yapılabiliyor.
+`%ProgramData%\ZapretTR\learned.json` duruyor: 16 kayıt (tcp443 9, quic 7), bu
+oturumun `--save-learned` koşumlarından. `config.json` yok — WPF hiç açılmadı.
 
-`%ProgramData%\ZapretTR\config.json` duruyor (kullanıcı ayarı, kaldırma bunu
-silmiyor).
+**Ortam kurulumu (yeniden gerekirse):** .NET SDK 8.0.424 `dotnet-install.ps1` ile
+kullanıcıya özel kuruldu, PATH'e EKLENMEDİ. Tam yol:
+`%LOCALAPPDATA%\Microsoft\dotnet\dotnet.exe`. `C:\Program Files\dotnet\dotnet.exe`
+hâlâ SDK'sız, onunla `dotnet build` çalışmaz.
 
-Test hatları: Türk Telekom / AS9121 (sabit) **ve** Turkcell Mobil / AS16135
-(telefon hotspot ile tethering). İkisi de ölçüldü. VPN yok. Superonline (AS34984)
-erişimi yok.
+Test hatları: Türk Telekom / AS9121 (sabit). VPN yok. Bu makinede Turkcell Mobil
+hotspot ve Superonline (AS34984) erişimi YOK — turkcell-mobil profilinin verisi
+önceki makineden geliyor, bu oturumda tekrar ölçülmedi.
 
-**Son oturum sonunda makine Turkcell Mobil hotspot'una bağlıydı.** Ölçüm yapmadan önce hattı
-doğrula — artık kendi komutu var:
+Ölçüm yapmadan önce hattı doğrula:
 
 ```
 zapret-tr-test.exe --detect-isp
@@ -385,14 +471,22 @@ zapret-tr-test.exe --detect-isp
 Yanlış hatta koşup sonucu yanlış profile yazmak, bu projedeki en pahalı sessiz
 hata sınıfı.
 
-**Açık konu — `--dns test` bu makinede geçmiyor.** dnscrypt-proxy başlıyor,
-çözümleyicilere bağlanıyor (`OK (DNSCrypt) rtt: ...`), ama uygulamanın doğrulama
-sorgusu cevapsız kalıyor; bunun üzerine sistem DNS'ine **dokunmuyor** ve temiz
-geri alıyor — yani güvenli davranış doğru çalışıyor. Kırpmayla ilgisi YOK:
-kırpılmamış Debug derlemesi de birebir aynı davranıyor, ikisi karşılaştırılarak
-ayrıldı. `--apply --doh` yolu ise aynı makinede sorunsuz çalışıyor (dnscrypt
-başlıyor, sistem DNS'i yönlendiriliyor, hedefler çözülüyor), dolayısıyla sorun
-dnscrypt'in kendisinde değil `--dns test`'in doğrulama sorgusunda. Bakılacak yer
-orası.
+**Kapanan konu — `--dns test`: bu makinede YENİDEN ÜRETİLEMEDİ.** Önceki makinede
+dnscrypt açılıyor, çözümleyicilere bağlanıyor ama doğrulama sorgusu cevapsız
+kalıyordu. Burada hem sıcak hem **soğuk** başlangıçta (çözümleyici listesi
+önbelleği `public-resolvers.md` silinerek) saniyeler içinde geçti; üç hedef de
+gerçek adrese çözüldü ve DNS temiz geri alındı. Yani soğuk başlangıç
+hipotezi — "15 sn'lik doğrulama penceresi liste indirmeye yetmiyor" — bu hatta
+**doğrulanmadı**. Sorun o makineye özgü (yavaş bağlantı, 53/udp'yi tutan başka
+bir servis, ya da loopback UDP'yi engelleyen bir güvenlik duvarı olabilir).
+
+Üretilemeyen bir hata düzeltilemediği için bunun yerine **kendini anlatır** hale
+getirildi: doğrulama başarısız olduğunda `DnsCryptRunner` artık ne kadar
+beklendiğini, sürecin yaşayıp yaşamadığını (yaşamıyorsa çıkış kodunu) ve
+`127.0.0.1:53`'ü dinleyen biri olup olmadığını mesaja koyuyor. Bu üçlü, üç ayrı
+durumu ayırıyor: süreç ölmüş / süreç yaşıyor ama portu bağlayamamış / port bağlı
+ama sorgu cevapsız. O makinede tekrar görülürse mesaj hangisi olduğunu söyler.
 
 Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).
+Kırpılmış Release yayını doğrulandı: 11.3 MB tek dosya + yanında `msquic.dll`,
+kırpma analizöründen tek uyarı yok.

@@ -13,7 +13,7 @@
   ],
   "engine": "winws",
   "priority": 2,
-  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket. DOGRULANMIS PROFIL: bu dosya artik elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ. Sebebi, icinde gercek saha dogrulamasi tasimasi -- yeniden uretim o veriyi silerdi.",
+  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket. DOGRULANMIS PROFIL: bu dosya artik elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ. Sebebi, icinde gercek saha dogrulamasi tasimasi -- yeniden uretim o veriyi silerdi. 2026-09-07 saha olcumu: --exhaustive ile ayni komut uc kez kosuldu ve yalnizca 3/3 gecen adaylar verified isaretlendi. tcp443 bolumunde 8, quic bolumunde 7 dogrulanmis aday var. tcp80 ve discord-voice bu hatta engelli olmadigi icin buradan olculemiyor.",
   "candidates": [
     {
       "id": "tt-443-fake-ttl4",
@@ -39,11 +39,13 @@
         "tls12",
         "tls13"
       ],
-      "weight": 95,
-      "source": "community-unverified",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Bildirilen alternatif TTL."
+      "weight": 98,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Onceki oturumda profilin ilk adayi (ttl=4) hemen tuttugu icin bu aday hic denenmemisti; --exhaustive ile goruldu."
     },
     {
       "id": "tt-443-fake-autottl",
@@ -53,11 +55,93 @@
         "tls12",
         "tls13"
       ],
+      "weight": 96,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Sabit TTL yerine hop sayisini olcup secer, yani farkli mesafedeki hedeflerde sabit TTL'den daha dayanikli olmasi beklenir."
+    },
+    {
+      "id": "tt-443-fake-md5sig",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 94,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-fake-md5sig) alindi; TTNET hattinda dogrulanan bu oldu, Superonline hattinda hala dogrulanmadi."
+    },
+    {
+      "id": "tt-443-fake-md5sig-ttl3",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-ttl=3",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 92,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-fake-md5sig-ttl3) alindi."
+    },
+    {
+      "id": "tt-443-fake-ttl1-autottl3",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=3",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
       "weight": 90,
-      "source": "hypothesis",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Sabit TTL yerine hop sayisini olcup secer; farkli mesafedeki hedeflerde sabit TTL kirilgan."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Turkcell Mobil profilinde dogrulanmis aday (tcm-443-fake-autottl) sabit hatta da calisiyor. Iki hattin tcp443 davranisi bu adayda ortusuyor -- QUIC bolumunde ortusmuyordu."
+    },
+    {
+      "id": "tt-443-multisplit-seqovl",
+      "section": "tcp443",
+      "args": "--dpi-desync=multisplit --dpi-desync-split-pos=1,midsld --dpi-desync-split-seqovl=1",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 88,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-multisplit-seqovl). Sahte paket uretmeyen tek dogrulanmis aday: yalnizca yuku bolup sira numarasi bindiriyor."
+    },
+    {
+      "id": "tt-443-fake-multidisorder-sni",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake,multidisorder --dpi-desync-split-pos=1,midsld --dpi-desync-repeats=11 --dpi-desync-fooling=md5sig --dpi-desync-fake-tls-mod=rnd,dupsid,sni=www.google.com",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 86,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-fake-multidisorder-sni)."
     },
     {
       "id": "tt-443-fake-multidisorder",
@@ -67,7 +151,7 @@
         "tls12",
         "tls13"
       ],
-      "weight": 85,
+      "weight": 84,
       "source": "upstream-preset",
       "verifiedFor": [],
       "lastVerified": null,
@@ -157,30 +241,107 @@
       "note": "DOGRULANDI: gercek bir TTNET hattinda discord.com QUIC el sikismasini acti (3/3 basarili; any-protocol'suz ayni aday 2/2 zaman asimi). Neden gerekli: winws --debug=1 ciktisina gore discord.com'un ILK Initial paketi sorunsuz ayrisiyor ama ClientHello ~2.5 KB'a yayildigi icin devam paketlerinde 'QUIC initial defrag CRYPTO failed' cikiyor ve winws bunlari 'not applying tampering because desync_any_proto is not set' diyerek atliyordu. cutoff ZORUNLU: cutoff'suz any-protocol baglantinin tum paketlerine mudahale eder."
     },
     {
-      "id": "tt-quic-fake-google",
-      "section": "quic",
-      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
-      "protocols": [
-        "quic"
-      ],
-      "weight": 100,
-      "source": "upstream-preset",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi. OLCULDU: bu hatta acmiyor -- devam paketlerine hic uygulanmiyor, tt-quic-anyproto-cutoff'un notuna bak."
-    },
-    {
       "id": "tt-quic-fake-plain",
       "section": "quic",
       "args": "--dpi-desync=fake --dpi-desync-repeats=11",
       "protocols": [
         "quic"
       ],
-      "weight": 90,
+      "weight": 108,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. ONEMLI: hazir sahte yuk YOK ve any-protocol YOK -- yalnizca repeats=11. Bu aday TTNET'te daha once hic denenmemisti, cunku arama profilin ilk QUIC adayinda duruyordu. Ayni hatta google yuklu ama any-protocol'suz aday (tt-quic-fake-google) 3/3 zaman asimi verdi; yani bu bolumde belirleyici olan yuk degil, yukun HIC olmamasi ya da any-protocol ile birlikte gelmesi."
+    },
+    {
+      "id": "tt-quic-anyproto-n3-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n3 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 106,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Genel merdivenden geldi. cutoff=n2 yerine n3."
+    },
+    {
+      "id": "tt-quic-anyproto-d2-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=d2 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 104,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Genel merdivenden geldi. cutoff paket sayisi yerine veri esigine (d2) bakiyor."
+    },
+    {
+      "id": "tt-quic-anyproto-n2",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n2",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 102,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Genel merdivenden geldi. Sahte yuk YOK: any-protocol acikken hazir yuk dosyasi gerekmiyor."
+    },
+    {
+      "id": "tt-quic-anyproto-n3",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n3",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 100,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Genel merdivenden geldi, yuksuz."
+    },
+    {
+      "id": "tt-quic-anyproto-d2",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-any-protocol=1 --dpi-desync-cutoff=d2",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 98,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da zaman asimina ugrayan olan discord.com QUIC el sikismasi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Genel merdivenden geldi, yuksuz."
+    },
+    {
+      "id": "tt-quic-fake-google",
+      "section": "quic",
+      "args": "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
+      "protocols": [
+        "quic"
+      ],
+      "weight": 60,
       "source": "upstream-preset",
       "verifiedFor": [],
       "lastVerified": null,
-      "note": "Hazir yuk olmadan sahte QUIC."
+      "note": "Hazir google yuku ile sahte QUIC. OLCULDU (2026-09-07, TTNET): 3/3 zaman asimi. Ayni yuk any-protocol ile birlikte verildiginde calisiyor (bkz. tt-quic-anyproto-cutoff), tek basina zarar veriyor. Bu yuzden agirligi dogrulanmislarin altina cekildi."
     },
     {
       "id": "tt-voice-fake",

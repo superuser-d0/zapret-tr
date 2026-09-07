@@ -716,6 +716,11 @@ if (options.MaxCandidates is { } budget)
     Console.WriteLine($"Bölüm başı bütçe : {budget} aday");
 }
 
+if (options.Exhaustive)
+{
+    Console.WriteLine("Arama            : kapsamlı — ilk başarıda durulmayacak");
+}
+
 // --- Hedefler ---------------------------------------------------------------
 var targets = ProbeTargetStore.Load(profiles.Root).ToList();
 foreach (var extra in options.ExtraTargets)
@@ -888,7 +893,11 @@ try
     var report = await prober.RunAsync(
         profile,
         progress,
-        stopAtFirstSuccess: true,
+        // Normalde ilk calisan adayda durulur; kullaniciyi bekletmemek icin dogru
+        // davranis bu. --exhaustive ise bunun tersini ister: amac calisan BIR
+        // strateji bulmak degil, o hatta hangi adaylarin calistigini haritalamak.
+        // Profillerin siralamasi ancak bu veriyle duzeltilebiliyor.
+        stopAtFirstSuccess: !options.Exhaustive,
         maxCandidatesPerSection: options.MaxCandidates,
         // Yukarida zaten tarandi; tekrar taramak hem bir dakikadan fazla surer
         // hem de farkli siniflandirma uretip yanlis bolumlerde arama baslatir.
@@ -928,6 +937,83 @@ try
         Console.WriteLine("Birleşik komut:");
         var builder = new WinwsCommandBuilder(vendor);
         Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(builder.BuildRuntimeCommand(report.ToWinnerMap())));
+    }
+
+    // --- Calisan HER aday --------------------------------------------------
+    // Kazanan tek adaydir; ama profil siralamasini duzeltmek ve adaylari
+    // "verified"e cekmek icin gereken sey calisan adaylarin TAMAMI. Bu liste
+    // ancak --exhaustive ile anlamli doluyor, cunku normal koşumda arama ilk
+    // basaridan sonra duruyor.
+    var verifiedCandidates = report.Attempts
+        .Where(a => a.Succeeded)
+        .GroupBy(a => (a.Section, a.CandidateId, a.Args))
+        .Select(g => (
+            g.Key.Section,
+            g.Key.CandidateId,
+            g.Key.Args,
+            Categories: g.Select(a => a.TargetCategory)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(c => c, StringComparer.Ordinal)
+                .ToList()))
+        .OrderBy(x => x.Section)
+        .ThenByDescending(x => x.Categories.Count)
+        .ThenBy(x => x.CandidateId, StringComparer.Ordinal)
+        .ToList();
+
+    if (options.Exhaustive)
+    {
+        Console.WriteLine();
+        Console.WriteLine($"ÇALIŞAN TÜM ADAYLAR ({verifiedCandidates.Count}):");
+
+        StrategySection? lastSection = null;
+        foreach (var candidate in verifiedCandidates)
+        {
+            if (lastSection != candidate.Section)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"   [{candidate.Section.ToJsonName()}]");
+                lastSection = candidate.Section;
+            }
+
+            Console.WriteLine($"      {candidate.CandidateId,-34} açılan: {string.Join(", ", candidate.Categories)}");
+        }
+
+        if (verifiedCandidates.Count == 0)
+        {
+            Console.WriteLine("   (yok)");
+        }
+    }
+
+    // --- Ogrenilenleri kalici hale getir ------------------------------------
+    // Arayuz bunu kendi test akisinda zaten yapiyordu; CLI yapmiyordu. Yani bu
+    // araci calistirip calisan strateji bulan biri, arayuzu actiginda bulunanin
+    // hicbirini gormuyordu. Bayrakla opsiyonel: bu arac baskasinin makinesinde de
+    // calisiyor ve oradaki soz "sonuclar yalnizca rapor dosyasina yazilir".
+    if (options.SaveLearned)
+    {
+        Console.WriteLine();
+        if (profile is null)
+        {
+            Console.Error.WriteLine("--save-learned için --isp gerekli; kaydedilmedi.");
+        }
+        else if (verifiedCandidates.Count == 0)
+        {
+            Console.WriteLine("Kaydedilecek doğrulanmış aday yok.");
+        }
+        else
+        {
+            ConfigStore.AddLearned(verifiedCandidates.Select(candidate => new LearnedCandidate
+            {
+                IspId = profile.Id,
+                CandidateId = candidate.CandidateId,
+                Section = candidate.Section.ToJsonName(),
+                Args = candidate.Args,
+                VerifiedFor = candidate.Categories,
+                LastVerified = DateTime.Now.ToString("yyyy-MM-dd"),
+            }));
+
+            Console.WriteLine($"learned.json güncellendi ({verifiedCandidates.Count} aday): {ConfigStore.LearnedPath}");
+        }
     }
 
     if (options.OutputPath is not null)
@@ -1003,6 +1089,8 @@ internal sealed record CliOptions(
     string? IspId,
     bool BaselineOnly,
     int? MaxCandidates,
+    bool Exhaustive,
+    bool SaveLearned,
     IReadOnlyList<string> ExtraTargets,
     string? OutputPath,
     string? DiagnoseHost,
@@ -1028,6 +1116,8 @@ internal sealed record CliOptions(
         string? section = null;
         var detectIsp = false;
         int? max = null;
+        var exhaustive = false;
+        var saveLearned = false;
         var baselineOnly = false;
         var cleanup = false;
         var apply = false;
@@ -1074,6 +1164,12 @@ internal sealed record CliOptions(
                 case "--section" when i + 1 < args.Length:
                     section = args[++i].ToLowerInvariant();
                     break;
+                case "--exhaustive":
+                    exhaustive = true;
+                    break;
+                case "--save-learned":
+                    saveLearned = true;
+                    break;
                 case "--detect-isp":
                     detectIsp = true;
                     break;
@@ -1106,7 +1202,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, section, detectIsp, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, exhaustive, saveLearned, extras, output, diagnose, engage, strategy, section, detectIsp, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -1118,6 +1214,10 @@ internal sealed record CliOptions(
         Console.WriteLine("  --target <adres>        Sizde açılmayan bir adres ekler. Birden fazla verilebilir.");
         Console.WriteLine("  --baseline-only         Yalnızca neyin engelli olduğunu ölçer, winws başlatmaz.");
         Console.WriteLine("  --max-candidates <n>    Bölüm başına denenecek en fazla aday.");
+        Console.WriteLine("  --exhaustive            İlk çalışan adayda durmaz, bütçe bitene kadar hepsini dener.");
+        Console.WriteLine("                          (doğrulama verisi toplamak için; normal kullanımda gereksiz)");
+        Console.WriteLine("  --save-learned          Doğrulanan adayları %ProgramData%\\ZapretTR\\learned.json'a yazar,");
+        Console.WriteLine("                          böylece arayüz ve servis de kullanır. --isp gerekir.");
         Console.WriteLine("  --out <dosya.json>      Sonuç raporunu yazar (kişisel veri içermez).");
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
