@@ -1,14 +1,47 @@
+<div align="center">
+
 # ZapretTR
 
-Windows için GUI'li [zapret](https://github.com/bol-van/zapret) dağıtımı — Türkiye'deki servis
-sağlayıcılarına odaklanmış otomatik parametre bulma ile.
+**Türkiye'deki DPI engellemelerini aşan parametreyi sizin yerinize bulan Windows uygulaması.**
+
+[zapret](https://github.com/bol-van/zapret)'in `winws` motoru üzerine kurulu bir arayüz —
+elle parametre denemek yerine, sizin hattınızda gerçekten ne çalışıyorsa onu ölçerek buluyor.
+
+[![yayın](https://img.shields.io/github/v/release/superuser-d0/zapret-tr?label=s%C3%BCr%C3%BCm&color=2b7489)](https://github.com/superuser-d0/zapret-tr/releases/latest)
+[![derle ve test](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml/badge.svg)](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml)
+[![lisans](https://img.shields.io/badge/lisans-MIT-blue)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-Windows%20x64-0078d4)](https://github.com/superuser-d0/zapret-tr/releases/latest)
+
+### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Sık sorulanlar](#sık-sorulanlar)
+
+<img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
+
+</div>
+
+---
+
+## Ne yapıyor
+
+`blockcheck.sh` ile parametre aramak 10-40 dakika sürüyor ve sonunda elinizde bir `.cmd`
+dosyasına yapıştırmanız gereken komut satırı kalıyor. ZapretTR bunu **iki düğmeye** indiriyor:
+hattınızı tespit ediyor, o hat için bilinen adayları sırayla ölçüyor ve çalışanı buluyor.
+
+| | |
+|---|---|
+| **Otomatik ISS tespiti** | ASN'den hattınızı bulur; "Bilmiyorum" birinci sınıf bir seçenek |
+| **Ölçerek bulur** | Her aday gerçekten bağlanılarak sınanır, tahmin edilmez |
+| **Bölüm bölüm** | `tcp80`, `tcp443`, `quic`, `discord-voice` bağımsız aranır ve birleştirilir |
+| **Şifreli DNS** | Türkiye'de engelleme çoğu zaman iki katmanlı; DNS katmanı da aşılır |
+| **Dokunmadığı yeri bozmaz** | Sorunu olmayan bölüme denenmemiş strateji uygulanmaz |
+| **Ne bildiğini söyler** | Her aday "doğrulandı / doğrulanmadı" etiketiyle gelir |
 
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
 > kullanıcı akışıyla kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu ve
 > Başlat'tan sonra engelli adresler açıldı — bağımsız bir istemciyle (`curl`) doğrulandı, ölçüm
 > motorunun kendi raporuyla değil. Türk Telekom / AS9121 hattında **25 aday** doğrulanmış durumda.
+>
 > Eksik olan kod değil **kapsam**: 10 profilin 8'inde henüz saha verisi yok, çünkü o hatlara
-> erişimimiz yok.
+> erişimimiz yok. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
 
 ---
 
@@ -78,7 +111,7 @@ dolayısıyla dışarıdan ölçemiyoruz.
 
 ---
 
-## Sorun
+## Neden var
 
 zapret güçlü bir anti-DPI aracı ama Windows'ta son kullanıcı için pratikte kullanılamıyor. Çalışan
 bir strateji bulmanın tek yolu `blockcheck.sh` — cygwin üstünde çalışan, desync metodu × TTL × split
@@ -95,9 +128,13 @@ sergiliyor, dolayısıyla o ISP için daha önce çalıştığı bilinen adaylar
 |---|---|---|
 | Tier 1 | Seçilen ISP'nin profili (5-19 aday) | saniyeler |
 | Tier 2 | Komşu TR profilleri | ~1-2 dakika |
-| Tier 3 | Genel kombinatoryal arama (180 aday) | dakikalar |
+| Tier 3 | Genel kombinatoryal arama (221 aday) | dakikalar |
 
 Kullanıcı ISP'sini bilmiyorsa ASN/kuruluş adından otomatik tespit edilir.
+
+Genel aramada sıra **aileler arasında** dolaşıyor: önce her strateji ailesinden birer aday,
+sonra derinleşiliyor. Aksi halde tek bir ailenin onlarca varyantı bütçeyi yiyor ve hiç
+denenmemiş mekanizmalara sıra gelmiyordu — ölçülen bir kullanıcıda tam bu oldu.
 
 ### Çalışan strateji tek bir parametre değildir
 
@@ -117,8 +154,11 @@ da gerçek sunucuya ulaştırıyor:
 | xvideos.com | Cloudflare **değil** | HTTP 301 |
 | www.youtube.com | Google (engelli değil) | HTTP 200 — etkilenmedi |
 
-Bu yüzden hedef listesi kasıtlı olarak dar tutuluyor: hedef eklemek her adayın süresini uzatıyor ve
-ölçüm bu maliyeti haklı çıkaracak yeni bilgi vermedi.
+Hedef listesi bu yüzden dar ama **keyfî değil**: bir hedef ancak yeni bilgi veriyorsa ekleniyor.
+"Barındırıcıya göre değişiyor mu" sorusu yukarıdaki ölçümle cevaplandığı için genel site listesi
+büyütülmedi. Buna karşılık `updates.discord.com` eklendi — çünkü Discord istemcisi güncelleme için
+oraya gidiyor ve o adres açılmazsa uygulama güncelleme ekranında takılı kalıyor; test ise
+"başarılı" diyordu.
 
 Bu yüzden adaylar bölümlere ayrılmış durumda (`tcp80`, `tcp443`, `quic`, `discord-voice`), her bölüm
 bağımsız test edilip bağımsız kazananını buluyor, ve nihai komut bölümleri `--new` ile birleştiriyor —
@@ -195,11 +235,33 @@ Tamamlananlar:
 - [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak
       üretimine taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
 
+### Hangi hatlarda doğrulandı
+
+"Doğrulandı" burada dar bir anlam taşır: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
+koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmaz.
+
+| Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
+|---|:---:|:---:|:---:|---|
+| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı |
+| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı |
+| Superonline | — | — | — | ⬜ **testçi aranıyor** |
+| TurkNet | — | — | — | ⬜ **testçi aranıyor** |
+| Türksat | — | — | — | ⬜ **testçi aranıyor** |
+| Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
+| Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
+
+Bu hatlardan birindeyseniz: uygulamayı kurup **Parametre Testi**'ni çalıştırmanız ve sonucu
+[bir issue'da](https://github.com/superuser-d0/zapret-tr/issues) paylaşmanız yeter. Test hiçbir
+yere veri göndermiyor; ne paylaşacağınıza siz karar veriyorsunuz.
+
+Aynı ISS içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
+alındı (birinde düz HTTP engelliydi, diğerinde değil). Yani "profil var" demek "sizde çalışır"
+demek değil — ölçüm bunun için var.
+
 Kalanlar:
 
-- [ ] **Doğrulama kapsamı — asıl eksik bu.** Gerçek bir hatta doğrulanmış aday
-      sayısı 25: turk-telekom'da 23 (tcp443 10, tcp80 6, quic 7), turkcell-mobil'de 2.
-      Kalan 8 profilde sıfır. Kod eksiği değil, saha verisi eksiği.
+- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: 10 profilin
+      8'inde sıfır saha verisi. Kod eksiği değil, o hatlara erişim eksiği.
 - [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.**
       Discord'un ses yolu kendi IP-keşif protokolünü kullanıyor; sunucu adresi ancak
       kimlik doğrulamalı bir ses oturumundan alınıyor. Genel STUN engellenmediği için
