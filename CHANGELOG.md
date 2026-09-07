@@ -8,6 +8,18 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.2]
+
+### Düzeltildi
+
+- **Kurulum sonundaki "şimdi başlat" çalışmıyordu.** Uygulamanın manifesti
+  `requireAdministrator`; Inno kurulum sonu girdisini yükseltilmemiş bağlamda
+  `CreateProcess` ile çalıştırdığı için **"CreateProcess tamamlanamadı; kod 740.
+  The requested operation requires elevation."** hatası veriyordu. Kullanıcı için
+  belirtisi kötü: kurulum başarıyla bitiyor ama uygulama açılmıyor, yalnızca
+  masaüstü kısayolundan açılabiliyordu. `shellexec` bayrağı eklendi — UAC
+  yükseltmesini yalnızca ShellExecute yapabiliyor.
+
 ## [0.1.1]
 
 0.1.0 hiç yayımlanmadı: kurulum paketi üretildi, gerçek bir makineye kuruldu ve
@@ -124,6 +136,7 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.1...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.2
 [0.1.1]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.1
 [0.1.0]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.0

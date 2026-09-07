@@ -15,7 +15,7 @@
 ; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
 ; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
 #ifndef AppVersion
-  #define AppVersion "0.1.1"
+  #define AppVersion "0.1.2"
 #endif
 #define AppPublisher "ZapretTR contributors"
 #define AppUrl "https://github.com/superuser-d0/zapret-tr"
@@ -81,7 +81,14 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription: "Ek görevler:"
 
 [Run]
-Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent
+; shellexec ZORUNLU. Uygulamanin manifesti requireAdministrator ve Inno, kurulum
+; sonu "simdi baslat" girdisini yukseltilmemis baglamda CreateProcess ile
+; calistiriyor -- CreateProcess UAC yukseltmesi yapamaz, yalnizca ShellExecute
+; yapar. Bayrak olmadan kurulum sonunda su hata cikiyordu:
+;   "CreateProcess tamamlanamadi; kod 740. The requested operation requires elevation."
+; Kullanici icin belirtisi kotu: kurulum bitiyor ama uygulama acilmiyor; yalnizca
+; masaustu kisayolundan aciliyor. Gercek makinede goruldu.
+Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent shellexec
 
 [UninstallRun]
 ; Kaldirmadan ONCE servisleri sokup DNS'i geri al. Bu adim atlanirsa kullanicinin
