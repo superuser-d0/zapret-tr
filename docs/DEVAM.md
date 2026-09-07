@@ -138,14 +138,27 @@ türetmek de mümkün değil.
 
 Superonline için hâlâ gerçek bir AS34984 hattı gerekiyor.
 
-### 3. Paket boyutu (düşük öncelik)
+### 3. ~~Paket boyutu~~ — ÇÖZÜLDÜ (34.3 → 12.5 MB)
 
-Saha paketi 34 MB, paylaşım limitlerinin üstünde. `PublishTrimmed` **denendi ve
-geri alındı**: JSON yansımayla çalıştığı için kırpma, DNS yedeğinin geri
-yüklenmesi gibi güvenlik kritik yolları sessizce bozabiliyor. Güvenli hale
-getirmek profil yükleyicisi, hedef listesi, DoH yanıtları ve rapor DTO'su dahil
-tüm JSON yollarını kaynak üretimine taşımayı gerektirir. DNS ve yapılandırma
-yolları zaten taşındı (`CoreJsonContext`).
+`PublishTrimmed` artık açık ve **güvenli**. Bütün JSON yolları kaynak üretimine
+taşındı: `CoreJsonContext` (yapılandırma, DNS yedeği, profil, merdiven),
+`ProberJsonContext` (hedef listesi, DoH yanıtı, ASN tespiti),
+`ReportJsonContext` (rapor).
+
+Güvenliği "dikkatli olduk"a değil **derleyiciye** dayanıyor:
+
+```
+<TrimmerSingleWarn>false</TrimmerSingleWarn>
+<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+<WarningsAsErrors>...;IL2026;IL2104;IL3050</WarningsAsErrors>
+```
+
+Yeni bir yansıma tabanlı JSON yolu eklenirse yayın **uyarı değil hata** verir.
+Bu üç satırı kaldırma.
+
+Not: eski notta "profil yükleyicisi, hedef listesi, DoH yanıtları ve rapor DTO'su"
+sayılıyordu ama **`IspDetector`'ın iki ASN sorgusu listede yoktu**. Çözümleyici
+onları buldu; elle sayım eksik kalmıştı.
 
 ---
 
@@ -182,6 +195,29 @@ engelli OLMADIĞI bilinen bir adresle (`www.google.com`) karşılaştır:
 ```
 zapret-tr-test.exe --diagnose www.google.com --doh
 ```
+
+**`PublishSingleFile`, QUIC'i sessizce öldürüyor.** msquic.dll tek dosya paketine
+gömüldüğünde çalışma anında bulunamıyor, `QuicConnection.IsSupported` false
+dönüyor ve belirti `QUIC bu makinede desteklenmiyor (msquic yok)` oluyor.
+Ölçülen dört yayın biçimi:
+
+| Biçim | Boyut | QUIC |
+|---|---|---|
+| tek dosya, kırpılmamış | 33.6 MB, 1 dosya | **bozuk** |
+| tek dosya, kırpılmış | 11.3 MB, 1 dosya | **bozuk** |
+| çok dosya, kırpılmış | 21.0 MB, 58 dosya | çalışıyor |
+| tek dosya + yanda msquic | 11.8 MB, 2 dosya | çalışıyor ← seçilen |
+
+**Kırpmayla ilgisi yok** — kırpılmamış tek dosya da bozuk. Ve bu, kırpma
+çalışmasından **önce de vardı**: dağıtılan 33.6 MB'lik saha paketi QUIC bölümünü
+hiç ölçemiyordu. Fark edilmemesinin sebebi kontrol hedefi koruması: QUIC kontrolü
+de açılmadığı için bölüm "güvenilmez" sayılıp sessizce atlanıyordu. Koruma doğru
+çalıştı ama kök nedeni gizledi.
+
+Çözüm iki yerde birden: CLI projesindeki `MsQuicTekDosyaDisindaKalsin` hedefi
+msquic'i yayın çıktısına kopyalıyor (bulamazsa `<Error>` ile patlıyor), ve
+`build-field-package.ps1` onu pakete alıyor (yoksa `throw`). İkisi de bilerek
+gürültülü — bu dosyanın sessizce kaybolması tam olarak bir kez oldu.
 
 **Bölüme göre ölçüm seçimi DÖRT ayrı yerde tekrarlanıyordu ve hepsi tek tek
 ısırdı.** `quic` ham `QuicConnection`, `discord-voice` STUN, gerisi
@@ -298,6 +334,7 @@ dotnet test tests/ZapretTr.Tests
 
 # CLI (yönetici gerekir) — bin/Debug/net8.0-windows/win-x64/
 zapret-tr-test.exe --doh --isp turk-telekom --max-candidates 20 -y
+zapret-tr-test.exe --detect-isp               # hangi hattayım + eşleşen profiller
 zapret-tr-test.exe --diagnose discord.com     # tek adres, dört protokol
 
 # winws paketleri görüyor mu VE gördüğünü değiştiriyor mu (ikisi ayrı soru).
@@ -338,9 +375,24 @@ Test hatları: Türk Telekom / AS9121 (sabit) **ve** Turkcell Mobil / AS16135
 (telefon hotspot ile tethering). İkisi de ölçüldü. VPN yok. Superonline (AS34984)
 erişimi yok.
 
-**Son oturum sonunda makine Turkcell Mobil hotspot'una bağlıydı.** Sonraki
-oturumda TTNET ölçümü yapılacaksa önce hattı doğrula:
-`curl -s "http://ip-api.com/json/?fields=as,isp"` — AS9121 beklenir. Yanlış hatta
-koşup sonucu yanlış profile yazmak, bu projedeki en pahalı sessiz hata sınıfı.
+**Son oturum sonunda makine Turkcell Mobil hotspot'una bağlıydı.** Ölçüm yapmadan önce hattı
+doğrula — artık kendi komutu var:
+
+```
+zapret-tr-test.exe --detect-isp
+```
+
+Yanlış hatta koşup sonucu yanlış profile yazmak, bu projedeki en pahalı sessiz
+hata sınıfı.
+
+**Açık konu — `--dns test` bu makinede geçmiyor.** dnscrypt-proxy başlıyor,
+çözümleyicilere bağlanıyor (`OK (DNSCrypt) rtt: ...`), ama uygulamanın doğrulama
+sorgusu cevapsız kalıyor; bunun üzerine sistem DNS'ine **dokunmuyor** ve temiz
+geri alıyor — yani güvenli davranış doğru çalışıyor. Kırpmayla ilgisi YOK:
+kırpılmamış Debug derlemesi de birebir aynı davranıyor, ikisi karşılaştırılarak
+ayrıldı. `--apply --doh` yolu ise aynı makinede sorunsuz çalışıyor (dnscrypt
+başlıyor, sistem DNS'i yönlendiriliyor, hedefler çözülüyor), dolayısıyla sorun
+dnscrypt'in kendisinde değil `--dns test`'in doğrulama sorgusunda. Bakılacak yer
+orası.
 
 Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).

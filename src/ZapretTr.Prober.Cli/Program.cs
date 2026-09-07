@@ -413,6 +413,53 @@ if (options.Cleanup)
 }
 
 // --- Teshis modu ------------------------------------------------------------
+// --- Hat tespiti ------------------------------------------------------------
+// Olcum yapmadan once "hangi hattayim" sorusunu cevaplar. Yanlis hatta kosup
+// sonucu yanlis profile yazmak bu projedeki en pahali sessiz hata: veri kirlenir
+// ve hangi olcumun hangi sebekeye ait oldugu geri kazanilamaz.
+//
+// Ayrica IspDetector'i CLI'dan calistirabilen TEK yol bu. Onemi kirpilmis
+// yayinlarda ortaya cikiyor: kirpma bir JSON yolunu bozarsa belirti calisma
+// aninda gorunur, ve sinanamayan kod yolu sinanmamis kod yoludur.
+if (options.DetectIsp)
+{
+    using var detector = new IspDetector();
+    var detection = await detector.DetectAsync(ProfileStore.Load());
+
+    Console.WriteLine();
+    if (detection.Identity is not { IsKnown: true } identity)
+    {
+        Console.WriteLine("Hat tespit edilemedi (ağ erişimi yok ya da servisler cevap vermedi).");
+        return 1;
+    }
+
+    Console.WriteLine($"ASN      : {(identity.Asn is null ? "bilinmiyor" : "AS" + identity.Asn)}");
+    Console.WriteLine($"Kuruluş  : {identity.OrgName ?? "bilinmiyor"}");
+    Console.WriteLine($"Kaynak   : {identity.Source}");
+    Console.WriteLine();
+
+    if (detection.Matches.Count == 0)
+    {
+        Console.WriteLine("Eşleşen profil yok — genel arama gerekir.");
+        return 0;
+    }
+
+    Console.WriteLine("Eşleşen profiller (en iyi önce):");
+    foreach (var match in detection.Matches)
+    {
+        Console.WriteLine($"   {match.Id,-18} {match.DisplayName}");
+    }
+
+    if (detection.IsAmbiguous)
+    {
+        Console.WriteLine();
+        Console.WriteLine("Birden fazla eşleşme var; --isp ile hangisi olduğunu açıkça belirt.");
+    }
+
+    Console.WriteLine();
+    return 0;
+}
+
 // Tek bir adresi dort protokolle de deneyip ham sonucu basar. Destek istegi
 // geldiginde "su komutun ciktisini gonder" diyebilecegimiz sey.
 if (options.DiagnoseHost is { } diagnoseHost)
@@ -910,47 +957,44 @@ static void WriteReport(string path, ProbeReport report, IspProfile? profile)
 {
     // Kasitli olarak dar: kisiyi tanimlayabilecek hicbir alan yok.
     // IP adresi (ResolvedIp dahil), makine adi, kullanici adi disarida.
-    var document = new
+    //
+    // Anonim tip DEGIL, gercek DTO: anonim tipler kaynak uretimiyle ele alinamiyor
+    // ve bu yol kirpilmis yayinda calisan tek yansima yolu olarak kalirdi.
+    var document = new ReportDocument
     {
-        schema = 1,
-        createdAt = report.StartedAt.ToString("O"),
-        durationSeconds = Math.Round(report.Duration.TotalSeconds, 1),
-        isp = profile?.Id,
-        ispDisplayName = profile?.DisplayName,
-        baseline = report.Baseline.Select(b => new
+        CreatedAt = report.StartedAt.ToString("O"),
+        DurationSeconds = Math.Round(report.Duration.TotalSeconds, 1),
+        Isp = profile?.Id,
+        IspDisplayName = profile?.DisplayName,
+        Baseline = [.. report.Baseline.Select(b => new ReportBaseline
         {
-            host = b.Target.Host,
-            section = b.Target.Section.ToJsonName(),
-            category = b.Target.Category,
-            status = b.Status.ToString(),
-            detail = b.Detail,
-        }),
-        attempts = report.Attempts.Select(a => new
+            Host = b.Target.Host,
+            Section = b.Target.Section.ToJsonName(),
+            Category = b.Target.Category,
+            Status = b.Status.ToString(),
+            Detail = b.Detail,
+        })],
+        Attempts = [.. report.Attempts.Select(a => new ReportAttempt
         {
-            candidateId = a.CandidateId,
-            args = a.Args,
-            section = a.Section.ToJsonName(),
-            targetHost = a.TargetHost,
-            targetCategory = a.TargetCategory,
-            succeeded = a.Succeeded,
-            detail = a.Detail,
-            durationMs = (int)a.Duration.TotalMilliseconds,
-        }),
-        winners = report.Winners.Select(w => new
+            CandidateId = a.CandidateId,
+            Args = a.Args,
+            Section = a.Section.ToJsonName(),
+            TargetHost = a.TargetHost,
+            TargetCategory = a.TargetCategory,
+            Succeeded = a.Succeeded,
+            Detail = a.Detail,
+            DurationMs = (int)a.Duration.TotalMilliseconds,
+        })],
+        Winners = [.. report.Winners.Select(w => new ReportWinner
         {
-            section = w.Section.ToJsonName(),
-            candidateId = w.CandidateId,
-            args = w.Args,
-            verifiedFor = w.VerifiedCategories,
-        }),
+            Section = w.Section.ToJsonName(),
+            CandidateId = w.CandidateId,
+            Args = w.Args,
+            VerifiedFor = [.. w.VerifiedCategories],
+        })],
     };
 
-    var json = JsonSerializer.Serialize(document, new JsonSerializerOptions
-    {
-        WriteIndented = true,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    });
+    var json = JsonSerializer.Serialize(document, ReportJsonContext.Relaxed.ReportDocument);
 
     File.WriteAllText(path, json);
 }
@@ -965,6 +1009,7 @@ internal sealed record CliOptions(
     string? EngageCheckHost,
     string? Strategy,
     string? Section,
+    bool DetectIsp,
     bool Cleanup,
     bool Apply,
     bool UseSecureDns,
@@ -981,6 +1026,7 @@ internal sealed record CliOptions(
         string? engage = null;
         string? strategy = null;
         string? section = null;
+        var detectIsp = false;
         int? max = null;
         var baselineOnly = false;
         var cleanup = false;
@@ -1028,6 +1074,9 @@ internal sealed record CliOptions(
                 case "--section" when i + 1 < args.Length:
                     section = args[++i].ToLowerInvariant();
                     break;
+                case "--detect-isp":
+                    detectIsp = true;
+                    break;
                 case "--baseline-only":
                     baselineOnly = true;
                     break;
@@ -1057,7 +1106,7 @@ internal sealed record CliOptions(
             }
         }
 
-        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, section, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
+        return new CliOptions(isp, baselineOnly, max, extras, output, diagnose, engage, strategy, section, detectIsp, cleanup, apply, useSecureDns, dnsCommand, serviceCommand, assumeYes, help);
     }
 
     public static void PrintUsage()
@@ -1074,6 +1123,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
         Console.WriteLine("  --section <ad>          --engage-check bölümü: tcp80 (varsayılan), tcp443, quic, discord-voice.");
+        Console.WriteLine("  --detect-isp            Hangi hatta olduğunuzu tespit eder ve eşleşen profilleri listeler.");
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");
         Console.WriteLine("  --dns test              Tam döngüyü dener ve sistemi mutlaka eski haline döndürür.");

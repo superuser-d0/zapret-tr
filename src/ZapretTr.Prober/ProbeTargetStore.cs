@@ -14,13 +14,6 @@ namespace ZapretTr.Prober;
 /// </remarks>
 public static class ProbeTargetStore
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
-    };
-
     public static IReadOnlyList<ProbeTarget> Load(string profilesDirectory)
     {
         var path = Path.Combine(profilesDirectory, "probe-targets.json");
@@ -29,7 +22,7 @@ public static class ProbeTargetStore
             throw new FileNotFoundException($"Hedef listesi bulunamadi: {path}", path);
         }
 
-        var document = JsonSerializer.Deserialize<TargetDocument>(File.ReadAllText(path), JsonOptions)
+        var document = JsonSerializer.Deserialize(File.ReadAllText(path), ProberJsonContext.Default.TargetDocument)
                        ?? throw new InvalidDataException("probe-targets.json bos cozumlendi.");
 
         return document.Targets
@@ -66,13 +59,13 @@ public static class ProbeTargetStore
         return new ProbeTarget(uri.Host, uri.Host, "kullanici", section);
     }
 
-    private sealed class TargetDocument
+    internal sealed class TargetDocument
     {
         [JsonPropertyName("targets")]
         public IReadOnlyList<TargetEntry> Targets { get; init; } = Array.Empty<TargetEntry>();
     }
 
-    private sealed class TargetEntry
+    internal sealed class TargetEntry
     {
         [JsonPropertyName("host")]
         public required string Host { get; init; }

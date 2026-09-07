@@ -83,8 +83,9 @@ public sealed class IspDetector : IDisposable
     {
         try
         {
-            var response = await _client.GetFromJsonAsync<IpApiResponse>(
+            var response = await _client.GetFromJsonAsync(
                 "http://ip-api.com/json/?fields=status,isp,org,as,asname",
+                ProberJsonContext.Default.IpApiResponse,
                 cancellationToken).ConfigureAwait(false);
 
             if (response is null || !string.Equals(response.Status, "success", StringComparison.OrdinalIgnoreCase))
@@ -112,8 +113,8 @@ public sealed class IspDetector : IDisposable
     {
         try
         {
-            var response = await _client.GetFromJsonAsync<IpInfoResponse>(
-                "https://ipinfo.io/json", cancellationToken).ConfigureAwait(false);
+            var response = await _client.GetFromJsonAsync(
+                "https://ipinfo.io/json", ProberJsonContext.Default.IpInfoResponse, cancellationToken).ConfigureAwait(false);
 
             if (response is null)
             {
@@ -145,7 +146,7 @@ public sealed class IspDetector : IDisposable
 
     public void Dispose() => _client.Dispose();
 
-    private sealed class IpApiResponse
+    internal sealed class IpApiResponse
     {
         [JsonPropertyName("status")]
         public string? Status { get; set; }
@@ -163,7 +164,7 @@ public sealed class IspDetector : IDisposable
         public string? AsName { get; set; }
     }
 
-    private sealed class IpInfoResponse
+    internal sealed class IpInfoResponse
     {
         [JsonPropertyName("org")]
         public string? Org { get; set; }

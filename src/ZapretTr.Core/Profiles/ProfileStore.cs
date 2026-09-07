@@ -8,13 +8,6 @@ namespace ZapretTr.Core.Profiles;
 /// </summary>
 public sealed class ProfileStore
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
-    };
-
     private ProfileStore(IReadOnlyList<IspProfile> profiles, GenericLadder ladder, string root)
     {
         Profiles = profiles;
@@ -51,7 +44,7 @@ public sealed class ProfileStore
         {
             try
             {
-                var profile = JsonSerializer.Deserialize<IspProfile>(File.ReadAllText(file), JsonOptions);
+                var profile = JsonSerializer.Deserialize(File.ReadAllText(file), CoreJsonContext.Default.IspProfile);
                 if (profile is not null)
                 {
                     profiles.Add(profile);
@@ -71,7 +64,7 @@ public sealed class ProfileStore
             throw new FileNotFoundException($"Genel merdiven dosyasi yok: {ladderPath}");
         }
 
-        var ladder = JsonSerializer.Deserialize<GenericLadder>(File.ReadAllText(ladderPath), JsonOptions)
+        var ladder = JsonSerializer.Deserialize(File.ReadAllText(ladderPath), CoreJsonContext.Default.GenericLadder)
                      ?? throw new InvalidDataException("generic-ladder.json bos cozumlendi.");
 
         if (learned is { Count: > 0 })

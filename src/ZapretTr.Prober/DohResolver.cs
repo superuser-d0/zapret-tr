@@ -53,7 +53,7 @@ public sealed class DohResolver : IDisposable
             try
             {
                 var url = $"{endpoint}?name={Uri.EscapeDataString(host)}&type=A";
-                var response = await _client.GetFromJsonAsync<DohResponse>(url, cancellationToken)
+                var response = await _client.GetFromJsonAsync(url, ProberJsonContext.Default.DohResponse, cancellationToken)
                     .ConfigureAwait(false);
 
                 // type 1 = A kaydi. CNAME zincirleri de donebildigi icin filtreleniyor.
@@ -77,12 +77,12 @@ public sealed class DohResolver : IDisposable
 
     public void Dispose() => _client.Dispose();
 
-    private sealed class DohResponse
+    internal sealed class DohResponse
     {
         public List<DohAnswer>? Answer { get; set; }
     }
 
-    private sealed class DohAnswer
+    internal sealed class DohAnswer
     {
         public int Type { get; set; }
 

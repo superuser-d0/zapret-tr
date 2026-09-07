@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using ZapretTr.Core.Profiles;
 
@@ -16,7 +17,15 @@ namespace ZapretTr.Core.Engine;
 /// Bu baglam o riski ortadan kaldiriyor: tipler derleme zamaninda biliniyor,
 /// kirpma onlara dokunmuyor ve IL2026 uyarilari kalmiyor.
 /// </remarks>
-[JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
+// ReadCommentHandling ve AllowTrailingCommas, ProfileStore'un elle kurdugu
+// secenekleri karsiliyor: profil JSON'lari elle bakim goruyor ve icinde yorum
+// bulunabiliyor. Bunlar buraya tasinmazsa kaynak uretimine gecis, yorumlu bir
+// profil dosyasini ayristirilamaz hale getirirdi.
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNameCaseInsensitive = true,
+    ReadCommentHandling = JsonCommentHandling.Skip,
+    AllowTrailingCommas = true)]
 [JsonSerializable(typeof(AppConfig))]
 [JsonSerializable(typeof(DnsBackup))]
 [JsonSerializable(typeof(DnsBackupEntry))]

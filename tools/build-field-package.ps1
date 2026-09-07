@@ -68,12 +68,22 @@ if (-not $SkipPublish) {
 $exePath = Join-Path $PublishDir 'zapret-tr-test.exe'
 if (-not (Test-Path $exePath)) { throw "Yayin ciktisi bulunamadi: $exePath" }
 
+# msquic.dll exe'nin YANINDA gitmek ZORUNDA. Tek dosya paketine gomuldugunde
+# calisma aninda bulunamiyor ve QuicConnection.IsSupported false donuyor; belirti
+# "QUIC bu makinede desteklenmiyor (msquic yok)" ve QUIC bolumu sessizce
+# olculemiyor. Bu paket bir kez bu sekilde dagitildi ve QUIC verisi hic gelmedi.
+$msQuicPath = Join-Path $PublishDir 'msquic.dll'
+if (-not (Test-Path $msQuicPath)) {
+    throw "msquic.dll yayin ciktisinda yok: $msQuicPath`nBu dosya olmadan paket QUIC bolumunu olcemez. Cli projesindeki MsQuicTekDosyaDisindaKalsin hedefi calismamis olabilir."
+}
+
 # --- Paketi kur ---------------------------------------------------------------
 if (Test-Path $PackageDir) { Remove-Item $PackageDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $PackageDir | Out-Null
 
 Write-Host '  dosyalar kopyalaniyor...'
 Copy-Item $exePath (Join-Path $PackageDir 'zapret-tr-test.exe')
+Copy-Item $msQuicPath (Join-Path $PackageDir 'msquic.dll')
 
 # profiles/ ve zapret-winws/ uygulamanin YANINDA olmali.
 Copy-Item $ProfilesDir (Join-Path $PackageDir 'profiles') -Recurse

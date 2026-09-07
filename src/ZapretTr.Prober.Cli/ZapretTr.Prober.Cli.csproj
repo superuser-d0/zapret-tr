@@ -16,10 +16,62 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!--
+      Kirpma. Bir kez denenip GERI ALINMISTI: JSON yansimayla calisiyordu ve kirpma,
+      DNS yedeginin geri yuklenmesi gibi guvenlik kritik yollari SESSIZCE bozabiliyordu.
+      Simdi guvenli, cunku butun JSON yollari kaynak uretimine tasindi (CoreJsonContext,
+      ProberJsonContext, ReportJsonContext) ve asagidaki iki bayrak bunu ZORLUYOR:
+      yeni bir yansima yolu eklenirse yayin uyari degil HATA verir.
+
+      Bu iki satiri kaldirmadan once bunu oku: kirpmanin guvenligi "dikkatli olduk"a
+      degil, TrimmerSingleWarn=false + WarningsAsErrors'a dayaniyor.
+    -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL2104;IL3050</WarningsAsErrors>
   </PropertyGroup>
+
+  <!--
+    msquic.dll tek dosya paketine GIRMEMELI; exe'nin yaninda gercek dosya olarak
+    durmali. Yoksa QuicConnection.IsSupported false doner ve QUIC olcumu sessizce
+    olmaz: belirti "QUIC bu makinede desteklenmiyor (msquic yok)".
+
+    OLCULDU, uc yayin bicimi karsilastirildi:
+      tek dosya, kirpilmamis  33.6 MB, 1 dosya   QUIC BOZUK
+      tek dosya, kirpilmis    11.3 MB, 1 dosya   QUIC BOZUK
+      cok dosya, kirpilmis    21.0 MB, 58 dosya  QUIC calisiyor
+      tek dosya + yanda msquic 11.8 MB, 2 dosya  QUIC calisiyor  (secilen)
+
+    Yani sorunun kaynagi KIRPMA DEGIL, PublishSingleFile. Bu, kirpma calismasindan
+    once de vardi: dagitilan 33.6 MB'lik saha paketi QUIC bolumunu hic olcemiyordu
+    ve kimse fark etmemisti, cunku kontrol hedefi korumasi o bolumu sessizce
+    atliyordu.
+
+    Dogrulamasi: yayin ciktisinda msquic.dll GORUNMELI (exe ile yan yana), ve
+    zapret-tr-test.exe cloudflare-quic.com teshisinde Http3 satiri BASARILI demeli.
+  -->
+  <Target Name="MsQuicTekDosyaDisindaKalsin" AfterTargets="Publish">
+    <ItemGroup>
+      <_MsQuicKaynak Include="@(RuntimePackAsset)"
+                     Condition="'%(Filename)%(Extension)' == 'msquic.dll'" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_MsQuicKaynak)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+
+    <!--
+      Kopyalama sessizce basarisiz olursa QUIC olcumu de sessizce olmaz. Bu
+      projede sessiz olcum hatasi en pahali hata sinifi, o yuzden burada
+      acikca patliyoruz.
+    -->
+    <Error Condition="!Exists('$(PublishDir)msquic.dll')"
+           Text="msquic.dll yayin ciktisina kopyalanamadi. Bu dosya olmadan QuicConnection.IsSupported false doner ve QUIC bolumu sessizce olculemez." />
+  </Target>
 
 </Project>
 
