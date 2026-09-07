@@ -32,3 +32,6 @@ publish/
 # dnscrypt-proxy calisma dosyalari
 public-resolvers.md*
 zapret-tr-dnscrypt.toml
+
+# Yayin ciktilari
+installer/Output/

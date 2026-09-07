@@ -367,6 +367,88 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Baglantidan servis saglayiciyi tespit edip secmeyi dener.
+    /// </summary>
+    /// <remarks>
+    /// Tespit BASARISIZ olursa test yine de calisir, sadece genel aramadan baslar.
+    /// Kullaniciyi "once ISS'ini sec" diye geri cevirmek, bilmeyen kullaniciyi
+    /// tam da yardim etmesi gereken yerde duvara toslatmak olurdu.
+    ///
+    /// Birden fazla profil eslesirse (ornegin "vodafone" hem sabit hat hem mobil)
+    /// secim kullaniciya birakiliyor; birini sessizce secmek yanlis profille
+    /// dakikalarca test etmek demek olabilir.
+    /// </remarks>
+    private async Task TryDetectIspAsync()
+    {
+        if (_profiles is null)
+        {
+            return;
+        }
+
+        try
+        {
+            Append("Servis sağlayıcı tespit ediliyor...");
+
+            using var detector = new IspDetector();
+            var result = await detector.DetectAsync(_profiles).ConfigureAwait(true);
+
+            if (result.Identity is null)
+            {
+                Append("Tespit edilemedi (bağlantı yok ya da sorgu servisleri erişilemiyor). "
+                       + "Test genel aramayla devam edecek.");
+                return;
+            }
+
+            Append($"Bağlantı: {result.Identity.OrgName ?? "(ad yok)"}"
+                   + (result.Identity.Asn is { } asn ? $" · AS{asn}" : string.Empty)
+                   + $" ({result.Identity.Source})");
+
+            if (result.BestMatch is null)
+            {
+                Append("Bu sağlayıcı için profil yok; test genel aramayla devam edecek.");
+                return;
+            }
+
+            if (result.IsAmbiguous)
+            {
+                var options = string.Join(
+                    Environment.NewLine + "   ",
+                    result.Matches.Select(m => m.DisplayName));
+
+                var choice = MessageBox.Show(
+                    "Bağlantınız birden fazla profille eşleşti:"
+                    + Environment.NewLine + "   " + options
+                    + Environment.NewLine + Environment.NewLine
+                    + $"En olası olan \"{result.BestMatch.DisplayName}\" ile devam edilsin mi?"
+                    + Environment.NewLine + Environment.NewLine
+                    + "Hayır derseniz listeden kendiniz seçebilirsiniz.",
+                    "Servis sağlayıcı tespiti",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (choice != MessageBoxResult.Yes)
+                {
+                    Append("Otomatik seçim reddedildi; listeden seçim bekleniyor.");
+                    return;
+                }
+            }
+
+            var match = IspChoices.FirstOrDefault(c => c.Profile?.Id == result.BestMatch.Id);
+            if (match is not null)
+            {
+                SelectedIsp = match;
+                SaveSelection();
+                Append($"Servis sağlayıcı seçildi: {result.BestMatch.DisplayName}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Tespit bir kolaylik; basarisizligi testi engellememeli.
+            Append("Tespit denemesi başarısız: " + ex.Message, isError: true);
+        }
+    }
+
     /// <summary>Kayitli secimleri geri yukler.</summary>
     /// <remarks>
     /// Strateji once id ile, bulunamazsa argumanla aranir. Id'ler profil surumleri
@@ -622,6 +704,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Append("Test için winws geçici olarak durduruluyor.");
             await _runner.StopAsync().ConfigureAwait(true);
+        }
+
+        // "Bilmiyorum" secildiyse once ISS'i tespit etmeyi dene. Profil bilinmeden
+        // yapilan test Tier 1'i tamamen atlar ve dogrudan genel aramaya duser --
+        // yani kullanici tam da bu araci hizlandiran seyden mahrum kalir.
+        if (SelectedIsp?.Profile is null)
+        {
+            await TryDetectIspAsync().ConfigureAwait(true);
         }
 
         _testCancellation = new CancellationTokenSource();
