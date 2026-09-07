@@ -205,6 +205,29 @@ public sealed class StrategyProber(
             if (resolver is not null)
             {
                 pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
+
+                // Sifreli DNS ISTENDI ama cozumleme basarisiz oldu. Buradan devam
+                // etmek olcumu sessizce baska bir seye cevirir: pinnedIp null
+                // kalinca baglanti SISTEM DNS'ine duser ve DNS kacirmasi olan bir
+                // hatta -- Turkiye'de olagan durum -- engel sunucusuna gider.
+                // O zaman "engelli mi" sorusunun cevabi DPI'i degil DNS katmanini
+                // olcer, ve arama bunun uzerine kurulur.
+                //
+                // Gercek bir hatta bu somut: sistem DNS'i discord.com'u
+                // 195.175.254.2'ye (saglayicinin engel sunucusu) cozuyor. Oradan
+                // gelen bir yonlendirme "acildi" diye okunabilir.
+                //
+                // Belirsiz isaretlemek dogru davranis: belirsiz hedefte strateji
+                // aranmaz, kontrol hedefi belirsizse bolum tumuyle atlanir.
+                if (pinnedIp is null)
+                {
+                    results.Add(new BaselineResult(
+                        target,
+                        BaselineStatus.Inconclusive,
+                        "sifreli DNS ile cozulemedi -- olcum yapilmadi (sistem DNS'i kacirilmis olabilir)",
+                        null));
+                    continue;
+                }
             }
 
             var outcome = await ProbeAsync(

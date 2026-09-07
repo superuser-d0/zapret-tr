@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Threading;
 using ZapretTr.App.ViewModels;
 
 namespace ZapretTr.App;
@@ -49,6 +50,13 @@ public partial class MainWindow : Window
             await viewModel.ShutdownAsync();
         }
 
-        Close();
+        // Close() DOGRUDAN cagrilamaz. Hala bu kapanma isleminin icindeyiz ve WPF
+        // bunu reddediyor:
+        //   "Cannot set Visibility to Visible or call Show, ShowDialog, Close, or
+        //    WindowInteropHelper.EnsureHandle while a Window is closing."
+        // Ilk yazimda oyleydi ve duman testi test barindiricisini cokerterek
+        // yakaladi -- gercek kullanicida da pencereyi kapatirken cokme olurdu.
+        // Dispatcher'a birakmak, mevcut kapanmanin cozulmesini bekletiyor.
+        await Dispatcher.InvokeAsync(Close, DispatcherPriority.Background);
     }
 }

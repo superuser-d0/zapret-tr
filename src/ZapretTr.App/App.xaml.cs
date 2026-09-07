@@ -99,6 +99,22 @@ public partial class App : Application
             }
 
             ServiceManager.UninstallAsync().GetAwaiter().GetResult();
+
+            // SURUCUYU DE CEKIRDEKTEN KALDIR. ServiceManager yalnizca ZapretTR
+            // servislerini soker; "windivert" surucusune dokunmaz. Sonucu gercek bir
+            // kullanicida goruldu: bir test kosumundan sonra surucu cekirdekte asili
+            // kaliyor, WinDivert64.sys kilitleniyor ve
+            //
+            //   - YUKSELTME dosyayi degistiremiyor: "DeleteFile tamamlanamadi; kod 5.
+            //     Erisim engellendi." Kullaniciya "bu dosya atlansin" demekten baska
+            //     secenek kalmiyor.
+            //   - KALDIRMA klasoru bosaltamiyor; geriye kalinti dosyalar kaliyor ve
+            //     bir sonraki kurulum ayni duvara tosluyor.
+            //
+            // removeConfig: false -- bu yol yukseltme sirasinda da calisiyor ve
+            // kullanicinin profil secimini, ogrenilmis dogrulamalarini silmek
+            // yanlis olurdu. Kaldirma zaten [UninstallDelete] ile klasoru temizliyor.
+            WinDivertCleanup.RunAsync(removeConfig: false).GetAwaiter().GetResult();
         }
         catch (Exception)
         {

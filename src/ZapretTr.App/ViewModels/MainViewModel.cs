@@ -1010,6 +1010,39 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetStatus(AppStatus.Ready, "ÇALIŞAN STRATEJİ YOK",
                 $"{report.Attempts.Count} aday denendi, hiçbiri açmadı.");
             Append($"{report.Attempts.Count} aday denendi, {report.Duration.TotalSeconds:F0} sn sürdü. Sonuç yok.");
+
+            // NEDEN olmadigini da soyle. Onceden yalnizca "hicbiri acmadi" yaziyordu
+            // ve bu iki cok farkli durumu ayni gosteriyordu: (a) stratejiler gercekten
+            // tutmadi, (b) winws hic calismadi -- ornegin WinDivert surucusu onceki
+            // kosumdan cekirdekte asili kaldigi icin. Gercek bir kullanicida (b)
+            // yasandi ve ekranda ayirt edilemedi: 176 aday, 1105 saniye, tek satir
+            // "sonuc yok".
+            //
+            // Butun denemeler AYNI sebeple dustuyse bu neredeyse her zaman ortamla
+            // ilgilidir, stratejiyle degil.
+            var reasons = report.Attempts
+                .GroupBy(a => a.Detail ?? "(sebep belirtilmedi)", StringComparer.Ordinal)
+                .OrderByDescending(g => g.Count())
+                .Take(3)
+                .ToList();
+
+            if (reasons.Count > 0)
+            {
+                Append("En sık görülen sebepler:");
+                foreach (var reason in reasons)
+                {
+                    Append($"   {reason.Count()}x  {reason.Key}");
+                }
+
+                if (reasons.Count == 1 && report.Attempts.Count > 5)
+                {
+                    Append("Bütün denemeler aynı sebeple düştü. Bu genellikle stratejiyle değil");
+                    Append("ortamla ilgilidir: winws çalışamamış ya da paketleri hiç görememiş olabilir.");
+                    Append("Uygulamayı kaldırıp yeniden kurmak, gerekirse bilgisayarı yeniden");
+                    Append("başlatmak bu durumu çözer (ağ sürücüsü önceki koşumdan asılı kalmış olabilir).");
+                }
+            }
+
             return;
         }
 

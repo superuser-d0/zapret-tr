@@ -15,7 +15,7 @@
 ; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
 ; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
 #ifndef AppVersion
-  #define AppVersion "0.1.3"
+  #define AppVersion "0.1.4"
 #endif
 #define AppPublisher "ZapretTR contributors"
 #define AppUrl "https://github.com/superuser-d0/zapret-tr"
@@ -129,4 +129,56 @@ begin
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe /F',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := True;
+end;
+
+// Dosyalar degistirilmeden ONCE onceki kurulumun surucusunu cekirdekten kaldir.
+//
+// Gercek bir kullanicida goruldu: bir test kosumundan sonra WinDivert surucusu
+// cekirdekte asili kaliyor ve WinDivert64.sys kilitleniyor. Yukseltme o dosyayi
+// degistiremiyor ve kurulum su hatayi veriyor:
+//
+//   "Var olan dosya degistirilirken sorun cikti:
+//    DeleteFile tamamlanamadi; kod 5. Erisim engellendi."
+//
+// Kullaniciya kalan tek secenek "bu dosya atlansin" oluyor -- yani eski surucu
+// dosyasiyla devam etmek. Ayni kilit, kaldirmadan sonra da klasorde kalinti
+// birakiyor ve bir sonraki kurulum ayni duvara tosluyor.
+//
+// PrepareToInstall dogru kanca: kurulum yeri artik belli ({app} cozulebiliyor)
+// ama dosya kopyalama henuz baslamadi.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+  OncekiExe: String;
+  Sc: String;
+begin
+  Result := '';
+  OncekiExe := ExpandConstant('{app}\{#AppExe}');
+
+  // 1) Onceki surumun kendi temizligi: servisleri soker ve DNS'i geri alir.
+  //    Kullanici ayarlari ve ogrenilmis dogrulamalar KORUNUR.
+  if FileExists(OncekiExe) then
+  begin
+    Exec(OncekiExe, '--uninstall-services', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+
+  // 2) Surucuyu KURULUM KENDISI kaldirir; onceki exe'ye guvenmez.
+  //
+  //    Sebep: bu adim eski surume DELEGE EDILEMEZ. Surucu kaldirma davranisi
+  //    0.1.4'te eklendi, dolayisiyla 0.1.3 ve oncesinden yukseltirken cagrilan
+  //    exe onu YAPMIYOR. Tam da duzeltmeye calistigimiz kullanicilar eski surumde
+  //    olacagi icin, kurulumun kendi ayaklari uzerinde durmasi sart.
+  //
+  //    sc.exe cagrilari WinDivertCleanup'in yaptiginin aynisi.
+  Sc := ExpandConstant('{sys}\sc.exe');
+
+  // winws surucuyu acik tutuyor olabilir; once o gitmeli.
+  Exec(ExpandConstant('{cmd}'), '/c taskkill /IM winws.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(ExpandConstant('{cmd}'), '/c taskkill /IM dnscrypt-proxy.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  Exec(Sc, 'stop windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(Sc, 'delete windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Surucu goruntusunun cekirdekten dusmesi anlik degil.
+  Sleep(2000);
 end;

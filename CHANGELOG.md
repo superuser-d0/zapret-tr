@@ -8,6 +8,46 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.4]
+
+### Düzeltildi
+
+- **Yükseltme, kilitli `WinDivert64.sys` yüzünden başarısız oluyordu.** Gerçek bir
+  kullanıcıda görüldü: bir test koşumundan sonra WinDivert sürücüsü çekirdekte
+  asılı kalıyor, dosya kilitleniyor ve kurulum **"DeleteFile tamamlanamadı; kod 5.
+  Erişim engellendi."** veriyordu. Kullanıcıya kalan tek seçenek "bu dosya
+  atlansın" oluyordu. Aynı kilit kaldırmadan sonra da klasörde kalıntı bırakıyor
+  ve bir sonraki kurulum aynı duvara toslıyordu.
+
+  Kök sebep: `ServiceManager.UninstallAsync` yalnızca ZapretTR servislerini
+  söküyordu; `windivert` sürücüsüne hiç dokunmuyordu. Sürücüyü kaldıran kod
+  (`WinDivertCleanup`) yalnızca CLI'nin `--cleanup` komutundan erişilebiliyordu.
+
+  İki yerden düzeltildi: `--uninstall-services` artık sürücüyü de indiriyor
+  (kullanıcı ayarları korunarak), **ve kurulum bunu eski sürüme delege etmiyor** —
+  `PrepareToInstall` içinde doğrudan `sc stop/delete windivert` çağırıyor. Bu şart,
+  çünkü yükseltme sırasında çalışan exe henüz ESKİ sürüm ve o davranışa sahip değil.
+
+  Gerçek makinede yeniden üretilip doğrulandı: sürücü RUNNING durumdayken eski
+  sürümün üzerine kurulum → hata yok, dosya değiştirildi, sürücü kaldırıldı.
+
+- **Pencereyi kapatırken çökme.** 0.1.1'de eklenen kapanma işleyicisi, kapanma
+  işlemi sürerken `Close()` çağırıyordu; WPF bunu reddediyor ("Cannot ... call
+  Close ... while a Window is closing"). Duman testi test barındırıcısını
+  çökerterek yakaladı. Artık Dispatcher'a bırakılıyor.
+
+- **Şifreli DNS çözümlemesi başarısız olduğunda ölçüm sessizce sistem DNS'ine
+  düşüyordu.** DNS kaçırması olan bir hatta bu, DPI yerine DNS katmanını ölçmek
+  demek — ve hiçbir yerde söylenmiyordu. Ölçülen bir örnek: bir kullanıcının
+  sistem DNS'i `discord.com`'u `195.175.254.2`'ye (sağlayıcının engel sunucusu)
+  çözüyor. Artık böyle bir hedef **belirsiz** işaretleniyor; belirsiz hedefte
+  strateji aranmaz, kontrol hedefi belirsizse bölüm tümüyle atlanır.
+
+- **"Çalışan strateji yok" mesajı nedenini söylemiyordu.** İki çok farklı durum
+  aynı görünüyordu: stratejiler gerçekten tutmadı, ya da winws hiç çalışmadı.
+  Artık en sık görülen başarısızlık sebepleri listeleniyor ve bütün denemeler aynı
+  sebeple düştüyse bunun ortamla ilgili olduğu açıkça yazılıyor.
+
 ## [0.1.3]
 
 ### Değişti
@@ -165,7 +205,8 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.3...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.4
 [0.1.3]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.3
 [0.1.2]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.2
 [0.1.1]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.1
