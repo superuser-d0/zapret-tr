@@ -36,6 +36,9 @@ public sealed class DohResolver : IDisposable
     private readonly HttpClient _client;
     private readonly string[] _endpoints;
 
+    /// <summary>Tarama boyunca cozulmus adlar. Ayni ad birden fazla bolumde geciyor.</summary>
+    private readonly Dictionary<string, string?> _cache = new(StringComparer.OrdinalIgnoreCase);
+
     public DohResolver(TimeSpan? timeout = null, string[]? endpoints = null)
     {
         _endpoints = endpoints ?? DefaultEndpoints;
@@ -46,7 +49,36 @@ public sealed class DohResolver : IDisposable
     /// <summary>
     /// Alan adinin IPv4 adresini doner; cozulemezse null.
     /// </summary>
+    /// <remarks>
+    /// Sonuclar bu ornegin omru boyunca onbellekleniyor. Sebebi olculdu: hedef
+    /// listesinde 10 girdi var ama yalnizca 7 benzersiz adres -- discord.com uc
+    /// bolumde (tcp80, tcp443, quic), www.youtube.com iki bolumde geciyor.
+    /// Onbelleksiz hali ayni adi tekrar tekrar soruyordu ve baseline taramasi
+    /// SIRALI oldugu icin bu, gecikmeye dogrudan carpim olarak biniyordu: hizli
+    /// hatta ~300 ms, yavas hatta 3-6 saniye bosa gidiyordu.
+    ///
+    /// Onbellek kasitli olarak ornek omru kadar: bir tarama boyunca ayni adin
+    /// ayni adrese cozulmesi zaten istedigimiz sey -- aksi halde ayni alan adinin
+    /// iki bolumu farkli sunuculara gidip sonuclar kiyaslanamaz hale gelirdi.
+    /// TTL takibi gerekmiyor, cunku nesne tek bir taramadan uzun yasamiyor.
+    /// </remarks>
     public async Task<string?> ResolveIPv4Async(string host, CancellationToken cancellationToken = default)
+    {
+        if (_cache.TryGetValue(host, out var cached))
+        {
+            return cached;
+        }
+
+        var resolved = await ResolveUncachedAsync(host, cancellationToken).ConfigureAwait(false);
+
+        // Basarisizlik da onbellege giriyor: cozulemeyen bir ad ayni tarama
+        // icinde yeniden sorulursa yine cozulemeyecek, ama her denemede bir
+        // zaman asimi daha yenirdi.
+        _cache[host] = resolved;
+        return resolved;
+    }
+
+    private async Task<string?> ResolveUncachedAsync(string host, CancellationToken cancellationToken)
     {
         foreach (var endpoint in _endpoints)
         {

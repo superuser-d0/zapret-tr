@@ -420,6 +420,38 @@ Doğrulama şekli de not: ölçüm motorunun kendi raporu YETMEZ. Bağımsız bi
 istemciyle bakıldı — `curl https://discord.com` düzeltmeden önce 78 ms'de RST,
 sonra **HTTP 200**.
 
+**Test süresini belirleyen şey bant genişliği değil, ISS'in ENGELLEME BİÇİMİ
+ve sabit maliyetler.** 240 gerçek denemenin süresi ölçüldü (TTNET):
+
+| Bölüm | Sonuç | Medyan |
+|---|---|---|
+| tcp80 / tcp443 | başarısız | ~0,70 sn (DPI hemen RST atıyor) |
+| quic | başarısız | **11,7 sn** (RST yok, sessizlik → zaman aşımı) |
+| hepsi | başarılı | ~1,3 sn |
+
+Yani başarısız aday maliyeti sabit zaman aşımlarıyla sınırlı (HTTP 6 sn, QUIC 8 sn,
+STUN 4 sn), indirme hızıyla değil. Aynı sayıda aday için RST atan bir hat ile paket
+düşüren bir hat arasında 8 kat fark çıkıyor: 60 başarısız tcp443 adayı TTNET'te
+~47 sn, zaman aşımı veren bir hatta ~6 dakika. Turkcell Mobil'de Discord TCP'nin
+zaman aşımı verdiği kayıtlı — o hatta test doğal olarak çok daha uzun sürer.
+
+**Sabit maliyet aramadan ÖNCE ve gecikmeye duyarlı.** `RunBaselineAsync` tamamen
+SIRALI (paralellik yalnızca aday denemelerinde, `MaxParallelProbes=3`). Her hedef
+için önce DoH sorgusu, sonra ölçüm yapılıyor. Doğrulanmış profili olan bir hatta
+(TTNET) arama saniyeler sürüyor, dolayısıyla kullanıcının beklediği sürenin çoğu
+baseline. Yavaş bir hatta bu 40-60 saniyeye çıkabiliyor.
+
+Bunun bir kısmı israftı: hedef listesinde 10 girdi var ama **7 benzersiz adres**
+(discord.com üç bölümde, www.youtube.com iki bölümde). `DohResolver`'da önbellek
+yoktu, aynı ad tekrar tekrar soruluyordu. Artık örnek ömrü boyunca önbellekleniyor.
+Başarısızlık da önbelleğe giriyor, yoksa çözülemeyen bir ad her bölümde bir zaman
+aşımı daha yerdi.
+
+Geriye kalan büyük kalem baseline'ın sıralı olması. Paralelleştirmek 3 kata kadar
+kısaltabilir ama baseline SINIFLANDIRMASI her şeyin girdisi; değiştirilecekse
+önce/sonra en az üç kez koşulup sınıflandırmaların birebir aynı çıktığı
+gösterilmeli. Ölçüm doğruluğu, hızdan önce gelir.
+
 **Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin
 kurulabildiğini ve yerleşimin hesaplandığını doğruluyor; bunların hepsi geçerken
 uygulama **yanlış servis sağlayıcıyı seçili gösteriyordu**. Kurulum paketi üretilip
