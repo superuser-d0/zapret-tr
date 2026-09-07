@@ -15,7 +15,7 @@
 ; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
 ; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
 #ifndef AppVersion
-  #define AppVersion "0.1.5"
+  #define AppVersion "0.1.6"
 #endif
 #define AppPublisher "ZapretTR contributors"
 #define AppUrl "https://github.com/superuser-d0/zapret-tr"
@@ -176,8 +176,15 @@ begin
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM winws.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM dnscrypt-proxy.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+  // Uc ad birden: WinDivert'i baska araclar da kuruyor. WinDivert14 GoodbyeDPI'in
+  // ve WinDivert 1.4'un adi, monkey bazi dagitimlarinki. Biri geride kalip surucusu
+  // cekirdege yuklu duruyorsa dosya yine kilitli kalir ve ayni kod 5 hatasi doner.
   Exec(Sc, 'stop windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(Sc, 'delete windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(Sc, 'stop WinDivert14', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(Sc, 'delete WinDivert14', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(Sc, 'stop monkey', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(Sc, 'delete monkey', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Surucu goruntusunun cekirdekten dusmesi anlik degil.
   Sleep(2000);

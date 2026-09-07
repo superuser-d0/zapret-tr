@@ -31,6 +31,60 @@ public static class WinDivertCleanup
 
     /// <summary>WinDivert surucusunun servis adi.</summary>
     public const string DriverServiceName = "windivert";
+    /// <summary>
+    /// Kaldirilacak SURUCU servis adlarinin tamami.
+    /// </summary>
+    /// <remarks>
+    /// Yalnizca "windivert" YETMIYOR. WinDivert'i baska araclar da kuruyor ve farkli
+    /// servis adlari birakiyor: "WinDivert14" (WinDivert 1.4 ve GoodbyeDPI'in kullandigi
+    /// ad) ve bazi dagitimlarda "monkey". Bunlardan biri geride kalmis ve surucusu hala
+    /// cekirdege yukluyse winws kendi surucusunu yukleyemiyor ve BUTUN adaylar ayni
+    /// sekilde basarisiz oluyor -- disaridan "hicbir strateji calismadi" gibi gorunuyor.
+    ///
+    /// Bu liste, Zapret Win TR (Ali Mali) projesinin temizlik adimlarindan ogrenildi;
+    /// orada da tam olarak bu uc ad sokuluyor. GoodbyeDPI Turkiye'de ayni is icin cok
+    /// yaygin, dolayisiyla bu kalintinin gercekten bulunma ihtimali yuksek.
+    /// </remarks>
+    public static readonly string[] DriverServiceNames = ["windivert", "WinDivert14", "monkey"];
+
+    /// <summary>
+    /// Ayni anda calisan ve WinDivert'i ele geciren baska bir DPI atlatma araci var mi.
+    /// Bulunanlarin surec adlarini doner; bos liste = temiz.
+    /// </summary>
+    /// <remarks>
+    /// Neden gerekli: WinDivert'i ayni anda iki arac kullanamiyor. GoodbyeDPI acikken
+    /// winws paketleri goremiyor ve BUTUN adaylar ayni sekilde dusuyor. Kullanicinin
+    /// gordugu sey "176 aday denendi, hicbiri calismadi" oluyor -- yani stratejilerin
+    /// hepsi kotu saniliyor, oysa olcum hic yapilamamis.
+    ///
+    /// GoodbyeDPI Turkiye'de tam olarak ayni is icin cok yaygin, dolayisiyla bu
+    /// carpisma teorik degil. Zapret Win TR de acilista bu kontrolu yapiyor.
+    ///
+    /// Burada SUREC OLDURULMUYOR: baska bir aracin kapatilmasi kullanicinin karari.
+    /// Yapilan tek sey durumu gorunur kilmak.
+    /// </remarks>
+    public static IReadOnlyList<string> DetectConflictingTools()
+    {
+        string[] known = ["goodbyedpi", "ciadpi", "spoofdpi", "zapret", "winws2"];
+
+        var found = new List<string>();
+        foreach (var name in known)
+        {
+            try
+            {
+                if (Process.GetProcessesByName(name).Length > 0)
+                {
+                    found.Add(name + ".exe");
+                }
+            }
+            catch (Exception)
+            {
+                // Surec listesi okunamiyorsa teshis ugruna akisi durdurmuyoruz.
+            }
+        }
+
+        return found;
+    }
 
     /// <summary>Yapilandirmanin tutuldugu dizin.</summary>
     public static string ConfigDirectory => Path.Combine(
@@ -59,8 +113,11 @@ public static class WinDivertCleanup
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await RunScAsync("stop", ServiceName, "ZapretTR servisi durduruldu", cancellationToken).ConfigureAwait(false));
         steps.Add(await RunScAsync("delete", ServiceName, "ZapretTR servisi silindi", cancellationToken).ConfigureAwait(false));
-        steps.Add(await RunScAsync("stop", DriverServiceName, "WinDivert surucusu durduruldu", cancellationToken).ConfigureAwait(false));
-        steps.Add(await RunScAsync("delete", DriverServiceName, "WinDivert surucusu kaldirildi", cancellationToken).ConfigureAwait(false));
+        foreach (var driver in DriverServiceNames)
+        {
+            steps.Add(await RunScAsync("stop", driver, $"{driver} surucusu durduruldu", cancellationToken).ConfigureAwait(false));
+            steps.Add(await RunScAsync("delete", driver, $"{driver} surucusu kaldirildi", cancellationToken).ConfigureAwait(false));
+        }
 
         if (removeConfig)
         {

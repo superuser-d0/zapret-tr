@@ -34,6 +34,30 @@ yeterlidir, ZapretTR bu dosyaları yeniden imzalamaz veya kilitlemez.
 
 ---
 
+## Zapret Win TR
+
+- **Yazar:** Ali Mali
+- **Ne aldık:** doğrudan kod değil — iki şey öğrendik ve kendi kodumuzda uyguladık.
+
+Projenin geliştiricisi, aracındaki hazır ISS stratejilerini kullanmamıza izin verdi
+ve `.au3` kaynağını paylaştı. Karşılaştırdık: klasik winws motoru için tanımladığı
+sekiz stratejinin **sekizi de bizim profillerimizde zaten vardı** ve altısında onun
+tercihi bizim ilk adayımızla aynıydı. Yani buradan kopyalanan bir strateji yok;
+birbirinden bağımsız iki proje aynı değerlere varmış. Bu örtüşmeyi `docs/DEVAM.md`
+içinde kayıt altına aldık, çünkü o profillerin tohumlarına duyulacak güveni
+etkiliyor.
+
+Kaynağından **öğrendiğimiz** ve uyguladığımız iki şey:
+
+1. WinDivert sürücüsünün yalnızca `windivert` adıyla değil, `WinDivert14` ve
+   `monkey` adlarıyla da kalabildiği. Temizliğimiz eskiden yalnızca ilkini
+   söküyordu.
+2. Aynı anda çalışan başka bir DPI atlatma aracının (özellikle GoodbyeDPI)
+   ölçümü tamamen geçersiz kıldığı ve bunun kullanıcıya söylenmesi gerektiği.
+
+Bunlar fikir düzeyinde katkılar; uygulama bize ait. Yine de kaynağı belirtmek
+doğru olur.
+
 ## Parametre verisi hakkında not
 
 `profiles/isp/*.json` içindeki başlangıç parametre adayları, Türkiye'deki kullanıcı

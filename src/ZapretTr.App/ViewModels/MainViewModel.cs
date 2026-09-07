@@ -736,6 +736,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await _runner.StopAsync().ConfigureAwait(true);
         }
 
+        // BASKA BIR DPI ARACI ACIKSA ONCE ONU SOYLE. WinDivert'i ayni anda iki arac
+        // kullanamiyor; GoodbyeDPI acikken winws paketleri goremiyor ve butun adaylar
+        // ayni sekilde dusuyor. Kullanicinin gordugu sey "N aday denendi, hicbiri
+        // calismadi" oluyor -- yani stratejiler kotu saniliyor, oysa olcum hic
+        // yapilamamis. Testi engellemiyoruz; karar kullanicinin, ama korlemesine
+        // 15 dakika beklemesin.
+        var conflicts = WinDivertCleanup.DetectConflictingTools();
+        if (conflicts.Count > 0)
+        {
+            Append("DİKKAT: başka bir DPI atlatma aracı çalışıyor: " + string.Join(", ", conflicts));
+            Append("WinDivert sürücüsünü aynı anda iki araç kullanamaz. Bu açıkken test");
+            Append("hiçbir strateji bulamayabilir — sebebi stratejiler değil, ölçümün");
+            Append("hiç yapılamaması olur. Önce o aracı kapatmanız önerilir.");
+        }
+
         // "Bilmiyorum" secildiyse once ISS'i tespit etmeyi dene. Profil bilinmeden
         // yapilan test Tier 1'i tamamen atlar ve dogrudan genel aramaya duser --
         // yani kullanici tam da bu araci hizlandiran seyden mahrum kalir.

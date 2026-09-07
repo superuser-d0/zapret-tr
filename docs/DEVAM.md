@@ -452,6 +452,41 @@ kısaltabilir ama baseline SINIFLANDIRMASI her şeyin girdisi; değiştirileceks
 önce/sonra en az üç kez koşulup sınıflandırmaların birebir aynı çıktığı
 gösterilmeli. Ölçüm doğruluğu, hızdan önce gelir.
 
+**Bağımsız bir projeyle örtüşme: profil tohumları sanılandan sağlam.**
+Zapret Win TR'in (Ali Mali) geliştiricisi `.au3` kaynağını paylaştı. Klasik winws
+motoru için tanımladığı sekiz ISS stratejisi bizimkilerle karşılaştırıldı:
+
+- **Sekizinin sekizi de bizim profillerimizde zaten vardı.** İçe aktarılacak yeni
+  strateji çıkmadı.
+- **Altısında onun tercihi bizim 1. adayımız.** Kalan ikisi bizde 2. sırada ve
+  onun arayüzünde de adları "Alternatif" — yani sıralama bile örtüşüyor.
+- Üçü bizim ölçtüğümüz (`verified`) adaylar; beşi `community-unverified`
+  tohumlarımız.
+
+Anlamı: o 8 profildeki tohumlar "forumda biri söyledi" değil, gerçek kullanıcıları
+olan ayrı bir aracın gönderdiği değerlerle aynı. Bu etiketleri `verified` YAPMAZ --
+geliştiricinin dayanağı "olumsuz dönüş olmadı" ve sessizlik ölçüm değildir; başarısız
+kullanıcı çoğu zaman geri bildirim yazmaz. Ama bir sonraki oturum bu profillere
+bakarken bunu bilsin.
+
+Zapret2 (LUA motoru) stratejileri ALINMADI: `--lua-desync=` sözdizimi bizim
+sabitlediğimiz v72.13 ile uyumsuz.
+
+**Sürücü servisi tek adla temizlenmiyor.** Aynı kaynaktan öğrenildi: WinDivert
+`windivert` dışında `WinDivert14` (WinDivert 1.4 ve GoodbyeDPI'ın adı) ve bazı
+dağıtımlarda `monkey` adıyla da kurulu kalabiliyor. Bizim temizliğimiz yalnızca
+ilkini söküyordu. Kalıntı bir servis sürücüyü çekirdekte tutuyorsa winws kendi
+sürücüsünü yükleyemez ve **bütün adaylar aynı şekilde düşer** — dışarıdan
+"hiçbir strateji çalışmadı" gibi görünür. Bir kullanıcıda tam bu tablo vardı
+(176 aday, 1105 saniye, sonuç yok).
+
+**GoodbyeDPI açıkken ölçüm yapılamaz ve bunu söylemek gerekiyor.** WinDivert'i iki
+araç aynı anda kullanamıyor. GoodbyeDPI Türkiye'de tam olarak aynı iş için çok
+yaygın, dolayısıyla bu çakışma teorik değil. `WinDivertCleanup.DetectConflictingTools()`
+artık bunu tespit ediyor ve arayüz testten ÖNCE uyarıyor. Süreç öldürülmüyor —
+başka bir aracı kapatmak kullanıcının kararı; yapılan tek şey 15 dakikayı körlemesine
+harcamasını engellemek.
+
 **Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin
 kurulabildiğini ve yerleşimin hesaplandığını doğruluyor; bunların hepsi geçerken
 uygulama **yanlış servis sağlayıcıyı seçili gösteriyordu**. Kurulum paketi üretilip

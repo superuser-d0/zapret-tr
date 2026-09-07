@@ -8,6 +8,37 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.6]
+
+Bu sürümün tamamı, [Zapret Win TR](https://github.com/superuser-d0/zapret-tr/blob/main/THIRD-PARTY-NOTICES.md)
+geliştiricisi Ali Mali'nin paylaştığı kaynaktan öğrenilenlere dayanıyor.
+
+### Düzeltildi
+
+- **Sürücü temizliği tek servis adına bakıyordu.** WinDivert yalnızca `windivert`
+  adıyla değil, `WinDivert14` (WinDivert 1.4 ve **GoodbyeDPI**'ın kullandığı ad) ve
+  bazı dağıtımlarda `monkey` adıyla da kurulu kalabiliyor. Kalıntı bir servis
+  sürücüyü çekirdekte tutuyorsa winws kendi sürücüsünü yükleyemiyor ve **bütün
+  adaylar aynı şekilde düşüyor** — dışarıdan "hiçbir strateji çalışmadı" gibi
+  görünüyor. Bir kullanıcıda tam bu tablo vardı: 176 aday, 1105 saniye, sonuç yok.
+  Hem `--cleanup`/`--uninstall-services` hem de kurulum artık üç adı da söküyor.
+
+### Eklendi
+
+- **Çakışan araç tespiti.** WinDivert'i aynı anda iki araç kullanamıyor; GoodbyeDPI
+  açıkken ölçüm hiç yapılamıyor ama kullanıcı bunu göremiyordu. Parametre testi
+  başlamadan önce çalışan bilinen araçlar (goodbyedpi, ciadpi, spoofdpi, winws2)
+  tespit edilip uyarı veriliyor. **Süreç öldürülmüyor** — başka bir aracı kapatmak
+  kullanıcının kararı; amaç 15 dakikayı körlemesine harcamasını engellemek.
+
+### Not — bağımsız doğrulama
+
+Ali Mali'nin aracındaki klasik winws stratejileri bizim profillerimizle
+karşılaştırıldı: **sekizinin sekizi de zaten bizde vardı** ve altısında onun tercihi
+bizim ilk adayımızdı. İçe aktarılacak yeni strateji çıkmadı; ama bu, o profillerin
+tohumlarının bağımsız bir araçla örtüştüğünü gösteriyor. Etiketler `verified`
+**yapılmadı** — dayanak "olumsuz dönüş olmadı" ve sessizlik ölçüm değildir.
+
 ## [0.1.5]
 
 ### Düzeltildi
@@ -231,7 +262,8 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.5...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.6
 [0.1.5]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.5
 [0.1.4]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.4
 [0.1.3]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.3
