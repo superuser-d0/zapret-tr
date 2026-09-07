@@ -21,11 +21,17 @@ namespace ZapretTr.Prober;
 /// sunucu TCP MD5 secenegini reddettiginde ise yarar, yani calisan strateji hedef
 /// sunucuya da bagli. Tek bir "kazanan parametre" aramak yanlis soru olurdu.
 ///
-/// Su an testler SIRALI kosuyor. Paralel kosum icin gereken izolasyon mekanizmasi
-/// (her isciye --ipset-ip ile kendi hedefi) komut kurucuda hazir ama davranisi
-/// henuz dogrulanmadi; dogrulanana kadar sirali kalmak dogru olan, cunku birbirine
-/// karisan iki winws ornegi sessizce YANLIS sonuc uretir -- yavas olmaktan cok
-/// daha kotu.
+/// PARALELLIK: izolasyon --ipset-ip ile saglaniyor ve calistigi winws --debug=1
+/// ciktisiyla dogrulandi ("include ipset check for <ip> : positive / desync
+/// profile 1 matches"). Ama izolasyon HEDEF BAZINDA: ayni hedefe ayni anda iki
+/// farkli strateji uygulanamaz, cunku ikisi de ayni paketleri gorur ve hangi
+/// sonucun hangi stratejiye ait oldugu belirsizlesir.
+///
+/// Bu yuzden paralellik ADAYLAR arasinda degil HEDEFLER arasinda: bir aday, ayrik
+/// hedeflerde es zamanli sinaniyor. Kazanc en cok cok hedefli bolumlerde (tcp443:
+/// discord.com, gateway.discord.gg, kullanicinin kendi adresi) hissediliyor.
+/// Adaylari paralellestirmek cazip gorunuyor ama sessizce yanlis sonuc uretirdi --
+/// yavas olmaktan cok daha kotu.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class StrategyProber(
@@ -38,6 +44,16 @@ public sealed class StrategyProber(
 
     /// <summary>Bir adayin uygulanmasindan sonra ag yiginin oturmasi icin beklenen sure.</summary>
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(400);
+
+    /// <summary>
+    /// Ayni anda kac hedefin sinanacagi.
+    /// </summary>
+    /// <remarks>
+    /// Her isci bir winws sureci ve bir WinDivert tutamagi demek. Sinirsiz
+    /// birakmak, hedef sayisi arttiginda makineyi surec acmakla mesgul eder ve
+    /// olcumun kendisini bozar -- hizlandirmak icin yapilan sey yavaslatir.
+    /// </remarks>
+    private const int MaxParallelProbes = 3;
 
     /// <summary>Dogrulama tekrari oncesi beklenen sure.</summary>
     private static readonly TimeSpan ConfirmationGap = TimeSpan.FromMilliseconds(300);
@@ -326,103 +342,157 @@ public sealed class StrategyProber(
     {
         var opened = new List<string>();
 
-        foreach (var blocked in blockedTargets)
+        // Ayrik hedefler es zamanli sinaniyor. Ayni hedefe iki strateji birden
+        // uygulanmadigi surece izolasyon gecerli: her winws ornegi --ipset-ip ile
+        // yalnizca kendi hedefine dokunuyor, digerlerini dokunmadan geciriyor.
+        var candidates = blockedTargets
+            .Where(b => b.ResolvedIp is not null && !abandoned.Contains(b.Target.Host))
+            .ToList();
+
+        if (candidates.Count == 0)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (blocked.ResolvedIp is null || abandoned.Contains(blocked.Target.Host))
-            {
-                continue;
-            }
-
-            var stopwatch = Stopwatch.StartNew();
-            var runner = new WinwsRunner(vendor);
-
-            try
-            {
-                var arguments = _commandBuilder.BuildProbeCommand(section, candidate.Args, blocked.ResolvedIp);
-
-                // Once winws'in kendisine dogrulat. Gecersiz bir aday burada
-                // ~50 ms'de elenir; yoksa surucu acilir, ag istegi zaman asimina
-                // ugrar ve sonuc "zaman asimi" olarak kaydedilir -- yani gercekte
-                // parametre hatasi olan bir sey engelleme sanilir.
-                var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
-                if (validationError is not null)
-                {
-                    stopwatch.Stop();
-                    attempts.Add(new CandidateResult(
-                        candidate.Id, candidate.Args, section,
-                        blocked.Target.Host, blocked.Target.Category,
-                        false, "gecersiz parametre: " + validationError, stopwatch.Elapsed));
-                    continue;
-                }
-
-                runner.Start(arguments);
-
-                // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
-                // atarsak strateji henuz devrede olmaz ve calisan bir aday
-                // basarisiz gorunur.
-                await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
-
-                using var client = new HttpProbeClient();
-                var outcome = await client
-                    .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
-                    .ConfigureAwait(false);
-
-                stopwatch.Stop();
-
-                attempts.Add(new CandidateResult(
-                    candidate.Id,
-                    candidate.Args,
-                    section,
-                    blocked.Target.Host,
-                    blocked.Target.Category,
-                    outcome.Succeeded,
-                    outcome.Detail,
-                    stopwatch.Elapsed));
-
-                if (outcome.IsBlockPage)
-                {
-                    // Engel sayfasi geldi: baglanti kuruldu ama yanlis sunucuya.
-                    // Bu DNS yonlendirmesidir ve hicbir desync stratejisi duzeltemez.
-                    // Bu hedefte kalan adaylari denemek zaman kaybi.
-                    abandoned.Add(blocked.Target.Host);
-                }
-
-                if (outcome.Succeeded && !opened.Contains(blocked.Target.Category))
-                {
-                    // Tek basarili deneme yeterli DEGIL. Ilk gercek kosumda bir aday
-                    // calisti, ayni aday sonraki kosumda calismadi -- ag kosullari
-                    // gurultulu ve tek olcum bunu ayirt edemiyor. Kullaniciya
-                    // "bulundu" deyip sonra calismamasi, hic bulamamaktan kotu.
-                    if (await ConfirmAsync(section, blocked, cancellationToken).ConfigureAwait(false))
-                    {
-                        opened.Add(blocked.Target.Category);
-                    }
-                    else
-                    {
-                        attempts.Add(new CandidateResult(
-                            candidate.Id, candidate.Args, section,
-                            blocked.Target.Host, blocked.Target.Category,
-                            false, "dogrulama tekrarinda basarisiz (kararsiz)", stopwatch.Elapsed));
-                    }
-                }
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                stopwatch.Stop();
-                attempts.Add(new CandidateResult(
-                    candidate.Id, candidate.Args, section,
-                    blocked.Target.Host, blocked.Target.Category,
-                    false, "calistirilamadi: " + ex.Message, stopwatch.Elapsed));
-            }
-            finally
-            {
-                await runner.StopAsync(cancellationToken: CancellationToken.None).ConfigureAwait(false);
-            }
+            return opened;
         }
 
+        var results = new List<CandidateResult>();
+        var lockObject = new object();
+
+        await Parallel.ForEachAsync(
+            candidates,
+            new ParallelOptions
+            {
+                // Sinir kasitli: her isci bir winws sureci ve bir WinDivert
+                // tutamagi demek. Sinirsiz birakmak, hedef sayisi arttiginda
+                // makineyi surec acmakla mesgul eder ve olcumu bozar.
+                MaxDegreeOfParallelism = MaxParallelProbes,
+                CancellationToken = cancellationToken,
+            },
+            async (blocked, token) =>
+            {
+                var (result, openedCategory, isBlockPage) =
+                    await ProbeSingleTargetAsync(section, candidate, blocked, token).ConfigureAwait(false);
+
+                lock (lockObject)
+                {
+                    results.Add(result);
+
+                    if (isBlockPage)
+                    {
+                        abandoned.Add(blocked.Target.Host);
+                    }
+
+                    if (openedCategory is not null && !opened.Contains(openedCategory))
+                    {
+                        opened.Add(openedCategory);
+                    }
+                }
+            }).ConfigureAwait(false);
+
+        // Sonuclar deterministik sirada eklensin: paralel kosumda tamamlanma
+        // sirasi degisken ve rapor her seferinde farkli siralanirsa
+        // karsilastirilamaz hale gelir.
+        attempts.AddRange(results.OrderBy(r => r.TargetHost, StringComparer.Ordinal));
+
         return opened;
+    }
+
+    /// <summary>
+    /// Tek bir hedefte tek bir adayi dener.
+    /// </summary>
+    /// <returns>
+    /// Denemenin kaydi, acilan hedef sinifi (acilmadiysa null) ve engel sayfasi
+    /// gorulup gorulmedigi.
+    /// </returns>
+    /// <remarks>
+    /// Paralel cagrilabilmesi icin PAYLASILAN DURUMA DOKUNMUYOR: sonuclari
+    /// listelere kendisi eklemek yerine geri donduruyor. Cagiran taraf onlari
+    /// kilit altinda topluyor.
+    /// </remarks>
+    private async Task<(CandidateResult Result, string? OpenedCategory, bool IsBlockPage)>
+        ProbeSingleTargetAsync(
+            StrategySection section,
+            ProbeCandidate candidate,
+            BaselineResult blocked,
+            CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var runner = new WinwsRunner(vendor);
+
+        CandidateResult Failure(string detail)
+        {
+            stopwatch.Stop();
+            return new CandidateResult(
+                candidate.Id, candidate.Args, section,
+                blocked.Target.Host, blocked.Target.Category,
+                false, detail, stopwatch.Elapsed);
+        }
+
+        try
+        {
+            var arguments = _commandBuilder.BuildProbeCommand(section, candidate.Args, blocked.ResolvedIp!);
+
+            // Once winws'in kendisine dogrulat. Gecersiz bir aday burada ~50 ms'de
+            // elenir; yoksa surucu acilir, ag istegi zaman asimina ugrar ve sonuc
+            // "zaman asimi" olarak kaydedilir -- yani gercekte parametre hatasi
+            // olan bir sey engelleme sanilir.
+            var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
+            if (validationError is not null)
+            {
+                return (Failure("gecersiz parametre: " + validationError), null, false);
+            }
+
+            runner.Start(arguments);
+
+            // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
+            // atarsak strateji henuz devrede olmaz ve calisan bir aday basarisiz
+            // gorunur.
+            await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
+
+            using var client = new HttpProbeClient();
+            var outcome = await client
+                .TryReachAsync(blocked.Target.Host, ModeFor(section), blocked.ResolvedIp, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (!outcome.Succeeded)
+            {
+                stopwatch.Stop();
+                return (
+                    new CandidateResult(
+                        candidate.Id, candidate.Args, section,
+                        blocked.Target.Host, blocked.Target.Category,
+                        false, outcome.Detail, stopwatch.Elapsed),
+                    null,
+                    outcome.IsBlockPage);
+            }
+
+            // Tek basarili deneme yeterli DEGIL. Ilk gercek kosumda bir aday
+            // calisti, ayni aday sonraki kosumda calismadi -- ag kosullari
+            // gurultulu ve tek olcum bunu ayirt edemiyor. Kullaniciya "bulundu"
+            // deyip sonra calismamasi, hic bulamamaktan kotu.
+            var confirmed = await ConfirmAsync(section, blocked, cancellationToken).ConfigureAwait(false);
+            stopwatch.Stop();
+
+            if (!confirmed)
+            {
+                return (Failure("dogrulama tekrarinda basarisiz (kararsiz)"), null, false);
+            }
+
+            return (
+                new CandidateResult(
+                    candidate.Id, candidate.Args, section,
+                    blocked.Target.Host, blocked.Target.Category,
+                    true, outcome.Detail, stopwatch.Elapsed),
+                blocked.Target.Category,
+                false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (Failure("calistirilamadi: " + ex.Message), null, false);
+        }
+        finally
+        {
+            await runner.StopAsync(cancellationToken: CancellationToken.None).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
