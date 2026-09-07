@@ -15,7 +15,7 @@
 ; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
 ; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
 #ifndef AppVersion
-  #define AppVersion "0.1.4"
+  #define AppVersion "0.1.5"
 #endif
 #define AppPublisher "ZapretTR contributors"
 #define AppUrl "https://github.com/superuser-d0/zapret-tr"

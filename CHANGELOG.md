@@ -8,6 +8,32 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.5]
+
+### Düzeltildi
+
+- **Test "başarılı" derken Discord güncellemede takılı kalabiliyordu.** Gerçek bir
+  kullanıcıda görüldü: parametre testi çalışan strateji buluyor, Zapret
+  başlatılıyor, ama Discord istemcisi güncelleme ekranından geçemiyor.
+
+  Sebep: Discord istemcisi güncelleme için **ayrı bir sunucuya** gidiyor
+  (`updates.discord.com`) ve o adres de ayrıca engelli — ama hedef listemizde yoktu.
+  Test yalnızca `discord.com` ve `gateway.discord.gg`'ye bakıyordu; ikisini açan bir
+  strateji "başarılı" ilan ediliyor ve kullanıcının eline çalışmayan bir Discord
+  geçiyordu. Ölçüldü (TTNET): koruma kapalıyken `updates.discord.com` RST veriyor,
+  açıkken HTTP 200.
+
+  `updates.discord.com` hedef listesine **kendi kategorisiyle** eklendi
+  (`discord-guncelleme`). Aynı kategoriye konsaydı `discord.com`'un açılması bu
+  adresi de açılmış gösterirdi ve eksik olan şey raporda görünmezdi. Hedefler
+  paralel sınandığı için (aynı anda 3) süreye pratikte bir şey katmıyor.
+
+- **Kısmi başarı "başarılı" gibi gösteriliyordu.** Bir bölümde birden fazla hedef
+  sınıfı olabiliyor ve kazanan aday hepsini açmak zorunda değil — arama ilk
+  başarıda duruyor, "başarı" ise en az bir sınıfın açılması. Ekranda yalnızca
+  "STRATEJİ BULUNDU" yazıyordu. Artık açılmayan hedefler ismen listeleniyor ve
+  durum **"KISMEN ÇALIŞIYOR"** olarak gösteriliyor.
+
 ## [0.1.4]
 
 ### Düzeltildi
@@ -205,7 +231,8 @@ Doğrulama yöntemi: aynı komut üç bağımsız koşum, yalnızca **3/3** geç
 - **8 profilde sıfır saha verisi.** O hatlara erişim yok. Arayüz bu durumu
   "doğrulanmadı" rozetiyle açıkça gösterir.
 
-[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.4...HEAD
+[Yayınlanmamış]: https://github.com/superuser-d0/zapret-tr/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.5
 [0.1.4]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.4
 [0.1.3]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.3
 [0.1.2]: https://github.com/superuser-d0/zapret-tr/releases/tag/v0.1.2

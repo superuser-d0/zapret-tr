@@ -1083,6 +1083,42 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         PersistLearned(report);
 
+        // EKSIK KALAN KATEGORILERI SOYLE. Bir bolumde birden fazla hedef sinifi
+        // olabiliyor ve kazanan aday hepsini acmak zorunda degil: arama ilk
+        // basarida duruyor, "basari" ise en az bir sinifin acilmasi.
+        //
+        // Gercek bir kullanicida bunun bedeli goruldu: test calisan strateji
+        // buldu, Zapret baslatildi, ama Discord istemcisi GUNCELLEME ekraninda
+        // takili kaldi. Sebep, istemcinin guncelleme icin ayri bir sunucuya
+        // gitmesi ve o sunucunun acilmamasiydi. Ekranda "strateji bulundu"
+        // yaziyordu ve eksik olan sey hicbir yerde gorunmuyordu.
+        var eksikler = new List<string>();
+        foreach (var winner in report.Winners)
+        {
+            var beklenen = report.Baseline
+                .Where(b => b.Target.Section == winner.Section
+                            && b.Status == BaselineStatus.Blocked
+                            && b.Target.Category != StrategyProber.ControlCategory)
+                .Select(b => b.Target.Category)
+                .Distinct(StringComparer.Ordinal);
+
+            eksikler.AddRange(beklenen.Except(winner.VerifiedCategories, StringComparer.Ordinal));
+        }
+
+        eksikler = eksikler.Distinct(StringComparer.Ordinal).ToList();
+
+        if (eksikler.Count > 0)
+        {
+            Append("DİKKAT: şu hedefler hâlâ açılmıyor: " + string.Join(", ", eksikler));
+            Append("Bulunan strateji bunları açmadı. İlgili uygulama yine takılabilir");
+            Append("(örneğin Discord güncellemede kalabilir). Testi tekrar çalıştırmak");
+            Append("ya da açılmayan adresi \"Açılmayan site\" kutusuna yazmak işe yarayabilir.");
+
+            SetStatus(AppStatus.Ready, "KISMEN ÇALIŞIYOR",
+                $"{report.Winners.Count} bölüm açıldı, {eksikler.Count} hedef hâlâ kapalı.");
+            return;
+        }
+
         SetStatus(AppStatus.Ready, "STRATEJİ BULUNDU",
             $"{report.Winners.Count} bölüm için çalışan parametre bulundu.");
     }
