@@ -487,6 +487,16 @@ artık bunu tespit ediyor ve arayüz testten ÖNCE uyarıyor. Süreç öldürül
 başka bir aracı kapatmak kullanıcının kararı; yapılan tek şey 15 dakikayı körlemesine
 harcamasını engellemek.
 
+**Türksat Kablonet'ten ilk saha geri bildirimi (2026-09-07, 0.1.6).** Bir kullanıcı
+bağlantı kurabildiğini ve giriş yapabildiğini bildirdi. Profil `verified` YAPILMADI
+ve yapılmamalı: hangi adayın kazandığını bilmiyoruz, tekrar yok, rapor yok. README'de
+ayrı bir durum olarak duruyor ("kullanıcı bildirimi"), çünkü ölçümle karıştırılırsa
+o sütunun anlamı biter.
+
+Bu profili doğrulanmışa çevirecek tek şey: o hattan gelen bir "Ayrıntılar" günlüğü
+ya da `--out` raporu. Hangi adayın tuttuğunu öğrenmeden profil sıralaması
+düzeltilemez — Türksat profilinde şu an ölçülmüş hiçbir şey yok.
+
 **Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin
 kurulabildiğini ve yerleşimin hesaplandığını doğruluyor; bunların hepsi geçerken
 uygulama **yanlış servis sağlayıcıyı seçili gösteriyordu**. Kurulum paketi üretilip

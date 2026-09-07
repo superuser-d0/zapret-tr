@@ -239,16 +239,22 @@ Tamamlananlar:
 
 "Doğrulandı" burada dar bir anlam taşır: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
 koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmaz.
+Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil.
 
 | Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
 |---|:---:|:---:|:---:|---|
-| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı |
-| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı |
+| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) |
+| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
+| Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
 | Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
-| Türksat | — | — | — | ⬜ **testçi aranıyor** |
 | Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
+
+🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
+bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
+tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
+**"Ayrıntılar"** günlüğünü paylaşmanız bu profili doğrulanmışa çevirecek tek şey.
 
 Bu hatlardan birindeyseniz: uygulamayı kurup **Parametre Testi**'ni çalıştırmanız ve sonucu
 [bir issue'da](https://github.com/superuser-d0/zapret-tr/issues) paylaşmanız yeter. Test hiçbir
@@ -300,6 +306,31 @@ Değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
 
 **Antivirüs uyarısı verebilir.** Paket yakalama sürücüsü + imzasız derleme birleşimi false-positive
 üretir. Kod imzalama sertifikamız yok.
+
+## Teşekkür — Zapret Win TR
+
+**Zapret Win TR** geliştiricisi **Ali Mali**, kendi aracındaki hazır ISS stratejilerini
+kullanmamıza izin verdi ve kaynağını paylaştı.
+
+Karşılaştırdık ve sonuç ilginç çıktı: klasik winws motoru için tanımladığı **sekiz stratejinin
+sekizi de bizim profillerimizde zaten vardı**, üstelik altısında onun tercihi bizim de ilk
+adayımızdı. Kalan ikisi bizde ikinci sırada — onun arayüzünde de adları "Alternatif". Yani
+buradan kopyalanan bir parametre **yok**; birbirinden bağımsız iki proje aynı değerlere varmış.
+Bunu ayrıca yazıyoruz çünkü o profillerin tohumlarına duyulacak güveni doğrudan etkiliyor:
+artık "toplulukta biri söylemiş" değil, gerçek kullanıcıları olan ayrı bir aracın gönderdiği
+değerlerle örtüşen bir liste. (Yine de `verified` değiller — dayanak "olumsuz dönüş olmadı"
+ve sessizlik ölçüm sayılmaz.)
+
+Kaynağından **öğrendiğimiz ve uyguladığımız** iki şey var, ikisi de 0.1.6'da:
+
+- WinDivert sürücüsünün yalnızca `windivert` adıyla değil **`WinDivert14`** (GoodbyeDPI'ın da
+  kullandığı ad) ve **`monkey`** adlarıyla da geride kalabildiği. Temizliğimiz eskiden yalnızca
+  ilkini söküyordu ve kalıntı bir servis, bütün adayların aynı şekilde başarısız olmasına yol
+  açabiliyordu.
+- Aynı anda çalışan başka bir DPI atlatma aracının (özellikle **GoodbyeDPI**) ölçümü tümüyle
+  geçersiz kıldığı — ve bunun kullanıcıya söylenmesi gerektiği.
+
+Bunlar fikir düzeyinde katkılar; kod bize ait. Ayrıntı: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Lisans
 
