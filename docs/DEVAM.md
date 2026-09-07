@@ -347,8 +347,10 @@ Kontrolün başka bir işletmeciden olması şart — Google'ın stun/stun1/stun
 üçü de aynı IP'ye (74.125.250.129) çözülüyor, dolayısıyla birbirinin kontrolü olamazlar.
 Bunun için hedeflere `port` alanı eklendi; Google 19302, geri kalan herkes 3478 kullanıyor.
 
-**TTNET'te Discord SESİ, ses bölümüne hiç dokunulmadan çalışıyor — ölçüldü.**
-Gerçek kullanımda sınandı ve ses kuruldu. Bunun "discord-voice stratejimiz
+**TTNET'te Discord SESİ ve EKRAN PAYLAŞIMI, ses bölümüne hiç dokunulmadan
+çalışıyor.** Gerçek kullanımda sınandı: sesli görüşme kuruldu ve ekran paylaşımı
+da çalıştı. Ekran paylaşımı ayrıca değerli bir gözlem, çünkü sesten çok daha ağır
+bir medya akışı — yani UDP yolu yalnızca kurulmuyor, yük altında da taşıyor. Bunun "discord-voice stratejimiz
 doğrulandı" ANLAMINA GELMEDİĞİNE dikkat: koşan winws komutunda o bölüm hiç yok.
 Komut üç bölümden ibaretti (`--filter-tcp=80`, `--filter-tcp=443`,
 `--filter-l7=quic`); global filtre `--wf-tcp=80,443 --wf-udp=443`, yani Discord

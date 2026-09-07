@@ -63,10 +63,13 @@ araçla geri alabilirsiniz:
 ```
 Kaldırma (Program Ekle/Kaldır) da aynı temizliği yapar.
 
-**Sesli görüşme (Discord voice) çalışıyor mu?** Türk Telekom hattında **çalışıyor** — ve
-ilginç olan şu: ZapretTR ses trafiğine **hiç dokunmadan** çalışıyor. O hatta ses zaten engelli
-değil; metin ve bağlantı engeli aşılınca ses kendiliğinden kuruluyor. Araç bunu görüp o bölümü
-komuta hiç eklemiyor ("sorunu olmayan bölüme dokunma" kuralı).
+**Sesli görüşme (Discord voice) çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
+denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımı ayrıca anlamlı, çünkü
+sesten çok daha ağır bir medya akışı.
+
+Mekanizması şu (bir sonraki soruyu baştan cevaplasın diye): o hatta ses zaten engelli değil,
+metin ve bağlantı engeli aşılınca kendiliğinden kuruluyor. ZapretTR ses trafiğine **hiç
+dokunmuyor** — "sorunu olmayan bölüme dokunma" kuralı gereği o bölüm komuta hiç girmiyor.
 
 Sizde ses **çalışmıyorsa** dürüst cevap: o durum için doğrulanmış bir stratejimiz yok ve araç
 size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP-keşif
