@@ -60,6 +60,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isSecureDnsActive;
     private bool _isServiceInstalled;
 
+    /// <summary>
+    /// Kayitli ayarlar geri yuklenirken true.
+    /// </summary>
+    /// <remarks>
+    /// Bu bayrak olmadan geri yukleme kendi kendini bozuyordu: ilk atanan ozelligin
+    /// setter'i SaveSelection() cagiriyor, o an ISS ve strateji HENUZ geri
+    /// yuklenmemis oluyor ve yapilandirma yarim haliyle uzerine yaziliyordu. Sonuc:
+    /// her acilista ayarlarin bir kismi sessizce kayboluyordu.
+    /// </remarks>
+    private bool _isRestoring;
+
     public MainViewModel()
     {
         StartCommand = new RelayCommand(StartAsync, () => CanStart);
@@ -459,34 +470,50 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var config = ConfigStore.Load();
 
-        IsSecureDnsEnabled = config.SecureDnsEnabled;
-        CustomTarget = config.CustomTarget ?? string.Empty;
-
-        if (config.SelectedIspId is not null)
+        _isRestoring = true;
+        try
         {
-            var isp = IspChoices.FirstOrDefault(c =>
-                string.Equals(c.Profile?.Id, config.SelectedIspId, StringComparison.OrdinalIgnoreCase));
 
-            if (isp is not null)
+            IsSecureDnsEnabled = config.SecureDnsEnabled;
+            CustomTarget = config.CustomTarget ?? string.Empty;
+
+            if (config.SelectedIspId is not null)
             {
-                SelectedIsp = isp;
+                var isp = IspChoices.FirstOrDefault(c =>
+                    string.Equals(c.Profile?.Id, config.SelectedIspId, StringComparison.OrdinalIgnoreCase));
+
+                if (isp is not null)
+                {
+                    SelectedIsp = isp;
+                }
+            }
+
+            var strategy = StrategyChoices.FirstOrDefault(c => c.Id == config.SelectedStrategyId)
+                           ?? StrategyChoices.FirstOrDefault(c =>
+                               string.Equals(c.Args, config.SelectedStrategyArgs, StringComparison.Ordinal));
+
+            if (strategy is not null)
+            {
+                SelectedStrategy = strategy;
+                Append("Kayıtlı ayarlar geri yüklendi.");
             }
         }
-
-        var strategy = StrategyChoices.FirstOrDefault(c => c.Id == config.SelectedStrategyId)
-                       ?? StrategyChoices.FirstOrDefault(c =>
-                           string.Equals(c.Args, config.SelectedStrategyArgs, StringComparison.Ordinal));
-
-        if (strategy is not null)
+        finally
         {
-            SelectedStrategy = strategy;
-            Append("Kayıtlı ayarlar geri yüklendi.");
+            _isRestoring = false;
         }
     }
 
     /// <summary>Secimleri diske yazar. Her degisiklikte degil, anlamli anlarda cagrilir.</summary>
     private void SaveSelection()
     {
+        // Geri yukleme sirasinda kaydetme: yarim durumu diske yazmak, kaydedilmis
+        // ayarlarin bir kismini silmek demek.
+        if (_isRestoring)
+        {
+            return;
+        }
+
         try
         {
             ConfigStore.Save(new AppConfig

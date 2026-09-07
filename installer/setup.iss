@@ -46,7 +46,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 ; Uygulama ve kutuphaneleri
-Source: "..\publish\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+; Hata ayiklama sembolleri (.pdb) disarida. Yayin zaten DebugType=none ile
+; uretiliyor ama bu filtre ikinci bir guvence: elle yapilmis bir yayin ciktisi
+; pakete sembol sizdirmasin.
+Source: "..\publish\app\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs
 
 ; winws ve bagimliliklari. VendorPaths bu klasoru uygulamanin YANINDA ariyor,
 ; klasor adi bu yuzden birebir "zapret-winws" olmali.
