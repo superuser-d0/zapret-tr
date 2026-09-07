@@ -68,6 +68,12 @@ quic   : --dpi-desync=fake --dpi-desync-repeats=11
 İkisi de kontrollü tekrarda 3/3. Profilde `tcm-443-fake-autottl` ve
 `tcm-quic-fake-plain` olarak `verified`.
 
+**Uygulama düzeyinde de doğrulandı:** WPF arayüzü ile şifreli DNS + bu strateji
+açıkken Discord'un kendi istemcisi çalıştı. Ölçüm ile gerçek kullanım örtüştü —
+projede ilk kez bir profil bu düzeyde teyit edildi. `--apply --doh` aynı anda
+`3 hedef düzeldi, 0 hedef bozuldu` verdi; "0 bozuldu" ayrıca önemli, YouTube ve
+kontrol hedefleri etkilenmedi.
+
 **Mobil, sabit hattan gerçekten farklı — türetilemez.** İki somut fark:
 
 1. Discord TCP: TTNET'te **RST**, Turkcell Mobil'de **zaman aşımı**.
@@ -315,8 +321,16 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-Temiz: `--cleanup` koşuldu — WinDivert sürücüsü durduruldu ve kaldırıldı, servis
-yok, DNS değiştirilmemiş, winws/dnscrypt süreci yok, internet normal.
+Temiz ve **bağımsız doğrulandı** (`--cleanup` çıktısına güvenilmedi, ayrıca
+kontrol edildi): winws/dnscrypt/ZapretTR süreci yok, WinDivert ve ZapretTR
+servisi yok, DNS gerçek sunuculara dönmüş (dnscrypt'in `127.0.0.1`'i değil),
+`example.com` HTTP 200.
+
+WPF uygulaması `CloseMainWindow` ile kapatıldı, `TerminateProcess` ile değil —
+DNS'i kendi çıkış yolundan geri alsın diye. Nitekim sonraki `--cleanup`
+"Sistem DNS ayarı — değiştirilmemiş" dedi, yani uygulama işini yapmıştı.
+Yükseltilmiş süreç olduğu için bu ancak yükseltilmiş bir oturumdan yapılabiliyor.
+
 `%ProgramData%\ZapretTR\config.json` duruyor (kullanıcı ayarı, kaldırma bunu
 silmiyor).
 
