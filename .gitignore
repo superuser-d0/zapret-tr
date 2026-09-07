@@ -15,8 +15,10 @@ installer/Output/
 *.log
 saha-raporu-*.json
 
-# Gecici ekran goruntuleri
+# Gecici ekran goruntuleri. Belgelerdeki gorseller ISTISNA: README'nin
+# ekran goruntusu depoda durmali, yoksa GitHub'da kirik resim gorunuyor.
 *.png
+!docs/*.png
 
 # Yerel test ciktilari
 diag.txt
