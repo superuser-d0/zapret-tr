@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    Surum TEK yerde. Onceden yalnizca installer/setup.iss biliyordu; uretilen
+    exe'lerin uzerinde hicbir surum bilgisi yoktu, dolayisiyla kullanicinin
+    "hangi surumu calistiriyorum" sorusunun makinede cevabi yoktu.
+
+    Yayin akisi bunu tag'den geciyor: dotnet'e -p:Version=, ISCC'ye /DAppVersion=.
+    Ikisi de verilmezse buradaki deger kullanilir.
+  -->
+  <PropertyGroup>
+    <Version Condition="'$(Version)' == ''">0.1.0</Version>
+    <Company>ZapretTR</Company>
+    <Product>ZapretTR</Product>
+    <Copyright>MIT</Copyright>
+  </PropertyGroup>
+
+</Project>

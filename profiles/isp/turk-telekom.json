@@ -13,7 +13,7 @@
   ],
   "engine": "winws",
   "priority": 2,
-  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket. DOGRULANMIS PROFIL: bu dosya artik elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ. Sebebi, icinde gercek saha dogrulamasi tasimasi -- yeniden uretim o veriyi silerdi. 2026-09-07 saha olcumu: --exhaustive ile ayni komut uc kez kosuldu ve yalnizca 3/3 gecen adaylar verified isaretlendi. tcp443 bolumunde 8, quic bolumunde 7 dogrulanmis aday var. tcp80 ve discord-voice bu hatta engelli olmadigi icin buradan olculemiyor.",
+  "notes": "Gelistirme makinesinin baglantisi bu ISP uzerinde, dolayisiyla yerelde uctan uca dogrulanabilen tek profil. Toplulukta bildirilen cekirdek yontem sabit dusuk TTL ile sahte paket. DOGRULANMIS PROFIL: bu dosya artik elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ. Sebebi, icinde gercek saha dogrulamasi tasimasi -- yeniden uretim o veriyi silerdi. 2026-09-07 saha olcumu: --exhaustive ile ayni komut uc kez kosuldu ve yalnizca 3/3 gecen adaylar verified isaretlendi. tcp443 bolumunde 8, quic bolumunde 7 dogrulanmis aday var. tcp80 bolumu de ayni gun dogrulandi (hedef listesine engelli bir tcp80 hedefi eklendikten sonra; oncesinde bolumde yalnizca kontrol hedefi vardi). discord-voice hala olculemiyor: Discord ses yolu kendi IP-kesif protokolunu kullaniyor ve genel STUN bu hatta engellenmiyor.",
   "candidates": [
     {
       "id": "tt-443-fake-ttl4",
@@ -80,6 +80,22 @@
       "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-fake-md5sig) alindi; TTNET hattinda dogrulanan bu oldu, Superonline hattinda hala dogrulanmadi."
     },
     {
+      "id": "tt-443-fake-md5sig-autottl",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-autottl=-1:3-20",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 93,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan discord.com baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
+    },
+    {
       "id": "tt-443-fake-md5sig-ttl3",
       "section": "tcp443",
       "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-ttl=3",
@@ -94,6 +110,22 @@
       ],
       "lastVerified": "2026-09-07",
       "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan olan discord.com baglantisi acildi, ayni komutun uc bagimsiz kosumunda 3/3. Superonline profilinden (sol-443-fake-md5sig-ttl3) alindi."
+    },
+    {
+      "id": "tt-443-fake-ttl5",
+      "section": "tcp443",
+      "args": "--dpi-desync=fake --dpi-desync-ttl=5",
+      "protocols": [
+        "tls12",
+        "tls13"
+      ],
+      "weight": 91,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da RST ile sifirlanan discord.com baglantisi acildi, uc bagimsiz kosumda 3/3. Turk Telekom Mobil profilinden (ttm-443-fake-ttl5). Sabit hatta ttl=3, 4 ve 5 birlikte calisiyor, yani DPI kutusu dar bir TTL penceresine degil bir aralia duyarli.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
     },
     {
       "id": "tt-443-fake-ttl1-autottl3",
@@ -183,7 +215,7 @@
       "source": "hypothesis",
       "verifiedFor": [],
       "lastVerified": null,
-      "note": "Saf bolmenin ters sirali hali."
+      "note": "Sahte paket uretmeden yalnizca yeniden siralama. OLCULDU (2026-09-07, TTNET): uc kosumun yalnizca BIRINDE calisti (1/3). Kararsiz kabul edildi ve verified YAPILMADI. Bu satirin amaci, bir sonraki oturumun ayni kararsizligi yeniden kesfetmemesi."
     },
     {
       "id": "tt-443-fake-badseq",
@@ -207,10 +239,87 @@
         "http"
       ],
       "weight": 100,
-      "source": "upstream-preset",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Upstream'in duz HTTP kurali."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Bolumun ilk dogrulanmis adayi. Merdiven ayni bayraklari farkli sirayla ureten bir varyantini da denedi ve o da 3/3 gecti -- yani sonuc bayrak sirasindan bagimsiz."
+    },
+    {
+      "id": "tt-80-fake-fakedsplit-autottl-range",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-fooling=md5sig --dpi-desync-autottl=-1:3-20",
+      "protocols": [
+        "http"
+      ],
+      "weight": 98,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden. Sabit autottl=2 yerine aralik.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
+    },
+    {
+      "id": "tt-80-fake-fakedsplit-plain",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "http"
+      ],
+      "weight": 96,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden. TTL ekseni HIC yok: bu hatta tcp80 icin belirleyici olan md5sig fooling, TTL degil.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
+    },
+    {
+      "id": "tt-80-fake-fakedsplit-ttl3",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake,fakedsplit --dpi-desync-fooling=md5sig --dpi-desync-ttl=3",
+      "protocols": [
+        "http"
+      ],
+      "weight": 94,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
+    },
+    {
+      "id": "tt-80-fake-md5sig",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig",
+      "protocols": [
+        "http"
+      ],
+      "weight": 92,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden. En sade dogrulanmis aday: fakedsplit bile gerekmiyor, tek basina md5sig sahte paketi yetiyor.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
+    },
+    {
+      "id": "tt-80-fake-md5sig-autottl",
+      "section": "tcp80",
+      "args": "--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-autottl=-1:3-20",
+      "protocols": [
+        "http"
+      ],
+      "weight": 90,
+      "source": "verified",
+      "note": "DOGRULANDI (2026-09-07, gercek TTNET hatti, AS9121): baseline'da 14 ms'de RST veren discord.com duz HTTP baglantisi acildi, uc bagimsiz kosumda 3/3. Genel merdivenden.",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07"
     },
     {
       "id": "tt-80-multisplit-method",

@@ -207,7 +207,8 @@ public sealed class StrategyProber(
                 pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
             }
 
-            var outcome = await ProbeAsync(target.Section, target.Host, pinnedIp, client, cancellationToken)
+            var outcome = await ProbeAsync(
+                    target.Section, target.Host, pinnedIp, client, cancellationToken, target.Port)
                 .ConfigureAwait(false);
 
             var status = outcome switch
@@ -295,6 +296,12 @@ public sealed class StrategyProber(
         // 8 gercek aday.
         var triedArgs = new HashSet<string>(StringComparer.Ordinal);
 
+        // Anahtar NORMALLESTIRILMIS: bayrak sirasi disinda ayni olan iki aday ayni
+        // adaydir. Olculdu: "tt-80-fake-fakedsplit" ile merdivenin urettigi
+        // "fake-fakedsplit#1" ayni uc bayragi farkli sirada tasiyor ve uc bagimsiz
+        // kosumun ucunde de birebir ayni sonucu verdiler -- yani sira sonucu
+        // degistirmiyor, yalnizca butce yiyordu.
+
         foreach (var (tier, label, candidates) in BuildTiers(section, profile))
         {
             if (remaining <= 0)
@@ -307,7 +314,7 @@ public sealed class StrategyProber(
             // cekilmeyen bir aday isaretlenmis olsaydi, ayni argumani tasiyan baska bir
             // aday sonradan sessizce elenirdi.
             var candidateList = candidates
-                .Where(c => triedArgs.Add(c.Args))
+                .Where(c => triedArgs.Add(NormalizeArgs(c.Args)))
                 .Take(remaining)
                 .ToList();
             if (candidateList.Count == 0)
@@ -508,7 +515,8 @@ public sealed class StrategyProber(
         {
             using var client = new HttpProbeClient();
             var outcome = await ProbeAsync(
-                    section, blocked.Target.Host, blocked.ResolvedIp, client, cancellationToken)
+                    section, blocked.Target.Host, blocked.ResolvedIp, client, cancellationToken,
+                    blocked.Target.Port)
                 .ConfigureAwait(false);
 
             if (!outcome.Succeeded)
@@ -565,7 +573,8 @@ public sealed class StrategyProber(
 
         using var client = new HttpProbeClient();
         var outcome = await ProbeAsync(
-                section, target.Target.Host, target.ResolvedIp, client, cancellationToken)
+                section, target.Target.Host, target.ResolvedIp, client, cancellationToken,
+                target.Target.Port)
             .ConfigureAwait(false);
 
         return outcome.Succeeded;
@@ -589,7 +598,7 @@ public sealed class StrategyProber(
             "Diger TR profilleri",
             neighbours
                 .SelectMany(p => p.CandidatesFor(section).Select(c => new ProbeCandidate($"{p.Id}/{c.Id}", c.Args)))
-                .DistinctBy(c => c.Args, StringComparer.Ordinal));
+                .DistinctBy(c => NormalizeArgs(c.Args), StringComparer.Ordinal));
 
         // Aile adi tek basina KIMLIK DEGIL: bir aile eksenlerin kartezyen carpimi
         // kadar aday uretiyor, dolayisiyla "ladder/fake-quic-anyproto" adinda
@@ -604,7 +613,7 @@ public sealed class StrategyProber(
             ProbeTier.GenericLadder,
             "Genel arama",
             profiles.Ladder.Expand(section)
-                .DistinctBy(c => c.Args, StringComparer.Ordinal)
+                .DistinctBy(c => NormalizeArgs(c.Args), StringComparer.Ordinal)
                 .GroupBy(c => c.Family, StringComparer.Ordinal)
                 .SelectMany(family => family.Select((c, index) =>
                     new ProbeCandidate($"ladder/{c.Family}#{index + 1}", c.Args))));
@@ -641,17 +650,23 @@ public sealed class StrategyProber(
     /// DNS kacirmasi olan bir hatta baglanti engel sunucusuna gidiyor, winws'in
     /// --ipset-ip kontrolu negatif donuyor ve strateji hic uygulanmadan paket geciyor.
     /// </remarks>
+    /// <param name="port">
+    /// Yalnizca discord-voice bolumunde kullanilir; verilmezse STUN icin 19302.
+    /// Hedef listesinden gelir, cunku Google disindaki STUN sunuculari 3478'i
+    /// kullaniyor ve bolumun kontrol hedefi baska bir isletmeciden olmali.
+    /// </param>
     public static async Task<ProbeOutcome> ProbeAsync(
         StrategySection section,
         string host,
         string? pinnedIp,
         HttpProbeClient httpClient,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int? port = null)
         => section switch
         {
             // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.
             StrategySection.DiscordVoice => await new StunProbeClient()
-                .TryReachAsync(host, pinnedIp: pinnedIp, cancellationToken: cancellationToken)
+                .TryReachAsync(host, port ?? 19302, pinnedIp, cancellationToken)
                 .ConfigureAwait(false),
 
             StrategySection.Quic => await new QuicProbeClient()
@@ -671,6 +686,15 @@ public sealed class StrategyProber(
         StrategySection.DiscordVoice => ProbeMode.Http3,
         _ => ProbeMode.Tls12,
     };
+
+    /// <summary>
+    /// Tekillestirme anahtari: bayraklar siralanmis halde. YALNIZCA karsilastirma
+    /// icin; winws'e her zaman adayin kendi yazimi veriliyor.
+    /// </summary>
+    private static string NormalizeArgs(string args)
+        => string.Join(' ', args
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .OrderBy(part => part, StringComparer.Ordinal));
 
     private readonly record struct ProbeCandidate(string Id, string Args);
 }

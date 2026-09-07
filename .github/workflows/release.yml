@@ -1,0 +1,112 @@
+name: yayin
+
+# Tag itildiginde kurulum paketini ve saha testi paketini uretip GitHub Release
+# olarak yayinlar. Elle uretim birakildi cunku elle uretilen bir pakette hangi
+# commit'ten, hangi upstream surumunden ve hangi ayarlarla ciktigi kaybolabiliyor.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Surum (tag olmadan deneme uretimi icin, or. 0.1.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Surum TEK kaynaktan: tag. Hem exe'nin surum bilgisine hem kurulum
+      # paketine ayni deger giriyor, boylece uretilen dosyayla tag ayrisamiyor.
+      - name: surumu belirle
+        id: surum
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF -like 'refs/tags/v*') {
+            $env:GITHUB_REF -replace '^refs/tags/v', ''
+          } else {
+            '${{ github.event.inputs.version }}'
+          }
+          if (-not $v) { throw 'Surum belirlenemedi.' }
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "Surum x.y.z olmali: $v" }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "Surum: $v"
+
+      - name: upstream ikililerini indir
+        run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
+
+      # Yayinlanan pakette test edilmemis kod olmasin. CI ayrica kosuyor ama
+      # yayin kendi basina ayakta durmali: tag dogrudan da itilebiliyor.
+      - name: test
+        run: dotnet test tests/ZapretTr.Tests -c Release --nologo
+
+      - name: uygulamayi yayinla
+        run: >
+          dotnet publish src/ZapretTr.App -c Release -o publish/app
+          -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:DebugType=none
+          -p:Version=${{ steps.surum.outputs.version }} --nologo
+
+      # QUIC olcumu msquic.dll'e bagli ve yoklugu SESSIZ bir hataya donusuyor.
+      - name: msquic yayin ciktisinda mi
+        shell: pwsh
+        run: |
+          if (-not (Test-Path publish/app/msquic.dll)) {
+            throw "msquic.dll yayin ciktisinda yok. QUIC olcumu sessizce calismaz."
+          }
+
+      - name: Inno Setup kur
+        run: choco install innosetup --no-progress -y
+
+      - name: kurulum paketini uret
+        shell: pwsh
+        run: |
+          # Parantezli ortam degiskeni ${env:...} ile yazilmali; $env:ProgramFiles(x86)
+          # PowerShell'de "$env:ProgramFiles" + "(x86)" olarak ayrisir ve yol bozulur.
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "ISCC bulunamadi: $iscc" }
+          & $iscc "/DAppVersion=${{ steps.surum.outputs.version }}" installer\setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC basarisiz: $LASTEXITCODE" }
+
+      - name: saha testi paketini uret
+        run: powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
+
+      # Imzasiz dagitim yapiyoruz (kod imzalama sertifikamiz yok), dolayisiyla
+      # kullanicinin indirdigi dosyayi dogrulayabilmesinin TEK yolu bu ozetler.
+      - name: SHA256 ozetleri
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem installer\Output\*.exe, dist\*.zip -ErrorAction SilentlyContinue)
+          if ($files.Count -eq 0) { throw "Yayinlanacak dosya bulunamadi." }
+          $lines = foreach ($f in $files) {
+            $h = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$h  $($f.Name)"
+          }
+          $lines | Tee-Object -Variable shown | Out-File SHA256SUMS.txt -Encoding utf8
+          $shown
+
+      # Ucuncu taraf action yerine onceden kurulu gh: bu is ikili yayinliyor,
+      # dolayisiyla guvendigimiz kod miktarini kucuk tutmak bedava bir kazanc.
+      # Yayin TASLAK aciliyor -- imzasiz ikili dagitiliyor, son bir goz kasitli.
+      - name: taslak yayin olustur
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = '${{ steps.surum.outputs.version }}'
+          $assets = @(Get-ChildItem installer\Output\*.exe, dist\*.zip, SHA256SUMS.txt -ErrorAction SilentlyContinue)
+          if ($assets.Count -lt 2) { throw "Beklenen dosyalar eksik: $($assets.Name -join ', ')" }
+          gh release create "v$v" @($assets.FullName) `
+            --title "ZapretTR $v" `
+            --notes-file .github/release-notes.md `
+            --draft
+          if ($LASTEXITCODE -ne 0) { throw "gh release create basarisiz: $LASTEXITCODE" }

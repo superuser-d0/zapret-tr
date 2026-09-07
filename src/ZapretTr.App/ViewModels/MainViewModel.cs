@@ -884,7 +884,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IspChoices.Add(new IspChoice(profile, profile.DisplayName));
         }
 
-        SelectedIsp = IspChoices.FirstOrDefault(c => c.Profile is not null);
+        // Ilk acilista "Bilmiyorum" secili gelir, listedeki ilk profil DEGIL.
+        //
+        // Onceden ilk gercek profil seciliyordu ve bu, kurulum paketiyle gercek bir
+        // makinede denendiginde goruldu: Turk Telekom hattinda uygulama acildiginda
+        // "Turkcell Superonline" secili geliyordu (priority'si en kucuk profil).
+        // Kullanicinin dogrudan Baslat'a basmasi, kendi hattinda HIC denenmemis bir
+        // stratejiyi trafige uygulamasi demekti. Uygulama, tespit etmedigi bir
+        // saglayiciyi secilmis gibi gostermemeli.
+        //
+        // Tespit burada kendiliginden CALISTIRILMIYOR: ASN sorgusu kullanicinin
+        // IP'sini ucuncu bir servise gonderiyor ve bu, kullanici hicbir sey
+        // istemeden acilista yapilacak bir sey degil. "Bilmiyorum" secili haldeyken
+        // parametre testi baslatildiginda tespit zaten devreye giriyor.
+        SelectedIsp = IspChoices.FirstOrDefault(c => c.Profile is null)
+                      ?? IspChoices.FirstOrDefault();
     }
 
     private void LoadStrategyChoices()

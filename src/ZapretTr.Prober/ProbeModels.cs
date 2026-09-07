@@ -28,7 +28,16 @@ public enum ProbeMode
 /// <param name="Label">Kullaniciya gosterilen ad.</param>
 /// <param name="Category">Hedef sinifi: genel-web, youtube, discord, discord-voice.</param>
 /// <param name="Section">Bu hedefin hangi bolumu test ettigi.</param>
-public sealed record ProbeTarget(string Host, string Label, string Category, StrategySection Section);
+/// <param name="Port">
+/// Yalnizca <see cref="StrategySection.DiscordVoice"/> bolumunde anlamli: STUN
+/// sunucusunun portu. Verilmezse Google'in kullandigi 19302 varsayilir. Alan
+/// gerekli oldu cunku discord-voice bolumune KONTROL hedefi eklenebilmesi icin
+/// baska bir isletmecinin sunucusu gerekiyordu ve Google disindaki STUN
+/// sunuculari 3478'i kullaniyor. tcp80/tcp443/quic bolumlerinde port zaten
+/// bolumun kendisinden belli.
+/// </param>
+public sealed record ProbeTarget(
+    string Host, string Label, string Category, StrategySection Section, int? Port = null);
 
 /// <summary>Bir hedefin winws kapaliyken erisilebilirlik durumu.</summary>
 public enum BaselineStatus

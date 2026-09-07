@@ -1,6 +1,7 @@
 using System.Windows;
 using ZapretTr.App;
 using ZapretTr.App.ViewModels;
+using ZapretTr.Core.Engine;
 
 namespace ZapretTr.Tests;
 
@@ -53,9 +54,30 @@ public sealed class MainWindowSmokeTests
             Assert.Contains(viewModel.IspChoices, c => c.Profile is null);
             Assert.Contains(viewModel.IspChoices, c => c.Profile?.Id == "superonline");
 
-            // Bir ISS secili oldugunda strateji listesi de dolmali.
+            // ILK ACILIS: tespit edilmemis bir saglayici secilmis gibi GOSTERILMEZ.
+            //
+            // Kurulum paketiyle gercek bir makinede goruldu: Turk Telekom hattinda
+            // uygulama "Turkcell Superonline" secili aciliyordu, cunku liste ilk
+            // gercek profili seciyordu. Kullanicinin Baslat'a basmasi, kendi hattinda
+            // hic denenmemis bir stratejiyi trafige uygulamasi demekti.
+            //
+            // ConfigStore statik ve %ProgramData%'dan okuyor; kayitli secimi olan bir
+            // makinede geri yukleme dogru sekilde devreye girer ve bu iddia gecersiz
+            // olur. O durumda atliyoruz -- sessizce yanlis dogrulamaktansa.
+            if (ConfigStore.Load().SelectedIspId is null)
+            {
+                Assert.NotNull(viewModel.SelectedIsp);
+                Assert.Null(viewModel.SelectedIsp!.Profile);
+                Assert.Null(viewModel.SelectedStrategy);
+                Assert.Empty(viewModel.StrategyChoices);
+                Assert.False(viewModel.CanStart, "Saglayici bilinmeden Baslat acik olmamali.");
+            }
+
+            // Bir ISS SECILDIGINDE strateji listesi dolmali.
+            viewModel.SelectedIsp = viewModel.IspChoices.First(c => c.Profile?.Id == "turk-telekom");
             Assert.NotEmpty(viewModel.StrategyChoices);
             Assert.NotNull(viewModel.SelectedStrategy);
+            Assert.True(viewModel.CanStart);
         });
 
         Assert.Null(error);

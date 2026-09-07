@@ -1,11 +1,17 @@
 {
   "version": 1,
-  "notes": "Parametre testinin kullandigi hedefler. Bunlar 'engelli site listesi' DEGIL -- aday havuzu. Test once winws kapaliyken hepsini deneyip hangilerinin gercekten erisilemedigini belirler (baseline taramasi) ve yalnizca erisilemeyenlerle strateji test eder. Zaten acilan bir hedefle test yapilirsa her strateji 'calisiyor' gorunur. Kullanici arayuzden kendi hedefini ekleyebilir; asil dogru kullanim da budur, cunku kimin neye erisemedigi kisiye gore degisiyor. Listedeki 'kontrol' kategorisindeki hedef engellenmemesi BEKLENEN bir adrestir: o da erisilemiyorsa sorun DPI'da degil bizim olcum yolumuzda ya da internet baglantisindadir. Bu ayrimi yapamayan bir arac, kendi hatasini engelleme sanar. neverssl.com bir sure varsayilan tcp80 hedefiydi ve KALDIRILDI: winws --debug=1 ciktisi o hedefte TCP el sikismasinin tamamlanmadigini (SYN gonderiliyor, SYN-ACK gelmiyor) gosterdi. Desync stratejileri yuk paketi uzerinde calisir; el sikisma kurulmuyorsa DPI'in gorecegi bir Host basligi da yoktur, dolayisiyla hicbir aday yardimci olamaz. Ustelik hedef kararsiz oldugu icin arada bir kendiliginden calisiyor ve bu, aslinda hicbir sey asmamis bir adayin 'kazanan' ilan edilmesine yol aciyordu. QUIC icin ayri bir kontrol hedefi var cunku 'HTTP/3 baglantisi kurulamadi' hatasi iki cok farkli seyi ayni sekilde gosteriyor: QUIC'in engellenmesi, ve QUIC'in bu makinede/agda hic calismamasi. Ayirt edemedigimiz bir seyi engel sayip dakikalarca aday denemek yanlis; kontrol hedefi de acilmiyorsa o bolum hic aranmiyor. discord-voice bolumu UDP kullaniyor ve HTTP istemcisiyle olculemez; bu bolum bugune kadar hic sinanmiyordu ve arac 'ses calisiyor mu' sorusuna sessiz kaliyordu. Artik STUN Binding Request ile olculuyor: cevap geliyorsa UDP yolu acik demek.",
+  "notes": "Parametre testinin kullandigi hedefler. Bunlar 'engelli site listesi' DEGIL -- aday havuzu. Test once winws kapaliyken hepsini deneyip hangilerinin gercekten erisilemedigini belirler (baseline taramasi) ve yalnizca erisilemeyenlerle strateji test eder. Zaten acilan bir hedefle test yapilirsa her strateji 'calisiyor' gorunur. Kullanici arayuzden kendi hedefini ekleyebilir; asil dogru kullanim da budur, cunku kimin neye erisemedigi kisiye gore degisiyor. Listedeki 'kontrol' kategorisindeki hedef engellenmemesi BEKLENEN bir adrestir: o da erisilemiyorsa sorun DPI'da degil bizim olcum yolumuzda ya da internet baglantisindadir. Bu ayrimi yapamayan bir arac, kendi hatasini engelleme sanar. neverssl.com bir sure varsayilan tcp80 hedefiydi ve KALDIRILDI: winws --debug=1 ciktisi o hedefte TCP el sikismasinin tamamlanmadigini (SYN gonderiliyor, SYN-ACK gelmiyor) gosterdi. Desync stratejileri yuk paketi uzerinde calisir; el sikisma kurulmuyorsa DPI'in gorecegi bir Host basligi da yoktur, dolayisiyla hicbir aday yardimci olamaz. Ustelik hedef kararsiz oldugu icin arada bir kendiliginden calisiyor ve bu, aslinda hicbir sey asmamis bir adayin 'kazanan' ilan edilmesine yol aciyordu. QUIC icin ayri bir kontrol hedefi var cunku 'HTTP/3 baglantisi kurulamadi' hatasi iki cok farkli seyi ayni sekilde gosteriyor: QUIC'in engellenmesi, ve QUIC'in bu makinede/agda hic calismamasi. Ayirt edemedigimiz bir seyi engel sayip dakikalarca aday denemek yanlis; kontrol hedefi de acilmiyorsa o bolum hic aranmiyor. discord-voice bolumu UDP kullaniyor ve HTTP istemcisiyle olculemez; bu bolum bugune kadar hic sinanmiyordu ve arac 'ses calisiyor mu' sorusuna sessiz kaliyordu. Artik STUN Binding Request ile olculuyor: cevap geliyorsa UDP yolu acik demek. 2026-09-07: tcp80 bolumune gercek bir hedef eklendi. O gune kadar bolumde YALNIZCA kontrol hedefi (example.com) vardi, dolayisiyla 'engelli tcp80 hedefi yok' sonucu hattan degil listeden geliyordu ve bolum hicbir profilde dogrulanamiyordu. Olculdu (TTNET/AS9121): discord.com duz HTTP'de 14 ms'de RST veriyor, yani tcp80 de engelli. discord-voice bolumune de kontrol hedefi eklendi: o bolumun tek hedefi STUN'du ve STUN sunucusunun kendisi olu oldugunda bu 'DPI engeli' olarak gorunurdu -- QUIC bolumunde bir kez yasanmis hatanin aynisi. Kontrol baska bir isletmeciden secildi (Cloudflare, 3478); Google'in stun/stun1/stun2 adlarinin hepsi ayni IP'ye cozuldugu icin bagimsiz kontrol olamazlardi.",
   "targets": [
     {
       "host": "example.com",
       "label": "Kontrol (engelli olmamali)",
       "category": "kontrol",
+      "section": "tcp80"
+    },
+    {
+      "host": "discord.com",
+      "label": "Discord (duz HTTP)",
+      "category": "discord",
       "section": "tcp80"
     },
     {
@@ -45,10 +51,18 @@
       "section": "quic"
     },
     {
+      "host": "stun.cloudflare.com",
+      "label": "Kontrol - STUN (engelli olmamali)",
+      "category": "kontrol",
+      "section": "discord-voice",
+      "port": 3478
+    },
+    {
       "host": "stun.l.google.com",
       "label": "Discord ses (STUN/UDP)",
       "category": "discord-voice",
-      "section": "discord-voice"
+      "section": "discord-voice",
+      "port": 19302
     }
   ]
 }

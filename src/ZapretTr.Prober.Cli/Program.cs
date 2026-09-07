@@ -83,10 +83,18 @@ if (options.Apply)
     Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(runtimeArgs));
     Console.WriteLine();
 
+    var applySection = StrategySection.Tcp443;
+    if (options.Section is { } applySectionName
+        && !StrategySectionExtensions.TryParseJsonName(applySectionName, out applySection))
+    {
+        Console.Error.WriteLine($"Bilinmeyen bölüm: {applySectionName} (tcp80 | tcp443 | quic | discord-voice)");
+        return 4;
+    }
+
     var applyTargets = ProbeTargetStore.Load(applyProfiles.Root).ToList();
     foreach (var extraHost in options.ExtraTargets)
     {
-        var parsedExtra = ProbeTargetStore.TryParseUserTarget(extraHost);
+        var parsedExtra = ProbeTargetStore.TryParseUserTarget(extraHost, applySection);
         if (parsedExtra is not null)
         {
             applyTargets.Insert(0, parsedExtra);
@@ -722,10 +730,22 @@ if (options.Exhaustive)
 }
 
 // --- Hedefler ---------------------------------------------------------------
+// --target hangi bolume yazilacak: varsayilan tcp443, --section ile degistirilir.
+// Onceden HER kullanici hedefi tcp443'e gidiyordu, yani kullanici duz HTTP'de
+// acilmayan bir adresi test edemiyordu -- tcp80 bolumu icin kendi hedefini
+// ekleyemedigi gibi, verdigi adres yanlis bolumde olculuyordu.
+var extraSection = StrategySection.Tcp443;
+if (options.Section is { } extraSectionName
+    && !StrategySectionExtensions.TryParseJsonName(extraSectionName, out extraSection))
+{
+    Console.Error.WriteLine($"Bilinmeyen bölüm: {extraSectionName} (tcp80 | tcp443 | quic | discord-voice)");
+    return 4;
+}
+
 var targets = ProbeTargetStore.Load(profiles.Root).ToList();
 foreach (var extra in options.ExtraTargets)
 {
-    var parsed = ProbeTargetStore.TryParseUserTarget(extra);
+    var parsed = ProbeTargetStore.TryParseUserTarget(extra, extraSection);
     if (parsed is null)
     {
         Console.Error.WriteLine($"Hedef çözümlenemedi, atlanıyor: {extra}");
@@ -733,7 +753,7 @@ foreach (var extra in options.ExtraTargets)
     }
 
     targets.Insert(0, parsed);
-    Console.WriteLine("Ek hedef         : " + parsed.Host);
+    Console.WriteLine($"Ek hedef         : {parsed.Host} ({parsed.Section.ToJsonName()})");
 }
 
 Console.WriteLine();
@@ -1212,6 +1232,7 @@ internal sealed record CliOptions(
         Console.WriteLine();
         Console.WriteLine("  --isp <id>              Servis sağlayıcı profili (ör. superonline, turk-telekom)");
         Console.WriteLine("  --target <adres>        Sizde açılmayan bir adres ekler. Birden fazla verilebilir.");
+        Console.WriteLine("                          Hangi bölüme yazılacağı --section ile belirlenir (varsayılan tcp443).");
         Console.WriteLine("  --baseline-only         Yalnızca neyin engelli olduğunu ölçer, winws başlatmaz.");
         Console.WriteLine("  --max-candidates <n>    Bölüm başına denenecek en fazla aday.");
         Console.WriteLine("  --exhaustive            İlk çalışan adayda durmaz, bütçe bitene kadar hepsini dener.");
@@ -1222,7 +1243,8 @@ internal sealed record CliOptions(
         Console.WriteLine("  --diagnose <adres>      Tek adresi dört protokolle dener, ham sonucu basar.");
         Console.WriteLine("  --engage-check <adres>  winws'i --debug=1 ile çalıştırıp paketleri görüp görmediğini gösterir.");
         Console.WriteLine("  --strategy \"<args>\"     --engage-check ile kullanılacak winws parametreleri.");
-        Console.WriteLine("  --section <ad>          --engage-check bölümü: tcp80 (varsayılan), tcp443, quic, discord-voice.");
+        Console.WriteLine("  --section <ad>          Bölüm adı: tcp80, tcp443, quic, discord-voice.");
+        Console.WriteLine("                          --engage-check için varsayılan tcp80, --target için tcp443.");
         Console.WriteLine("  --detect-isp            Hangi hatta olduğunuzu tespit eder ve eşleşen profilleri listeler.");
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");

@@ -1,0 +1,53 @@
+name: derle ve test
+
+# Windows'a bagli bir proje: WPF, WinDivert, yonetici yetkisi. Linux runner'da
+# derlenmesi bile mumkun degil, o yuzden tek is windows-latest uzerinde.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Upstream ikilileri SHA256 ile dogrulanarak iniyor. Bu adim testler icin
+      # de gerekli: arayuz duman testleri vendor/ altindaki winws.exe'yi ariyor
+      # ve dosya yoksa gorunum modeli "KURULUM EKSIK" durumunda kalip iki test
+      # duser. Bu bir kez gercek bir makinede yasandi.
+      - name: upstream ikililerini indir
+        run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
+
+      - name: derle
+        run: dotnet build ZapretTr.sln -c Release --nologo
+
+      - name: test
+        run: dotnet test tests/ZapretTr.Tests -c Release --nologo --logger "console;verbosity=normal"
+
+      # Kirpilmis yayin ayri bir hata sinifini yakaliyor: yansimayla calisan bir
+      # JSON yolu eklenirse kirpma analizoru IL2026/IL3050 uretir ve proje bunu
+      # HATA sayar. Normal derleme bunu gostermez, o yuzden CI'da ayrica kosuyor.
+      - name: kirpilmis yayin (analizor kontrolu)
+        run: dotnet publish src/ZapretTr.Prober.Cli -c Release -o publish/cli --nologo
+
+      # msquic.dll tek dosya paketine gomulunce calisma aninda bulunamiyor ve
+      # QUIC olcumu SESSIZCE yapilamaz hale geliyor. csproj bunu <Error> ile
+      # koruyor; burada bir kez daha, cikti uzerinden dogruluyoruz.
+      - name: msquic yayin ciktisinda mi
+        shell: pwsh
+        run: |
+          if (-not (Test-Path publish/cli/msquic.dll)) {
+            throw "msquic.dll yayin ciktisinda yok. QUIC olcumu sessizce calismaz."
+          }
+          Write-Host "msquic.dll yerinde."

@@ -116,16 +116,38 @@ Tamamlananlar:
 Kalanlar:
 
 - [ ] **Doğrulama kapsamı — asıl eksik bu.** Gerçek bir hatta doğrulanmış aday
-      sayısı 17: turk-telekom'da 15 (tcp443 8, quic 7), turkcell-mobil'de 2.
+      sayısı 25: turk-telekom'da 23 (tcp443 10, tcp80 6, quic 7), turkcell-mobil'de 2.
       Kalan 8 profilde sıfır. Kod eksiği değil, saha verisi eksiği.
-- [ ] **`tcp80` ve `discord-voice` hiçbir profilde doğrulanmadı.** Hedef listesinde
-      o bölümlerde engelli bir adres yok; yeni hedef eklenmeden ölçülemezler.
+- [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.**
+      Discord'un ses yolu kendi IP-keşif protokolünü kullanıyor; sunucu adresi ancak
+      kimlik doğrulamalı bir ses oturumundan alınıyor. Genel STUN engellenmediği için
+      vekil hedefle de ölçülemiyor. (`tcp80` artık doğrulandı — eksik olan hattın
+      temizliği değil, hedef listesinde engelli bir tcp80 adresi bulunmamasıydı.)
 - [ ] **Superonline saha testi** — paket hazır, test kullanıcısında. Turkcell Mobil
       hotspot bunun yerine geçmiyor: ayrı ağ, ayrı ASN, ölçülen davranışı da farklı.
+- [ ] **Kod imzalama sertifikası yok.** Defender bu paketi işaretlemiyor (ölçüldü),
+      ama SmartScreen "bilinmeyen yayımcı" uyarısı verecek. Sertifika alınana kadar
+      kullanıcının elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
 - [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir
       makinede sıcak ve soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor
       (sistem DNS'ine dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini
       söylemesi için hata mesajı artık süreç ve port durumunu taşıyor.
+
+## Yayın ve sürüm
+
+Sürüm tek kaynaktan gelir: git tag'i. `Directory.Build.props` derlenen exe'lerin
+sürümünü, `installer/setup.iss` kurulum paketininkini taşır; ikisi de yayın akışında
+tag'den beslenir (`-p:Version=`, `/DAppVersion=`).
+
+- `.github/workflows/ci.yml` — her itmede: upstream indirme, derleme, testler,
+  kırpılmış yayın (kırpma analizörü hata verirse burada patlar) ve `msquic.dll`
+  kontrolü.
+- `.github/workflows/release.yml` — `v*` tag'i itildiğinde kurulum paketini, saha
+  testi paketini ve `SHA256SUMS.txt` dosyasını üretip **taslak** yayın açar.
+
+Yayın taslak olarak açılır; yayımlamadan önce içeriğinin gözden geçirilmesi kasıtlı.
+
+Değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
 
 ## Uyarılar
 

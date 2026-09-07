@@ -81,11 +81,21 @@ bağımsız koşuldu. Her koşum 60 deneme / ~5.5 dakika. Sonuç şaşırtıcı 
 kararlı: **32 ortak adayın 14'ü üçünde de çalıştı**, biri (`vf-443-fake-multisplit-badseq`)
 yalnızca 1/3 — tekrarın gerekçesi tam olarak o tek aday.
 
-3/3 geçenler `profiles/isp/turk-telekom.json`'a `verified` olarak işlendi:
-tcp443'te 8, quic'te 7 doğrulanmış aday. Yabancı profillerden gelenler (md5sig
-ailesi Superonline'dan, ttl1+autottl3 Turkcell Mobil'den) `tt-` kimliğiyle
-kopyalandı — **kaynak profillerinde durumları değişmedi**, çünkü orada değil
-burada doğrulandılar.
+3/3 geçenler `profiles/isp/turk-telekom.json`'a `verified` olarak işlendi.
+Yabancı profillerden gelenler (md5sig ailesi Superonline'dan, ttl1+autottl3
+Turkcell Mobil'den) `tt-` kimliğiyle kopyalandı — **kaynak profillerinde durumları
+değişmedi**, çünkü orada değil burada doğrulandılar.
+
+**İkinci tur (aynı gün, tcp80 hedefi eklendikten sonra):** aynı komut yine üç kez,
+bu sefer üç bölüm birden (80 deneme / ~6.6 dakika koşum başına). 60 ortak adayın
+**22'si 3/3**, biri (`tt-443-multidisorder-pure`) yine 1/3 çıkıp elendi — iki turda
+da tekrarın bedelini ödeten aday oldu. Profil şimdi: **tcp80 6, tcp443 10, quic 7**
+doğrulanmış aday.
+
+tcp80'de ölçülen desen net: doğrulanan altı adayın **hepsinde** `md5sig` fooling
+var, TTL ekseni ise değişken (yok / 2 / 3 / -1:3-20 hepsi çalışıyor). Yani bu hatta
+tcp80 için belirleyici olan fooling, TTL değil. En sade doğrulanmış aday
+`--dpi-desync=fake --dpi-desync-fooling=md5sig` — `fakedsplit` bile gerekmiyor.
 
 **`--exhaustive` ilk koşumunda hemen bir şey buldu: `tt-quic-fake-plain`.**
 `--dpi-desync=fake --dpi-desync-repeats=11` — sahte yük yok, `any-protocol` yok —
@@ -135,21 +145,22 @@ alttaki DPI stratejisi ne kadar doğru olursa olsun sonuç değişmiyor.
 
 ## Yapılacaklar
 
-### 1. Doğrulama kapsamı — 17 aday doğrulanmış, 8 profil hâlâ boş
+### 1. Doğrulama kapsamı — 25 aday doğrulanmış, 8 profil hâlâ boş
 
 Kod eksiği değil saha verisi eksiği. Gerçek hatta doğrulanan adaylar:
 
 | Profil | Bölüm | Doğrulanmış aday |
 |---|---|---|
-| turk-telekom (AS9121) | tcp443 | 8 (`tt-443-fake-ttl4` başta) |
+| turk-telekom (AS9121) | tcp80 | 6 (`tt-80-fake-fakedsplit` başta) |
+| turk-telekom (AS9121) | tcp443 | 10 (`tt-443-fake-ttl4` başta) |
 | turk-telekom (AS9121) | quic | 7 (`tt-quic-anyproto-cutoff` başta) |
 | turkcell-mobil (AS16135) | tcp443 | 1 (`tcm-443-fake-autottl`) |
 | turkcell-mobil (AS16135) | quic | 1 (`tcm-quic-fake-plain`) |
 
-Kalan 8 profilde sıfır. Hiçbir profilde `tcp80` ve `discord-voice` doğrulanmadı —
-`profiles/probe-targets.json` içinde o bölümlerde engelli bir hedef yok (tcp80'de
-yalnızca kontrol hedefi var), dolayısıyla bu hatlardan ölçülemezler. Yeni bir
-tcp80 hedefi eklenmeden bu bölüm hiçbir hatta doğrulanamaz.
+Kalan 8 profilde sıfır. `discord-voice` hâlâ hiçbir profilde doğrulanmadı ve
+dışarıdan doğrulanamıyor (sebebi tuzaklar bölümünde). `tcp80` ise 2026-09-07'de
+doğrulandı: eksik olan hattın temizliği değil, hedef listesinde engelli bir tcp80
+adresi bulunmamasıydı.
 
 Kullanıcılar test çalıştırdıkça `%ProgramData%\ZapretTR\learned.json` doluyor ve
 profillerin üzerine bindiriliyor. **CLI bunu 2026-09-07'ye kadar hiç yazmıyordu**
@@ -288,6 +299,35 @@ hedeflerin yalnızca birinde ölçülüyor, diğerinde "çalıştırılamadı" y
 (`--ipset-ip=<ip_list>` virgüllü liste alıyor). Aynı aday zaten bütün hedeflere
 aynı stratejiyi uyguluyor, dolayısıyla anlam değişmiyor.
 
+**`tcp80` bölümünün doğrulanamamasının sebebi hat değil HEDEF LİSTESİYDİ.** Aylarca
+"o bölümler bu hatlarda zaten engelli değil" diye kayıtlıydı. Ölçüldü (TTNET,
+`--diagnose`): discord.com düz HTTP'de **14 ms'de RST** veriyor; pornhub.com,
+xvideos.com, xhamster.com da öyle. Yani tcp80 pekâlâ engelli. Gerçek sebep
+`probe-targets.json`'da tcp80 bölümünde YALNIZCA kontrol hedefi (example.com)
+bulunmasıydı — engelli hedef olmayınca bölüm hiç aranmıyordu ve çıktı "bu hatta
+tcp80 engelli değil" gibi okunuyordu.
+
+Ders: "ölçüm yapılamıyor" ile "ölçecek hedef koymamışız" dışarıdan aynı görünüyor.
+Bir bölüm hiç sonuç vermiyorsa önce hedef listesine bak.
+
+**`discord-voice` gerçekten ölçülemiyor — ama artık sebebi belli.** İki filtre
+farklı şeyler yakalıyor: `windivert_part.stun.txt` sihirli sayıya bakıp HER STUN
+paketini yakalıyor (yani bir STUN hedefiyle ölçmek geçerli), `windivert_part.discord_media.txt`
+ise Discord'un kendi 74 baytlık IP-keşif paketini arıyor (portlar 50000-50099 ve
+19294-19344). İkincisini konuşmak için ses sunucusunun adresi gerekiyor ve o adres
+ancak kimlik doğrulamalı bir ses oturumundan alınıyor.
+
+Ölçüldü: 10 kamu STUN sunucusundan 8'i cevap veriyor, yani bu hatta genel STUN
+engellenmiyor. İki sunucu cevapsız kaldı ama bu **engel kanıtı değil** — ölü bir
+STUN sunucusu ile DPI engeli dışarıdan birebir aynı görünür. Vekil hedefle ölçmeye
+kalkmak, QUIC bölümünde bir kez yaşanmış yanlış pozitifin aynısı olurdu.
+
+Bu yüzden bölüme **kontrol hedefi** eklendi (Cloudflare, 3478): tek hedefli haliyle,
+o STUN sunucusu bir gün ölürse bölüm "DPI engeli" sanılıp boşuna 20 aday denenirdi.
+Kontrolün başka bir işletmeciden olması şart — Google'ın stun/stun1/stun2 adlarının
+üçü de aynı IP'ye (74.125.250.129) çözülüyor, dolayısıyla birbirinin kontrolü olamazlar.
+Bunun için hedeflere `port` alanı eklendi; Google 19302, geri kalan herkes 3478 kullanıyor.
+
 **Aday tekilleştirmesi tier'ların İÇİNDE vardı, ARASINDA yoktu.** Profiller
 birbirinden türediği ve genel merdiven de aynı kombinasyonları ürettiği için aynı
 komut farklı adla ikinci kez deneniyordu. Ölçüldü: TTNET kapsamlı taramasında
@@ -303,6 +343,32 @@ zarar `--save-learned` ile görüldü: doğrulanan altı farklı varyant `learne
 aynı adla yazıldı ve hangisinin çalıştığı okunamaz hale geldi. Artık aile içinde
 sıra numarası var (`ladder/fake-quic-anyproto#3`). Asıl kimlik yine argümanlar —
 `ConfigStore.AddLearned` de onu anahtar alıyor — ad yalnızca okunabilirlik için.
+
+**Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin
+kurulabildiğini ve yerleşimin hesaplandığını doğruluyor; bunların hepsi geçerken
+uygulama **yanlış servis sağlayıcıyı seçili gösteriyordu**. Kurulum paketi üretilip
+gerçek makineye kurulup açılana ve ekran görüntüsü alınana kadar görülmedi:
+Türk Telekom hattında "Turkcell Superonline" seçili geliyordu, çünkü
+`LoadIspChoices` listedeki ilk gerçek profili seçiyordu (`FirstOrDefault(c =>
+c.Profile is not null)`) ve Superonline en küçük priority'ye sahip. Kullanıcının
+doğrudan Başlat'a basması, kendi hattında hiç denenmemiş bir stratejiyi trafiğe
+uygulaması demekti.
+
+Artık "Bilmiyorum" seçili geliyor; strateji listesi boş, Başlat kapalı, durum
+satırı "servis sağlayıcısı seçilmedi · strateji yok" diyor ve tek belirgin eylem
+"Parametre Testi Yap". Tespit açılışta KENDİLİĞİNDEN çalıştırılmıyor: ASN sorgusu
+kullanıcının IP'sini üçüncü bir servise gönderiyor.
+
+Ders: bu projede arayüz hataları ancak paketlenip kurulduktan sonra görünüyor.
+Yayın öncesi bu turu atlama.
+
+**Üçüncü bir `MainViewModel` kurulumu test paketini kilitliyor.** Yeni davranış için
+ayrı bir test yazıldığında STA iş parçacığı 30 sn'de bitmedi; test TEK BAŞINA
+koştuğunda geçiyordu. Yani sorun testin kendisi değil, aynı süreçte üçüncü kez
+`MainViewModel` kurulması (ilk test bir WPF `Application` açıp `Shutdown` ediyor).
+İddia, gözlendiği yere — mevcut profil testinin içine — taşındı. Yeni bir arayüz
+testi eklerken bunu hatırla: mevcut testin içine iddia eklemek, dördüncü bir
+`MainViewModel` kurmaktan daha güvenli.
 
 **`winws.exe --help` bile yönetici yetkisi istiyor.** Seçenek listesini öğrenmek
 için UAC harcamaya gerek yok: ikiliden ASCII dizgi çıkarmak yeterli ve daha
@@ -490,3 +556,23 @@ ama sorgu cevapsız. O makinede tekrar görülürse mesaj hangisi olduğunu söy
 Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).
 Kırpılmış Release yayını doğrulandı: 11.3 MB tek dosya + yanında `msquic.dll`,
 kırpma analizöründen tek uyarı yok.
+
+**Yayın zinciri uçtan uca koşuldu (2026-09-07).** Elle değil, gerçekten:
+
+- `dotnet publish` (257 dosya, `msquic.dll` yerinde) → ISCC → `ZapretTR-Setup-0.1.0.exe`,
+  53.1 MB. Sürüm damgası çalışıyor: `ProductVersion 0.1.0+<commit>`.
+- Sessiz kurulum → 504 dosya, `profiles/`, `zapret-winws/`, `dnscrypt-proxy/` yerinde,
+  Programlar listesinde "ZapretTR 0.1.0".
+- Uygulama açıldı, ekran görüntüsüyle doğrulandı (yanlış profil hatası burada bulundu),
+  `CloseMainWindow` ile kapatıldı, DNS'e dokunulmadı.
+- Kaldırma: dizin silindi, kayıt defteri girdisi silindi, servis/süreç kalmadı.
+  `%ProgramData%\ZapretTR\learned.json` kasıtlı olarak duruyor (kullanıcı verisi).
+- Saha paketi: 12.0 MB, 39 dosya.
+- **Windows Defender taraması: sıfır tespit** (motor 1.1.26080.3, imza 1.459.93.0)
+  — kurulum paketi, saha paketi ve kurulu dizin. Gerçek zamanlı koruma açıktı.
+  SmartScreen uyarısı ayrı konu ve duruyor; o imzasızlıktan geliyor.
+
+**`build-field-package.ps1` PATH'teki `dotnet`'i kullanıyor.** Bu makinede
+`C:\Program Files\dotnet` SDK'sız olduğu için betik "No .NET SDKs were found" ile
+düşüyor. Depo hatası değil; yerelde koşarken PATH'e
+`%LOCALAPPDATA%\Microsoft\dotnet` eklenmeli. CI'da sorun yok.

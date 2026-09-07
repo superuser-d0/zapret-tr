@@ -26,7 +26,7 @@ public static class ProbeTargetStore
                        ?? throw new InvalidDataException("probe-targets.json bos cozumlendi.");
 
         return document.Targets
-            .Select(t => new ProbeTarget(t.Host, t.Label, t.Category, t.Section))
+            .Select(t => new ProbeTarget(t.Host, t.Label, t.Category, t.Section, t.Port))
             .ToList();
     }
 
@@ -78,5 +78,9 @@ public static class ProbeTargetStore
 
         [JsonPropertyName("section")]
         public StrategySection Section { get; init; }
+
+        /// <summary>Yalnizca discord-voice bolumunde anlamli; verilmezse 19302 varsayilir.</summary>
+        [JsonPropertyName("port")]
+        public int? Port { get; init; }
     }
 }
