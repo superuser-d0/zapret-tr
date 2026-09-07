@@ -10,7 +10,7 @@
   ],
   "engine": "winws",
   "priority": 8,
-  "notes": "Mobil sebekeler sabit hatlardan farkli DPI davranisi gosterebiliyor; ayri profil tutuluyor.",
+  "notes": "Mobil sebekeler sabit hatlardan farkli DPI davranisi gosterebiliyor; ayri profil tutuluyor. OLCUMLE DOGRULANDI (2026-09-07, gercek AS16135 hatti): fark somut -- TTNET'te Discord TCP baglantisi RST ile sifirlanirken burada ZAMAN ASIMI veriyor, ve QUIC'te sahte yuk KULLANMAYAN aday kazaniyor, yuklu olan basarisiz. Yani mobil profili sabit hat profilinden turetmek yanlis olurdu. DOGRULANMIS PROFIL: elle bakim goruyor, tools/gen-seed-profiles.py tarafindan URETILMEZ -- yeniden uretim saha verisini silerdi. Olcum TETHERING (telefon hotspot) uzerinden yapildi; ayrinti adaylarin notlarinda.",
   "candidates": [
     {
       "id": "tcm-443-fake-autottl",
@@ -21,10 +21,12 @@
         "tls13"
       ],
       "weight": 100,
-      "source": "community-unverified",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Turkcell mobil icin bildirilen strateji."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI: gercek AS16135 hattinda, baseline'da zaman asimina ugrayan discord.com ve gateway.discord.gg baglantilarini acti (kontrollu tekrar 3/3). TETHERING uzerinden olculdu -- hotspot bir hop ekliyor. Bu aday autottl kullandigi icin hop sayisini kendi olcup seciyor, dolayisiyla USB modem/dongle ile dogrudan baglantida da tasinabilir olmasi bekleniyor; sabit TTL'li bir aday olsaydi bu garanti verilemezdi."
     },
     {
       "id": "tcm-443-fake-multidisorder",
@@ -73,11 +75,11 @@
       "protocols": [
         "quic"
       ],
-      "weight": 100,
+      "weight": 80,
       "source": "upstream-preset",
       "verifiedFor": [],
       "lastVerified": null,
-      "note": "UDP parcalanamaz; QUIC'te tek yol sahte Initial paketi."
+      "note": "OLCULDU: bu hatta ACMIYOR (kontrast tekrari 0/2, zaman asimi). Hazir yuk EKLEMEK burada zarar veriyor -- yuksuz hali (tcm-quic-fake-plain) calisiyor. Agirligi bu yuzden yuksuzun altina cekildi. TTNET'te tersi gecerli degil ama orada da bu aday tek basina yetmiyordu; yuk secimi hatta gore degisen bir eksen."
     },
     {
       "id": "tcm-quic-fake-plain",
@@ -86,11 +88,13 @@
       "protocols": [
         "quic"
       ],
-      "weight": 90,
-      "source": "upstream-preset",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Hazir yuk olmadan sahte QUIC."
+      "weight": 110,
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-07",
+      "note": "DOGRULANDI: gercek AS16135 hattinda discord.com QUIC el sikismasini acti (kontrollu tekrar 3/3; ayni aday sahte yuk EKLENINCE 0/2). Dikkat: TTNET'te bu aday calismiyor, orada any-protocol+cutoff gerekiyordu. Sebep muhtemelen mobil DPI'in Initial paketini TTNET'teki gibi cozmeye calismamasi -- burada parcalanmis ClientHello sorunu hic ortaya cikmiyor. TETHERING uzerinden olculdu; bu aday TTL kullanmadigi icin hop sayisindan etkilenmiyor."
     },
     {
       "id": "tcm-voice-fake",

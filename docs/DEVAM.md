@@ -58,14 +58,44 @@ Yani strateji paketlerin bir kısmına hiç uygulanmıyordu.
 Cutoff'suz any-protocol bağlantının TÜM paketlerine müdahale eder — çalışan bir
 bağlantıyı bozmak, açmayan bir bağlantıyı açamamaktan kötü.
 
+**Ölçülmüş sonuç — Turkcell Mobil (AS16135, gerçek hat, tethering):**
+
+```
+tcp443 : --dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=3
+quic   : --dpi-desync=fake --dpi-desync-repeats=11
+```
+
+İkisi de kontrollü tekrarda 3/3. Profilde `tcm-443-fake-autottl` ve
+`tcm-quic-fake-plain` olarak `verified`.
+
+**Mobil, sabit hattan gerçekten farklı — türetilemez.** İki somut fark:
+
+1. Discord TCP: TTNET'te **RST**, Turkcell Mobil'de **zaman aşımı**.
+2. QUIC: TTNET'te `any-protocol`+`cutoff` şart; mobilde düz
+   `fake --repeats=11` yetiyor. Dahası mobilde **sahte yük eklemek zarar
+   veriyor** — yüklü aday 0/2, yüksüz aday 3/3. `tcm-quic-fake-google`'ın
+   ağırlığı bu yüzden yüksüzün altına çekildi.
+
+Yani sahte yük seçimi hatta göre değişen bir eksen; "google yükü hep iyidir"
+varsayımı yanlış.
+
 ---
 
 ## Yapılacaklar
 
-### 1. Doğrulama kapsamı — 2 aday doğrulanmış
+### 1. Doğrulama kapsamı — 4 aday doğrulanmış
 
-Kod eksiği değil saha verisi eksiği. Gerçek bir hatta doğrulanan adaylar:
-`tt-443-fake-ttl4` (tcp443) ve `tt-quic-anyproto-cutoff` (quic). Kullanıcılar test
+Kod eksiği değil saha verisi eksiği. Gerçek hatta doğrulanan adaylar:
+
+| Profil | Bölüm | Aday |
+|---|---|---|
+| turk-telekom (AS9121) | tcp443 | `tt-443-fake-ttl4` |
+| turk-telekom (AS9121) | quic | `tt-quic-anyproto-cutoff` |
+| turkcell-mobil (AS16135) | tcp443 | `tcm-443-fake-autottl` |
+| turkcell-mobil (AS16135) | quic | `tcm-quic-fake-plain` |
+
+Hiçbir profilde `tcp80` ve `discord-voice` doğrulanmadı — o bölümler bu iki hatta
+zaten engelli değil, dolayısıyla buradan ölçülemezler. Kullanıcılar test
 çalıştırdıkça `%ProgramData%\ZapretTR\learned.json` doluyor ve profillerin üzerine
 bindiriliyor.
 
@@ -82,23 +112,14 @@ Paket hazır: `dist/zapret-tr-saha-testi.zip`. Test kullanıcısında.
 Rapor gelince `learned.json`'a aktarılıp `profiles/isp/superonline.json`
 `verified`e çekilecek. Superonline'ın 19 adayının hiçbiri doğrulanmadı.
 
-**Turkcell Mobil hotspot bunun yerine GEÇMEZ.** Aynı şirket ama ayrı ağ ve ayrı
-ASN: Superonline AS34984 (sabit), Turkcell Mobil AS16135. `turkcell-mobil.json`
-zaten "mobil şebekeler sabit hatlardan farklı DPI davranışı gösterebiliyor" diye
-ayrı tutuluyor. Hotspot ile toplanan veri `turkcell-mobil` profiline yazılmalı,
-`superonline`a değil.
+**Turkcell Mobil hotspot bunun yerine GEÇMEDİ — denendi ve ölçüldü.** Aynı şirket
+ama ayrı ağ ve ayrı ASN: Superonline AS34984 (sabit), Turkcell Mobil AS16135.
+Hotspot koşumu `turkcell-mobil` profilini doğruladı, `superonline` hâlâ 19 adayla
+ve sıfır saha verisiyle duruyor. İki hattın DPI davranışı ölçümle farklı çıktı
+(yukarıdaki Turkcell Mobil bölümüne bak), yani sabit hat profilini mobilden
+türetmek de mümkün değil.
 
-Yine de değerli: `turkcell-mobil`'in 7 adayının da hiçbiri doğrulanmadı ve
-Windows uygulaması + mobil internet zaten pratikte tethering demek, yani ölçülen
-şey gerçek kullanım şekli. ASN otomatik tespiti AS16135'i görüp doğru profili
-seçer.
-
-Uyarı — **hotspot bir hop ekliyor.** Sabit TTL'li stratejiler (`--dpi-desync-ttl=N`)
-buna duyarlı: telefon doğrudan bağlansaydı paket operatör ağına bir fazla TTL ile
-girerdi. Hotspot üzerinden bulunan sabit TTL değeri USB modem/dongle ile birebir
-aynı olmayabilir. `--dpi-desync-autottl` hop sayısını ölçüp seçtiği için bundan
-etkilenmiyor; mobil profilde autottl sonuçları daha taşınabilir. Ölçüm yapılırsa
-aday notuna "tethering üzerinden ölçüldü" yazılmalı.
+Superonline için hâlâ gerçek bir AS34984 hattı gerekiyor.
 
 ### 3. Paket boyutu (düşük öncelik)
 
@@ -274,6 +295,13 @@ yok, DNS değiştirilmemiş, winws/dnscrypt süreci yok, internet normal.
 `%ProgramData%\ZapretTR\config.json` duruyor (kullanıcı ayarı, kaldırma bunu
 silmiyor).
 
-Test hattı: Türk Telekom / AS9121, VPN yok. Superonline erişimi yok.
+Test hatları: Türk Telekom / AS9121 (sabit) **ve** Turkcell Mobil / AS16135
+(telefon hotspot ile tethering). İkisi de ölçüldü. VPN yok. Superonline (AS34984)
+erişimi yok.
+
+**Son oturum sonunda makine Turkcell Mobil hotspot'una bağlıydı.** Sonraki
+oturumda TTNET ölçümü yapılacaksa önce hattı doğrula:
+`curl -s "http://ip-api.com/json/?fields=as,isp"` — AS9121 beklenir. Yanlış hatta
+koşup sonucu yanlış profile yazmak, bu projedeki en pahalı sessiz hata sınıfı.
 
 Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).
