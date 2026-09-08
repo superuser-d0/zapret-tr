@@ -42,6 +42,15 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Surum: $v"
 
+      # Yayin notu CHANGELOG'dan uretiliyor. Paketlemeden ONCE, cunku surum notu
+      # yazilmadiysa on dakikalik uretimi bosa harcamanin anlami yok.
+      - name: yayin notunu uret
+        shell: pwsh
+        run: >
+          pwsh -File tools/release-notes.ps1
+          -Version ${{ steps.surum.outputs.version }}
+          -OutPath release-notes-generated.md
+
       - name: upstream ikililerini indir
         run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
 
@@ -107,6 +116,6 @@ jobs:
           if ($assets.Count -lt 2) { throw "Beklenen dosyalar eksik: $($assets.Name -join ', ')" }
           gh release create "v$v" @($assets.FullName) `
             --title "ZapretTR $v" `
-            --notes-file .github/release-notes.md `
+            --notes-file release-notes-generated.md `
             --draft
           if ($LASTEXITCODE -ne 0) { throw "gh release create basarisiz: $LASTEXITCODE" }

@@ -1,4 +1,4 @@
-Bu sürümde nelerin değiştiği için [CHANGELOG.md](../blob/main/CHANGELOG.md) dosyasına bakın.
+Önceki sürümlerin tamamı için [CHANGELOG.md](../blob/main/CHANGELOG.md).
 
 ## Kurulum
 
