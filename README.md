@@ -291,13 +291,23 @@ Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama öl�
 
 | Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
 |---|:---:|:---:|:---:|---|
-| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) |
-| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
+| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
+| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) · ⚠️ bir hatta tcp80/QUIC açılamadı |
 | Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
 | Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
 | Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
+
+⚠️ **Turkcell Mobil — negatif bir ölçüm de kaydediyoruz.** Bir hatta 49 aday denendi ve
+hiçbiri `tcp80` ile QUIC bölümünü açamadı; motor düzgün çalışıyordu, bağlantılar gerçekten
+sıfırlanıyordu. **Ama aynı hatta `tcp443` tamamen açıktı** (`discord.com`,
+`gateway.discord.gg`, `updates.discord.com` hepsi erişilebilir) — yani Discord'un ana
+trafiği zaten geçiyordu.
+
+Bu, uygulamanın "çalışan strateji bulunamadı" demesinin her zaman "araç işe yaramadı"
+anlamına gelmediğini gösteriyor: engelli bölümler ikincil olabiliyor. Negatif sonuçlar da
+veri, o yüzden burada duruyor.
 
 🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
 bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
