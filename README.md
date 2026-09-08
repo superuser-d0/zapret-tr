@@ -4,8 +4,8 @@
 
 **Türkiye'deki DPI engellemelerini aşan parametreyi sizin yerinize bulan Windows uygulaması.**
 
-[zapret](https://github.com/bol-van/zapret)'in `winws` motoru üzerine kurulu bir arayüz —
-elle parametre denemek yerine, sizin hattınızda gerçekten ne çalışıyorsa onu ölçerek buluyor.
+[zapret](https://github.com/bol-van/zapret) projesinin `winws` motoru üzerine kurulu bir arayüz.
+Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığını ölçerek buluyor.
 
 [![yayın](https://img.shields.io/github/v/release/superuser-d0/zapret-tr?label=s%C3%BCr%C3%BCm&color=2b7489)](https://github.com/superuser-d0/zapret-tr/releases/latest)
 [![derle ve test](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml/badge.svg)](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml)
@@ -20,132 +20,164 @@ elle parametre denemek yerine, sizin hattınızda gerçekten ne çalışıyorsa 
 
 ---
 
+## Amaç
+
+Türkiye'de erişim engeli iki ayrı katmanda uygulanıyor: adres çözümlemesini bozan **DNS
+yönlendirmesi** ve bağlantının içine bakıp sonlandıran **DPI** (derin paket incelemesi).
+İkisini de aşmanın bilinen yolları var — ama hangi yolun işe yaradığı sabit değil.
+
+Sebebi şu: her servis sağlayıcı kendi DPI donanımını kendi ayarlarıyla işletiyor. Bir hatta
+bağlantıyı sıfırlayan kutu, başka bir hatta yalnızca ilk paketi süzüyor olabilir. Bu yüzden bir
+sağlayıcıda çalışan parametre diğerinde hiçbir şey yapmayabilir. Aynı sağlayıcının farklı
+hatlarında bile farklı sonuç çıkabiliyor: üç ayrı Türk Telekom hattında üç farklı davranış
+ölçtük.
+
+ZapretTR'in işi tam burada başlıyor: **doğru parametreyi tahmin etmek yerine ölçerek
+kanıtlamak.** Uygulama, hattınız için bilinen adayları sırayla deniyor, her birini gerçekten
+bağlantı kurarak sınıyor ve hangisinin işe yaradığını kanıtıyla birlikte söylüyor. Bir aday
+ancak ölçümü geçtiyse "doğrulandı" etiketi alıyor.
+
+Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet, Vodafone ve
+diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
+hatlara erişimimiz yok. [Aşağıdaki tabloda](#hangi-hatlarda-doğrulandı) hangi hattın eksik
+olduğunu görebilirsiniz.
+
+> **Bir dürüstlük notu:** "Şu sağlayıcıda engelleme daha ağır" gibi bir sıralama yapmıyoruz,
+> çünkü elimizde bunu söyleyecek karşılaştırmalı ölçüm yok. Bildiğimiz tek şey, sağlayıcıların
+> birbirinden farklı davrandığı ve bu farkın ölçülmesi gerektiği.
+
+---
+
 ## Ne yapıyor
 
-`blockcheck.sh` ile parametre aramak 10-40 dakika sürüyor ve sonunda elinizde bir `.cmd`
-dosyasına yapıştırmanız gereken komut satırı kalıyor. ZapretTR bunu **iki düğmeye** indiriyor:
-hattınızı tespit ediyor, o hat için bilinen adayları sırayla ölçüyor ve çalışanı buluyor.
+zapret ile çalışan bir parametre bulmanın alışıldık yolu `blockcheck.sh`: 10-40 dakika süren bir
+tarama ve sonunda elinizde bir `.cmd` dosyasına yapıştırmanız gereken komut satırı. ZapretTR
+bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bilinen adayları sırayla
+ölçüyor, çalışanı buluyor.
 
 | | |
 |---|---|
-| **Otomatik ISS tespiti** | ASN'den hattınızı bulur; "Bilmiyorum" birinci sınıf bir seçenek |
-| **Ölçerek bulur** | Her aday gerçekten bağlanılarak sınanır, tahmin edilmez |
-| **Bölüm bölüm** | `tcp80`, `tcp443`, `quic`, `discord-voice` bağımsız aranır ve birleştirilir |
-| **Şifreli DNS** | Türkiye'de engelleme çoğu zaman iki katmanlı; DNS katmanı da aşılır |
+| **Otomatik sağlayıcı tespiti** | Hattınızı ASN üzerinden bulur; "Bilmiyorum" tam anlamıyla desteklenen bir seçenektir |
+| **Ölçerek bulur** | Her aday gerçekten bağlantı kurularak sınanır, tahmin edilmez |
+| **Bölüm bölüm arar** | `tcp80`, `tcp443`, `quic` ve `discord-voice` bağımsız aranıp birleştirilir |
+| **Şifreli DNS** | Engelleme çoğu zaman iki katmanlı olduğu için DNS katmanı da aşılır |
 | **Dokunmadığı yeri bozmaz** | Sorunu olmayan bölüme denenmemiş strateji uygulanmaz |
-| **Ne bildiğini söyler** | Her aday "doğrulandı / doğrulanmadı" etiketiyle gelir |
+| **Ne bildiğini söyler** | Her aday "doğrulandı" ya da "doğrulanmadı" etiketiyle gelir |
 
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
-> kullanıcı akışıyla kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu ve
-> Başlat'tan sonra engelli adresler açıldı — bağımsız bir istemciyle (`curl`) doğrulandı, ölçüm
-> motorunun kendi raporuyla değil. Türk Telekom / AS9121 hattında **25 aday** doğrulanmış durumda.
+> kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
+> sonra engelli adresler açıldı. Doğrulama bağımsız bir istemciyle (`curl`) yapıldı — ölçüm
+> motorunun kendi raporuyla değil. Şu an **25 aday** doğrulanmış durumda: 23'ü Türk Telekom
+> (AS9121), 2'si Turkcell Mobil (AS16135) hattında.
 >
-> Eksik olan kod değil **kapsam**: 10 profilin 8'inde henüz saha verisi yok, çünkü o hatlara
-> erişimimiz yok. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
+> Eksik olan kod değil, **kapsam**. On profilin sekizinde henüz hiç saha verisi yok, çünkü o
+> hatlara erişemiyoruz. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
 
 ---
 
 ## Kolay kullanım
 
-**1. İndir.** [Releases](https://github.com/superuser-d0/zapret-tr/releases) sayfasından
-`ZapretTR-Setup-<sürüm>.exe` dosyasını indirin.
+**1. İndirin.** [Releases](https://github.com/superuser-d0/zapret-tr/releases) sayfasından
+`ZapretTR-Setup-<sürüm>.exe` dosyasını alın.
 
-**2. Kur.** Dosyaya çift tıklayın.
+**2. Kurun.** Dosyaya çift tıklayın.
 
-- Windows **"bilgisayarınızı korudu"** uyarısı verirse: bu **beklenen**. Paket imzalı değil
-  (kod imzalama sertifikamız yok). "Ek bilgi" → "Yine de çalıştır".
-- **Yönetici izni** ister. Gerekli: uygulama çekirdek modunda çalışan bir ağ sürücüsü kullanıyor.
-- İndirdiğiniz dosyanın bu yayından geldiğini doğrulamak isterseniz yayındaki `SHA256SUMS.txt`
-  ile karşılaştırın:
+- Windows **"bilgisayarınızı korudu"** uyarısı verirse bu **beklenen bir durum**: paket imzalı
+  değil, çünkü kod imzalama sertifikamız yok. "Ek bilgi" → "Yine de çalıştır".
+- **Yönetici izni** ister. Gerekçesi, uygulamanın çekirdek modunda çalışan bir ağ sürücüsü
+  kullanması.
+- İndirdiğiniz dosyanın gerçekten bu yayından geldiğini doğrulamak isterseniz yayındaki
+  `SHA256SUMS.txt` ile karşılaştırın:
   ```powershell
   Get-FileHash .\ZapretTR-Setup-<sürüm>.exe -Algorithm SHA256
   ```
 
-**3. Üç tıkla kullan.** Uygulama açıldığında:
+**3. Üç adımda kullanın.**
 
 | Adım | Ne yapacaksınız | Ne göreceksiniz |
 |---|---|---|
-| 1 | Hiçbir şeyi değiştirmeyin | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı |
+| 1 | Hiçbir ayara dokunmayın | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı |
 | 2 | **PARAMETRE TESTİ YAP** | Hattınız tespit edilir, çalışan parametre aranır (**birkaç dakika**) |
 | 3 | **ZAPRET'İ BAŞLAT** | Test bitince "STRATEJİ BULUNDU" yazar ve Başlat açılır |
 
-Hepsi bu. **"Şifreli DNS kullan" işaretli kalsın** — Türkiye'de engelleme çoğu zaman iki katmanlı
-ve o kutu kapalıyken alttaki katman aşılamaz.
+Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
+katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 
-**Açılmayan kendi adresiniz varsa** "Açılmayan site" kutusuna yazıp testi öyle çalıştırın. Asıl
-doğru kullanım budur: kimin neye erişemediği kişiye göre değişiyor.
+**Sizde açılmayan belirli bir adres varsa** "Açılmayan site" kutusuna yazın ve testi öyle
+çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
 
-**Her açılışta çalışsın istiyorsanız** "Servis Olarak Yükle" düğmesi Windows servisi kurar.
+**Her açılışta çalışmasını istiyorsanız** "Servis Olarak Yükle" düğmesi bir Windows servisi
+kurar. Bu durumda uygulamayı açmanız gerekmez; koruma bilgisayar açılır açılmaz devreye girer.
 
 ### Sık sorulanlar
 
-**Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçülüyor.
-Sonuç kaydedilir; bir sonraki açılışta test tekrar gerekmez.
+**Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçüldüğü için.
+Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez.
 
-**"ENGEL BULUNAMADI" derse?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde açılmayan
-adresi "Açılmayan site" kutusuna girip tekrar deneyin.
+**"ENGEL BULUNAMADI" yazarsa ne olur?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde
+açılmayan adresi "Açılmayan site" kutusuna girip yeniden deneyin.
 
-**Antivirüs uyarırsa?** Paket sürücüsü + imzasız derleme birleşimi false-positive üretebilir.
-Windows Defender bu paketi işaretlemiyor (ölçüldü), diğerleri için garanti veremeyiz.
+**Antivirüs uyarı verirse?** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
+false-positive üretebiliyor. Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler
+için garanti veremeyiz.
 
-**İnternetim gitti / adresler çözülmüyor?** Uygulama şifreli DNS için sistem DNS'ini kendine
-yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa, kurulum klasöründeki
-araçla geri alabilirsiniz:
+**İnternetim gitti, adresler çözülmüyor.** Uygulama şifreli DNS için sistem DNS'ini kendine
+yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa şu komut geri alır:
 ```powershell
 & "$env:ProgramFiles\ZapretTR\ZapretTR.exe" --uninstall-services
 ```
-Kaldırma (Program Ekle/Kaldır) da aynı temizliği yapar.
+Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
-**Sesli görüşme (Discord voice) çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
-denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımı ayrıca anlamlı, çünkü
-sesten çok daha ağır bir medya akışı.
+**Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
+denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
+çünkü sesten çok daha ağır bir medya akışı.
 
-Mekanizması şu (bir sonraki soruyu baştan cevaplasın diye): o hatta ses zaten engelli değil,
-metin ve bağlantı engeli aşılınca kendiliğinden kuruluyor. ZapretTR ses trafiğine **hiç
-dokunmuyor** — "sorunu olmayan bölüme dokunma" kuralı gereği o bölüm komuta hiç girmiyor.
+Mekanizması şöyle: o hatta ses zaten engelli değil; metin ve bağlantı engeli aşılınca ses
+kendiliğinden kuruluyor. ZapretTR ses trafiğine **hiç dokunmuyor**, çünkü "sorunu olmayan bölüme
+dokunma" kuralı gereği o bölüm komuta hiç girmiyor.
 
-Sizde ses **çalışmıyorsa** dürüst cevap: o durum için doğrulanmış bir stratejimiz yok ve araç
-size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP-keşif
-protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulamalı bir ses oturumundan alınıyor,
-dolayısıyla dışarıdan ölçemiyoruz.
+Sizde ses **çalışmıyorsa** dürüst cevap şu: o durum için doğrulanmış bir stratejimiz yok ve araç
+size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP keşif
+protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulaması yapılmış bir ses oturumundan
+alınabiliyor. Dolayısıyla dışarıdan ölçemiyoruz.
 
 ---
 
 ## Neden var
 
-zapret güçlü bir anti-DPI aracı ama Windows'ta son kullanıcı için pratikte kullanılamıyor. Çalışan
-bir strateji bulmanın tek yolu `blockcheck.sh` — cygwin üstünde çalışan, desync metodu × TTL × split
-pozisyonu × fooling kombinasyonlarını **tek tek, sırayla** deneyen bir bash scripti. Tam bir tarama
-tipik olarak 10-40 dakika sürüyor ve sonunda elinizde kalan şey, bir `.cmd` dosyasına elle
-yapıştırmanız gereken bir komut satırı.
+zapret güçlü bir anti-DPI aracı, ama Windows'ta son kullanıcı için pratikte kullanılabilir
+değil. Çalışan bir strateji bulmanın tek yolu `blockcheck.sh`: cygwin üzerinde çalışan ve
+desync metodu × TTL × split pozisyonu × fooling kombinasyonlarını **tek tek, sırayla** deneyen
+bir bash betiği. Tam bir tarama tipik olarak 10-40 dakika sürüyor ve sonunda elinizde kalan şey,
+bir `.cmd` dosyasına elle yapıştırmanız gereken bir komut satırı oluyor.
 
 ## Yaklaşım
 
-ZapretTR, aramayı **sıralamayla** kısaltıyor. Her ISP'nin DPI kutusu tutarlı bir davranış
-sergiliyor, dolayısıyla o ISP için daha önce çalıştığı bilinen adaylar önce denenir:
+ZapretTR aramayı **sıralama yaparak** kısaltıyor. Bir sağlayıcının DPI kutusu tutarlı davrandığı
+için, o sağlayıcıda daha önce çalıştığı bilinen adaylar önce deneniyor:
 
 | Aşama | Kapsam | Tipik süre |
 |---|---|---|
-| Tier 1 | Seçilen ISP'nin profili (5-19 aday) | saniyeler |
-| Tier 2 | Komşu TR profilleri | ~1-2 dakika |
+| Tier 1 | Seçilen sağlayıcının profili (5-19 aday) | saniyeler |
+| Tier 2 | Komşu TR profilleri | 1-2 dakika |
 | Tier 3 | Genel kombinatoryal arama (221 aday) | dakikalar |
 
-Kullanıcı ISP'sini bilmiyorsa ASN/kuruluş adından otomatik tespit edilir.
+Kullanıcı sağlayıcısını bilmiyorsa ASN ve kuruluş adından otomatik tespit ediliyor.
 
-Genel aramada sıra **aileler arasında** dolaşıyor: önce her strateji ailesinden birer aday,
-sonra derinleşiliyor. Aksi halde tek bir ailenin onlarca varyantı bütçeyi yiyor ve hiç
-denenmemiş mekanizmalara sıra gelmiyordu — ölçülen bir kullanıcıda tam bu oldu.
+Genel aramada sıra **aileler arasında dolaşıyor**: önce her strateji ailesinden birer aday
+deneniyor, sonra derinleşiliyor. Aksi halde tek bir ailenin onlarca varyantı bütçeyi tüketiyor
+ve hiç denenmemiş mekanizmalara sıra gelmiyordu — ölçtüğümüz bir kullanıcıda tam olarak bu oldu.
 
 ### Çalışan strateji tek bir parametre değildir
 
-Tasarımın merkezindeki gözlem şu: `--dpi-desync-fooling=md5sig` yalnızca hedef sunucu TCP MD5
-seçeneğini reddettiğinde işe yarar. Yani **çalışan strateji ISP'nin olduğu kadar hedef sunucunun da
-fonksiyonu** — aynı bağlantıda Discord'u açan parametre YouTube'u açmayabilir.
+Tasarımın merkezinde şu gözlem var: `--dpi-desync-fooling=md5sig` yalnızca hedef sunucu TCP MD5
+seçeneğini reddettiğinde işe yarıyor. Yani **çalışan strateji, sağlayıcının olduğu kadar hedef
+sunucunun da fonksiyonu** — aynı bağlantıda Discord'u açan parametre YouTube'u açmayabilir.
 
-Bu, doğrulanmış adayların ne kadar genellenebildiğini de bir soru haline getiriyor: hedeflerimizin
-çoğu Cloudflare arkasında, dolayısıyla "doğrulandı" damgası yalnızca tek bir sunucu ailesini
-yansıtıyor olabilirdi. TTNET hattında ölçüldü ve öyle değil — aynı strateji, farklı barındırıcılarda
-da gerçek sunucuya ulaştırıyor:
+Bu, doğrulanmış adayların ne kadar genellenebildiğini de bir soru haline getiriyordu:
+hedeflerimizin çoğu Cloudflare arkasında olduğu için "doğrulandı" damgası yalnızca tek bir
+sunucu ailesini yansıtıyor olabilirdi. TTNET hattında ölçtük ve öyle olmadığını gördük — aynı
+strateji, farklı barındırıcılarda da gerçek sunucuya ulaştırıyor:
 
 | Hedef | Barındıran | Koruma açıkken |
 |---|---|---|
@@ -154,91 +186,36 @@ da gerçek sunucuya ulaştırıyor:
 | xvideos.com | Cloudflare **değil** | HTTP 301 |
 | www.youtube.com | Google (engelli değil) | HTTP 200 — etkilenmedi |
 
-Hedef listesi bu yüzden dar ama **keyfî değil**: bir hedef ancak yeni bilgi veriyorsa ekleniyor.
-"Barındırıcıya göre değişiyor mu" sorusu yukarıdaki ölçümle cevaplandığı için genel site listesi
-büyütülmedi. Buna karşılık `updates.discord.com` eklendi — çünkü Discord istemcisi güncelleme için
-oraya gidiyor ve o adres açılmazsa uygulama güncelleme ekranında takılı kalıyor; test ise
-"başarılı" diyordu.
+Hedef listesi bu yüzden dar, ama **keyfî değil**: bir hedef ancak yeni bilgi veriyorsa
+ekleniyor. "Barındırıcıya göre değişiyor mu" sorusu yukarıdaki ölçümle cevaplandığı için genel
+site listesi büyütülmedi. Buna karşılık `updates.discord.com` eklendi, çünkü Discord istemcisi
+güncelleme için oraya gidiyor; o adres açılmadığında uygulama güncelleme ekranında takılı
+kalıyor, test ise "başarılı" diyordu.
 
-Bu yüzden adaylar bölümlere ayrılmış durumda (`tcp80`, `tcp443`, `quic`, `discord-voice`), her bölüm
-bağımsız test edilip bağımsız kazananını buluyor, ve nihai komut bölümleri `--new` ile birleştiriyor —
-upstream'in kendi `preset1_example.cmd` dosyasıyla aynı yapı.
+Adaylar bu nedenle bölümlere ayrılmış durumda (`tcp80`, `tcp443`, `quic`, `discord-voice`). Her
+bölüm bağımsız test edilip kendi kazananını buluyor, nihai komut da bölümleri `--new` ile
+birleştiriyor — upstream'in kendi `preset1_example.cmd` dosyasıyla aynı yapı.
 
-### Parametre verisinin kaynağı belli
+### Her parametrenin kaynağı belli
 
 Her adayın nereden geldiği etiketli:
 
 | Etiket | Anlamı |
 |---|---|
+| `verified` | Bizim saha testimizde gerçekten çalıştı |
 | `community-unverified` | TR topluluğunda bildirilmiş, biz doğrulamadık |
 | `hypothesis` | Belgelenen mekanizmadan türetildi; kimse bildirmedi, biz çıkardık |
-| `upstream-preset` | zapret'in kendi örnek preset dosyasından |
-| `verified` | Bizim saha testimizde gerçekten çalıştı |
+| `upstream-preset` | zapret'in kendi örnek preset dosyasından geldi |
 
-Bu ayrım kozmetik değil: kullanıcıya "bu profil henüz doğrulanmadı" demek ile "bu çalışıyor" demek
-arasındaki farkı korumak için.
+Bu ayrım kozmetik değil. "Bu profil henüz doğrulanmadı" demekle "bu çalışıyor" demek arasındaki
+farkı korumak için var.
 
-## Kurulum (geliştirme)
+---
 
-Gereksinimler: .NET 8 SDK, PowerShell, Windows x64.
+## Hangi hatlarda doğrulandı
 
-```bash
-powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
-```
-
-Bu, `winws.exe` ve WinDivert sürücüsünü sabitlenmiş bir upstream sürümünden indirip SHA256 ile
-doğrular. `vendor/` git'e girmez.
-
-```bash
-dotnet build
-dotnet test
-```
-
-Sıra önemli: arayüz duman testleri `vendor/` içindeki ikilileri arıyor, dolayısıyla
-`fetch-upstream.ps1` çalıştırılmadan `dotnet test` iki testte başarısız olur.
-
-## Depo yapısı
-
-```
-src/ZapretTr.Core/        winws süreç yönetimi, komut kurma, profil yükleme
-src/ZapretTr.Prober/      parametre test motoru (blockcheck.sh'ın yerini alır)
-src/ZapretTr.Prober.Cli/  saha testi için taşınabilir tek dosyalık araç
-src/ZapretTr.App/         WPF GUI
-profiles/isp/*.json       ISP başına sıralı aday listesi
-profiles/generic-ladder.json   Tier 3 kombinatoryal arama tarifi
-tools/fetch-upstream.ps1  upstream ikili indirme + SHA256 doğrulama
-```
-
-## Yol haritası
-
-Tamamlananlar:
-
-- [x] Repo iskeleti, upstream indirme + SHA256 doğrulama
-- [x] ISP profil veritabanı (10 profil) + genel kombinatoryal merdiven (221 aday)
-- [x] Komut kurucu, profil yükleyici, testler (116 test)
-- [x] winws süreç yönetimi + WinDivert temizliği
-- [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
-- [x] WPF GUI (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
-- [x] Gerçek donanımda uçtan uca doğrulama — TTNET'te Discord, Pornhub, XVideos açıldı
-- [x] `--ipset-ip` izolasyonunun çalıştığı doğrulandı (winws `--debug=1` çıktısıyla)
-- [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
-- [x] Superonline saha testi paketi (taşınabilir, kendi kendini temizler)
-- [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\`
-- [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
-- [x] Servis kaldırma yolu gerçek koşumda doğrulandı
-- [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
-- [x] Kurulum paketi (Inno Setup, kendi kendine yeten) — tam yaşam döngüsü koşuldu
-- [x] Paralel hedef sınaması
-- [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
-- [x] **QUIC.** Hem ölçüm yolu hem çalışan strateji bulundu. Uzun süre "engelli"
-      sanılan şeyin bir kısmı bizim ölçüm hatamızmış; ayrıntısı `docs/DEVAM.md`'de.
-- [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak
-      üretimine taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
-
-### Hangi hatlarda doğrulandı
-
-"Doğrulandı" burada dar bir anlam taşır: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
-koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmaz.
+"Doğrulandı" burada dar bir anlam taşıyor: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
+koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmıyor.
 Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil.
 
 | Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
@@ -246,7 +223,7 @@ Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama öl�
 | Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) |
 | Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
 | Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
-| Superonline | — | — | — | ⬜ **testçi aranıyor** |
+| Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
 | Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
@@ -256,81 +233,162 @@ bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığın�
 tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
 **"Ayrıntılar"** günlüğünü paylaşmanız bu profili doğrulanmışa çevirecek tek şey.
 
-Bu hatlardan birindeyseniz: uygulamayı kurup **Parametre Testi**'ni çalıştırmanız ve sonucu
-[bir issue'da](https://github.com/superuser-d0/zapret-tr/issues) paylaşmanız yeter. Test hiçbir
-yere veri göndermiyor; ne paylaşacağınıza siz karar veriyorsunuz.
+Bu hatlardan birindeyseniz yapmanız gereken tek şey var: uygulamayı kurup **Parametre Testi**'ni
+çalıştırmak ve sonucu [bir issue'da](https://github.com/superuser-d0/zapret-tr/issues)
+paylaşmak. Test hiçbir yere veri göndermiyor; neyi paylaşacağınıza siz karar veriyorsunuz.
 
-Aynı ISS içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
-alındı (birinde düz HTTP engelliydi, diğerinde değil). Yani "profil var" demek "sizde çalışır"
-demek değil — ölçüm bunun için var.
+Aynı sağlayıcı içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
+aldık (birinde düz HTTP engelliydi, diğerinde değildi). Yani "profil var" demek "sizde çalışır"
+demek değil — ölçüm tam olarak bunun için var.
+
+---
+
+## Saha testi paketi kimin için
+
+Yayınlarda `zapret-tr-saha-testi.zip` diye ikinci bir dosya var. **Son kullanıcı için değil** ve
+internetinizi açmaz: koruma sağlamaz, arka planda çalışmaz, bilgisayar açılışında devreye
+girmez. Yaptığı tek şey ölçmek — hangi parametrenin o hatta işe yaradığını bulup bir rapor
+dosyasına yazmak.
+
+Var oluş sebebi, henüz ölçemediğimiz hatlarda (başka bir sağlayıcı, başka bir şehir)
+engellemenin nasıl davrandığını öğrenmek. Kurulum yapmıyor, `--cleanup` ile kendini temizliyor
+ve raporu hiçbir yere göndermiyor; yalnızca diske yazıyor. Yardım etmek isterseniz raporu bize
+iletebilirsiniz.
+
+Kendi internetinizi açmak istiyorsanız ihtiyacınız olan dosya bu değil,
+`ZapretTR-Setup-<sürüm>.exe`.
+
+---
+
+## Kurulum (geliştirme)
+
+Gereksinimler: .NET 8 SDK, PowerShell, Windows x64.
+
+```bash
+powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
+```
+
+Bu komut `winws.exe` ile WinDivert sürücüsünü sabitlenmiş bir upstream sürümünden indiriyor ve
+SHA256 ile doğruluyor. `vendor/` klasörü git'e girmiyor.
+
+```bash
+dotnet build
+dotnet test
+```
+
+Sıra önemli: arayüz duman testleri `vendor/` içindeki ikilileri aradığı için,
+`fetch-upstream.ps1` çalıştırılmadan `dotnet test` iki testte başarısız olur.
+
+## Depo yapısı
+
+```
+src/ZapretTr.Core/             winws süreç yönetimi, komut kurma, profil yükleme
+src/ZapretTr.Prober/           parametre test motoru (blockcheck.sh'ın yerini alır)
+src/ZapretTr.Prober.Cli/       saha testi için taşınabilir tek dosyalık araç
+src/ZapretTr.App/              WPF arayüz
+profiles/isp/*.json            sağlayıcı başına sıralı aday listesi
+profiles/generic-ladder.json   Tier 3 kombinatoryal arama tarifi
+tools/fetch-upstream.ps1       upstream ikili indirme + SHA256 doğrulama
+```
+
+## Yol haritası
+
+Tamamlananlar:
+
+- [x] Depo iskeleti, upstream indirme + SHA256 doğrulama
+- [x] Sağlayıcı profil veritabanı (10 profil) + genel kombinatoryal merdiven (221 aday)
+- [x] Komut kurucu, profil yükleyici, testler (125 test)
+- [x] winws süreç yönetimi + WinDivert temizliği
+- [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
+- [x] WPF arayüz (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
+- [x] Gerçek donanımda uçtan uca doğrulama — TTNET'te Discord, Pornhub, XVideos açıldı
+- [x] `--ipset-ip` izolasyonunun çalıştığı doğrulandı (winws `--debug=1` çıktısıyla)
+- [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
+- [x] Taşınabilir saha testi paketi (kurulum yapmaz, kendini temizler)
+- [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\` altında
+- [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
+- [x] Servis kaldırma yolu gerçek koşumda doğrulandı
+- [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
+- [x] Kurulum paketi (Inno Setup, kendi kendine yeten) — tam yaşam döngüsü koşuldu
+- [x] Paralel hedef sınaması
+- [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
+- [x] **QUIC.** Hem ölçüm yolu hem çalışan strateji bulundu. Uzun süre "engelli" sanılan şeyin
+      bir kısmı bizim ölçüm hatamızmış; ayrıntısı `docs/DEVAM.md` dosyasında.
+- [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak üretimine
+      taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
 
 Kalanlar:
 
-- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: 10 profilin
-      8'inde sıfır saha verisi. Kod eksiği değil, o hatlara erişim eksiği.
-- [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.**
-      Discord'un ses yolu kendi IP-keşif protokolünü kullanıyor; sunucu adresi ancak
-      kimlik doğrulamalı bir ses oturumundan alınıyor. Genel STUN engellenmediği için
-      vekil hedefle de ölçülemiyor. (`tcp80` artık doğrulandı — eksik olan hattın
-      temizliği değil, hedef listesinde engelli bir tcp80 adresi bulunmamasıydı.)
-- [ ] **Superonline saha testi** — paket hazır, test kullanıcısında. Turkcell Mobil
-      hotspot bunun yerine geçmiyor: ayrı ağ, ayrı ASN, ölçülen davranışı da farklı.
-- [ ] **Kod imzalama sertifikası yok.** Defender bu paketi işaretlemiyor (ölçüldü),
-      ama SmartScreen "bilinmeyen yayımcı" uyarısı verecek. Sertifika alınana kadar
-      kullanıcının elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
-- [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir
-      makinede sıcak ve soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor
-      (sistem DNS'ine dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini
-      söylemesi için hata mesajı artık süreç ve port durumunu taşıyor.
+- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin sekizinde
+      sıfır saha verisi var. Kod eksiği değil, o hatlara erişim eksiği.
+- [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.** Discord'un
+      ses yolu kendi IP keşif protokolünü kullanıyor; sunucu adresi ancak kimlik doğrulaması
+      yapılmış bir ses oturumundan alınabiliyor. Genel STUN engellenmediği için vekil bir
+      hedefle de ölçülemiyor. (`tcp80` artık doğrulandı — eksik olan şey hattın temizliği değil,
+      hedef listesinde engelli bir tcp80 adresinin bulunmamasıydı.)
+- [ ] **Kurulumdan sonra takılan yeni ağ adaptörü.** Şifreli DNS, kurulum sırasında makinede
+      bulunan Ethernet ve WiFi kartlarına uygulanıyor. Sonradan takılan bir adaptör (örneğin USB
+      WiFi) kapsam dışında kalıyor; onun için uygulamayı açıp servisi bir kez yeniden kurmak
+      gerekiyor.
+- [ ] **Kod imzalama sertifikası yok.** Defender bu paketi işaretlemiyor (ölçtük), ama
+      SmartScreen "bilinmeyen yayımcı" uyarısı verecek. Sertifika alınana kadar kullanıcının
+      elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
+- [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir makinede
+      hem sıcak hem soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor (sistem DNS'ine
+      dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini söylemesi için hata mesajı artık
+      süreç ve port durumunu taşıyor.
 
 ## Yayın ve sürüm
 
-Sürüm tek kaynaktan gelir: git tag'i. `Directory.Build.props` derlenen exe'lerin
-sürümünü, `installer/setup.iss` kurulum paketininkini taşır; ikisi de yayın akışında
-tag'den beslenir (`-p:Version=`, `/DAppVersion=`).
+Sürüm tek bir kaynaktan geliyor: git tag'i. `Directory.Build.props` derlenen exe'lerin sürümünü,
+`installer/setup.iss` kurulum paketininkini taşıyor; ikisi de yayın akışında tag'den besleniyor
+(`-p:Version=`, `/DAppVersion=`).
 
-- `.github/workflows/ci.yml` — her itmede: upstream indirme, derleme, testler,
-  kırpılmış yayın (kırpma analizörü hata verirse burada patlar) ve `msquic.dll`
-  kontrolü.
-- `.github/workflows/release.yml` — `v*` tag'i itildiğinde kurulum paketini, saha
-  testi paketini ve `SHA256SUMS.txt` dosyasını üretip **taslak** yayın açar.
+- `.github/workflows/ci.yml` — her itmede upstream indirme, derleme, testler, kırpılmış yayın
+  (kırpma analizörü hata verirse burada patlar) ve `msquic.dll` kontrolü.
+- `.github/workflows/release.yml` — `v*` tag'i itildiğinde kurulum paketini, saha testi paketini
+  ve `SHA256SUMS.txt` dosyasını üretip **taslak** yayın açar.
 
-Yayın taslak olarak açılır; yayımlamadan önce içeriğinin gözden geçirilmesi kasıtlı.
+Yayın notu CHANGELOG'dan üretiliyor; o sürümün bölümü yazılmamışsa yayın akışı başarısız oluyor.
+Yayının taslak açılması da kasıtlı: imzasız ikili dağıtıldığı için son bir gözden geçirme
+yapılıyor.
 
-Değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
+Bütün değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
 
 ## Uyarılar
 
-**Yönetici yetkisi zorunlu.** `winws.exe` çekirdek modunda çalışan WinDivert sürücüsünü kullanıyor ve
-`--help` için bile yükseltilmiş yetki istiyor.
+**Yönetici yetkisi zorunlu.** `winws.exe` çekirdek modunda çalışan WinDivert sürücüsünü kullanıyor
+ve `--help` için bile yükseltilmiş yetki istiyor.
 
-**Antivirüs uyarısı verebilir.** Paket yakalama sürücüsü + imzasız derleme birleşimi false-positive
-üretir. Kod imzalama sertifikamız yok.
+**Antivirüs uyarı verebilir.** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
+false-positive üretiyor. Kod imzalama sertifikamız yok.
 
 ## Teşekkür — Zapret Win TR
 
-**Zapret Win TR** geliştiricisi **Ali Mali**, kendi aracındaki hazır ISS stratejilerini
+**Zapret Win TR** geliştiricisi **Ali Mali**, kendi aracındaki hazır sağlayıcı stratejilerini
 kullanmamıza izin verdi ve kaynağını paylaştı.
 
 Karşılaştırdık ve sonuç ilginç çıktı: klasik winws motoru için tanımladığı **sekiz stratejinin
 sekizi de bizim profillerimizde zaten vardı**, üstelik altısında onun tercihi bizim de ilk
 adayımızdı. Kalan ikisi bizde ikinci sırada — onun arayüzünde de adları "Alternatif". Yani
-buradan kopyalanan bir parametre **yok**; birbirinden bağımsız iki proje aynı değerlere varmış.
-Bunu ayrıca yazıyoruz çünkü o profillerin tohumlarına duyulacak güveni doğrudan etkiliyor:
+buradan kopyalanmış bir parametre **yok**; birbirinden bağımsız iki proje aynı değerlere varmış.
+
+Bunu ayrıca yazıyoruz, çünkü o profillerin tohumlarına duyulacak güveni doğrudan etkiliyor:
 artık "toplulukta biri söylemiş" değil, gerçek kullanıcıları olan ayrı bir aracın gönderdiği
-değerlerle örtüşen bir liste. (Yine de `verified` değiller — dayanak "olumsuz dönüş olmadı"
-ve sessizlik ölçüm sayılmaz.)
+değerlerle örtüşen bir liste. (Yine de `verified` değiller — dayanak "olumsuz dönüş olmadı" ve
+sessizlik ölçüm sayılmaz.)
 
 Kaynağından **öğrendiğimiz ve uyguladığımız** iki şey var, ikisi de 0.1.6'da:
 
-- WinDivert sürücüsünün yalnızca `windivert` adıyla değil **`WinDivert14`** (GoodbyeDPI'ın da
+- WinDivert sürücüsünün yalnızca `windivert` adıyla değil, **`WinDivert14`** (GoodbyeDPI'ın da
   kullandığı ad) ve **`monkey`** adlarıyla da geride kalabildiği. Temizliğimiz eskiden yalnızca
-  ilkini söküyordu ve kalıntı bir servis, bütün adayların aynı şekilde başarısız olmasına yol
+  ilkini söküyordu; kalıntı bir servis ise bütün adayların aynı şekilde başarısız olmasına yol
   açabiliyordu.
 - Aynı anda çalışan başka bir DPI atlatma aracının (özellikle **GoodbyeDPI**) ölçümü tümüyle
-  geçersiz kıldığı — ve bunun kullanıcıya söylenmesi gerektiği.
+  geçersiz kıldığı ve bunun kullanıcıya söylenmesi gerektiği.
 
-Bunlar fikir düzeyinde katkılar; kod bize ait. Ayrıntı: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Bunlar fikir düzeyinde katkılar; kod bize ait. Ayrıntı için:
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Lisans
 
