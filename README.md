@@ -128,6 +128,8 @@ yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa ş
 ```
 Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
+### Bağlantı ya da ağ değiştirdiğinizde
+
 **WiFi ile Ethernet arasında geçiş yaparsam yeniden test gerekir mi?** Aynı modeme bağlı
 oldukları sürece **hayır**. DPI, evinizdeki bağlantı türünde değil servis sağlayıcının
 ağında çalışıyor; kabloyla da WiFi ile de aynı sağlayıcıya, aynı DPI donanımına
@@ -137,7 +139,7 @@ iki arayüzün ağ geçidi aynı çıktı — aynı IP, aynı MAC adresi, yani a
 Şifreli DNS tarafı da 0.1.9'dan itibaren her iki karta birden uygulanıyor, dolayısıyla
 kabloyu takıp çıkarmak koruma durumunu değiştirmiyor.
 
-**Yeni test gerektiren durum, bağlantı türü değil ağın kendisi:** telefonunuzun mobil
+Yeni test gerektiren şey bağlantı türü değil, **ağın kendisi**: telefonunuzun mobil
 paylaşımına bağlanmak, başka bir eve ya da iş yerine gitmek. Orada farklı bir servis
 sağlayıcı, dolayısıyla farklı bir DPI yapılandırması var; bir hatta çalışan parametre
 orada işe yaramayabilir.
@@ -156,6 +158,9 @@ Kaydedilmiş bir strateji zamanla işlevini yitirebilir — sağlayıcı DPI yap
 güncellerse dün çalışan parametre bugün çalışmaz. Uygulama bunu kendisi fark ediyor:
 başlattıktan birkaç saniye sonra hedefleri ölçüyor ve hiçbiri açılmıyorsa **"ÇALIŞIYOR —
 AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
+
+### Discord
+
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
 denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
 çünkü sesten çok daha ağır bir medya akışı.
@@ -336,6 +341,8 @@ Tamamlananlar:
 - [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\` altında
 - [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
 - [x] Servis kaldırma yolu gerçek koşumda doğrulandı
+- [x] Şifreli DNS bağlı olmayan kartlara da uygulanıyor — kablo/WiFi geçişinde koruma
+      yarım kalmıyor (gerçek makinede ölçüldü)
 - [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
 - [x] Kurulum paketi (Inno Setup, kendi kendine yeten) — tam yaşam döngüsü koşuldu
 - [x] Paralel hedef sınaması
