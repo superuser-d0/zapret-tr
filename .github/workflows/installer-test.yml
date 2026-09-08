@@ -86,10 +86,22 @@ jobs:
 
           # Temiz kurulumda servis OLMAMALI: otomatik baslatma kullanicinin
           # acikca sectigi bir sey, kurulumun varsayilani degil.
-          foreach ($ad in 'ZapretTR','ZapretTR-DNS') {
+          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
+          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
+          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
-            if ($LASTEXITCODE -eq 0) { throw "$ad servisi temiz kurulumda kurulmus olmamaliydi." }
+            $sonuc = $LASTEXITCODE -eq 0
+            $global:LASTEXITCODE = 0
+            return $sonuc
           }
+
+          foreach ($ad in 'ZapretTR','ZapretTR-DNS') {
+            if (ServisVar $ad) { throw "$ad servisi temiz kurulumda kurulmus olmamaliydi." }
+          }
+
+          exit 0
 
       # --- 2. Servis kurulumu -------------------------------------------------
       - name: yapilandirma yaz ve servisi kur
@@ -115,20 +127,31 @@ jobs:
       - name: servis kuruldu mu
         shell: pwsh
         run: |
-          sc.exe query ZapretTR *> $null
-          if ($LASTEXITCODE -ne 0) { throw "ZapretTR servisi kurulmadi." }
+          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
+          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
+          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          function ServisVar([string]$ad) {
+            sc.exe query $ad *> $null
+            $sonuc = $LASTEXITCODE -eq 0
+            $global:LASTEXITCODE = 0
+            return $sonuc
+          }
+
+          if (-not (ServisVar ZapretTR)) { throw "ZapretTR servisi kurulmadi." }
 
           # Sifreli DNS kapaliyken DNS servisi kurulmamali. Kurulduysa
           # yapilandirma dikkate alinmiyor demektir ve sistem DNS'i de
           # cevrilmis olabilir -- CI icin de kullanici icin de kotu.
-          sc.exe query ZapretTR-DNS *> $null
-          if ($LASTEXITCODE -eq 0) { throw "DNS kapaliyken ZapretTR-DNS kurulmus." }
+          if (ServisVar ZapretTR-DNS) { throw "DNS kapaliyken ZapretTR-DNS kurulmus." }
 
           # winws'i durduruyoruz: testin olctugu sey servisin VARLIGI, calisip
           # calismadigi degil. Calisir durumda birakmak runner'in kendi 80/443
           # trafigini gereksiz yere kurcalar.
           sc.exe stop ZapretTR *> $null
           Start-Sleep -Seconds 3
+
+          exit 0
 
       # --- 3. Asil sinav: yukseltme servisi koruyor mu -------------------------
       - name: uzerine yukseltme kur
@@ -144,15 +167,28 @@ jobs:
           # servisi sokuyor ama geri kurmuyordu. Kullanici korumasiz kaliyordu ve
           # HICBIR belirti yoktu -- uygulama dogru davraniyordu, kaybolan sey bir
           # kez basilmis bir dugmenin sonucuydu.
-          sc.exe query ZapretTR *> $null
-          if ($LASTEXITCODE -ne 0) {
+          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
+          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
+          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          function ServisVar([string]$ad) {
+            sc.exe query $ad *> $null
+            $sonuc = $LASTEXITCODE -eq 0
+            $global:LASTEXITCODE = 0
+            return $sonuc
+          }
+
+          if (-not (ServisVar ZapretTR)) {
             throw "REGRESYON: otomatik baslatma servisi yukseltmede kayboldu."
           }
 
           $baslangic = sc.exe qc ZapretTR | Select-String 'START_TYPE'
+          $global:LASTEXITCODE = 0
           if ($baslangic -notmatch 'AUTO_START') {
             throw "REGRESYON: servis var ama otomatik baslatma degil: $baslangic"
           }
+
+          exit 0
 
       # --- 4. Sokme ve kaldirma -----------------------------------------------
       - name: servisleri sok
@@ -162,8 +198,20 @@ jobs:
           $p = Start-Process $exe -ArgumentList '--uninstall-services' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "--uninstall-services $($p.ExitCode) koduyla dondu." }
 
-          sc.exe query ZapretTR *> $null
-          if ($LASTEXITCODE -eq 0) { throw "ZapretTR servisi sokulmedi." }
+          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
+          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
+          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          function ServisVar([string]$ad) {
+            sc.exe query $ad *> $null
+            $sonuc = $LASTEXITCODE -eq 0
+            $global:LASTEXITCODE = 0
+            return $sonuc
+          }
+
+          if (ServisVar ZapretTR) { throw "ZapretTR servisi sokulmedi." }
+
+          exit 0
 
       - name: kaldir (sessiz)
         shell: pwsh
@@ -185,10 +233,22 @@ jobs:
           $anahtar = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8F3A1C42-5D7E-4B19-9A24-6E8C0F5D3B71}_is1'
           if (Test-Path $anahtar) { throw "Kaldirmadan sonra kayit defteri girdisi duruyor." }
 
-          foreach ($ad in 'ZapretTR','ZapretTR-DNS','windivert','WinDivert14') {
+          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
+          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
+          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
-            if ($LASTEXITCODE -eq 0) { throw "Kaldirmadan sonra $ad servisi duruyor." }
+            $sonuc = $LASTEXITCODE -eq 0
+            $global:LASTEXITCODE = 0
+            return $sonuc
           }
+
+          foreach ($ad in 'ZapretTR','ZapretTR-DNS','windivert','WinDivert14') {
+            if (ServisVar $ad) { throw "Kaldirmadan sonra $ad servisi duruyor." }
+          }
+
+          exit 0
 
       # Is hangi adimda duserse dussen runner temiz kalmali; kalinti bir surucu
       # ya da servis sonraki kosumlari da bozar.
