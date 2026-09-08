@@ -22,7 +22,7 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   olmadığına bakıyor ve dosyalar yerine geçtikten sonra geri kuruyor; geri kurma
   başarısız olursa sessiz geçmiyor, kurulum bunu söylüyor.
 
-**0.1.7'den yükselttiyseniz:** servisiniz silinmiş olabilir. `sc query ZapretTR`
+**0.1.7'den yükselttiyseniz:** servisiniz silinmiş olabilir. `sc.exe query ZapretTR`
 komutu `RUNNING` demiyorsa uygulamayı açıp "Servis Olarak Yükle" düğmesine basın.
 
 ## [0.1.7]
