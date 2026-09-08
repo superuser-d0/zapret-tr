@@ -54,7 +54,7 @@ if ([string]::IsNullOrWhiteSpace($body)) {
 $preamble = (Get-Content $PreamblePath -Encoding UTF8) -join "`n"
 
 $note = @"
-## Bu sürümde neler düzeldi
+## Bu sürümde neler değişti
 
 $body
 
