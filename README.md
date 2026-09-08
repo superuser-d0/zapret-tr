@@ -128,6 +128,11 @@ yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa ş
 ```
 Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
+**Yeni sürüm çıkınca ne yapmam gerekiyor?** Hiçbir şey indirmenize gerek yok:
+**"Güncellemeleri Denetle"** düğmesi yeni sürümü indirir, SHA256 özetini doğrular ve
+kurulumu başlatır. Ayarlarınız ve doğrulanmış stratejileriniz korunur. Yeni sürüm
+varsa uygulama açılışta zaten haber verir.
+
 **Uygulama internete bir şey gönderiyor mu?** Ölçüm sonuçları, seçtiğiniz strateji ve
 raporlar **yalnızca diske** yazılır. Dışarı yapılan tek istek güncelleme kontrolüdür:
 açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir şey yok —

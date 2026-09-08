@@ -12,10 +12,19 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ### Eklendi
 
-- **Güncelleme bildirimi.** Açılışta yeni sürüm var mı diye bakılıyor; varsa
-  arayüzde bir satır ve günlükte indirme adresi görünüyor. Sebebi somut: bazı
-  günler birkaç sürüm çıkıyor ve her seferinde test kullanıcılarına tek tek "şunu
-  kur" demek gerekiyordu — kullanıcıya ulaşmayan bir düzeltme işe yaramıyor.
+- **"Güncellemeleri Denetle" düğmesi ve tek tıkla kurulum.** Düğme yeni sürüm var
+  mı diye bakar; varsa paketi indirir, **SHA256 özetini doğrular** ve kurulumu
+  başlatır. Artık tarayıcı açıp dosya aramak, indirip SmartScreen uyarısını geçmek
+  gerekmiyor.
+
+  Kurulum **onaysız başlamaz**: ne indirileceği, özetin doğrulanacağı ve ZapretTR'nin
+  kapanacağı önce sorulur. Özet tutmazsa dosya silinir ve kurulum yapılmaz —
+  indirilen paket çalıştırılacağı için bu doğrulama atlanamaz.
+
+- **Açılışta güncelleme bildirimi.** Yeni sürüm varsa arayüzde bir satır ve günlükte
+  indirme adresi görünüyor. Sebebi somut: bazı günler birkaç sürüm çıkıyor ve her
+  seferinde test kullanıcılarına tek tek "şunu kur" demek gerekiyordu — kullanıcıya
+  ulaşmayan bir düzeltme işe yaramıyor.
 
   **Bu, uygulamanın dışarı istek yapan tek yeri** ve saklanacak bir şey değil:
   GitHub'a yalnızca "en son sürüm ne" sorusu gidiyor. Hattınız, stratejiniz ya da

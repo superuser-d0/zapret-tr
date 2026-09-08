@@ -84,6 +84,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ExitCommand = new RelayCommand(ExitAsync);
         ServiceCommand = new RelayCommand(ToggleServiceAsync, () => !IsBusy && IsReady);
         SaveReportCommand = new RelayCommand(SaveReportAsync);
+        UpdateCommand = new RelayCommand(UpdateAsync, () => !IsBusy);
 
         try
         {
@@ -165,6 +166,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public event EventHandler? ExitRequested;
 
     public RelayCommand ResetCommand { get; }
+
+    /// <summary>Guncellemeyi denetler; varsa indirip kurar.</summary>
+    public RelayCommand UpdateCommand { get; }
 
     /// <summary>Gunlugu ve ortam ozetini bir dosyaya yazar.</summary>
     public RelayCommand SaveReportCommand { get; }
@@ -618,6 +622,102 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             // Guncelleme kontrolu bir kolaylik, korumanin parcasi degil:
             // basarisiz olmasi kullaniciya hata olarak gosterilmemeli.
+        }
+    }
+
+    /// <summary>
+    /// "Güncellemeleri Denetle": yeni surum varsa indirip kurulumu baslatir.
+    /// </summary>
+    /// <remarks>
+    /// Kullanicilar her surumde tarayici acip dosyayi bulmak zorundaydi ve bu,
+    /// duzeltmenin kullaniciya ulasmasindaki en buyuk surtunmeydi.
+    ///
+    /// Indirilen paket CALISTIRILACAGI icin SHA256 dogrulamasi atlanmiyor
+    /// (UpdateDownloader yapiyor) ve kurulum kullanici ONAYLAMADAN baslamiyor:
+    /// uygulamanin kendi kendine ikili calistirmasi, kullanicinin bilmesi
+    /// gereken bir sey.
+    /// </remarks>
+    private async Task UpdateAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            Append("Güncellemeler denetleniyor...");
+
+            var latest = await UpdateChecker
+                .GetLatestVersionAsync(TimeSpan.FromSeconds(15))
+                .ConfigureAwait(true);
+
+            if (latest is null)
+            {
+                Append("Sürüm bilgisi alınamadı (ağ erişimi yok ya da GitHub cevap vermedi).",
+                    isError: true);
+                return;
+            }
+
+            var kurulu = SurumMetni().Split('+')[0];
+
+            if (!UpdateChecker.IsNewer(latest, kurulu))
+            {
+                Append($"En güncel sürümü kullanıyorsunuz ({kurulu}).");
+                UpdateMessage = null;
+                return;
+            }
+
+            var onay = MessageBox.Show(
+                $"Yeni sürüm var: {latest}" + Environment.NewLine +
+                $"Kurulu sürüm: {kurulu}" + Environment.NewLine + Environment.NewLine +
+                "İndirilip kurulsun mu?" + Environment.NewLine + Environment.NewLine +
+                "Paket GitHub'dan indirilir, SHA256 özeti doğrulanır ve kurulum" +
+                Environment.NewLine +
+                "başlatılır. Kurulum sırasında ZapretTR kapanacak.",
+                "Güncelleme",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (onay != MessageBoxResult.Yes)
+            {
+                Append("Güncelleme iptal edildi.");
+                return;
+            }
+
+            Append($"{latest} indiriliyor...");
+
+            var klasor = Path.Combine(Path.GetTempPath(), "ZapretTR-guncelleme");
+            var sonOnluk = -1;
+            var ilerleme = new Progress<int>(yuzde =>
+            {
+                // Her bayt icin satir yazmak gunlugu kullanilamaz hale getiriyor;
+                // onar onar yeter.
+                if (yuzde / 10 > sonOnluk)
+                {
+                    sonOnluk = yuzde / 10;
+                    Append($"  indiriliyor: %{yuzde}");
+                }
+            });
+
+            var paket = await UpdateDownloader
+                .DownloadAsync(latest, klasor, ilerleme)
+                .ConfigureAwait(true);
+
+            Append("İndirildi ve SHA256 özeti doğrulandı.");
+            Append("Kurulum başlatılıyor: " + paket);
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(paket) { UseShellExecute = true });
+
+            // Kurulum calisan uygulamayi kapatmak zorunda (dosyalar kilitli).
+            // Kendimiz cikarsak kullanici "neden kapandi" diye sormaz.
+            ExitRequested?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Append("Güncelleme başarısız: " + ex.Message, isError: true);
+            Append("Yayın sayfasından elle indirebilirsiniz: " + UpdateChecker.ReleasesPage);
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

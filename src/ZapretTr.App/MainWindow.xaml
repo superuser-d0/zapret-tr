@@ -172,6 +172,11 @@
                     <TextBlock Text="github.com/superuser-d0/zapret-tr/releases"
                                FontSize="11" Foreground="#8A6D3B" TextWrapping="Wrap"
                                Margin="0,3,0,0" />
+                    <Button Content="İndir ve Kur"
+                            Command="{Binding UpdateCommand}"
+                            Style="{StaticResource ActionButton}"
+                            Margin="0,8,0,0" Padding="14,6"
+                            ToolTip="Paketi indirir, SHA256 özetini doğrular ve kurulumu başlatır." />
                 </StackPanel>
             </Border>
             <Button Content="{Binding ServiceButtonText}"
@@ -183,6 +188,10 @@
                  agaca hic eklemiyor, dolayisiyla dugme paneli acmayan kullanici
                  icin YOKTU. Gercek bir kurulumda da tam olarak bu yasandi.
                  Bulunamayan bir dugmenin baglami da olmaz. -->
+            <Button Content="Güncellemeleri Denetle"
+                    Command="{Binding UpdateCommand}"
+                    Style="{StaticResource ActionButton}"
+                    ToolTip="Yeni sürüm var mı diye bakar; varsa indirip kurar. GitHub'a yalnızca sürüm sorusu gider." />
             <Button Content="Raporu Kaydet"
                     Command="{Binding SaveReportCommand}"
                     Style="{StaticResource ActionButton}"
