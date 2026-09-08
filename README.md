@@ -63,6 +63,9 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 | **Şifreli DNS** | Engelleme çoğu zaman iki katmanlı olduğu için DNS katmanı da aşılır |
 | **Dokunmadığı yeri bozmaz** | Sorunu olmayan bölüme denenmemiş strateji uygulanmaz |
 | **Ne bildiğini söyler** | Her aday "doğrulandı" ya da "doğrulanmadı" etiketiyle gelir |
+| **Kendini günceller** | "Güncellemeleri Denetle" paketi indirir, SHA256 özetini doğrular, kurar |
+| **Arka planda çalışır** | Pencereyi kapatmak korumayı kapatmaz; uygulama bildirim alanına iner |
+| **Raporlanabilir** | "Raporu Kaydet" günlüğü ve ortam özetini tek dosyaya yazar |
 
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
 > kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
@@ -107,7 +110,12 @@ katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
 
 **Her açılışta çalışmasını istiyorsanız** "Servis Olarak Yükle" düğmesi bir Windows servisi
-kurar. Bu durumda uygulamayı açmanız gerekmez; koruma bilgisayar açılır açılmaz devreye girer.
+kurar. Bu durumda uygulamayı açmanız gerekmez ve **yeniden başlatmaya da gerek yok** —
+servis hemen çalışmaya başlar, sonraki açılışlarda kendiliğinden devreye girer.
+
+**Otomatik başlatmayı kaldırdıysanız** bilgisayarı bir kez yeniden başlatmanız iyi olur:
+ağ sürücüsü çekirdekten hemen düşmüyor ve kalıntı bir sürücü, sonraki parametre testinde
+bütün adayların aynı şekilde başarısız olmasına yol açabiliyor.
 
 ### Sık sorulanlar
 
@@ -139,6 +147,12 @@ açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçb
 ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. İstemezseniz
 `%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
 yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
+
+**"SERVİS DURMUŞ" yazıyor, ne yapmalıyım?** Otomatik başlatma servisi kurulu ama
+çalışmıyor demektir — koruma o anda kapalıdır. En sık sebebi, bir yükseltmeden sonra
+servisin yeniden başlatılamamış olması. Üç seçeneğiniz var: **"ZAPRET'İ BAŞLAT"** ile
+elle başlatın, **"Otomatik Başlatmayı Kaldır"** deyip yeniden kurun, ya da bilgisayarı
+yeniden başlatın. Uygulama bu durumda Başlat düğmesini açık tutar; kilitli kalmazsınız.
 
 ### Bağlantı ya da ağ değiştirdiğinizde
 
@@ -355,7 +369,7 @@ Tamamlananlar:
 
 - [x] Depo iskeleti, upstream indirme + SHA256 doğrulama
 - [x] Sağlayıcı profil veritabanı (10 profil) + genel kombinatoryal merdiven (221 aday)
-- [x] Komut kurucu, profil yükleyici, testler (125 test)
+- [x] Komut kurucu, profil yükleyici, testler (151 test)
 - [x] winws süreç yönetimi + WinDivert temizliği
 - [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
 - [x] WPF arayüz (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
@@ -374,6 +388,13 @@ Tamamlananlar:
 - [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
 - [x] **QUIC.** Hem ölçüm yolu hem çalışan strateji bulundu. Uzun süre "engelli" sanılan şeyin
       bir kısmı bizim ölçüm hatamızmış; ayrıntısı `docs/DEVAM.md` dosyasında.
+- [x] **Kurulum testi CI'da.** Paket gerçekten kuruluyor, servis kurduruluyor, üzerine
+      yükseltme yapılıp servisin sağ kalıp kalmadığına bakılıyor, sonra kaldırılıyor.
+      Düzeltme geri alınarak testin hatayı gerçekten yakaladığı kanıtlandı.
+- [x] **Teşhis kanalı.** "Raporu Kaydet" düğmesi ve saha paketinin her yolda rapor
+      bırakması — hata durumunda ve engel bulunamadığında da.
+- [x] **Tek tıkla güncelleme.** Paketi indirir, SHA256 özetini doğrular, kurulumu başlatır.
+- [x] **Bildirim alanı simgesi.** Pencereyi kapatmak korumayı kapatmıyor.
 - [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak üretimine
       taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
 

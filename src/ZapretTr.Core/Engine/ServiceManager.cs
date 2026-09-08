@@ -6,9 +6,24 @@ namespace ZapretTr.Core.Engine;
 /// <summary>Kurulu servislerin durumu.</summary>
 /// <param name="WinwsInstalled">winws servisi kurulu mu.</param>
 /// <param name="DnsInstalled">dnscrypt-proxy servisi kurulu mu.</param>
-public sealed record ServiceStatus(bool WinwsInstalled, bool DnsInstalled)
+/// <param name="WinwsRunning">
+/// Servis su anda CALISIYOR mu. Kurulu olmak calisiyor olmak demek degil.
+/// </param>
+public sealed record ServiceStatus(
+    bool WinwsInstalled, bool DnsInstalled, bool WinwsRunning = false)
 {
     public bool AnyInstalled => WinwsInstalled || DnsInstalled;
+
+    /// <summary>
+    /// Servis kurulu ama CALISMIYOR: koruma yok, ve kullanicinin haberi olmali.
+    /// </summary>
+    /// <remarks>
+    /// En tehlikeli durum bu. "Kurulu" ile "calisiyor" ayni sey sayildiginda
+    /// arayuz "servis modu aktif" deyip Baslat dugmesini kapatiyordu; koruma
+    /// yoktu ve kullanicinin yapabilecegi bir sey de yoktu. Gercek bir
+    /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+    /// </remarks>
+    public bool InstalledButStopped => WinwsInstalled && !WinwsRunning;
 }
 
 /// <summary>
@@ -34,11 +49,20 @@ public static class ServiceManager
     /// <summary>dnscrypt-proxy'yi calistiran servisin adi.</summary>
     public const string DnsServiceName = "ZapretTR-DNS";
 
-    /// <summary>Hangi servislerin kurulu oldugunu doner.</summary>
+    /// <summary>Servislerin kurulu VE calisir olup olmadigini doner.</summary>
+    /// <remarks>
+    /// "Kurulu" ile "calisiyor" ayri sorular ve ikisini birbirine karistirmak
+    /// kullaniciyi kilitliyordu: yukseltmede servis geri kuruluyor ama
+    /// <c>sc start</c> basarisiz olursa servis VAR ama DURMUS kaliyor. Arayuz
+    /// bunu "servis modu aktif" diye okuyup Baslat dugmesini kapatiyordu --
+    /// koruma yok, kullanicinin yapabilecegi de bir sey yok. Gercek bir
+    /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+    /// </remarks>
     public static async Task<ServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default)
         => new(
             await ExistsAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false),
-            await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false));
+            await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false),
+            await IsRunningAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false));
 
     /// <summary>
     /// Servisleri kurar ve baslatir.
@@ -180,6 +204,21 @@ public static class ServiceManager
         return startCode == 0
             ? new CleanupStep($"{name} servisi kuruldu ve baslatildi", true)
             : new CleanupStep($"{name} servisi kuruldu ama baslatilamadi", false, startOutput.Trim());
+    }
+
+    /// <summary>Servis su anda CALISIYOR mu.</summary>
+    /// <remarks>
+    /// <c>sc query</c> ciktisindaki STATE satirina bakiliyor. Kurulu olmak
+    /// calisiyor olmak demek degil: servis durdurulmus, baslatilamamis ya da
+    /// coktukten sonra yeniden baslatilmamis olabilir.
+    /// </remarks>
+    private static async Task<bool> IsRunningAsync(string name, CancellationToken cancellationToken)
+    {
+        var (exitCode, output) = await RunScAsync(["query", name], cancellationToken)
+            .ConfigureAwait(false);
+
+        return exitCode == 0
+               && output.Contains("RUNNING", StringComparison.Ordinal);
     }
 
     private static async Task<bool> ExistsAsync(string name, CancellationToken cancellationToken)

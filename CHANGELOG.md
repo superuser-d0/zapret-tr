@@ -8,6 +8,30 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.17]
+
+### Düzeltildi
+
+- **Servis kurulu ama durmuşsa kullanıcı kilitleniyordu.** Uygulama servisin yalnızca
+  **var olup olmadığına** bakıyordu, **çalışıp çalışmadığına** değil. Bir yükseltmeden
+  sonra `sc start` herhangi bir sebeple başarısız olursa servis VAR ama DURMUŞ kalıyor;
+  arayüz bunu "SERVİS MODU AKTİF" diye okuyup **Başlat düğmesini kapatıyordu**. Sonuç:
+  koruma yok, ve kullanıcının yapabileceği hiçbir şey yok.
+
+  Bir kullanıcıda 0.1.9'dan 0.1.15'e yükseltmeden sonra tam olarak bu yaşandı —
+  "güncelledim, bağlanamadım" bildiriminin sebebi büyük olasılıkla buydu.
+
+  Artık üç durum ayrı: **kurulu değil** (Başlat açık), **kurulu ve çalışıyor**
+  (Başlat kapalı, gerek yok), **kurulu ama durmuş** → durum **"SERVİS DURMUŞ"** oluyor,
+  ne yapılacağı yazılıyor ve **Başlat açık kalıyor** ki kullanıcı korumasını elle
+  başlatabilsin.
+
+### Değişti
+
+- README güncellendi: yeni yetenekler (tek tıkla güncelleme, bildirim alanı, rapor),
+  servis kurulumu/kaldırması sonrası ne yapılacağı, "SERVİS DURMUŞ" durumu ve güncel
+  test sayısı.
+
 ## [0.1.16]
 
 ### Düzeltildi

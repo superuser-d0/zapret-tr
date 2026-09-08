@@ -299,6 +299,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
     ///
     /// Koruma zaten aciksa basilacak bir dugme olmamali.
     /// </remarks>
+    private bool _isServiceStopped;
+
+    /// <summary>Servis kurulu ama calismiyor: koruma yok.</summary>
+    public bool IsServiceStopped
+    {
+        get => _isServiceStopped;
+        private set => Set(ref _isServiceStopped, value);
+    }
+
     public bool CanStart => Status is AppStatus.Ready or AppStatus.Paused
                             && SelectedStrategy is not null
                             && !IsServiceInstalled;
@@ -903,11 +912,33 @@ public sealed class MainViewModel : INotifyPropertyChanged
         try
         {
             var status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
-            IsServiceInstalled = status.AnyInstalled;
+
+            // "Kurulu" ile "calisiyor" AYRI sorular. Ikisini birbirine
+            // karistirmak kullaniciyi kilitliyordu: servis kurulu ama durmussa
+            // arayuz "servis modu aktif" deyip Baslat'i kapatiyor, koruma yok
+            // ve kullanicinin yapabilecegi de bir sey yok. Gercek bir
+            // kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+            //
+            // Bu durumda servisi "kurulu degil" sayiyoruz: boylece Baslat
+            // ACIK kaliyor ve kullanici korumasini elle baslatabiliyor.
+            IsServiceInstalled = status.WinwsInstalled && status.WinwsRunning;
+            IsServiceStopped = status.InstalledButStopped;
+
+            if (status.InstalledButStopped)
+            {
+                Append("UYARI: otomatik başlatma servisi kurulu ama ÇALIŞMIYOR.", isError: true);
+                Append("  Koruma şu anda kapalı. \"ZAPRET'İ BAŞLAT\" ile elle başlatabilir,");
+                Append("  ya da \"Otomatik Başlatmayı Kaldır\" deyip yeniden kurabilirsiniz.");
+                Append("  Sorun sürerse bilgisayarı bir kez yeniden başlatın.");
+
+                SetStatus(AppStatus.Ready, "SERVİS DURMUŞ",
+                    "Otomatik başlatma servisi kurulu ama çalışmıyor; koruma kapalı.");
+            }
         }
         catch (Exception)
         {
             IsServiceInstalled = false;
+            IsServiceStopped = false;
         }
     }
 
