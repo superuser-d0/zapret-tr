@@ -1,0 +1,204 @@
+name: kurulum testi
+
+# Kurulum paketini GERCEKTEN kurar, servisi kurdurur, uzerine yukseltme yapar ve
+# kaldirir. Birim testlerinin goremedigi katman bu: 0.1.7 ve 0.1.8'de bulunan iki
+# kullanici-etkileyen hatanin ikisi de burada yasiyordu ve 125 birim testinin
+# hicbiri yakalamadi --
+#
+#   * yukseltme, kurulu otomatik baslatma servisini sessizce siliyordu;
+#   * servis kuruluyken "Baslat" olumcul hata veriyordu.
+#
+# Ikisi de ancak gercek bir kurulum-yukseltme-kaldirma dizisinde ortaya cikiyor.
+#
+# GUVENLIK: sifreli DNS KAPALI yapilandiriliyor (secureDnsEnabled=false).
+# Acik olsaydi servis kurulumu runner'in sistem DNS'ini 127.0.0.1'e cevirirdi;
+# dnscrypt orada cevap vermezse is ag erisimini kaybedip asili kalirdi. DNS
+# yolunun kendi testleri ayri.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kurulum:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: upstream ikililerini indir
+        run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
+
+      - name: uygulamayi yayinla
+        run: >
+          dotnet publish src/ZapretTr.App -c Release -o publish/app
+          -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:DebugType=none
+          -p:Version=0.0.1-ci --nologo
+
+      - name: Inno Setup kur
+        run: choco install innosetup --no-progress -y
+
+      - name: kurulum paketini uret
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) { throw "ISCC bulunamadi: $iscc" }
+          & $iscc "/DAppVersion=0.0.1" installer\setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC basarisiz: $LASTEXITCODE" }
+
+          $paket = Get-ChildItem installer\Output\*.exe | Select-Object -First 1
+          if (-not $paket) { throw "Kurulum paketi uretilmedi." }
+          "paket=$($paket.FullName)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      # --- 1. Temiz kurulum ---------------------------------------------------
+      - name: kur (sessiz)
+        shell: pwsh
+        run: |
+          $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Kurulum $($p.ExitCode) koduyla dondu." }
+
+      - name: kurulum dogrula
+        shell: pwsh
+        run: |
+          $kok = Join-Path $env:ProgramFiles 'ZapretTR'
+          foreach ($yol in @(
+              (Join-Path $kok 'ZapretTR.exe'),
+              (Join-Path $kok 'zapret-winws\winws.exe'),
+              (Join-Path $kok 'profiles'))) {
+            if (-not (Test-Path $yol)) { throw "Kurulumdan sonra eksik: $yol" }
+          }
+
+          # Programlar listesinde gorunmeli; gorunmezse kullanici kaldiramaz.
+          $anahtar = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8F3A1C42-5D7E-4B19-9A24-6E8C0F5D3B71}_is1'
+          if (-not (Test-Path $anahtar)) { throw "Kaldirma kayit defteri girdisi yok: $anahtar" }
+
+          $kaldirici = (Get-ItemProperty $anahtar).UninstallString -replace '"',''
+          if (-not (Test-Path $kaldirici)) { throw "Kaldirici bulunamadi: $kaldirici" }
+          "kaldirici=$kaldirici" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+          # Temiz kurulumda servis OLMAMALI: otomatik baslatma kullanicinin
+          # acikca sectigi bir sey, kurulumun varsayilani degil.
+          foreach ($ad in 'ZapretTR','ZapretTR-DNS') {
+            sc.exe query $ad *> $null
+            if ($LASTEXITCODE -eq 0) { throw "$ad servisi temiz kurulumda kurulmus olmamaliydi." }
+          }
+
+      # --- 2. Servis kurulumu -------------------------------------------------
+      - name: yapilandirma yaz ve servisi kur
+        shell: pwsh
+        run: |
+          # Gercek bir kullanicinin parametre testinden sonra sahip oldugu duruma
+          # esdeger yapilandirma. secureDnsEnabled KAPALI -- gerekcesi dosyanin
+          # basinda.
+          $dizin = Join-Path $env:ProgramData 'ZapretTR'
+          New-Item -ItemType Directory -Force $dizin | Out-Null
+          @{
+            selectedIspId       = 'turk-telekom'
+            selectedStrategyId  = 'tt-443-fake-ttl4'
+            selectedStrategyArgs= '--dpi-desync=fake --dpi-desync-ttl=4'
+            secureDnsEnabled    = $false
+            customTarget        = $null
+          } | ConvertTo-Json | Out-File (Join-Path $dizin 'config.json') -Encoding utf8
+
+          $exe = Join-Path $env:ProgramFiles 'ZapretTR\ZapretTR.exe'
+          $p = Start-Process $exe -ArgumentList '--install-services' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "--install-services $($p.ExitCode) koduyla dondu." }
+
+      - name: servis kuruldu mu
+        shell: pwsh
+        run: |
+          sc.exe query ZapretTR *> $null
+          if ($LASTEXITCODE -ne 0) { throw "ZapretTR servisi kurulmadi." }
+
+          # Sifreli DNS kapaliyken DNS servisi kurulmamali. Kurulduysa
+          # yapilandirma dikkate alinmiyor demektir ve sistem DNS'i de
+          # cevrilmis olabilir -- CI icin de kullanici icin de kotu.
+          sc.exe query ZapretTR-DNS *> $null
+          if ($LASTEXITCODE -eq 0) { throw "DNS kapaliyken ZapretTR-DNS kurulmus." }
+
+          # winws'i durduruyoruz: testin olctugu sey servisin VARLIGI, calisip
+          # calismadigi degil. Calisir durumda birakmak runner'in kendi 80/443
+          # trafigini gereksiz yere kurcalar.
+          sc.exe stop ZapretTR *> $null
+          Start-Sleep -Seconds 3
+
+      # --- 3. Asil sinav: yukseltme servisi koruyor mu -------------------------
+      - name: uzerine yukseltme kur
+        shell: pwsh
+        run: |
+          $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Yukseltme $($p.ExitCode) koduyla dondu." }
+
+      - name: servis yukseltmeden sag cikti mi
+        shell: pwsh
+        run: |
+          # 0.1.8'de duzeltilen hata: kurulum, dosyalari degistirebilmek icin
+          # servisi sokuyor ama geri kurmuyordu. Kullanici korumasiz kaliyordu ve
+          # HICBIR belirti yoktu -- uygulama dogru davraniyordu, kaybolan sey bir
+          # kez basilmis bir dugmenin sonucuydu.
+          sc.exe query ZapretTR *> $null
+          if ($LASTEXITCODE -ne 0) {
+            throw "REGRESYON: otomatik baslatma servisi yukseltmede kayboldu."
+          }
+
+          $baslangic = sc.exe qc ZapretTR | Select-String 'START_TYPE'
+          if ($baslangic -notmatch 'AUTO_START') {
+            throw "REGRESYON: servis var ama otomatik baslatma degil: $baslangic"
+          }
+
+      # --- 4. Sokme ve kaldirma -----------------------------------------------
+      - name: servisleri sok
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:ProgramFiles 'ZapretTR\ZapretTR.exe'
+          $p = Start-Process $exe -ArgumentList '--uninstall-services' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "--uninstall-services $($p.ExitCode) koduyla dondu." }
+
+          sc.exe query ZapretTR *> $null
+          if ($LASTEXITCODE -eq 0) { throw "ZapretTR servisi sokulmedi." }
+
+      - name: kaldir (sessiz)
+        shell: pwsh
+        run: |
+          $p = Start-Process $env:kaldirici -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Kaldirma $($p.ExitCode) koduyla dondu." }
+
+          # Kaldirici arka planda bitiyor olabilir.
+          Start-Sleep -Seconds 5
+
+      - name: kaldirma dogrula
+        shell: pwsh
+        run: |
+          $kok = Join-Path $env:ProgramFiles 'ZapretTR'
+          if (Test-Path (Join-Path $kok 'ZapretTR.exe')) {
+            throw "Kaldirmadan sonra uygulama dosyasi duruyor."
+          }
+
+          $anahtar = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8F3A1C42-5D7E-4B19-9A24-6E8C0F5D3B71}_is1'
+          if (Test-Path $anahtar) { throw "Kaldirmadan sonra kayit defteri girdisi duruyor." }
+
+          foreach ($ad in 'ZapretTR','ZapretTR-DNS','windivert','WinDivert14') {
+            sc.exe query $ad *> $null
+            if ($LASTEXITCODE -eq 0) { throw "Kaldirmadan sonra $ad servisi duruyor." }
+          }
+
+      # Is hangi adimda duserse dussen runner temiz kalmali; kalinti bir surucu
+      # ya da servis sonraki kosumlari da bozar.
+      - name: temizlik
+        if: always()
+        shell: pwsh
+        run: |
+          foreach ($ad in 'ZapretTR','ZapretTR-DNS','windivert','WinDivert14','monkey') {
+            sc.exe stop $ad *> $null
+            sc.exe delete $ad *> $null
+          }
+          Get-Process winws,dnscrypt-proxy -ErrorAction SilentlyContinue | Stop-Process -Force
+          exit 0
