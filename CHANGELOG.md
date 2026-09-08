@@ -8,20 +8,6 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
-## [0.1.10]
-
-### Değişti
-
-- **Strateji listesinde kendi ölçümünüz ayırt ediliyor.** Parametre testinizden çıkan
-  adaylar `✓ … · sizin testiniz`, başka bir hatta doğrulanmış olanlar `✓ … · doğrulanmış`
-  etiketiyle görünüyor. İkisi de "doğrulandı" ama aynı şey değil: biri sizin hattınızda
-  ölçüldü, diğeri başkasınınkinde. Ağ değiştirip listeye dönen kullanıcının görmesi
-  gereken ilk şey hangisinin kendi ölçümü olduğu.
-- **README'ye bağlantı değiştirme bölümü eklendi.** Aynı modeme bağlı WiFi ile Ethernet
-  arasında geçiş yeni test gerektirmiyor (ölçüldü: aynı strateji iki bağlantıda da
-  çalıştı, iki arayüzün ağ geçidi aynı IP ve aynı MAC adresi). Yeni test gerektiren şey
-  bağlantı türü değil ağın kendisi: mobil paylaşım, başka bir ev, iş yeri.
-
 ## [0.1.9]
 
 ### Düzeltildi

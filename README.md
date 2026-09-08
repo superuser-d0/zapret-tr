@@ -147,8 +147,8 @@ Bu durumda ne yapmanız gerektiği:
 1. **Servis sağlayıcı** listesinden yeni hattı seçin (bilmiyorsanız "Bilmiyorum" seçeneği
    hattı kendisi tespit eder).
 2. **Strateji** listesi o sağlayıcının adaylarıyla dolar. Daha önce o hatta test
-   yaptıysanız kendi ölçümünüz **"· sizin testiniz"** etiketiyle en üstte çıkar; onu
-   seçip doğrudan Başlat'a basabilirsiniz, testi tekrarlamanız gerekmez.
+   yaptıysanız sonucunuz kaydedilmiştir ve listenin en üstünde `✓` işaretiyle çıkar;
+   onu seçip doğrudan Başlat'a basabilirsiniz, testi tekrarlamanız gerekmez.
 3. O hatta hiç test yapmadıysanız **Parametre Testi**'ni bir kez çalıştırın. Sonuç
    kaydedilir ve bir dahaki sefere listede hazır bekler.
 
