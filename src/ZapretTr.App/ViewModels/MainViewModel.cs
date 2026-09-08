@@ -112,6 +112,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
             Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
+            // Beklemiyoruz: ag yavassa uygulamanin acilisini geciktirmesin.
+            _ = CheckForUpdateAsync();
+
             var missing = _vendor.FindMissingFiles();
             if (missing.Count > 0)
             {
@@ -136,6 +139,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public RelayCommand PauseCommand { get; }
     public RelayCommand TestCommand { get; }
     public RelayCommand CancelTestCommand { get; }
+    private string? _updateMessage;
+
+    /// <summary>Yeni surum varsa gosterilecek satir; yoksa <c>null</c>.</summary>
+    public string? UpdateMessage
+    {
+        get => _updateMessage;
+        private set
+        {
+            if (Set(ref _updateMessage, value))
+            {
+                Notify(nameof(HasUpdate));
+            }
+        }
+    }
+
+    /// <summary>Guncelleme satiri gosterilsin mi.</summary>
+    public bool HasUpdate => !string.IsNullOrEmpty(UpdateMessage);
+
     /// <summary>Kullanici uygulamadan GERCEKTEN cikmak istedi.</summary>
     /// <remarks>
     /// Pencereyi kapatmak artik cikis anlamina gelmiyor (bildirim alanina
@@ -563,6 +584,43 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// kullanici karar veriyor. Dosyanin basinda ne icerdigi yaziyor ki
     /// paylasmadan once bilerek baksin.
     /// </remarks>
+    /// <summary>Yayinlanmis daha yeni bir surum var mi diye bakar.</summary>
+    /// <remarks>
+    /// Gunde birkac surum cikabiliyor ve her seferinde kullanicilara tek tek
+    /// "sunu kur" demek gerekiyordu; kullaniciya ulasmayan bir duzeltme ise
+    /// yaramiyor. Bu, uygulamanin DISARI istek yapan tek yeri: GitHub'a
+    /// yalnizca "en son surum ne" sorusu gidiyor, baska hicbir sey degil.
+    /// Ayardan kapatilabilir.
+    /// </remarks>
+    private async Task CheckForUpdateAsync()
+    {
+        try
+        {
+            if (!ConfigStore.Load().UpdateCheckEnabled)
+            {
+                return;
+            }
+
+            var latest = await UpdateChecker
+                .GetLatestVersionAsync(TimeSpan.FromSeconds(8))
+                .ConfigureAwait(true);
+
+            if (!UpdateChecker.IsNewer(latest, SurumMetni()))
+            {
+                return;
+            }
+
+            UpdateMessage = $"Yeni sürüm var: {latest}";
+            Append($"Yeni sürüm yayınlandı: {latest} (kurulu: {SurumMetni().Split('+')[0]})");
+            Append("İndirme: " + UpdateChecker.ReleasesPage);
+        }
+        catch (Exception)
+        {
+            // Guncelleme kontrolu bir kolaylik, korumanin parcasi degil:
+            // basarisiz olmasi kullaniciya hata olarak gosterilmemeli.
+        }
+    }
+
     private async Task SaveReportAsync()
     {
         try

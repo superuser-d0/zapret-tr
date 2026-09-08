@@ -29,6 +29,17 @@ public sealed class AppConfig
 
     [JsonPropertyName("customTarget")]
     public string? CustomTarget { get; set; }
+
+    /// <summary>Acilista yeni surum var mi diye sorulsun mu.</summary>
+    /// <remarks>
+    /// Uygulamanin disari istek yapan TEK yeri bu ve kapatilabilir olmasi sart:
+    /// engellemenin konu oldugu bir arac, kullanicinin haberi olmadan ag istegi
+    /// yapmamali. Varsayilan ACIK, cunku gunde birkac surum cikabiliyor ve
+    /// kullaniciya ulasmayan bir duzeltme ise yaramiyor -- ama ne gonderildigi
+    /// (yalnizca "en son surum ne" sorusu) README'de ve bu yorumda yazili.
+    /// </remarks>
+    [JsonPropertyName("updateCheckEnabled")]
+    public bool UpdateCheckEnabled { get; set; } = true;
 }
 
 /// <summary>

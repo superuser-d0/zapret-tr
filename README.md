@@ -128,6 +128,13 @@ yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa ş
 ```
 Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
+**Uygulama internete bir şey gönderiyor mu?** Ölçüm sonuçları, seçtiğiniz strateji ve
+raporlar **yalnızca diske** yazılır. Dışarı yapılan tek istek güncelleme kontrolüdür:
+açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir şey yok —
+ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. İstemezseniz
+`%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
+yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
+
 ### Bağlantı ya da ağ değiştirdiğinizde
 
 **WiFi ile Ethernet arasında geçiş yaparsam yeniden test gerekir mi?** Aynı modeme bağlı
@@ -280,7 +287,8 @@ tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız
 
 Bu hatlardan birindeyseniz yapmanız gereken tek şey var: uygulamayı kurup **Parametre Testi**'ni
 çalıştırmak ve sonucu [bir issue'da](https://github.com/superuser-d0/zapret-tr/issues)
-paylaşmak. Test hiçbir yere veri göndermiyor; neyi paylaşacağınıza siz karar veriyorsunuz.
+paylaşmak. Test hiçbir yere veri göndermiyor; neyi paylaşacağınıza siz karar
+veriyorsunuz.
 
 Aynı sağlayıcı içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
 aldık (birinde düz HTTP engelliydi, diğerinde değildi). Yani "profil var" demek "sizde çalışır"

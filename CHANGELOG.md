@@ -8,6 +8,30 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.15]
+
+### Eklendi
+
+- **Güncelleme bildirimi.** Açılışta yeni sürüm var mı diye bakılıyor; varsa
+  arayüzde bir satır ve günlükte indirme adresi görünüyor. Sebebi somut: bazı
+  günler birkaç sürüm çıkıyor ve her seferinde test kullanıcılarına tek tek "şunu
+  kur" demek gerekiyordu — kullanıcıya ulaşmayan bir düzeltme işe yaramıyor.
+
+  **Bu, uygulamanın dışarı istek yapan tek yeri** ve saklanacak bir şey değil:
+  GitHub'a yalnızca "en son sürüm ne" sorusu gidiyor. Hattınız, stratejiniz ya da
+  ölçüm sonuçlarınız **gönderilmiyor**. `config.json` içindeki `updateCheckEnabled`
+  değeri `false` yapılırsa uygulama hiçbir ağ isteği yapmaz.
+
+  Sürüm karşılaştırması metin değil sayı olarak yapılıyor. Metin karşılaştırması
+  sessizce yanlış sonuç verirdi: "0.1.9" ile "0.1.14" karşılaştırıldığında metin
+  sırası 0.1.9'u sonraya koyar ve bildirim hiç görünmezdi — hata da vermezdi.
+
+### Değişti
+
+- README ve yayın notundaki "hiçbir veri dışarı gönderilmez" ifadesi güncellendi.
+  Güncelleme kontrolü eklendiği için o cümle artık tam doğru değildi; ne
+  gönderildiği ve nasıl kapatılacağı açıkça yazıldı.
+
 ## [0.1.14]
 
 ### Düzeltildi

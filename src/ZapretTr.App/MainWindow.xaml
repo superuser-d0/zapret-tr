@@ -161,6 +161,19 @@
 
         <!-- ================= DIGER ISLEMLER ================= -->
         <StackPanel Grid.Row="4">
+            <!-- Yeni surum varsa: gorulur ama rahatsiz etmeyen bir satir. -->
+            <Border Background="#FFF8E1" BorderBrush="#FFE0A3"
+                    BorderThickness="1" CornerRadius="4" Padding="10,7"
+                    Margin="0,0,0,10"
+                    Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding UpdateMessage}" FontWeight="SemiBold"
+                               TextWrapping="Wrap" Foreground="#7A5A00" />
+                    <TextBlock Text="github.com/superuser-d0/zapret-tr/releases"
+                               FontSize="11" Foreground="#8A6D3B" TextWrapping="Wrap"
+                               Margin="0,3,0,0" />
+                </StackPanel>
+            </Border>
             <Button Content="{Binding ServiceButtonText}"
                     Command="{Binding ServiceCommand}"
                     Style="{StaticResource ActionButton}"

@@ -31,7 +31,10 @@ elle de geri alınabilir.
 **Ne yaptığı ve yapmadığı:** ZapretTR paketleri kendisi kurcalamaz; bunu
 [bol-van/zapret](https://github.com/bol-van/zapret) projesinin `winws` motoru yapar.
 ZapretTR o motoru yöneten arayüz ve çalışan parametreyi otomatik bulan test
-katmanıdır. Hiçbir veri dışarı gönderilmez; test raporu yalnızca diske yazılır.
+katmanıdır. Ölçüm sonuçları ve raporlar yalnızca diske yazılır, hiçbir yere
+gönderilmez. Uygulamanın dışarı yaptığı tek istek güncelleme kontrolü: açılışta
+GitHub'a "en son sürüm ne" diye sorar, başka hiçbir şey göndermez ve ayarlardan
+kapatılabilir.
 
 ## Doğrulama durumu
 
