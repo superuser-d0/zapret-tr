@@ -237,6 +237,44 @@ onları buldu; elle sayım eksik kalmıştı.
 
 ## Tuzaklar — hepsi bir kez ısırdı
 
+**Birim testleri kurulum katmanını hiç görmüyordu; oradaki iki hatayı da kullanıcı
+buldu (0.1.10 sonrası eklendi).** 2026-09-08 günü bulunan dört kullanıcı-etkileyen
+hatanın **hiçbirini** 125 birim testi yakalamadı — dördü de gerçek kullanımda çıktı.
+İkisi doğrudan kurulum akışında yaşıyordu: yükseltmenin servisi sessizce silmesi ve
+servis kuruluyken "Başlat"ın ölümcül hata vermesi. İkisi de ancak gerçek bir
+kurulum → servis kur → yükselt → kaldır dizisinde ortaya çıkıyor, ve o dizi CI'da
+hiç koşmuyordu: `release.yml` paketi yalnızca **üretiyordu**, kurmuyordu.
+
+`.github/workflows/installer-test.yml` bu boşluğu kapatıyor. Üç şeyi bilerek yapıyor:
+
+- **Şifreli DNS KAPALI** (`secureDnsEnabled=false`). Açık olsaydı servis kurulumu
+  runner'ın sistem DNS'ini `127.0.0.1`'e çevirirdi; dnscrypt orada cevap vermezse iş
+  ağ erişimini kaybedip asılı kalırdı — CI'nin kendi ayağını kesmesi. Kısıt bedava bir
+  kazanç da getirdi: "DNS kapalıyken `ZapretTR-DNS` kurulmamalı" artık sınanıyor.
+- **`winws` kurulur kurulmaz durduruluyor.** Ölçülen şey servisin VARLIĞI, çalışıp
+  çalışmadığı değil; çalışır bırakmak runner'ın kendi 80/443 trafiğini kurcalar.
+- **Temizlik `if: always()`.** İş hangi adımda düşerse düşsün kalıntı bir sürücü ya da
+  servis sonraki koşumları da bozardı.
+
+**İlk koşum düştü ama sebep testin bulduğu bir hata değildi — testin kendi
+raporlamasıydı.** Adım `sc.exe query` ile bitiyordu; servis yokken o komut `1060`
+döndürüyor ve `pwsh -Command`, script'in çıkış kodu olarak son YEREL komutunkini
+yansıtıyor. Yani test, "temiz kurulumda servis olmamalı" kontrolünü **doğrulayarak
+geçtiği için** başarısız sayıldı. Teşhisi veren ayrıntı: temizlik adımının ortamında
+`kaldirici` değeri görünüyordu, o da ancak bütün kontroller geçtikten sonra yazılıyor —
+yani hiçbir `throw` çalışmamıştı. Kural: **CI adımlarında `sc.exe` gibi yerel komutların
+çıkış kodu adımın çıkış koduna sızmamalı**; sorgu `$LASTEXITCODE`'u sıfırlayan bir
+yardımcıdan geçmeli ve adım `exit 0` ile bitmeli. Başarısızlık `throw` ile bildirilir.
+
+**Test mutasyonla doğrulandı — geçen bir test, işe yaradığını kanıtlamaz.**
+`test/regresyon-dogrulama` dalında `setup.iss`'teki `CurStepChanged` (servisi geri
+kuran blok) kaldırılıp paket 0.1.8 öncesi bozuk haline döndürüldü. Sonuç tam
+beklendiği gibi: önceki adımların hepsi geçti, "servis yükseltmeden sağ çıktı mı"
+adımı `REGRESYON: otomatik baslatma servisi yukseltmede kayboldu.` diyerek düştü.
+Dal sonra silindi. **Yeni bir CI kontrolü eklerken bunu tekrarla**: kontrolü
+yakalaması gereken hatayı bir dalda geri getir, düştüğünü gör, dalı sil. Aksi halde
+hiçbir şeyi kontrol etmeyen bir adım da yeşil görünür.
+
 **DNS yalnızca o an bağlı arayüze yazılıyordu; ikinci ağa geçince koruma yarım
 kalıyordu (0.1.9).** Arayüz seçimi "çalışan + varsayılan ağ geçidi olan" idi.
 Kablo takılıyken kurulum yapan makinede WiFi `Disconnected`, dolayısıyla atlanıyor;
@@ -660,6 +698,13 @@ sunucu tarafı sebeplerle de başarısız olabilir ve bu DPI'a yazılırdı.
 ---
 
 ## Komutlar
+
+```bash
+# Kurulum testini elle kostur (main disi bir dalda da calisir).
+# Yeni bir CI kontrolu eklerken: kontrolun yakalamasi gereken hatayi bir dalda
+# geri getir, bu isi o dalda kostur, DUSTUGUNU gor, sonra dali sil.
+gh workflow run installer-test.yml --ref <dal>
+```
 
 ```
 # upstream ikilileri (winws + dnscrypt-proxy)
