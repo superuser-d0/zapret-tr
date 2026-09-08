@@ -1,11 +1,24 @@
-ZapretTR - Superonline test paketi
-==================================
+ZapretTR - saha testi paketi
+============================
 
 Merhaba, ve yardimin icin tesekkurler.
 
-Bu, Superonline hattinda hangi internet engellemelerinin nasil asilabildigini
+Bu, SENIN hattinda hangi internet engellemelerinin nasil asilabildigini
 olcen bir test araci. Kurulum yok, kayit yok, hicbir sey gondermiyor. Calisiyor,
 olcuyor, sonucu bir dosyaya yaziyor. O kadar.
+
+BU DOSYA NE DEGIL
+-----------------
+
+Bu paket internetini ACMAZ. Koruma saglamaz, arka planda calismaz, bilgisayar
+yeniden baslayinca devreye girmez. Yaptigi tek sey OLCMEK: hangi teknik
+parametrenin senin hattinda ise yaradigini bulup bir rapor dosyasina yazmak.
+
+Kendi internetini acmak istiyorsan bu degil, KURULUM PAKETI lazim:
+ZapretTR-Setup-<surum>.exe. O, bulunan parametreyi kalici olarak uygular.
+
+Bu paket, engellemenin bilinmeyen bir hatta (baska bir servis saglayici, baska
+bir sehir) nasil davrandigini olcmek icin var. Yani bize veri toplamak icin.
 
 
 NASIL CALISTIRILIR
@@ -22,7 +35,7 @@ NASIL CALISTIRILIR
 4. Test 2-5 dakika surer. Bu sirada internetin kisa sureli kesilip acilabilir,
    normal. Sayfalar acilmazsa panige gerek yok, test bitince duzelir.
 
-5. Bitince klasorde  superonline-rapor.json  diye bir dosya olusacak.
+5. Bitince klasorde  zapret-tr-rapor.json  diye bir dosya olusacak.
    Onu bana geri gonder.
 
 6. Son olarak  TEMIZLIK.bat  dosyasina cift tikla. Bu, testin yukledigi
@@ -71,7 +84,7 @@ RAPORDA NE VAR, NE YOK
 ----------------------
 
 VAR:
-  - Servis saglayici adi (Superonline)
+  - Servis saglayici adi (or. Turk Telekom, Superonline)
   - Test edilen adresler (discord.com, youtube.com gibi bilinen siteler)
   - Denenen teknik parametreler ve her birinin sonucu
   - Sureler

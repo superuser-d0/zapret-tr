@@ -405,6 +405,16 @@ public static class SystemDnsManager
     private static bool IsOfflinePhysical(NetworkInterface nic)
         => IsOfflinePhysical(nic.OperationalStatus, nic.NetworkInterfaceType);
 
+    /// <summary>Bu arayuzun DNS'i cevrilecek mi.</summary>
+    /// <remarks>
+    /// Disari aciliyor cunku bu kararin GERCEK makinede ne verdigi, tek basina
+    /// birim testiyle ogrenilemiyor: arayuz listesi isletim sisteminden geliyor.
+    /// Hicbir sey degistirmeden "hangi kartlar secilirdi" diye sorabilmek,
+    /// sessizce yanlis secim yapan bir hatanin tekrarini onluyor.
+    /// </remarks>
+    public static bool IsRedirectTarget(NetworkInterface nic)
+        => IsOnlineWithGateway(nic) || IsOfflinePhysical(nic);
+
     private static DnsBackupEntry Capture(NetworkInterface nic)
     {
         var addresses = nic.GetIPProperties().DnsAddresses

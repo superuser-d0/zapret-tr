@@ -703,14 +703,35 @@ if (missing.Count > 0)
 }
 
 // --- ISS secimi -------------------------------------------------------------
+//
+// "auto", saha paketi icin var. Paket herkese acik yayinlaniyor ve indiren
+// kisinin hangi ISS'te oldugunu bilmiyoruz; sabit bir ISS yazmak, baska bir
+// hattaki kullanicinin testini YANLIS profille baslatir (Tier 1 alakasiz
+// adaylari once dener, butce onlara harcanir). Tespit basarisiz olursa hata
+// degil: genel aramaya duserek test yine calisir.
 IspProfile? profile = null;
-if (options.IspId is not null)
+if (string.Equals(options.IspId, "auto", StringComparison.OrdinalIgnoreCase))
+{
+    Console.WriteLine("Servis sağlayıcı tespit ediliyor...");
+    using var autoDetector = new IspDetector();
+    var autoDetection = await autoDetector.DetectAsync(profiles);
+
+    // Birden fazla profil eslesirse ilki aliniyor: siralama en iyi eslesme
+    // once. Yanlis secim olumcul degil -- kazanan bulunamazsa arama zaten
+    // diger profillere ve genel merdivene geciyor.
+    profile = autoDetection.Matches.Count > 0 ? autoDetection.Matches[0] : null;
+
+    Console.WriteLine(profile is null
+        ? "Hat tanınmadı; genel aramayla devam edilecek."
+        : $"Tespit edildi: {profile.DisplayName}");
+}
+else if (options.IspId is not null)
 {
     profile = profiles.FindById(options.IspId);
     if (profile is null)
     {
         Console.Error.WriteLine($"Bilinmeyen servis sağlayıcı: {options.IspId}");
-        Console.Error.WriteLine("Mevcut olanlar: " + string.Join(", ", profiles.Profiles.Select(p => p.Id)));
+        Console.Error.WriteLine("Mevcut olanlar: auto, " + string.Join(", ", profiles.Profiles.Select(p => p.Id)));
         return 4;
     }
 }
@@ -1230,7 +1251,8 @@ internal sealed record CliOptions(
         Console.WriteLine();
         Console.WriteLine("ZapretTR parametre testi");
         Console.WriteLine();
-        Console.WriteLine("  --isp <id>              Servis sağlayıcı profili (ör. superonline, turk-telekom)");
+        Console.WriteLine("  --isp <id|auto>         Servis sağlayıcı profili (ör. turk-telekom).");
+        Console.WriteLine("                          auto = hattan tespit et, tanınmazsa genel arama.");
         Console.WriteLine("  --target <adres>        Sizde açılmayan bir adres ekler. Birden fazla verilebilir.");
         Console.WriteLine("                          Hangi bölüme yazılacağı --section ile belirlenir (varsayılan tcp443).");
         Console.WriteLine("  --baseline-only         Yalnızca neyin engelli olduğunu ölçer, winws başlatmaz.");

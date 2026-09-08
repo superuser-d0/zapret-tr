@@ -42,7 +42,13 @@ sonraki açılışta hazır hale getirir.
 
 ## Dosyalar
 
-- `ZapretTR-Setup-<sürüm>.exe` — kurulum paketi (kendi kendine yeten).
-- `zapret-tr-saha-testi.zip` — taşınabilir test aracı; hiçbir şey kurmaz,
-  `--cleanup` ile kendini temizler.
+- **`ZapretTR-Setup-<sürüm>.exe` — istediğiniz dosya bu.** Kurulum paketi;
+  kendi kendine yeten, çalışan parametreyi bulup kalıcı olarak uygular.
+- `zapret-tr-saha-testi.zip` — **son kullanıcı için değil.** İnternetinizi açmaz,
+  koruma sağlamaz, arka planda çalışmaz. Yaptığı tek şey ölçmek: hangi
+  parametrenin o hatta işe yaradığını bulup bir rapor dosyasına yazar. Henüz
+  ölçmediğimiz bir bağlantıda (başka bir servis sağlayıcı, başka bir şehir)
+  engellemenin nasıl davrandığını öğrenmek için var — yani veri toplamak için.
+  Yardım etmek isterseniz raporu bize iletebilirsiniz; hiçbir şeyi kendisi
+  göndermez, sadece diske yazar.
 - `SHA256SUMS.txt` — yukarıdaki dosyaların özetleri.

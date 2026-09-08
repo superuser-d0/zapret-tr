@@ -26,6 +26,16 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   Yedek artık yeni arayüzleri kapsayacak şekilde genişletiliyor; mevcut kayıtların
   üzerine yazılmıyor, çünkü bizim koyduğumuz `127.0.0.1` "orijinal" diye
   kaydedilirse geri dönüş yolu tamamen kaybolur.
+- **Saha testi paketi tek bir servis sağlayıcıya sabitlenmişti.** Paket her yayında
+  herkese açık duruyordu ama içinde `--isp superonline` yazıyordu: başka bir hattan
+  indiren kişi **yanlış profille** test ediyor, aday bütçesi alakasız parametrelere
+  harcanıyor ve rapor `superonline-rapor.json` adıyla çıkıyordu. Paket artık
+  `--isp auto` kullanıyor — hat tespit ediliyor, tanınmazsa genel aramaya düşüyor.
+  (CLI'ye `--isp auto` desteği bunun için eklendi.)
+- **Saha paketinin ne olduğu yanlış anlaşılıyordu.** Yayın sayfasında kurulum
+  paketinin hafif bir alternatifi gibi duruyordu; değil — internet açmaz, koruma
+  sağlamaz, yalnızca ölçüm yapıp rapor yazar. Hem yayın notunda hem paketin içindeki
+  açıklamada bu artık en başta söyleniyor.
 
 **Not:** Kurulumdan sonra takılan yeni bir adaptör (ör. USB WiFi) hâlâ kapsam
 dışında. Onun için uygulamayı açıp servisi bir kez yeniden kurmak gerekiyor.

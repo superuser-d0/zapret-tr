@@ -99,7 +99,7 @@ Copy-Item $DnsCryptDir (Join-Path $PackageDir 'dnscrypt-proxy') -Recurse
 $startBat = @'
 @echo off
 chcp 65001 >nul
-title ZapretTR - Superonline saha testi
+title ZapretTR - saha testi
 
 net session >nul 2>&1
 if %errorlevel% neq 0 (
@@ -109,11 +109,11 @@ if %errorlevel% neq 0 (
 )
 
 cd /d "%~dp0"
-zapret-tr-test.exe --isp superonline --doh --max-candidates 25 --out "superonline-rapor.json"
+zapret-tr-test.exe --isp auto --doh --max-candidates 25 --out "zapret-tr-rapor.json"
 
 echo.
 echo ============================================================
-echo  Test bitti. Sonuc dosyasi: superonline-rapor.json
+echo  Test bitti. Sonuc dosyasi: zapret-tr-rapor.json
 echo  Bu klasorde olusan bu dosyayi geri gonderin.
 echo.
 echo  Suruculeri kaldirmak icin TEMIZLIK.bat dosyasini calistirin.
