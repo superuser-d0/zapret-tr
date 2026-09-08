@@ -8,6 +8,28 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.9]
+
+### Düzeltildi
+
+- **Şifreli DNS yalnızca o an bağlı olan arayüze uygulanıyordu.** Kablo takılıyken
+  kurulum yapan bir kullanıcıda WiFi `Disconnected` olduğu için atlanıyordu; sonra
+  kabloyu çıkarıp WiFi'ye geçince o arayüzün DNS'i İSS'in sunucusunda kalıyor ve
+  **DNS engellemesi geri geliyordu**. Belirtisi de yok: `winws` çalışmaya devam
+  ettiği için arayüz "KORUMA AKTİF" gösteriyor, devrede olmayan şey şifreli DNS.
+  Gerçek bir makinede ölçüldü — `Ethernet → 127.0.0.1`, `WiFi → 192.168.8.10`.
+  Artık şu an bağlı olmayan Ethernet/WiFi kartlarına da yazılıyor: ayar kalıcı,
+  arayüz bağlanınca geçerli oluyor.
+- **Yedek, sonradan eklenen arayüzü kapsamıyordu.** Yönlendirme genişleyince eski
+  yedekte olmayan bir karta yazılabiliyordu; geri alma onu atlar, DNS'i
+  `127.0.0.1`'de kalır ve kaldırmadan sonra o bağlantıda **hiçbir ad çözülmezdi**.
+  Yedek artık yeni arayüzleri kapsayacak şekilde genişletiliyor; mevcut kayıtların
+  üzerine yazılmıyor, çünkü bizim koyduğumuz `127.0.0.1` "orijinal" diye
+  kaydedilirse geri dönüş yolu tamamen kaybolur.
+
+**Not:** Kurulumdan sonra takılan yeni bir adaptör (ör. USB WiFi) hâlâ kapsam
+dışında. Onun için uygulamayı açıp servisi bir kez yeniden kurmak gerekiyor.
+
 ## [0.1.8]
 
 ### Düzeltildi

@@ -138,33 +138,66 @@ public static class SystemDnsManager
     {
         ElevationGuard.EnsureElevated();
 
-        var interfaces = GetActiveInterfaces();
-        if (interfaces.Count == 0)
+        var targets = GetRedirectTargets();
+
+        // Su an internete cikan bir arayuz yoksa yapilacak anlamli bir sey yok:
+        // yalnizca bagli olmayan kartlara yazip "DNS cevrildi" demek yanlis olur.
+        if (!targets.Any(t => t.Required))
         {
             throw new InvalidOperationException(
                 "Varsayilan ag gecidi olan bir arayuz bulunamadi; DNS degistirilmedi.");
         }
 
-        // Zaten bir yedek varsa uzerine YAZMIYORUZ: ikinci kez cagrilirsa mevcut
-        // (bizim koydugumuz 127.0.0.1) degeri "orijinal" diye kaydeder ve geri
-        // donus yolu tamamen kaybolurdu.
-        if (!HasBackup)
-        {
-            var backup = new DnsBackup
-            {
-                CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
-                Owner = owner,
-                Entries = interfaces.Select(Capture).ToList(),
-            };
+        // Mevcut bir yedegin uzerine YAZMIYORUZ: ikinci kez cagrilirsa bizim
+        // koydugumuz 127.0.0.1 degerini "orijinal" diye kaydeder ve geri donus
+        // yolu tamamen kaybolurdu.
+        //
+        // Ama yedegin VARLIGI da yetmiyor: yedekte olmayan bir arayuze yazacaksak
+        // onu yedege EKLEMEK zorundayiz. Aksi halde geri alma o arayuzu atlar,
+        // DNS'i 127.0.0.1'de kalir ve kaldirmadan sonra o baglantida hicbir ad
+        // cozulmez. Kablo takiliyken kurup sonra WiFi'ye gecen kullanicida tam
+        // olarak bu oluyordu: WiFi yeni hedefe girdi ama eski yedekte yoktu.
+        var existing = await ReadBackupAsync(cancellationToken).ConfigureAwait(false);
 
-            Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
-            await File.WriteAllTextAsync(
-                BackupPath, JsonSerializer.Serialize(backup, CoreJsonContext.Default.DnsBackup), cancellationToken)
-                .ConfigureAwait(false);
+        if (existing is null)
+        {
+            await WriteBackupAsync(
+                new DnsBackup
+                {
+                    CreatedAt = DateTimeOffset.UtcNow.ToString("O"),
+                    Owner = owner,
+                    Entries = targets.Select(t => Capture(t.Nic)).ToList(),
+                },
+                cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            var bilinen = existing.Entries
+                .Select(e => e.Guid)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var eksik = targets
+                .Where(t => !bilinen.Contains(t.Nic.Id))
+                .Select(t => Capture(t.Nic))
+                .ToList();
+
+            if (eksik.Count > 0)
+            {
+                await WriteBackupAsync(
+                    new DnsBackup
+                    {
+                        // Sahip ve tarih KORUNUYOR: yonlendirmeyi kimin yaptigi
+                        // degismedi, yalnizca kapsami genisledi.
+                        CreatedAt = existing.CreatedAt,
+                        Owner = existing.Owner,
+                        Entries = [.. existing.Entries, .. eksik],
+                    },
+                    cancellationToken).ConfigureAwait(false);
+            }
         }
 
         var changed = new List<string>();
-        foreach (var nic in interfaces)
+        foreach (var (nic, required) in targets)
         {
             var (exitCode, output) = await RunNetshAsync(
                 ["interface", "ipv4", "set", "dnsservers", $"name={nic.Name}", "source=static",
@@ -174,12 +207,19 @@ public static class SystemDnsManager
             if (exitCode == 0)
             {
                 changed.Add(nic.Name);
+                continue;
             }
-            else
+
+            // Bagli olmayan bir kartta netsh basarisiz olabiliyor. Bunun yuzunden
+            // tum islemi dusurmek, KULLANILAN arayuzu zaten cevirmisken kullaniciyi
+            // hata ekranina goturmek olurdu -- kazanilani kaybettirmeden gec.
+            if (!required)
             {
-                throw new InvalidOperationException(
-                    $"'{nic.Name}' arayuzunun DNS ayari degistirilemedi: {output.Trim()}");
+                continue;
             }
+
+            throw new InvalidOperationException(
+                $"'{nic.Name}' arayuzunun DNS ayari degistirilemedi: {output.Trim()}");
         }
 
         return changed;
@@ -273,15 +313,97 @@ public static class SystemDnsManager
         return await RestoreAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Varsayilan ag gecidi olan, calisan IPv4 arayuzleri.</summary>
-    private static List<NetworkInterface> GetActiveInterfaces()
+    /// <summary>Diskteki yedegi okur; yoksa ya da bozuksa <c>null</c> doner.</summary>
+    /// <remarks>
+    /// Bozuk yedek burada <c>null</c> sayilmiyor -- <c>null</c> donmek cagiranin
+    /// uzerine yeni bir yedek yazmasina yol acar ve o an DNS bizde ise 127.0.0.1
+    /// "orijinal" olarak kaydedilir. Bozuk dosya bilerek hata olarak yukseliyor.
+    /// </remarks>
+    private static async Task<DnsBackup?> ReadBackupAsync(CancellationToken cancellationToken)
+    {
+        if (!HasBackup)
+        {
+            return null;
+        }
+
+        var json = await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false);
+        return JsonSerializer.Deserialize(json, CoreJsonContext.Default.DnsBackup)
+               ?? throw new InvalidOperationException(
+                   $"DNS yedegi okunamadi: {BackupPath}. Elle geri almak icin --cleanup kullanin.");
+    }
+
+    private static async Task WriteBackupAsync(DnsBackup backup, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
+        await File.WriteAllTextAsync(
+            BackupPath,
+            JsonSerializer.Serialize(backup, CoreJsonContext.Default.DnsBackup),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>DNS yonlendirmesi uygulanacak bir arayuz ve zorunlulugu.</summary>
+    /// <param name="Required">
+    /// Su an internete cikan arayuz mu. Zorunlu bir arayuzde yazma basarisiz
+    /// olursa islem hata verir; istege bagli olanda yalnizca atlanir.
+    /// </param>
+    private readonly record struct RedirectTarget(NetworkInterface Nic, bool Required);
+
+    /// <summary>
+    /// DNS'i cevrilecek arayuzler: su an internete cikanlar VE su an bagli
+    /// olmayan fiziksel arayuzler.
+    /// </summary>
+    /// <remarks>
+    /// Eskiden yalnizca "calisan + varsayilan ag gecidi olan" arayuzler
+    /// aliniyordu. Kablo takiliyken kurulum yapan bir kullanicida WiFi
+    /// <c>Disconnected</c> oldugu icin atlaniyordu; sonra kabloyu cikarip WiFi'ye
+    /// gecince o arayuzun DNS'i ISS'in sunucusunda kaliyor ve DNS engellemesi
+    /// geri geliyordu. Belirtisi de yok: winws calismaya devam ettigi icin arayuz
+    /// "KORUMA AKTIF" gosteriyor, sifreli DNS ise devrede degil.
+    ///
+    /// Bu yuzden bagli olmayan Ethernet/WiFi arayuzlerine de simdiden yaziliyor:
+    /// ayar kalici, arayuz bagliginca gecerli oluyor. Yedek de onlari kapsiyor,
+    /// dolayisiyla geri alma simetrik kaliyor.
+    ///
+    /// Kapsam disinda kalan tek durum: kurulumdan SONRA takilan yeni bir adaptor
+    /// (or. USB WiFi). Onun icin uygulamayi acip servisi yeniden kurmak gerekir.
+    /// </remarks>
+    private static List<RedirectTarget> GetRedirectTargets()
         => NetworkInterface.GetAllNetworkInterfaces()
-            .Where(n => n.OperationalStatus == OperationalStatus.Up)
-            .Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-            .Where(n => n.GetIPProperties().GatewayAddresses
-                .Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
-                          && !g.Address.Equals(System.Net.IPAddress.Any)))
+            .Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback
+                        && n.NetworkInterfaceType != NetworkInterfaceType.Tunnel)
+            .Select(n => new RedirectTarget(n, IsOnlineWithGateway(n)))
+            .Where(t => t.Required || IsOfflinePhysical(t.Nic))
             .ToList();
+
+    private static bool IsOnlineWithGateway(NetworkInterface nic)
+        => nic.OperationalStatus == OperationalStatus.Up && HasIpv4Gateway(nic);
+
+    /// <summary>Ag gecidi olmayan sanal adaptorler (VM, tunel) burada elenir.</summary>
+    private static bool HasIpv4Gateway(NetworkInterface nic)
+        => nic.GetIPProperties().GatewayAddresses
+            .Any(g => g.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork
+                      && !g.Address.Equals(System.Net.IPAddress.Any));
+
+    /// <summary>
+    /// Su an bagli olmayan ama kullaniciyi internete cikarabilecek bir arayuz mu.
+    /// </summary>
+    /// <remarks>
+    /// Tur suzgeci kasitli olarak dar: sanal adaptorlerin cogu <c>Up</c> ve ag
+    /// gecidi olmadigi icin zaten eleniyor, buraya ancak gercekten bagli olmayan
+    /// bir kart giriyor. Bluetooth kisisel ag (PAN) da dahil -- telefondan
+    /// baglanti paylasan kullanicinin o baglantida da korunmasi gerekiyor.
+    /// </remarks>
+    public static bool IsOfflinePhysical(
+        OperationalStatus status, NetworkInterfaceType type)
+        => status != OperationalStatus.Up
+           && type is NetworkInterfaceType.Ethernet
+                  or NetworkInterfaceType.GigabitEthernet
+                  or NetworkInterfaceType.FastEthernetT
+                  or NetworkInterfaceType.FastEthernetFx
+                  or NetworkInterfaceType.Wireless80211;
+
+    private static bool IsOfflinePhysical(NetworkInterface nic)
+        => IsOfflinePhysical(nic.OperationalStatus, nic.NetworkInterfaceType);
 
     private static DnsBackupEntry Capture(NetworkInterface nic)
     {

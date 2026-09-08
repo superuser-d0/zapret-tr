@@ -237,6 +237,22 @@ onları buldu; elle sayım eksik kalmıştı.
 
 ## Tuzaklar — hepsi bir kez ısırdı
 
+**DNS yalnızca o an bağlı arayüze yazılıyordu; ikinci ağa geçince koruma yarım
+kalıyordu (0.1.9).** Arayüz seçimi "çalışan + varsayılan ağ geçidi olan" idi.
+Kablo takılıyken kurulum yapan makinede WiFi `Disconnected`, dolayısıyla atlanıyor;
+kullanıcı WiFi'ye geçtiğinde o arayüzün DNS'i İSS'te kalıyor ve DNS engellemesi
+geri geliyor. **Arayüz yine "KORUMA AKTİF" gösteriyor** — çünkü `winws` gerçekten
+çalışıyor; devrede olmayan şey yalnızca şifreli DNS. İki katmanlı bir korumada bir
+katmanın sessizce düşmesi, tek katmanın hiç çalışmamasından daha kötü: kullanıcı
+korunduğunu sanıyor.
+
+Bunu düzeltirken ikinci bir tuzak çıktı: **yönlendirmenin kapsamını genişletmek,
+yedeğin kapsamını genişletmez.** Eski yedekte olmayan bir karta yazınca geri alma
+onu atlıyor, DNS `127.0.0.1`'de kalıyor ve kaldırmadan sonra o bağlantıda hiçbir ad
+çözülmüyor — projedeki en kötü sonuç. Kural: **yönlendirilen her arayüz yedekte
+olmak zorunda**, ama mevcut kayıtların üzerine asla yazılmamalı (bizim koyduğumuz
+`127.0.0.1` "orijinal" diye kaydedilirse geri dönüş yolu tamamen kaybolur).
+
 **Kurulum, söktüğü servisi geri kurmuyordu — belirtisi olmayan bir hata (0.1.8).**
 Yükseltme sırasında servisler sökülmek ZORUNDA: çalışan `winws` sürücüyü, dolayısıyla
 `WinDivert64.sys`'i kilitliyor ve dosya değiştirilemiyor. Sökme vardı, geri kurma yoktu.
