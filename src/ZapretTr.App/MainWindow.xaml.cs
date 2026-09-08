@@ -15,30 +15,67 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _cleanupRan;
 
+    /// <summary>
+    /// Kullanici GERCEKTEN cikmak istiyor mu ("Çıkış" dugmesi ya da tepsi menusu).
+    /// </summary>
+    /// <remarks>
+    /// X dugmesiyle ayrimin tek yolu bu bayrak: WPF ikisini de ayni Closing
+    /// olayiyla bildiriyor.
+    /// </remarks>
+    private bool _exitRequested;
+
+    private TrayIcon? _tray;
+
     public MainWindow()
     {
         InitializeComponent();
         Closing += OnClosingAsync;
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _tray = new TrayIcon(this);
+        _tray.ExitRequested += (_, _) => Cik();
+
+        if (DataContext is MainViewModel viewModel)
+        {
+            viewModel.ExitRequested += (_, _) => Cik();
+        }
+    }
+
+    /// <summary>Gercek cikis: temizlik kossun ve uygulama kapansin.</summary>
+    private void Cik()
+    {
+        _exitRequested = true;
+        _tray?.Goster();
+        Close();
     }
 
     /// <summary>
-    /// Pencere kapanirken winws'i durdurur ve sistem DNS'ini geri alir.
+    /// X ile kapatmak uygulamayi sonlandirmaz, bildirim alanina indirir.
     /// </summary>
     /// <remarks>
-    /// Bu isleyici olmadan pencereyi X ile kapatmak HICBIR SEY temizlemiyordu:
-    /// temizlik yalnizca "Çıkış" dugmesinin icindeydi. Gercek makinede olculdu --
-    /// koruma acikken pencere kapatildi, winws ve dnscrypt-proxy oksuz kaldi,
-    /// sistem DNS'i 127.0.0.1'de kaldi ve DNS yedegi diskte "geri alinmamis"
-    /// olarak durdu. dnscrypt sonradan olurse makine hicbir adi cozemez.
+    /// Kullanicinin istedigi davranis: koruma acikken pencereyi kapatmak
+    /// korumayi da kapatiyordu. Simdi X yalnizca pencereyi gizliyor; winws ve
+    /// dnscrypt calismaya devam ediyor. Uygulamayi gercekten sonlandirmak
+    /// "Çıkış" dugmesiyle ya da tepsi menusuyle yapiliyor.
     ///
-    /// Kapanma once IPTAL ediliyor cunku temizlik asenkron ve pencere kapanma
-    /// isleyicisi beklenemez; temizlik bitince Close() yeniden cagriliyor ve bu
-    /// sefer isleyici yol veriyor.
+    /// Temizlik SADECE gercek cikista kosuyor. X'te de kosursa, gizlenen
+    /// uygulama korumayi kapatmis olurdu -- yani ozelligin amacinin tam tersi.
     /// </remarks>
     private async void OnClosingAsync(object? sender, CancelEventArgs e)
     {
+        if (!_exitRequested)
+        {
+            e.Cancel = true;
+            _tray?.Gizle();
+            return;
+        }
+
         if (_cleanupRan)
         {
+            _tray?.Dispose();
             return;
         }
 

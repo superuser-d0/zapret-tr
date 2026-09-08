@@ -1061,7 +1061,7 @@ try
     {
         WriteReport(options.OutputPath, report, profile);
         Console.WriteLine();
-        Console.WriteLine("Rapor yazıldı: " + options.OutputPath);
+        Console.WriteLine("Rapor yazıldı: " + MutlakYol(options.OutputPath));
     }
 
     Console.WriteLine();
@@ -1077,8 +1077,66 @@ catch (Exception ex)
     Console.Error.WriteLine();
     Console.Error.WriteLine("Test sırasında hata: " + ex.Message);
     Console.Error.WriteLine(ex.StackTrace);
+
+    // Hata raporu da bir rapordur. Eskiden bu yolda HICBIR dosya
+    // yazilmiyordu: test patlayinca kullanicinin elinde gonderecek bir sey
+    // kalmiyor, "test yaptim ama json olusmadi" diyordu -- ve neyin
+    // patladigini kimse ogrenemiyordu. Saha paketinin tek isi veri
+    // toplamak; en cok da is ters gittiginde veri gerekiyor.
+    if (options.OutputPath is not null)
+    {
+        WriteFailureReport(options.OutputPath, ex);
+    }
+
     return 5;
 }
+
+/// <summary>Test patladiginda ne olduguna dair bir dosya birakir.</summary>
+static void WriteFailureReport(string path, Exception ex)
+{
+    try
+    {
+        var tam = MutlakYol(path);
+        var govde = new System.Text.StringBuilder();
+        govde.AppendLine("{");
+        govde.AppendLine("  \"sonuc\": \"hata\",");
+        govde.AppendLine("  \"tarih\": \"" + DateTimeOffset.Now.ToString("O") + "\",");
+        govde.AppendLine("  \"hata\": \"" + JsonKacir(ex.Message) + "\",");
+        govde.AppendLine("  \"tur\": \"" + ex.GetType().Name + "\"");
+        govde.AppendLine("}");
+
+        File.WriteAllText(tam, govde.ToString());
+
+        Console.Error.WriteLine();
+        Console.Error.WriteLine("Hata raporu yazıldı: " + tam);
+        Console.Error.WriteLine("Bu dosyayı gönderirseniz sorunun sebebini bulabiliriz.");
+    }
+    catch (Exception yazmaHatasi)
+    {
+        Console.Error.WriteLine("Hata raporu yazılamadı: " + yazmaHatasi.Message);
+    }
+}
+
+/// <summary>Bir dizgiyi JSON degeri olarak guvenli hale getirir.</summary>
+/// <remarks>
+/// JsonSerializer yerine elle: serializer yansima gerektiriyor ve kirpma
+/// analizoru bunu hakli olarak reddediyor (paket kirpilmis yayinlaniyor).
+/// Tek bir hata mesajini kacirmak icin o makineye gerek yok.
+/// </remarks>
+static string JsonKacir(string metin)
+    => metin
+        .Replace("\\", "\\\\", StringComparison.Ordinal)
+        .Replace("\"", "\\\"", StringComparison.Ordinal)
+        .ReplaceLineEndings(" ");
+
+/// <summary>Goreli yolu mutlaklastirir.</summary>
+/// <remarks>
+/// Kullaniciya HANGI dosyayi gonderecegini soylemek icin tam yol sart:
+/// "zapret-tr-rapor.json" yazmak, dosyanin nerede olustugunu bilmeyen bir
+/// kisiye hicbir sey anlatmiyor.
+/// </remarks>
+static string MutlakYol(string path)
+    => Path.IsPathRooted(path) ? path : Path.GetFullPath(path);
 
 static void WriteReport(string path, ProbeReport report, IspProfile? profile)
 {

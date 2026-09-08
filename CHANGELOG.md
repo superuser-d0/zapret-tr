@@ -8,6 +8,36 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.13]
+
+### Eklendi
+
+- **Pencereyi kapatmak artık korumayı kapatmıyor.** X düğmesi uygulamayı saat
+  yanındaki bildirim alanına indiriyor; `winws` ve şifreli DNS çalışmaya devam
+  ediyor. Pencereyi geri getirmek için simgeye çift tıklayın. Uygulamayı gerçekten
+  sonlandırmak için **"Çıkış"** düğmesi ya da simgenin sağ tık menüsündeki "Çıkış".
+
+  İlk gizlemede bir bildirim baloncuğu çıkıyor — kullanıcı uygulamanın kapandığını
+  sanıp simgeyi aramazsa "kapatamıyorum" durumuna düşer.
+
+### Düzeltildi
+
+- **Saha testi paketi hata durumunda hiçbir dosya bırakmıyordu.** Test bir yerde
+  patlarsa hata ekrana yazılıp çıkılıyor, `--out` ile istenen JSON hiç
+  oluşturulmuyordu. Kullanıcının elinde gönderecek bir şey kalmıyor, neyin
+  patladığını da kimse öğrenemiyordu — paketin tek işi veri toplamak olduğu halde.
+  Artık hata durumunda da bir rapor yazılıyor (ne olduğu, hangi tür hata, ne zaman).
+
+- **Rapor yolu göreliydi.** "zapret-tr-rapor.json yazıldı" mesajı, dosyanın nerede
+  oluştuğunu bilmeyen birine hiçbir şey anlatmıyordu. Artık tam yol yazılıyor.
+
+### Doğrulama
+
+- Türk Telekom (AS9121) profili **ikinci bağımsız bir kullanıcıda daha** çalıştı.
+  Aynı sağlayıcıda üç ayrı hatta üç farklı davranış ölçmüştük; bu, profilin farklı
+  hatlarda tekrarlandığına dair ilk saha teyidi. Ölçüm raporu alınmadığı için
+  profildeki adaylar `verified` sayısını değiştirmiyor.
+
 ## [0.1.12]
 
 Bu sürümün tamamı tek bir saha raporundan çıktı. Bir kullanıcının makinesinde test

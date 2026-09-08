@@ -136,6 +136,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public RelayCommand PauseCommand { get; }
     public RelayCommand TestCommand { get; }
     public RelayCommand CancelTestCommand { get; }
+    /// <summary>Kullanici uygulamadan GERCEKTEN cikmak istedi.</summary>
+    /// <remarks>
+    /// Pencereyi kapatmak artik cikis anlamina gelmiyor (bildirim alanina
+    /// iniyor), bu yuzden niyetin ayrica duyurulmasi gerekiyor.
+    /// </remarks>
+    public event EventHandler? ExitRequested;
+
     public RelayCommand ResetCommand { get; }
 
     /// <summary>Gunlugu ve ortam ozetini bir dosyaya yazar.</summary>
@@ -1142,22 +1149,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// "Çıkış" dugmesi. Temizligi KENDISI yapmiyor: pencereyi kapatiyor ve temizlik
-    /// pencerenin kapanma yolunda calisiyor. Boylece dugme ile X ayni yoldan gecer --
-    /// ikisi ayri olunca biri temizlerken digeri temizlemiyordu.
+    /// "Çıkış" dugmesi. Temizligi KENDISI yapmiyor: cikis niyetini duyuruyor,
+    /// pencere kapaniyor ve temizlik pencerenin kapanma yolunda calisiyor.
     /// </summary>
+    /// <remarks>
+    /// Pencereyi burada KAPATMIYORUZ. X ile kapatmak artik uygulamayi bildirim
+    /// alanina indiriyor; "gercek cikis" ile "gizle" ayrimini yalnizca pencere
+    /// bilebilir, cunku WPF ikisini de ayni Closing olayiyla bildiriyor.
+    /// Gorunum modeli niyeti duyuruyor, karari pencere veriyor.
+    /// </remarks>
     private Task ExitAsync()
     {
-        var window = Application.Current?.MainWindow;
-        if (window is not null)
-        {
-            window.Close();
-        }
-        else
-        {
-            Application.Current?.Shutdown();
-        }
-
+        ExitRequested?.Invoke(this, EventArgs.Empty);
         return Task.CompletedTask;
     }
 

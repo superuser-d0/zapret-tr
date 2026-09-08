@@ -161,6 +161,18 @@ AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
 
 ### Discord
 
+### Pencereyi kapatınca ne oluyor
+
+**X düğmesi korumayı kapatmaz.** Uygulama saat yanındaki bildirim alanına iner;
+`winws` ve şifreli DNS çalışmaya devam eder. Pencereyi geri getirmek için simgeye
+çift tıklayın.
+
+**Tamamen kapatmak için Çıkış düğmesini** kullanın (ya da simgeye sağ tıklayıp
+Çıkış). O yol koruma açıksa `winws`i durdurur ve sistem DNS ayarını geri alır.
+
+Otomatik başlatma servisi kuruluysa uygulamayı kapatmanız zaten korumayı etkilemez:
+servis bağımsız çalışır.
+
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
 denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
 çünkü sesten çok daha ağır bir medya akışı.
