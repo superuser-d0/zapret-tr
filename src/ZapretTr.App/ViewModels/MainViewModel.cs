@@ -83,6 +83,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ResetCommand = new RelayCommand(ResetAsync, () => !IsBusy);
         ExitCommand = new RelayCommand(ExitAsync);
         ServiceCommand = new RelayCommand(ToggleServiceAsync, () => !IsBusy && IsReady);
+        SaveReportCommand = new RelayCommand(SaveReportAsync);
 
         try
         {
@@ -136,6 +137,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public RelayCommand TestCommand { get; }
     public RelayCommand CancelTestCommand { get; }
     public RelayCommand ResetCommand { get; }
+
+    /// <summary>Gunlugu ve ortam ozetini bir dosyaya yazar.</summary>
+    public RelayCommand SaveReportCommand { get; }
     public RelayCommand ExitCommand { get; }
     public RelayCommand ServiceCommand { get; }
 
@@ -538,6 +542,103 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>Secimleri diske yazar. Her degisiklikte degil, anlamli anlarda cagrilir.</summary>
+    /// <summary>
+    /// Gunlugu ve ortam ozetini kullanicinin sectigi bir dosyaya yazar.
+    /// </summary>
+    /// <remarks>
+    /// Bu dugme bir kolaylik degil, eksik bir kanaldi. Turksat Kablonet
+    /// kullanicisi 0.1.6'nin calistigini bildirdi ama profil hala
+    /// dogrulanmamis durumda: HANGI adayin kazandigini bilmiyoruz, cunku
+    /// kullanicinin gunlugu bize ulastirmasinin tek yolu pencereden metni elle
+    /// secip kopyalamakti. Bildirim geldi, veri gelmedi.
+    ///
+    /// Rapor DISARI GONDERILMIYOR: yalnizca diske yaziliyor, neyi paylasacagina
+    /// kullanici karar veriyor. Dosyanin basinda ne icerdigi yaziyor ki
+    /// paylasmadan once bilerek baksin.
+    /// </remarks>
+    private async Task SaveReportAsync()
+    {
+        try
+        {
+            var ad = $"zapret-tr-rapor-{DateTime.Now:yyyy-MM-dd-HHmm}.txt";
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = ad,
+                DefaultExt = ".txt",
+                Filter = "Metin dosyasi (*.txt)|*.txt",
+                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                Title = "Raporu kaydet",
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            await File.WriteAllTextAsync(dialog.FileName, BuildReport()).ConfigureAwait(true);
+            Append("Rapor kaydedildi: " + dialog.FileName);
+        }
+        catch (Exception ex)
+        {
+            // Kaydetme basarisiz olsa bile uygulama calismaya devam etmeli:
+            // rapor bir teshis araci, korumanin parcasi degil.
+            Append("Rapor kaydedilemedi: " + ex.Message, isError: true);
+        }
+    }
+
+    /// <summary>Rapor metnini kurar.</summary>
+    /// <remarks>
+    /// Ortam ozeti gunlugun ONUNE konuyor. Gunluk tek basina cogu zaman
+    /// yetmiyor: "su aday calisti" satirini okuyup hangi profil ve hangi surumle
+    /// oldugunu bilmeden profile isleyemiyoruz.
+    /// </remarks>
+    public string BuildReport()
+    {
+        var sb = new System.Text.StringBuilder();
+
+        sb.AppendLine("ZapretTR raporu");
+        sb.AppendLine("===============");
+        sb.AppendLine();
+        sb.AppendLine("Bu dosya hicbir yere gonderilmedi; yalnizca diske yazildi.");
+        sb.AppendLine("Paylasmadan once icerigine bakin. Icinde sunlar var: kullandiginiz");
+        sb.AppendLine("servis saglayici, denenen parametreler ve test edilen adresler.");
+        sb.AppendLine("Genel IP adresiniz yazilmaz.");
+        sb.AppendLine();
+
+        sb.AppendLine("Tarih            : " + DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss zzz"));
+        sb.AppendLine("ZapretTR         : " + SurumMetni());
+        sb.AppendLine("Motor            : " + EngineVersionText);
+        sb.AppendLine("Windows          : " + Environment.OSVersion.Version);
+        sb.AppendLine();
+
+        sb.AppendLine("Servis saglayici : " + (SelectedIsp?.Display ?? "(secilmedi)"));
+        sb.AppendLine("Strateji         : " + (SelectedStrategy?.Display ?? "(secilmedi)"));
+        sb.AppendLine("Parametre        : " + (SelectedStrategy?.Args ?? "-"));
+        sb.AppendLine("Sifreli DNS      : " + (IsSecureDnsEnabled ? "acik" : "kapali"));
+        sb.AppendLine("Otomatik baslatma: " + (IsServiceInstalled ? "kurulu" : "kurulu degil"));
+        sb.AppendLine("Durum            : " + StatusHeadline);
+        sb.AppendLine();
+
+        sb.AppendLine("Gunluk");
+        sb.AppendLine("------");
+        foreach (var satir in LogLines)
+        {
+            sb.AppendLine(satir);
+        }
+
+        return sb.ToString();
+    }
+
+    private static string SurumMetni()
+    {
+        var asm = typeof(MainViewModel).Assembly;
+        var bilgi = asm
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+            .FirstOrDefault();
+
+        return bilgi?.InformationalVersion ?? asm.GetName().Version?.ToString() ?? "bilinmiyor";
+    }
     private void SaveSelection()
     {
         // Geri yukleme sirasinda kaydetme: yarim durumu diske yazmak, kaydedilmis
