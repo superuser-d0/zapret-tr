@@ -38,3 +38,4 @@ zapret-tr-dnscrypt.toml
 # Yayin ciktilari
 installer/Output/
 release-notes-generated.md
+_*.py
