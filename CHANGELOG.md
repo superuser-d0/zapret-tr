@@ -8,6 +8,33 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.10]
+
+### Eklendi
+
+- **"Raporu Kaydet" düğmesi.** Ayrıntılar panelinde, günlüğün hemen altında. Günlüğü
+  ve ortam özetini (sürüm, motor, servis sağlayıcı, strateji, parametre, DNS ve servis
+  durumu) tek bir metin dosyasına yazıyor.
+
+  Bu bir kolaylık değil, eksik bir kanaldı: Türksat Kablonet kullanıcısı 0.1.6'nın
+  çalıştığını bildirdi ama profil hâlâ doğrulanmamış durumda, çünkü **hangi adayın**
+  kazandığını bilmiyoruz — günlüğü iletmenin tek yolu pencereden metni elle seçip
+  kopyalamaktı. Ortam özeti de rapora bu yüzden giriyor: "şu aday çalıştı" satırını
+  okuyup hangi profil ve hangi sürümle olduğunu bilmeden profile işleyemiyoruz.
+
+  Dosya **hiçbir yere gönderilmiyor**, yalnızca diske yazılıyor; neyi paylaşacağınıza
+  siz karar veriyorsunuz. Başında ne içerdiği yazıyor, genel IP adresiniz yazılmıyor.
+
+### Değişti
+
+- **CI artık kurulumu gerçekten çalıştırıyor.** Yeni `installer-test.yml` işi paketi
+  kuruyor, servisi kurduruyor, üzerine yükseltme yapıp servisin sağ kalıp kalmadığına
+  bakıyor, sonra söküp kaldırıyor ve makinede kalıntı bırakmadığını doğruluyor.
+  Gerekçesi ölçülebilir: 2026-09-08'de bulunan dört kullanıcı-etkileyen hatanın
+  **hiçbirini** birim testleri yakalamadı; ikisi tam da bu katmanda yaşıyordu.
+  Yükseltmenin servisi silmesi (0.1.8) artık regresyon testi olarak sınanıyor —
+  düzeltme geri alınarak testin gerçekten yakaladığı kanıtlandı.
+
 ## [0.1.9]
 
 ### Düzeltildi
