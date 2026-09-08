@@ -237,6 +237,22 @@ onları buldu; elle sayım eksik kalmıştı.
 
 ## Tuzaklar — hepsi bir kez ısırdı
 
+**Otomatik başlatma servisi, "Başlat" düğmesini sessizce ölümcül yapıyordu (0.1.7).**
+Kullanıcının bildirdiği hata şuydu: bir kez parametre testi yap, Zapret'i başlat,
+uygulamayı kapat, tekrar aç, Başlat'a bas → "BAŞLATILAMADI". İlk bakışta ayar
+kaydedilmiyor gibi görünüyor. Değil: `config.json` doğru stratejiyi tutuyordu.
+Gerçek sebep, servis kuruluysa `winws`'in **zaten çalışıyor** olması — ikinci bir
+kopya aynı filtreyle açılamıyor, winws 1 koduyla kapanıyor. Yani koruma çalışırken
+kullanıcı bozuk sandığı bir uygulamaya bakıyordu. Ders: bir işlemi hem servis hem
+elle başlatabiliyorsan, düğmenin etkinliği **öbürünün durumuna** bakmak zorunda;
+`CanStart` artık `!IsServiceInstalled` içeriyor ve durum "SERVİS MODU AKTİF" diyor.
+
+**Kaydedilmiş strateji, engelleme değişince sessizce yanlışa dönüyor.** Test bir kez
+koşuyor ve sonuç kalıcı; sonraki açılışlarda doğrudan Başlat'a basılıyor. İSS'in DPI
+yapılandırması güncellendiğinde dün çalışan parametre bugün çalışmaz ama arayüz yine
+"ÇALIŞIYOR" gösterirdi — çünkü ölçtüğümüz tek şey `winws`'in ayakta olması, ki o
+ayakta. Başlatmadan sonra hedefleri gerçekten açıp açmadığına bakılıyor (0.1.7).
+
 **HTTP/3 IP'ye SABİTLENEMİYOR ve bu QUIC ölçümünü tümüyle geçersiz kılmıştı.**
 `SocketsHttpHandler.ConnectCallback` yalnızca TCP bağlantılarında çağrılıyor;
 HTTP/3 adresi kendisi, **sistem DNS'i** ile çözüyor. Sonuç: `--doh` ile gerçek IP

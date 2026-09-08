@@ -142,9 +142,21 @@ public sealed class WinwsRunner : IAsyncDisposable
             {
                 var exitCode = process.ExitCode;
                 process.Dispose();
+                // "1" neredeyse her zaman TEK bir seyi anlatiyor: winws ayni
+                // filtreyle zaten calisiyor ve ikinci ornegi reddediyor
+                // ("A copy of winws is already running with the same filter").
+                // En sik sebebi otomatik baslatma servisinin acik olmasi.
+                // Ciplak "1 koduyla kapandi" mesaji kullaniciya hicbir sey
+                // soylemiyordu; gercek bir kullanici bu duvara tosladi.
+                var ipucu = exitCode == 1
+                    ? " En olasi sebep: winws zaten calisiyor (otomatik baslatma servisi acik" +
+                      " olabilir ya da onceki bir kosum surmus olabilir). Ayni filtreyle ikinci" +
+                      " bir ornek baslatilamaz."
+                    : string.Empty;
+
                 throw new InvalidOperationException(
-                    $"winws baslar baslamaz {exitCode} koduyla kapandi. " +
-                    "Ayrintilar icin gunluge bakin.");
+                    $"winws baslar baslamaz {exitCode} koduyla kapandi." + ipucu +
+                    " Ayrintilar icin gunluge bakin.");
             }
 
             _process = process;

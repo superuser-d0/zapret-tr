@@ -243,7 +243,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public bool IsReady => Status is AppStatus.Ready or AppStatus.Running or AppStatus.Paused;
 
-    public bool CanStart => Status is AppStatus.Ready or AppStatus.Paused && SelectedStrategy is not null;
+    /// <summary>
+    /// Manuel baslatma mumkun mu.
+    /// </summary>
+    /// <remarks>
+    /// Servis kuruluysa winws ZATEN calisiyor ve ayni filtreyle ikinci bir ornek
+    /// baslatilamiyor -- winws "A copy of winws is already running with the same
+    /// filter" deyip 1 koduyla cikiyor. Dugme yine de aciktı ve basan kullanici
+    /// "winws baslar baslamaz 1 koduyla kapandi" diye anlamsiz bir hata aliyordu.
+    /// Gercek bir kullanicida yasandi.
+    ///
+    /// Koruma zaten aciksa basilacak bir dugme olmamali.
+    /// </remarks>
+    public bool CanStart => Status is AppStatus.Ready or AppStatus.Paused
+                            && SelectedStrategy is not null
+                            && !IsServiceInstalled;
 
     public bool IsBusy
     {
@@ -322,6 +336,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (Set(ref _isServiceInstalled, value))
             {
                 Notify(nameof(ServiceButtonText));
+                Notify(nameof(CanStart));
+                RefreshCommands();
+                UpdateStatusDetail();
+
+                // Servis kuruluysa koruma acilistan itibaren zaten calisiyor.
+                // Kullanici bunu ekranda gormeli, yoksa "neden Baslat kapali"
+                // diye dusunur.
+                if (value && Status == AppStatus.Ready)
+                {
+                    SetStatus(AppStatus.Ready, "SERVİS MODU AKTİF",
+                        "Koruma otomatik başlatma servisiyle çalışıyor; elle başlatmaya gerek yok.");
+                }
             }
         }
     }
@@ -369,6 +395,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
             _runner.Start(arguments);
             SaveSelection();
+
+            // Kayitli strateji HALA calisiyor mu. Beklemiyoruz: baslatma aninda
+            // bitmis sayilir, dogrulama arkadan gelir.
+            _ = VerifyAfterStartAsync();
         }
         catch (Exception ex)
         {
@@ -703,6 +733,90 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private Dictionary<StrategySection, string> BuildRuntimeSelection()
         => RuntimeSelection.Build(SelectedIsp?.Profile, SelectedStrategy!.Args);
 
+    /// <summary>
+    /// Baslatmadan sonra kayitli stratejinin GERCEKTEN ise yaradigini olcer.
+    /// </summary>
+    /// <remarks>
+    /// Kullanici bir kez test yapip stratejiyi kaydediyor ve sonraki acilislarda
+    /// dogrudan Baslat'a basiyor -- test tekrar kosmuyor. Ama engelleme degisebilir:
+    /// ISS'in DPI yapilandirmasi guncellenir ve dun calisan parametre bugun calismaz.
+    /// O durumda arayuz "CALISIYOR" gosteriyordu ve kullanici korundugunu saniyordu.
+    ///
+    /// Burada yalnizca tcp443 hedefleri olculuyor: ucu de birkac saniye suruyor ve
+    /// baslatma akisini bekletmiyor. HICBIRI acilmiyorsa strateji artik ise
+    /// yaramiyor demektir ve kullaniciya yeni bir test onerilir.
+    ///
+    /// Dogrulama bir KOLAYLIK: kendisi hata verirse baslatma bozulmamali, cunku
+    /// winws zaten calisiyor ve olcumun basarisizligi korumanin basarisizligi degil.
+    /// </remarks>
+    private async Task VerifyAfterStartAsync()
+    {
+        if (_profiles is null)
+        {
+            return;
+        }
+
+        try
+        {
+            // Ag yiginin oturmasi icin kisa bir bekleme; hemen olcmek yanlis
+            // negatif uretiyor.
+            await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(true);
+
+            // Bu arada winws coktuyse (Faulted) veya kullanici durdurduysa olcecek
+            // bir sey yok: hatanin uzerine "acmiyor" yazmak kafa karistirir.
+            if (Status != AppStatus.Running)
+            {
+                return;
+            }
+
+            var targets = ProbeTargetStore.Load(_profiles.Root)
+                .Where(t => t.Section == StrategySection.Tcp443
+                            && t.Category != StrategyProber.ControlCategory)
+                .ToList();
+
+            if (targets.Count == 0)
+            {
+                return;
+            }
+
+            using var client = new HttpProbeClient();
+            var opened = 0;
+            foreach (var target in targets)
+            {
+                var outcome = await StrategyProber
+                    .ProbeAsync(target.Section, target.Host, null, client)
+                    .ConfigureAwait(true);
+
+                if (outcome.Succeeded)
+                {
+                    opened++;
+                }
+            }
+
+            if (Status != AppStatus.Running)
+            {
+                return;
+            }
+
+            if (opened > 0)
+            {
+                Append($"Doğrulandı: {opened}/{targets.Count} hedef açılıyor.");
+                return;
+            }
+
+            Append("UYARI: kayıtlı strateji artık işe yaramıyor görünüyor —", isError: true);
+            Append("test hedeflerinin hiçbiri açılmadı. Engelleme değişmiş olabilir.", isError: true);
+            Append("\"PARAMETRE TESTİ YAP\" ile yeni bir strateji aramanız önerilir.");
+
+            SetStatus(AppStatus.Running, "ÇALIŞIYOR — AMA AÇMIYOR",
+                "Kayıtlı strateji hedefleri açmadı; yeni bir parametre testi önerilir.");
+        }
+        catch (Exception)
+        {
+            // Dogrulama yapilamadi. Sessiz geciyoruz: winws calisiyor ve olcumun
+            // kendi hatasini korumanin hatasi gibi gostermek yanlis olur.
+        }
+    }
     private async Task PauseAsync()
     {
         if (_runner is null)

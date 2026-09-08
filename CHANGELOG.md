@@ -8,6 +8,27 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.7]
+
+### Düzeltildi
+
+- **Otomatik başlatma servisi açıkken "Başlat" hata veriyordu.** Servis kuruluysa
+  `winws` zaten çalışıyor; ikinci bir kopya aynı filtreyle açılamadığı için 1 koduyla
+  kapanıyor ve arayüz "BAŞLATILAMADI" gösteriyordu. Kullanıcı, koruma **çalışırken**
+  bozuk sandığı bir uygulamaya bakıyordu. Artık servis kuruluyken Başlat düğmesi
+  kapalı ve durum "SERVİS MODU AKTİF" diyor — elle başlatmaya gerek yok.
+- **`winws` 1 koduyla kapandığında sebep söylenmiyordu.** Günlüğe, en olası neden
+  (zaten çalışan bir kopya) ipucu olarak yazılıyor.
+
+### Eklendi
+
+- **Başlatmadan sonra kayıtlı strateji doğrulanıyor.** Bir kez test yapıp stratejiyi
+  kaydeden kullanıcı, sonraki açılışlarda doğrudan Başlat'a basıyor ve test bir daha
+  koşmuyor. Ama engelleme değişebilir: İSS'in DPI yapılandırması güncellendiğinde dün
+  çalışan parametre bugün çalışmaz ve arayüz yine "ÇALIŞIYOR" gösterirdi. Artık
+  başlatmadan birkaç saniye sonra hedefler ölçülüyor; **hiçbiri açılmıyorsa** durum
+  "ÇALIŞIYOR — AMA AÇMIYOR" olur ve yeni bir parametre testi önerilir.
+
 ## [0.1.6]
 
 Bu sürümün tamamı, [Zapret Win TR](https://github.com/superuser-d0/zapret-tr/blob/main/THIRD-PARTY-NOTICES.md)
