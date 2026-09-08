@@ -840,6 +840,35 @@ var prober = new StrategyProber(vendor, profiles, targets, options.UseSecureDns)
 
 try
 {
+    // --- Koruma zaten acik mi ----------------------------------------------
+    //
+    // Aciksa bu olcum YANILTICI olur: hedefler zaten aciliyor, arac da "engel
+    // yok" diyor. Gercek bir kullanicida tam olarak bu oldu -- makinesinde
+    // ZapretTR servisi calisirken saha testini kosturdu, 11 hedefin 11'i
+    // "aciliyor" cikti ve sonuc "DPI ile engellenen hedef yok" oldu. Olcum
+    // dogruydu, yalnizca olculen sey engelleme degil KENDI KORUMAMIZDI.
+    var korumaSurecleri = System.Diagnostics.Process.GetProcessesByName("winws");
+    if (korumaSurecleri.Length > 0)
+    {
+        foreach (var surec in korumaSurecleri)
+        {
+            surec.Dispose();
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("DİKKAT: bu makinede winws zaten çalışıyor.");
+        Console.WriteLine();
+        Console.WriteLine("  Yani koruma şu anda AÇIK. Bu durumda ölçüm yanıltıcı olur:");
+        Console.WriteLine("  engelli adresler zaten açılıyor ve test \"engel yok\" der.");
+        Console.WriteLine();
+        Console.WriteLine("  Doğru ölçüm için önce korumayı durdurun:");
+        Console.WriteLine("    - ZapretTR kuruluysa uygulamayı açıp \"Çıkış\" deyin, ya da");
+        Console.WriteLine("    - otomatik başlatma servisi kuruluysa \"Otomatik Başlatmayı Kaldır\".");
+        Console.WriteLine();
+        Console.WriteLine("  Test yine de sürecek; sonuç bu uyarıyla birlikte okunmalı.");
+        Console.WriteLine();
+    }
+
     // --- Mevcut durum taramasi ---------------------------------------------
     Console.WriteLine("[1/2] Mevcut durum taranıyor (winws kapalı)...");
     var baseline = await prober.RunBaselineAsync(cancellationToken: cancellation.Token);
@@ -905,11 +934,20 @@ try
     {
         Console.WriteLine("DPI ile engellenen hedef yok; strateji testi anlamsız olurdu.");
         Console.WriteLine("Sizde açılmayan bir adresi --target ile verip tekrar çalıştırın.");
+
+        // "Engel yok" DA bir sonuctur ve rapor edilmeli. Eskiden bu yolda
+        // hicbir dosya yazilmadan cikiliyordu: kullanici testi calistiriyor,
+        // ekranda dolu dolu cikti goruyor, sonra klasorde JSON bulamiyordu.
+        // Gercek bir kullanicida tam olarak bu yasandi -- ustelik o kosum bize
+        // "bu hatta su an engel yok" bilgisini veriyordu, ki toplamak
+        // istedigimiz seyin ta kendisi.
+        WriteBaselineReport(options.OutputPath, baseline, profile, "engel-yok");
         return 0;
     }
 
     if (options.BaselineOnly)
     {
+        WriteBaselineReport(options.OutputPath, baseline, profile, "yalnizca-tarama");
         return 0;
     }
 
@@ -1089,6 +1127,58 @@ catch (Exception ex)
     }
 
     return 5;
+}
+
+/// <summary>Strateji aranmadan cikildiginda mevcut durumu dosyaya yazar.</summary>
+/// <remarks>
+/// Strateji bulunmamis olmasi raporu degersiz yapmiyor: hangi hedefin acildigi,
+/// hangisinin engellendigi ve DNS'in yonlendirilip yonlendirilmedigi tek basina
+/// bir olcum. Saha paketinin isi zaten bu veriyi toplamak.
+/// </remarks>
+static void WriteBaselineReport(
+    string? path, IReadOnlyList<BaselineResult> baseline, IspProfile? profile, string sonuc)
+{
+    if (path is null)
+    {
+        return;
+    }
+
+    try
+    {
+        var tam = MutlakYol(path);
+        var govde = new System.Text.StringBuilder();
+        govde.AppendLine("{");
+        govde.AppendLine("  \"sonuc\": \"" + sonuc + "\",");
+        govde.AppendLine("  \"tarih\": \"" + DateTimeOffset.Now.ToString("O") + "\",");
+        govde.AppendLine("  \"isp\": " + (profile is null
+            ? "null"
+            : "\"" + JsonKacir(profile.Id) + "\"") + ",");
+        govde.AppendLine("  \"hedefler\": [");
+
+        for (var i = 0; i < baseline.Count; i++)
+        {
+            var b = baseline[i];
+            var virgul = i == baseline.Count - 1 ? string.Empty : ",";
+            govde.AppendLine(
+                "    { \"host\": \"" + JsonKacir(b.Target.Host) + "\", " +
+                "\"bolum\": \"" + b.Target.Section.ToJsonName() + "\", " +
+                "\"kategori\": \"" + JsonKacir(b.Target.Category) + "\", " +
+                "\"durum\": \"" + b.Status + "\", " +
+                "\"ayrinti\": \"" + JsonKacir(b.Detail ?? string.Empty) + "\" }" + virgul);
+        }
+
+        govde.AppendLine("  ]");
+        govde.AppendLine("}");
+
+        File.WriteAllText(tam, govde.ToString());
+
+        Console.WriteLine();
+        Console.WriteLine("Rapor yazıldı: " + tam);
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("Rapor yazılamadı: " + ex.Message);
+    }
 }
 
 /// <summary>Test patladiginda ne olduguna dair bir dosya birakir.</summary>

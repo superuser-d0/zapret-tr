@@ -8,6 +8,27 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.14]
+
+### Düzeltildi
+
+- **Saha testi, engel bulamadığında rapor yazmadan çıkıyordu.** 0.1.13'te hata
+  yolundaki eksik rapor düzeltilmişti ama asıl yol bu değildi: test sorunsuz
+  çalışıp "DPI ile engellenen hedef yok" dediğinde de hiçbir dosya
+  bırakılmıyordu. Kullanıcı ekranda dolu dolu çıktı görüyor, sonra klasörde JSON
+  bulamıyordu.
+
+  **"Engel yok" da bir sonuçtur.** O koşum "bu hatta şu an engel yok" bilgisini
+  veriyor — saha paketinin toplamak istediği şeyin ta kendisi. Artık bu yolda da
+  (ve `--baseline` modunda da) rapor yazılıyor: hangi hedef açıldı, hangisi
+  engellendi, DNS yönlendirilmiş mi.
+
+- **Koruma açıkken yapılan ölçüm sessizce yanıltıyordu.** `winws` çalışırken saha
+  testi koşturulursa hedefler zaten açılır ve test "engel yok" der. Ölçüm doğrudur,
+  ama ölçtüğü şey engelleme değil **kendi korumamızdır**. Gerçek bir kullanıcıda
+  tam olarak bu yaşandı: 11 hedefin 11'i "açılıyor" çıktı. Test artık başlarken
+  `winws`in çalıştığını fark edip uyarıyor ve önce nasıl durdurulacağını söylüyor.
+
 ## [0.1.13]
 
 ### Eklendi
