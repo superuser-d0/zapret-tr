@@ -8,6 +8,24 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.11]
+
+### Düzeltildi
+
+- **"Raporu Kaydet" düğmesi görünmüyordu.** 0.1.10'da düğmeyi "Ayrıntılar" panelinin
+  içine koymuştuk. WPF kapalı bir panelin içeriğini hiç oluşturmuyor, dolayısıyla
+  paneli açmayan kullanıcı için düğme **yoktu** — gerçek bir kurulumda tam olarak bu
+  yaşandı. Düğme artık ana düğme öbeğinde, "Servis Olarak Yükle" ile "Tüm Ayarları
+  Sıfırla" arasında ve açılışta görünür.
+
+  Gerekçemiz ("günlüğün yanında dursun, bağlamı orası") yanlıştı: bulunamayan bir
+  düğmenin bağlamı da olmaz.
+
+- **Test bu hatayı yakalamıyordu, artık yakalıyor.** Düğmenin pencerede bulunması
+  yetmiyor; kapalı bir panelin altında olmadığı da sınanıyor. Düzeltme geri alınarak
+  doğrulandı: 0.1.10 yapısında test `"Raporu Kaydet" bir Expander icinde` diyerek
+  düşüyor.
+
 ## [0.1.10]
 
 ### Eklendi

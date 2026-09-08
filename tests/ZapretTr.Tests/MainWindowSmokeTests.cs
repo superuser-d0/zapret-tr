@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using ZapretTr.App;
 using ZapretTr.App.ViewModels;
 using ZapretTr.Core.Engine;
@@ -34,6 +35,30 @@ public sealed class MainWindowSmokeTests
             window.Measure(new Size(440, 720));
             window.Arrange(new Rect(0, 0, 440, 720));
             window.UpdateLayout();
+
+            // "Raporu Kaydet" AYNI pencerede sinaniyor: bir surecte yalnizca tek
+            // bir WPF Application olabildigi icin her kontrole ayri test sinifi
+            // acmak kosumu kilitliyordu.
+            var rapor = RaporDugmesiniBul(window)
+                        ?? throw new InvalidOperationException(
+                            "\"Raporu Kaydet\" dugmesi pencerede yok.");
+
+            if (rapor.Visibility != Visibility.Visible)
+            {
+                throw new InvalidOperationException(
+                    "\"Raporu Kaydet\" gorunur degil: " + rapor.Visibility);
+            }
+
+            // ASIL KONTROL. Dugme once kapali bir Expander'in icindeydi ve agacta
+            // GORUNUYORDU -- yani yukaridaki iki kontrol de geciyordu. Kullanici
+            // icin ise dugme yoktu: paneli acmadan goremiyordu ve gercek bir
+            // kurulumda tam olarak bunu bildirdi (0.1.10).
+            if (ExpanderAltinda(rapor))
+            {
+                throw new InvalidOperationException(
+                    "\"Raporu Kaydet\" bir Expander icinde: kullanici paneli " +
+                    "acmadan goremez.");
+            }
 
             window.Close();
             app.Shutdown();
@@ -131,5 +156,47 @@ public sealed class MainWindowSmokeTests
         }
 
         return captured;
+    }
+
+    /// <summary>Dugmenin atalari arasinda bir Expander var mi.</summary>
+    private static bool ExpanderAltinda(DependencyObject el)
+    {
+        for (var p = LogicalTreeHelper.GetParent(el); p is not null;
+             p = LogicalTreeHelper.GetParent(p))
+        {
+            if (p is Expander)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Mantiksal agacta icerigi "Raporu Kaydet" olan dugmeyi arar.</summary>
+    /// <remarks>
+    /// GORSEL agac degil: pencere hic gosterilmediginde sablonlar uygulanmadigi
+    /// icin gorsel agac eksik kaliyor ve var olan dugmeler de bulunamiyor.
+    /// Mantiksal agac XAML'de yazdigimiz yapiyi yansitiyor -- sorulan soru da bu:
+    /// dugme pencereye KONULMUS mu.
+    /// </remarks>
+    private static Button? RaporDugmesiniBul(DependencyObject kok)
+    {
+        foreach (var cocuk in LogicalTreeHelper.GetChildren(kok))
+        {
+            if (cocuk is Button b &&
+                b.Content is string metin &&
+                metin.Contains("Raporu Kaydet", StringComparison.Ordinal))
+            {
+                return b;
+            }
+
+            if (cocuk is DependencyObject d && RaporDugmesiniBul(d) is { } alt)
+            {
+                return alt;
+            }
+        }
+
+        return null;
     }
 }
