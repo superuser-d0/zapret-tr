@@ -40,6 +40,17 @@ public sealed class AppConfig
     /// </remarks>
     [JsonPropertyName("updateCheckEnabled")]
     public bool UpdateCheckEnabled { get; set; } = true;
+
+    /// <summary>Bu yapilandirmayi en son yazan surum.</summary>
+    /// <remarks>
+    /// Guncellemeden sonra kullaniciya "sürüm degisti, stratejiniz korundu"
+    /// diyebilmek icin. Strateji SILINMIYOR: surum degisikligi DPI'yi
+    /// degistirmiyor, dolayisiyla olcum hala gecerli. Yalnizca durum
+    /// bildiriliyor; parametrenin hala ise yarayip yaramadigini baslatmadan
+    /// sonraki dogrulama zaten olcuyor.
+    /// </remarks>
+    [JsonPropertyName("lastRunVersion")]
+    public string? LastRunVersion { get; set; }
 }
 
 /// <summary>
@@ -141,13 +152,57 @@ public static class ConfigStore
     }
 
     /// <summary>
-    /// Yeni dogrulamalari kaydeder; ayni ISS + bolum + arguman varsa uzerine yazar.
+    /// Yeni dogrulamalari kaydeder; ayni ISS + BOLUM icin eskisinin yerine gecer.
     /// </summary>
     /// <remarks>
-    /// Ayni stratejinin her testte yeniden eklenmesi dosyayi sisirir ve hangisinin
-    /// guncel oldugunu belirsizlestirir. Anahtar olarak arguman kullaniliyor cunku
-    /// asil kimlik o: aday id'si profil surumleri arasinda degisebilir.
+    /// Anahtar (ISS, bolum) -- arguman DEGIL. Calisma zamaninda bolum basina tek
+    /// kazanan kullaniliyor, dolayisiyla ayni bolum icin ikinci bir "dogrulandi"
+    /// kaydi hicbir sey eklemiyor; yalnizca hangisinin guncel oldugunu
+    /// belirsizlestiriyor.
+    ///
+    /// "Eskiden calisiyordu" bir kanit degil: o olcum artik gecerli olmayan bir
+    /// ag durumuna aitti ve engelleme degistiginde yaniltici hale geliyor.
     /// </remarks>
+    /// <summary>
+    /// Yeni dogrulamalari mevcutlarla birlestirir. Diske DOKUNMAZ.
+    /// </summary>
+    /// <remarks>
+    /// Ayri durmasinin sebebi sinanabilirlik: kural <see cref="AddLearned"/>
+    /// icinde gomulu kaldiginda test onu ancak KOPYALAYARAK sinayabiliyordu,
+    /// ve kopyalayan bir test kod degistiginde sessizce yesil kalir.
+    /// </remarks>
+    public static List<LearnedCandidate> Merge(
+        IEnumerable<LearnedCandidate> existing, IEnumerable<LearnedCandidate> incoming)
+    {
+        ArgumentNullException.ThrowIfNull(existing);
+        ArgumentNullException.ThrowIfNull(incoming);
+
+        var merged = existing.ToList();
+
+        foreach (var candidate in incoming)
+        {
+            // Anahtar (ISS, BOLUM) -- arguman DEGIL.
+            //
+            // Eskiden args de karsilastiriliyordu ve sonuc suydu: bir testte
+            // "fake+ttl4" dogrulanip kaydediliyor, engelleme degisip yeni testte
+            // "multisplit pos=2" kazaniyor, ve IKISI birden "bu baglantida
+            // dogrulandi" etiketiyle listede duruyordu. Calisma zamaninda bolum
+            // basina tek kazanan kullanildigi icin ikinci kayit hicbir sey
+            // eklemiyor; yalnizca hangisinin guncel oldugunu belirsizlestiriyor
+            // ve kayitli secim eskisini gosterebiliyordu.
+            //
+            // "Eskiden calisiyordu" bir kanit degil: o olcum artik gecerli
+            // olmayan bir ag durumuna aitti.
+            merged.RemoveAll(mevcut =>
+                string.Equals(mevcut.IspId, candidate.IspId, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(mevcut.Section, candidate.Section, StringComparison.Ordinal));
+
+            merged.Add(candidate);
+        }
+
+        return merged;
+    }
+
     public static void AddLearned(IEnumerable<LearnedCandidate> newlyVerified)
     {
         ArgumentNullException.ThrowIfNull(newlyVerified);
@@ -158,17 +213,7 @@ public static class ConfigStore
             return;
         }
 
-        var merged = LoadLearned().ToList();
-
-        foreach (var candidate in incoming)
-        {
-            merged.RemoveAll(existing =>
-                string.Equals(existing.IspId, candidate.IspId, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(existing.Section, candidate.Section, StringComparison.Ordinal)
-                && string.Equals(existing.Args, candidate.Args, StringComparison.Ordinal));
-
-            merged.Add(candidate);
-        }
+        var merged = Merge(LoadLearned(), incoming);
 
         Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
         File.WriteAllText(LearnedPath, JsonSerializer.Serialize(merged, CoreJsonContext.Default.ListLearnedCandidate));

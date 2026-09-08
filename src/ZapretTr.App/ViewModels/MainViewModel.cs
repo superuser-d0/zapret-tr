@@ -40,7 +40,13 @@ public sealed record IspChoice(IspProfile? Profile, string Display)
 public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly VendorPaths? _vendor;
-    private readonly ProfileStore? _profiles;
+    /// <summary>Yuklu profiller (kullanicinin dogrulamalari bindirilmis).</summary>
+    /// <remarks>
+    /// readonly DEGIL: "Tüm Ayarları Sıfırla" ogrenilmis dogrulamalari siliyor ve
+    /// listenin bellekte eski haliyle kalmasi, silinmis bir seyin ekranda
+    /// "dogrulandi" olarak gorunmesi demek olurdu.
+    /// </remarks>
+    private ProfileStore? _profiles;
     private readonly WinwsRunner? _runner;
     private readonly DnsCryptRunner? _dnsRunner;
     private CancellationTokenSource? _testCancellation;
@@ -114,6 +120,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
             // Beklemiyoruz: ag yavassa uygulamanin acilisini geciktirmesin.
+            NotifyIfVersionChanged();
+
             _ = CheckForUpdateAsync();
 
             var missing = _vendor.FindMissingFiles();
@@ -588,6 +596,52 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// kullanici karar veriyor. Dosyanin basinda ne icerdigi yaziyor ki
     /// paylasmadan once bilerek baksin.
     /// </remarks>
+    /// <summary>Surum degistiyse kullaniciya durumu bildirir.</summary>
+    /// <remarks>
+    /// Guncellemeden sonra kayitli parametreleri SILMIYORUZ. Bir sürüm
+    /// degisikligi ISS'in DPI yapilandirmasini degistirmiyor, dolayisiyla
+    /// olculmus strateji hala gecerli; silmek kullaniciyi her guncellemede
+    /// dakikalarca surecek yeni bir teste zorlardi ve guncellemekten
+    /// cekinmesine yol acardi.
+    ///
+    /// Asil endise -- "ya eski parametre artik calismiyorsa" -- zaten
+    /// karsilanmis durumda: Baslat'tan birkac saniye sonra hedefler
+    /// gercekten aciliyor mu diye olculuyor ve acilmiyorsa "ÇALIŞIYOR — AMA
+    /// AÇMIYOR" deyip yeni bir test oneriliyor. Yani karar TAHMINE degil
+    /// OLCUME dayaniyor.
+    /// </remarks>
+    private void NotifyIfVersionChanged()
+    {
+        try
+        {
+            var config = ConfigStore.Load();
+            var simdiki = SurumMetni().Split('+')[0];
+
+            if (string.Equals(config.LastRunVersion, simdiki, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(config.LastRunVersion))
+            {
+                Append($"Sürüm değişti: {config.LastRunVersion} → {simdiki}");
+
+                if (!string.IsNullOrWhiteSpace(config.SelectedStrategyArgs))
+                {
+                    Append("Kayıtlı stratejiniz korundu. Başlattığınızda gerçekten çalışıp");
+                    Append("çalışmadığı ölçülecek; çalışmıyorsa yeni bir test önerilecek.");
+                }
+            }
+
+            config.LastRunVersion = simdiki;
+            ConfigStore.Save(config);
+        }
+        catch (Exception)
+        {
+            // Bilgilendirme amacli; basarisiz olmasi uygulamayi etkilemez.
+        }
+    }
+
     /// <summary>Yayinlanmis daha yeni bir surum var mi diye bakar.</summary>
     /// <remarks>
     /// Gunde birkac surum cikabiliyor ve her seferinde kullanicilara tek tek
@@ -661,6 +715,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 Append($"En güncel sürümü kullanıyorsunuz ({kurulu}).");
                 UpdateMessage = null;
+
+                // Sonucu SOYLEMEK gerekiyor. Eskiden yalnizca gunluge
+                // yaziliyordu ve Ayrintilar paneli varsayilan olarak kapali:
+                // kullanici dugmeye basiyor, ekranda hicbir sey degismiyor ve
+                // dugmenin calisip calismadigini bilmiyordu.
+                MessageBox.Show(
+                    $"Yeni güncelleme bulunamadı." + Environment.NewLine + Environment.NewLine +
+                    $"En güncel sürümü kullanıyorsunuz: {kurulu}",
+                    "Güncelleme",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
                 return;
             }
 
@@ -868,7 +934,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
                            isError: !step.Succeeded);
                 }
 
-                SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KAPATILDI");
+                Append("Otomatik başlatma kaldırıldı.");
+                Append("ÖNERİ: bilgisayarı bir kez yeniden başlatın.");
+                Append("  Ağ sürücüsü çekirdekten hemen düşmüyor; kalıntı bir sürücü,");
+                Append("  sonraki parametre testinde bütün adayların aynı şekilde");
+                Append("  başarısız olmasına yol açabiliyor.");
+
+                SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KAPATILDI",
+                    "Yeni bir parametre testi yapacaksanız önce bilgisayarı yeniden başlatın.");
             }
             else
             {
@@ -919,8 +992,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
                            isError: !step.Succeeded);
                 }
 
-                SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KURULDU",
-                    "Bilgisayar açıldığında kendiliğinden çalışacak.");
+                Append("Otomatik başlatma kuruldu.");
+                Append("Uygulamayı artık kapatabilirsiniz: koruma servis olarak çalışıyor");
+                Append("ve bilgisayar her açıldığında kendiliğinden devreye giriyor.");
+                Append("Yeniden başlatmanıza gerek yok; servis şu anda çalışıyor.");
+
+                SetStatus(AppStatus.Ready, "SERVİS MODU AKTİF",
+                    "Koruma servis olarak çalışıyor. Uygulamayı kapatabilirsiniz; " +
+                    "bilgisayar açıldığında kendiliğinden devreye girer.");
             }
 
             await RefreshServiceStatusAsync().ConfigureAwait(true);
@@ -1265,7 +1344,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append($"{mark} {step.Description}{detail}", isError: !step.Succeeded);
             }
 
-            SetStatus(AppStatus.Ready, "SIFIRLANDI", "İlk kurulum durumuna dönüldü.");
+            // Diski temizlemek YETMIYOR: profiller, secili saglayici ve
+            // strateji BELLEKTE duruyordu. Kullanici "sıfırla" dedikten sonra
+            // ekranda hala eski ISS ve "✓ dogrulanmis" strateji goruyordu --
+            // silinmis bir seyin adi ekranda kaliyordu. Daha kotusu: o haliyle
+            // Baslat'a basmak, artik diskte karsiligi olmayan bir secimi
+            // yeniden kaydediyordu.
+            _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
+
+            IsSecureDnsEnabled = true;
+            CustomTarget = string.Empty;
+            IsServiceInstalled = false;
+            UpdateMessage = null;
+
+            LoadIspChoices();
+            LoadStrategyChoices();
+
+            Append("Yapılandırma, öğrenilmiş doğrulamalar ve seçimler silindi.");
+            Append("Uygulama ilk kurulum durumuna döndü; yeni bir parametre testi gerekiyor.");
+
+            SetStatus(AppStatus.Ready, "SIFIRLANDI",
+                "İlk kurulum durumuna dönüldü. \"PARAMETRE TESTİ YAP\" ile yeniden başlayın.");
         }
         finally
         {

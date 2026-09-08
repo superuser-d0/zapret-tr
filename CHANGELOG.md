@@ -8,6 +8,49 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.16]
+
+### Düzeltildi
+
+- **Eski doğrulama, yenisiyle birlikte listede kalıyordu.** Öğrenilmiş sonuçlar
+  kaydedilirken anahtar (sağlayıcı, bölüm, **parametre**) idi. Yani bir testte
+  `fake+ttl4` doğrulanıp kaydediliyor, engelleme değişip yeni testte
+  `multisplit pos=2` kazanıyor ve **ikisi birden** "bu bağlantıda doğrulandı"
+  etiketiyle listede duruyordu. Çalışma zamanında bölüm başına tek kazanan
+  kullanıldığı için ikinci kayıt hiçbir şey eklemiyor; yalnızca hangisinin güncel
+  olduğunu belirsizleştiriyor ve kayıtlı seçim eskisini gösterebiliyordu.
+
+  Anahtar artık (sağlayıcı, bölüm). "Eskiden çalışıyordu" bir kanıt değil: o ölçüm
+  artık geçerli olmayan bir ağ durumuna aitti.
+
+- **"Tüm Ayarları Sıfırla" ekranı sıfırlamıyordu.** Disk temizleniyordu ama
+  profiller, seçili sağlayıcı ve strateji **bellekte** duruyordu: kullanıcı
+  sıfırladıktan sonra ekranda hâlâ eski sağlayıcıyı ve "✓ doğrulanmış" stratejiyi
+  görüyordu — silinmiş bir şeyin adı ekranda kalıyordu. Daha kötüsü, o hâliyle
+  Başlat'a basmak diskte karşılığı olmayan seçimi yeniden kaydediyordu. Artık
+  profiller yeniden yükleniyor, seçimler ve tercihler ilk açılış hâline dönüyor.
+
+### Değişti
+
+- **"Güncellemeleri Denetle" sonucu artık pencerede söyleniyor.** Güncelleme yoksa
+  "Yeni güncelleme bulunamadı" penceresi çıkıyor. Eskiden sonuç yalnızca günlüğe
+  yazılıyordu ve Ayrıntılar paneli varsayılan olarak kapalı; kullanıcı düğmeye
+  basıyor ve hiçbir şey olmamış gibi görünüyordu.
+
+- **Otomatik başlatma kurulunca ne yapılacağı net söyleniyor:** uygulamayı
+  kapatabilirsiniz, koruma servis olarak çalışır, yeniden başlatmaya **gerek yok**.
+
+- **Otomatik başlatma kaldırılınca yeniden başlatma öneriliyor.** Kurulumda değil,
+  yalnızca kaldırmada: WinDivert sürücüsü çekirdekten hemen düşmüyor ve kalıntı bir
+  sürücü, sonraki parametre testinde bütün adayların aynı şekilde başarısız olmasına
+  yol açabiliyor (bir kullanıcıda 176 aday, 1105 saniye, sonuç yok).
+
+- **Sürüm değiştiğinde bildiriliyor.** Güncellemeden sonra ilk açılışta "sürüm
+  değişti, kayıtlı stratejiniz korundu" deniyor. Strateji **silinmiyor**: bir sürüm
+  değişikliği İSS'in DPI yapılandırmasını değiştirmediği için ölçüm hâlâ geçerli.
+  "Ya artık çalışmıyorsa" endişesi zaten karşılanmış durumda — başlattıktan sonra
+  hedefler gerçekten ölçülüyor ve açılmıyorsa yeni test öneriliyor.
+
 ## [0.1.15]
 
 ### Eklendi
