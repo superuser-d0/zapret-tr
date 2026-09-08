@@ -128,6 +128,34 @@ yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa ş
 ```
 Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
+**WiFi ile Ethernet arasında geçiş yaparsam yeniden test gerekir mi?** Aynı modeme bağlı
+oldukları sürece **hayır**. DPI, evinizdeki bağlantı türünde değil servis sağlayıcının
+ağında çalışıyor; kabloyla da WiFi ile de aynı sağlayıcıya, aynı DPI donanımına
+çıkıyorsunuz. Ölçtük: aynı strateji (`fake + ttl4`) iki bağlantıda da Discord'u açtı ve
+iki arayüzün ağ geçidi aynı çıktı — aynı IP, aynı MAC adresi, yani aynı modem.
+
+Şifreli DNS tarafı da 0.1.9'dan itibaren her iki karta birden uygulanıyor, dolayısıyla
+kabloyu takıp çıkarmak koruma durumunu değiştirmiyor.
+
+**Yeni test gerektiren durum, bağlantı türü değil ağın kendisi:** telefonunuzun mobil
+paylaşımına bağlanmak, başka bir eve ya da iş yerine gitmek. Orada farklı bir servis
+sağlayıcı, dolayısıyla farklı bir DPI yapılandırması var; bir hatta çalışan parametre
+orada işe yaramayabilir.
+
+Bu durumda ne yapmanız gerektiği:
+
+1. **Servis sağlayıcı** listesinden yeni hattı seçin (bilmiyorsanız "Bilmiyorum" seçeneği
+   hattı kendisi tespit eder).
+2. **Strateji** listesi o sağlayıcının adaylarıyla dolar. Daha önce o hatta test
+   yaptıysanız kendi ölçümünüz **"· sizin testiniz"** etiketiyle en üstte çıkar; onu
+   seçip doğrudan Başlat'a basabilirsiniz, testi tekrarlamanız gerekmez.
+3. O hatta hiç test yapmadıysanız **Parametre Testi**'ni bir kez çalıştırın. Sonuç
+   kaydedilir ve bir dahaki sefere listede hazır bekler.
+
+Kaydedilmiş bir strateji zamanla işlevini yitirebilir — sağlayıcı DPI yapılandırmasını
+güncellerse dün çalışan parametre bugün çalışmaz. Uygulama bunu kendisi fark ediyor:
+başlattıktan birkaç saniye sonra hedefleri ölçüyor ve hiçbiri açılmıyorsa **"ÇALIŞIYOR —
+AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
 denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
 çünkü sesten çok daha ağır bir medya akışı.

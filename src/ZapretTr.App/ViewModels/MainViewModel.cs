@@ -1098,11 +1098,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // yuksek agirlikli adaylariyla otomatik dolduruluyor. Dort bolumun adaylarini
         // tek bir listede karistirmak, kullanicinin farkinda olmadan yalnizca 80
         // portunu koruyan bir secim yapmasina yol aciyordu.
+        // BU makinede yapilan testten cikan adaylar ayri etiketleniyor. Ikisi de
+        // "dogrulandi" ama ayni sey degil: biri BU hatta olculdu, digeri baska
+        // birinin hattinda. Ag degistirip listeye donen kullanicinin gormesi gereken
+        // ilk sey, hangisinin kendi olcumu oldugu.
+        var kendiOlcumleri = ConfigStore.LoadLearned()
+            .Where(l => string.Equals(l.IspId, profile.Id, StringComparison.OrdinalIgnoreCase))
+            .Select(l => l.CandidateId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         foreach (var candidate in profile.CandidatesFor(StrategySection.Tcp443))
         {
-            var badge = candidate.Source == CandidateSource.Verified ? "✓ " : string.Empty;
+            var etiket = kendiOlcumleri.Contains(candidate.Id)
+                ? "✓ {0} · sizin testiniz"
+                : candidate.Source == CandidateSource.Verified
+                    ? "✓ {0} · doğrulanmış"
+                    : "{0}";
+
             StrategyChoices.Add(new StrategyChoice(
-                candidate.Id, badge + Describe(candidate.Args), candidate.Args, candidate.Source));
+                candidate.Id,
+                string.Format(etiket, Describe(candidate.Args)),
+                candidate.Args,
+                candidate.Source));
         }
 
         SelectedStrategy = StrategyChoices.FirstOrDefault();
