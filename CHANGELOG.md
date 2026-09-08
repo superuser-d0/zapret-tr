@@ -8,6 +8,31 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.12]
+
+Bu sürümün tamamı tek bir saha raporundan çıktı. Bir kullanıcının makinesinde test
+**320 adayı 23 saniyede** "denedi" ve arayüz "ÇALIŞAN STRATEJİ YOK" dedi. Gerçek şu ki
+hiçbir aday denenmemişti: `winws` her seferinde başlar başlamaz 34 koduyla ölüyordu.
+
+### Düzeltildi
+
+- **Motor hiç başlamadığında arayüz "strateji bulunamadı" diyordu.** İki bambaşka
+  durum aynı ekranı gösteriyordu: "bu hatta hiçbir strateji işe yaramıyor" ile
+  "makinede bir şey bozuk, ölçüm yapılamadı". Birincisi "başka çözüm ara" demek,
+  ikincisi "düzelt ve tekrar dene" demek. Artık ayrı: motor art arda 25 denemede hiç
+  başlamazsa arama **duruyor** ve durum **"ÖLÇÜM YAPILAMADI"** oluyor, ne yapılacağı
+  sırayla yazılıyor (yeniden başlatma, çakışan aracı kapatma).
+
+- **`winws`'in kendi hata mesajı atılıyordu.** Erken ölümde yalnızca çıkış kodu
+  gösteriliyor, "ayrıntılar için günlüğe bakın" deniyordu — ama günlükte ayrıntı
+  yoktu, çünkü motorun çıktısı okunmadan hata fırlatılıyordu. 304 aday bu mesajla
+  düştü ve sebebini kimse öğrenemedi. Artık motorun ilk satırları hata mesajında.
+
+- **Geçersiz parametre üretiyorduk.** Genel aramadaki
+  `--dpi-desync-fakedsplit-mod=altorder` değeri `winws` tarafından reddediliyordu
+  (`Invalid fakedsplit mod : altorder`); motorun kendi yardım metni
+  `altorder=0|1|2|3` bekliyor. Her koşumda 12-16 aday buna harcanıyordu.
+
 ## [0.1.11]
 
 ### Düzeltildi

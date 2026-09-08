@@ -1023,6 +1023,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Test iptal edildi.");
             SetStatus(AppStatus.Ready, "SİSTEM HAZIR", "Test iptal edildi.");
         }
+        catch (ProbeEngineException ex)
+        {
+            // "Strateji bulunamadi" DEMEK DEGIL. Motor hic baslamadigi icin
+            // hicbir aday olculemedi; ikisini ayni ekranda gostermek kullaniciyi
+            // yanlis yone gonderiyordu ("demek bu hatta ise yaramiyor").
+            Append("ÖLÇÜM YAPILAMADI: motor art arda hiç başlamadı.", isError: true);
+            Append(ex.Message, isError: true);
+            Append("Bu bir strateji sorunu değil; makinede motoru engelleyen bir şey var.");
+            Append("Sırayla deneyin:");
+            Append("  1. Bilgisayarı yeniden başlatın (takılı kalmış sürücü en sık sebep).");
+            Append("  2. GoodbyeDPI gibi başka bir DPI aracı açıksa kapatın.");
+            Append("  3. Testi yeniden çalıştırın.");
+
+            SetStatus(AppStatus.Faulted, "ÖLÇÜM YAPILAMADI",
+                "Motor başlamadığı için hiçbir strateji denenemedi. Ayrıntılar günlükte.");
+        }
         catch (Exception ex)
         {
             Append(ex.Message, isError: true);

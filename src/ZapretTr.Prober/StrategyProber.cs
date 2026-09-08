@@ -348,6 +348,15 @@ public sealed class StrategyProber(
             for (var i = 0; i < candidateList.Count; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                // Motor art arda hic baslamadiysa devam etmenin anlami yok:
+                // her aday saniyenin onda birinde "denenip" ayni sebeple
+                // dusuyor ve kullanici olcum yapildigini saniyor.
+                if (MotorSurekliDusuyor(attempts, out var sebep))
+                {
+                    throw new ProbeEngineException(sebep);
+                }
+
                 var candidate = candidateList[i];
                 remaining--;
 
@@ -382,9 +391,42 @@ public sealed class StrategyProber(
         return best;
     }
 
+    /// <summary>Motorun art arda kac denemede hic baslamadigina bakar.</summary>
+    /// <remarks>
+    /// Esik bilerek yuksek: tek tuk basarisizlik normal (gecersiz parametre,
+    /// gecici kilit). Aranan sey BU DEGIL -- surucunun cekirdekte takili
+    /// kalmasi gibi, her adayi ayni sekilde dusuren kalici bir bozukluk.
+    /// </remarks>
+    /// <summary>Motorun hic baslamadigini anlatan hata onek.</summary>
+    public const string EngineFailurePrefix = "calistirilamadi: ";
+
+    public const int MotorHataEsigi = 25;
+
+    public static bool MotorSurekliDusuyor(
+        IReadOnlyList<CandidateResult> attempts, out string sebep)
+    {
+        sebep = string.Empty;
+
+        if (attempts.Count < MotorHataEsigi)
+        {
+            return false;
+        }
+
+        var son = attempts.Skip(attempts.Count - MotorHataEsigi).ToList();
+        if (son.Any(a => a.Succeeded) ||
+            !son.All(a => (a.Detail ?? string.Empty).StartsWith(EngineFailurePrefix, StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        sebep = son[^1].Detail ?? "winws baslatilamadi";
+        return true;
+    }
+
     /// <summary>
     /// Bir adayi calistirip engelli hedeflerde deneyip hangi hedef siniflarini actigini dondurur.
     /// </summary>
+
     private async Task<IReadOnlyList<string>> TryCandidateAsync(
         StrategySection section,
         ProbeCandidate candidate,

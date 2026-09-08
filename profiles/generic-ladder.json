@@ -93,7 +93,7 @@
             "--dpi-desync-fooling=md5sig",
             "--dpi-desync-fooling=badseq,md5sig"
           ]},
-          { "name": "mod", "values": ["", "--dpi-desync-fakedsplit-mod=altorder"] }
+          { "name": "mod", "values": ["", "--dpi-desync-fakedsplit-mod=altorder=1"] }
         ]
       },
       {

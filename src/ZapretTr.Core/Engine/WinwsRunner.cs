@@ -119,8 +119,43 @@ public sealed class WinwsRunner : IAsyncDisposable
 
             var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
-            process.OutputDataReceived += (_, e) => PublishLine(e.Data, isError: false);
-            process.ErrorDataReceived += (_, e) => PublishLine(e.Data, isError: true);
+            // winws'in kendi soyledikleri. Erken olumde hata mesajina bunlar
+            // konuyor: eskiden yalnizca cikis kodu vardi ve "34 koduyla kapandi,
+            // ayrintilar icin gunluge bakin" deniyordu -- ama gunlukte ayrinti
+            // YOKTU. Gercek bir kullanicida 304 aday bu mesajla dustu ve
+            // sebebini kimse ogrenemedi. Motorun soyledigi sey teshisin
+            // kendisiydi ve biz onu atiyorduk.
+            var ilkSatirlar = new List<string>();
+
+            void Kaydet(string? satir)
+            {
+                if (string.IsNullOrWhiteSpace(satir))
+                {
+                    return;
+                }
+
+                lock (ilkSatirlar)
+                {
+                    // Ilk birkac satir yetiyor: winws sebebi hemen basta
+                    // yaziyor, sonrasi paket gunlugu.
+                    if (ilkSatirlar.Count < 5)
+                    {
+                        ilkSatirlar.Add(satir.Trim());
+                    }
+                }
+            }
+
+            process.OutputDataReceived += (_, e) =>
+            {
+                Kaydet(e.Data);
+                PublishLine(e.Data, isError: false);
+            };
+
+            process.ErrorDataReceived += (_, e) =>
+            {
+                Kaydet(e.Data);
+                PublishLine(e.Data, isError: true);
+            };
             process.Exited += (_, _) =>
             {
                 // Beklenmedik cikis: kullanici durdurmadiysa bu bir hatadir ve
@@ -141,7 +176,6 @@ public sealed class WinwsRunner : IAsyncDisposable
             if (process.WaitForExit(StartupGraceMilliseconds))
             {
                 var exitCode = process.ExitCode;
-                process.Dispose();
                 // "1" neredeyse her zaman TEK bir seyi anlatiyor: winws ayni
                 // filtreyle zaten calisiyor ve ikinci ornegi reddediyor
                 // ("A copy of winws is already running with the same filter").
@@ -154,9 +188,21 @@ public sealed class WinwsRunner : IAsyncDisposable
                       " bir ornek baslatilamaz."
                     : string.Empty;
 
+                // Cikis kodundan SONRA kisa bir bekleme: cikti okuma geri
+                // cagrilari ayri bir is parcaciginda geliyor ve surec olduktan
+                // hemen sonra bakarsak son satirlari kacirabiliyoruz.
+                process.WaitForExit();
+
+                string soyledigi;
+                lock (ilkSatirlar)
+                {
+                    soyledigi = ilkSatirlar.Count > 0
+                        ? " winws: " + string.Join(" | ", ilkSatirlar)
+                        : " (winws hicbir sey yazmadan cikti)";
+                }
+
                 throw new InvalidOperationException(
-                    $"winws baslar baslamaz {exitCode} koduyla kapandi." + ipucu +
-                    " Ayrintilar icin gunluge bakin.");
+                    $"winws baslar baslamaz {exitCode} koduyla kapandi." + ipucu + soyledigi);
             }
 
             _process = process;
