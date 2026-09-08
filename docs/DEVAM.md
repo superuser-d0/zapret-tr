@@ -237,6 +237,16 @@ onları buldu; elle sayım eksik kalmıştı.
 
 ## Tuzaklar — hepsi bir kez ısırdı
 
+**Kurulum, söktüğü servisi geri kurmuyordu — belirtisi olmayan bir hata (0.1.8).**
+Yükseltme sırasında servisler sökülmek ZORUNDA: çalışan `winws` sürücüyü, dolayısıyla
+`WinDivert64.sys`'i kilitliyor ve dosya değiştirilemiyor. Sökme vardı, geri kurma yoktu.
+0.1.7'ye yükselten makinede sonuç: kurulum sorunsuz bitti, uygulama "SİSTEM HAZIR" dedi,
+servisler yoktu, kullanıcı korumasız kaldı. **Hiçbir hata mesajı çıkmadı ve uygulama
+doğru davranıyordu** — kaybolan şey, kullanıcının aylar önce bir kez bastığı bir düğmenin
+sonucuydu. Ders: kurulumun geçici olarak BOZDUĞU her kullanıcı tercihi, kurulum sonunda
+geri kurulmak zorunda; "kullanıcı fark eder" varsayımı burada tutmaz, çünkü fark
+edilecek bir belirti yok.
+
 **Otomatik başlatma servisi, "Başlat" düğmesini sessizce ölümcül yapıyordu (0.1.7).**
 Kullanıcının bildirdiği hata şuydu: bir kez parametre testi yap, Zapret'i başlat,
 uygulamayı kapat, tekrar aç, Başlat'a bas → "BAŞLATILAMADI". İlk bakışta ayar

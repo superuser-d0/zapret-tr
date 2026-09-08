@@ -103,6 +103,26 @@ Type: filesandordirs; Name: "{app}\dnscrypt-proxy"
 Type: filesandordirs; Name: "{app}\zapret-winws"
 
 [Code]
+// Yukseltmeden ONCE otomatik baslatma servisi kurulu muydu. Kurulum, dosyalari
+// degistirebilmek icin servisleri sokmek ZORUNDA (calisan winws surucuyu, dolayisiyla
+// WinDivert64.sys'i kilitliyor) -- ama soktugunu geri kurmazsa kullanicinin otomatik
+// baslatma tercihi yukseltmede SESSIZCE kaybolur.
+//
+// 0.1.7 yukseltmesinde gercek bir makinede goruldu: kurulum bitti, uygulama "SISTEM
+// HAZIR" dedi, servisler yoktu ve kullanici korumasiz kaldi. Belirtisi yok: uygulama
+// dogru davraniyor, kaybolan sey kullanicinin bir daha basmadigi bir dugmenin sonucu.
+var
+  ServisGeriKurulacak: Boolean;
+
+// sc query cikis kodu: 0 = servis var, 1060 = yok.
+function ServisKurulu(const Ad: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + Ad, '',
+                 SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
 // Kurulum baslamadan once calisan bir surum varsa kapat: acik bir uygulama
 // dosyalari kilitler ve kurulum yarim kalir.
 //
@@ -155,6 +175,9 @@ begin
   Result := '';
   OncekiExe := ExpandConstant('{app}\{#AppExe}');
 
+  // Durum, sokme ISLEMINDEN ONCE okunmali; sonra bakmanin anlami olmaz.
+  ServisGeriKurulacak := ServisKurulu('ZapretTR');
+
   // 1) Onceki surumun kendi temizligi: servisleri soker ve DNS'i geri alir.
   //    Kullanici ayarlari ve ogrenilmis dogrulamalar KORUNUR.
   if FileExists(OncekiExe) then
@@ -188,4 +211,26 @@ begin
 
   // Surucu goruntusunun cekirdekten dusmesi anlik degil.
   Sleep(2000);
+end;
+
+// Sokulen servisi geri kur. Dosyalar yerine gectikten SONRA, cunku servis yeni
+// ikiliyi gostermeli.
+//
+// Geri kurma sessizce basarisiz olmamali: olursa kullanici korundugunu sanarak
+// korumasiz kalir, ki duzeltmeye calistigimiz sey tam olarak bu.
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+begin
+  if (CurStep <> ssPostInstall) or (not ServisGeriKurulacak) then
+    Exit;
+
+  if not Exec(ExpandConstant('{app}\{#AppExe}'), '--install-services', '',
+              SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    ResultCode := -1;
+
+  if (ResultCode <> 0) and (not WizardSilent()) then
+    MsgBox('Otomatik baslatma servisi geri kurulamadi (kod ' + IntToStr(ResultCode) + ').' #13#10
+           'Uygulamayi acip "Servis Olarak Yukle" dugmesiyle yeniden kurabilirsiniz.',
+           mbInformation, MB_OK);
 end;

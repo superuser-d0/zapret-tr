@@ -8,6 +8,23 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.8]
+
+### Düzeltildi
+
+- **Yükseltme, otomatik başlatma servisini sessizce siliyordu.** Kurulum, dosyaları
+  değiştirebilmek için servisleri sökmek zorunda: çalışan `winws`, WinDivert sürücüsünü
+  ve dolayısıyla `WinDivert64.sys` dosyasını kilitliyor. Ama söktüğünü geri kurmuyordu.
+  Sonuç, 0.1.7'ye yükselten gerçek bir makinede görüldü: kurulum sorunsuz bitiyor,
+  uygulama "SİSTEM HAZIR" diyor, servisler yok ve kullanıcı **korumasız** kalıyor.
+  Belirtisi de yok — uygulama doğru davranıyor, kaybolan şey kullanıcının bir daha
+  basmadığı bir düğmenin sonucu. Artık kurulum, yükseltmeden önce servisin kurulu olup
+  olmadığına bakıyor ve dosyalar yerine geçtikten sonra geri kuruyor; geri kurma
+  başarısız olursa sessiz geçmiyor, kurulum bunu söylüyor.
+
+**0.1.7'den yükselttiyseniz:** servisiniz silinmiş olabilir. `sc query ZapretTR`
+komutu `RUNNING` demiyorsa uygulamayı açıp "Servis Olarak Yükle" düğmesine basın.
+
 ## [0.1.7]
 
 ### Düzeltildi
