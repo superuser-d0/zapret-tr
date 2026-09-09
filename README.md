@@ -12,7 +12,7 @@ Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığ
 [![lisans](https://img.shields.io/badge/lisans-MIT-blue)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-Windows%20x64-0078d4)](https://github.com/superuser-d0/zapret-tr/releases/latest)
 
-### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Sık sorulanlar](#sık-sorulanlar)
+### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Yavaşlatır mı](#bilgisayarı-yavaşlatır-mı) · [Sık sorulanlar](#sık-sorulanlar)
 
 <img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
 
@@ -151,6 +151,12 @@ göndermeye siz karar verirsiniz.) İstemezseniz
 `%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
 yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
 
+**Bilgisayarımı yavaşlatır mı, oyunda FPS düşer mi?** Koruma çalışırken `winws` 10 MB bellek
+ve makinenin **%0,2'sinden azını** kullanıyor; çekirdek sürücüsünün DPC/kesme süresinde ölçülebilir
+bir artış yok — takılmanın çıkacağı yer orasıdır. Gecikme de değişmiyor. Tek gerçek maliyet
+şifreli DNS: bir adresi ilk kez açarken fazladan bekleme oluyor. Sayıların tamamı ve nasıl
+ölçüldüğü: [Bilgisayarı yavaşlatır mı](#bilgisayarı-yavaşlatır-mı).
+
 **Bir hatayı nasıl bildiririm?** **"Hata Bildir"** düğmesi GitHub'daki bildirim formunu
 **doldurulmuş halde** açar: sürüm, motor sürümü, Windows, servis sağlayıcı, seçili
 parametre ve günlüğün son satırları formda hazır gelir. Düğme **hiçbir şey göndermez** —
@@ -222,6 +228,110 @@ Sizde ses **çalışmıyorsa** dürüst cevap şu: o durum için doğrulanmış 
 size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP keşif
 protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulaması yapılmış bir ses oturumundan
 alınabiliyor. Dolayısıyla dışarıdan ölçemiyoruz.
+
+---
+
+## Bilgisayarı yavaşlatır mı
+
+Kısa cevap: **korumanın kendisi ölçülebilir bir yük getirmiyor. Şifreli DNS'in ise bir
+bedeli var ve aşağıda yazıyor.**
+
+Ölçüm makinesi: AMD Ryzen 7 260 (16 iş parçacığı), Windows 11 (26200), Türk Telekom
+hattı (~95 MB/s), ZapretTR 0.1.18. Her ölçüm **dönüşümlü** yapıldı — kapalı → açık →
+tekrar kapalı. Sondaki ikinci "kapalı" bir sürüklenme denetimi: aradaki farkın gerçekten
+ZapretTR'den mi yoksa hattın kendi dalgalanmasından mı geldiğini ayırır.
+
+### Bellek
+
+Aşağıdaki sayılar **çalışma kümesi** — Görev Yöneticisi'nde "Bellek" sütununda
+göreceğiniz değer:
+
+| Süreç | Ne yapıyor | Bellek |
+|---|---|---|
+| `winws` | paket süzgeci — **asıl iş bu** | **10 MB** |
+| `dnscrypt-proxy` | şifreli DNS (isteğe bağlı) | 41–78 MB |
+| `ZapretTR.exe` | arayüz | 165–235 MB |
+
+Listenin en pahalı parçası arayüz — ve **çalışıyor olması gerekmiyor.** Pencereyi
+kapatınca bildirim alanına iner; otomatik başlatmayı kurduysanız hiç açmanız gerekmez.
+Korumayı yapan şey 10 MB'lık `winws`.
+
+### İşlemci
+
+Sürekli ~95 MB/s indirme altında, 30 saniyelik pencerede ölçüldü:
+
+| Süreç | Makinenin tamamına oranla | Tek çekirdeğe oranla |
+|---|---|---|
+| `winws` | **%0,14 – %0,19** | %2,3 – %3,1 |
+| `dnscrypt-proxy` | %0,013 | %0,21 |
+| arayüz (boşta) | ~%0 | ~%0 |
+
+### Oyun takılması
+
+Bir paket süzgecinin oyunu takabileceği yer bellidir: çekirdek sürücüsünün kesme ve
+**DPC** süresi. Kare sürelerinde ani sıçrama olacaksa oradan çıkar. Aynı indirme yükü
+altında ölçtük:
+
+| | Motor kapalı | Motor açık | Yeniden kapalı |
+|---|---|---|---|
+| DPC süresi | %0,33 | %0,31 | %0,35 |
+| Kesme süresi | %0,29 | %0,23 | %0,23 |
+| Makine geneli CPU | %4,6 | %6,2 | %5,7 |
+
+DPC ve kesme sürelerinde **ölçülebilir bir artış yok** — açıkken okunan değerler,
+kapalıyken okunanların arasında kalıyor.
+
+**Dürüst sınır:** FPS'i doğrudan ölçmedik, çünkü ölçüm sırasında oyun çalıştırmadık.
+Yukarıdaki sayılar, bir FPS düşüşünün *sebebi* olabilecek şeyin ölçümü. Elimizdeki
+kanıt bu; "hiç etkilemez" demiyoruz, "etkilemesini bekleyeceğimiz yerde bir şey
+göremedik" diyoruz. Gerçek bir oyunda ölçüm yapan olursa bildirsin, buraya yazalım.
+
+### Gecikme
+
+| | Motor kapalı | Motor açık |
+|---|---|---|
+| ping (1.1.1.1) | 3,8 ms | 3,7 ms |
+| TCP el sıkışma (github.com:443) | 56,5 ms | 57,2 ms |
+| TCP el sıkışma (1.1.1.1:443) | 4,9 ms | 4,8 ms |
+
+Fark yok. Beklenen de buydu: `winws` bağlantının yalnızca **ilk** paketlerine dokunuyor,
+sonrasında akış olduğu gibi geçiyor.
+
+### Şifreli DNS'in bedeli — tek gerçek maliyet
+
+Burada gerçek bir fark var ve saklamanın anlamı yok:
+
+| | Ad çözme süresi |
+|---|---|
+| ISS'nin çözücüsü (şifreli DNS kapalı) | ortanca **1 ms** |
+| ISS'nin çözücüsü + paket süzgeci açık | ortanca **0,9 ms** — süzgecin etkisi yok |
+| Şifreli DNS, bir adresi **ilk kez** çözerken | **45–606 ms** (12 adres, ortanca ~190 ms) |
+| Şifreli DNS, aynı adresi tekrar çözerken | **0,4 ms** — ISS'nin çözücüsünden bile hızlı |
+
+Yani ilk ziyarette gözle görülür bir bekleme oluyor, sonrasında `dnscrypt-proxy` kendi
+önbelleğinden anında cevaplıyor. Karşılığında ISS'nin DNS'i devrede olmadığı için
+adresler engel sunucusuna yönlendirilemiyor — Türkiye'de engellemenin **ilk** katmanı
+tam olarak budur. Bu takas hoşunuza gitmiyorsa "Şifreli DNS kullan" kutusunu
+kapatabilirsiniz; paket süzgeci tek başına da çalışır.
+
+### İndirme hızı
+
+Ölçtük ama **kesin bir şey söyleyemiyoruz** ve bunu olduğu gibi yazmak daha doğru:
+motor açıkken de kapalıyken de 85–96 MB/s ölçtük, tutarlı bir fark çıkmadı. Sayıların
+dağılımı her iki durumda da hız testi sunucusundan geliyordu — nitekim test sunucusu
+bir noktada bizi hız sınırına takti. Hattı doyurabilen, sınırlamayan bir kaynak
+bulamadığımız için bu satır, tablodaki öteki satırlardan **daha zayıf bir kanıt**.
+
+Elimizdeki asıl dayanak şu: `winws` saniyede ~95 MB veri geçerken makinenin **%0,2'sinden
+azını** kullanıyor. Bu kadar az iş yapan bir şeyin bant genişliğini kayda değer biçimde
+kısması beklenmez.
+
+### Yerel trafik hiç dokunulmuyor
+
+Ölçüm sırasında yan bir bulgu: makinenin kendi içindeki trafik (127.0.0.1) süzgeçten
+**hiç geçmiyor**. 400 MB'lık yerel aktarım boyunca `winws`'in işlemci süresi 0 ms arttı.
+Yerelde çalıştırdığınız sunucular, oyun sunucuları ve uygulamalar arası bağlantılar
+etkilenmiyor.
 
 ---
 

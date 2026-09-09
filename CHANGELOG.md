@@ -8,6 +8,21 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Değişti
+
+- **README'ye "Bilgisayarı yavaşlatır mı" bölümü.** Gerçek bir makinede ölçüldü, dönüşümlü
+  (kapalı → açık → tekrar kapalı) — sondaki ikinci "kapalı", farkın ZapretTR'den mi yoksa
+  hattın kendi dalgalanmasından mı geldiğini ayırmak için.
+
+  Özet: `winws` 10 MB bellek ve sürekli ~95 MB/s indirme altında makinenin %0,2'sinden
+  azı. Çekirdek sürücüsünün DPC/kesme süresinde ölçülebilir artış yok — oyun takılması
+  olacaksa oradan çıkar. Gecikme değişmiyor. Tek gerçek maliyet şifreli DNS: bir adresi
+  ilk kez çözmek 45–606 ms, tekrarında 0,4 ms (ISS'nin çözücüsünden bile hızlı).
+
+  İki şey bilerek eksik bırakıldı ve README'de öyle yazıyor: **FPS doğrudan ölçülmedi**
+  (ölçüm sırasında oyun çalıştırılmadı), ve **indirme hızı için kesin bir şey
+  söylenmiyor** — hattı doyurabilen, hız sınırı koymayan bir test sunucusu bulunamadı.
+
 ## [0.1.18]
 
 ### Eklendi
