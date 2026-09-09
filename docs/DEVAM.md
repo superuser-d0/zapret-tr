@@ -29,6 +29,12 @@ Depo: https://github.com/superuser-d0/zapret-tr (public)
 - Paralel hedef sınaması
 - Discord ses (UDP/STUN) ölçümü
 - **QUIC** — ölçüm yolu ve çalışan strateji (aşağıda)
+- Bildirim alanı simgesi (0.1.13) — pencereyi kapatmak korumayı kapatmıyor
+- "Raporu Kaydet" (0.1.10/0.1.11) — günlük + ortam özeti tek dosyaya
+- Tek tıkla güncelleme (0.1.15) — indir, SHA256 doğrula, kur
+- "Hata Bildir" (0.1.18) — GitHub formunu doldurulmuş açar, göndermez
+- Gerçek kurulum testi CI'da (`installer-test.yml`) — kur, yükselt, kaldır
+- Başarım ölçümü (aşağıda) — bellek, CPU, DPC, gecikme
 
 **Ölçülmüş sonuç (TTNET, gerçek hat):** şifreli DNS + `--dpi-desync=fake
 --dpi-desync-ttl=4` ile discord.com, pornhub.com, xvideos.com açılıyor.
@@ -159,6 +165,41 @@ Discord'un metin, bağlantı ve QUIC bölümlerinin üçü de açılıyor.
 alttaki DPI stratejisi ne kadar doğru olursa olsun sonuç değişmiyor.
 `tcp443` bölümünde bu fark belirti olarak da görünüyor — DoH varken
 **zaman aşımı** (gerçek DPI), DoH yokken **engel sayfası** (DNS kaçırma).
+
+---
+
+## Başarım — ölçülmüş (2026-09-09, TTNET, Ryzen 7 260 / 16 iş parçacığı)
+
+Sayıların tamamı ve nasıl okunacağı README'de ("Bilgisayarı yavaşlatır mı").
+Burada yalnızca ÖLÇÜM YÖNTEMİNDEN öğrenilenler var; sayıları buraya kopyalamak
+iki yerde bayatlayan bir liste yaratır.
+
+Özet: `winws` 10 MB bellek, sürekli ~95 MB/s indirme altında makinenin
+%0,2'sinden azı. DPC/kesme süresinde artış yok. Gecikme değişmiyor. Tek gerçek
+maliyet şifreli DNS: bir adresi ilk çözme 45–606 ms, tekrarında 0,4 ms.
+
+**Ölçüm dönüşümlü yapılmalı: kapalı → açık → tekrar kapalı.** İlk koşumda motoru
+açıp kapatmak yerine sırayla ölçtük ve "motor açıkken indirme düştü" gibi duran
+bir sonuç çıktı. Sonradan anlaşıldı ki düşük değerler ZAMANLA korelasyondu, motor
+durumuyla değil: hız testi sunucusu bizi kademeli olarak kısıyordu. Sondaki
+ikinci "kapalı" ölçümü olmasaydı bu yanlış sonuç README'ye girecekti.
+
+**Testi kendini doğrulayacak şekilde kur.** Paket süzgecinin bayt başına bedelini
+internetsiz ölçmek için 127.0.0.1 üzerinden aktarım kurduk. Betiğe şu kontrolü de
+koyduk: "aktarım sırasında winws'in işlemci süresi artmıyorsa bu trafik süzgeçten
+geçmiyordur ve karşılaştırma geçersizdir." Artış **0 ms** çıktı — ölçüm çöpe
+gitti ama sessizce yanlış bir sayı üretmek yerine kendini ele verdi.
+
+Yan bulgu, kalıcı: **127.0.0.1 trafiği winws'ten hiç geçmiyor.**
+
+**Ücretsiz hız testi uç noktaları bu iş için güvenilmez.** Cloudflare ~2 GB sonra
+429 döndü. Alternatifler hattı doyuramadı (Hetzner 7,8 MB/s, OVH 5,1, GitHub CDN
+23,4 — hat ~95 MB/s). Bu yüzden indirme hızı için README'de kesin bir şey
+söylenmiyor; dayanak, winws'in ölçülmüş işlemci payı.
+
+**FPS ölçülmedi ve bu README'de açıkça yazıyor.** Ölçüm sırasında oyun
+çalıştırılmadı. Ölçülen şey, bir FPS düşüşünün sebebi olabilecek yer: çekirdek
+sürücüsünün DPC/kesme süresi.
 
 ---
 
@@ -659,6 +700,80 @@ için Python değil **Edit aracı** kullan. Birkaç kez derleme kırdı.
 çalışmıyor; birkaç kez test yarıda kaldı. Uzaktan çalışan bir oturum bunu
 kendisi geçemez.
 
+**Kapalı bir `Expander`'ın içeriği görsel ağaca HİÇ eklenmiyor (0.1.11).**
+"Raporu Kaydet" düğmesini "bağlamı orası" diye Ayrıntılar panelinin içine
+koymuştum. Paneli açmayan kullanıcı için düğme YOKTU ve gerçek bir kurulumda
+kullanıcı tam olarak bunu bildirdi. Testim de yakalamamıştı: mantıksal ağaç
+Expander içeriğini döndürüyor, yani "düğme pencerede mi" sorusu geçiyordu.
+`MainWindowSmokeTests` artık ayrıca **atalarında Expander var mı** diye bakıyor
+ve her yeni düğme o listeye ekleniyor.
+
+**Motor hiç başlamadığında "strateji bulunamadı" demek yanlış teşhis (0.1.12).**
+winws açılmadığında bütün adaylar başarısız oluyor ve arayüz "bu hatta çalışan
+strateji yok" diyordu — kullanıcı da hattını suçluyordu. Artık motor hatası ayrı
+bir durum: "ÖLÇÜM YAPILAMADI" + çıkış kodu + ne yapılacağı.
+
+**Bir hatayı düzeltmeden önce kullanıcının GEÇTİĞİ yolu bul (0.1.13 → 0.1.14).**
+Saha paketi rapor üretmiyordu; `catch` bloğunu düzelttim ve yayınladım. Kullanıcı
+"hâlâ yok" dedi. Ekran görüntüsünden anlaşıldı ki onun koşumu istisna fırlatmıyor,
+`blockedCount == 0` ile NORMAL yoldan çıkıyordu. İki sürüm, tek hata — çünkü
+belirtiye değil varsayıma göre düzeltmiştim.
+
+**Sürüm karşılaştırması metin olarak yapılırsa sessizce yanlış (0.1.15).**
+"0.1.9" > "0.1.14" metin sırasında doğru; bildirim hiç görünmez ve hata da
+vermez. `Version.TryParse` ile sayı olarak karşılaştırılıyor.
+
+**Öğrenilmiş kayıtların anahtarı (sağlayıcı, bölüm, PARAMETRE) idi ve bu iki
+doğrulamayı birden listede tutuyordu (0.1.16).** Engelleme değişip yeni bir aday
+kazandığında eskisi de "doğrulandı" etiketiyle duruyordu. "Eskiden çalışıyordu"
+bir kanıt değil — o ölçüm artık var olmayan bir ağ durumuna ait. Anahtar artık
+(sağlayıcı, bölüm). Kural `ConfigStore.Merge` içinde ve testi ORAYA bağlı:
+testi ilk yazdığımda kuralı test dosyasına KOPYALAMIŞTIM, mutasyondan sağ çıktı.
+
+**"Kurulu" ile "çalışıyor" ayrı sorular (0.1.17).** Servis var ama durmuşsa
+arayüz bunu "servis modu aktif" okuyup Başlat'ı kapatıyordu: koruma yok ve
+kullanıcının yapabileceği bir şey de yok. Bir kullanıcıda 0.1.9 → 0.1.15
+yükseltmesinden sonra yaşandı. Üç durum artık ayrı; "kurulu ama durmuş"ta Başlat
+AÇIK kalıyor.
+
+**Geçen bir test, sınamak istediği şeyi sınadığını kanıtlamaz — ikinci kez
+ısırdı.** "Hata Bildir" adresinin uzunluk sınırını test ederken 400 KISA günlük
+satırı verdim; son 25 satır zaten sınırın altında kaldığı için kısaltma döngüsü
+hiç çalışmıyordu ve kodu bozduğumda test hâlâ geçiyordu. Uzun satırlarla yeniden
+yazıldı. **Her yeni testi mutasyonla dene**, yoksa yalnızca bir yanılsama
+ekliyorsun.
+
+### Arayüzü otomasyonla sürerken (2026-09-09)
+
+**Uygulama yönetici hakkıyla çalışıyorsa otomasyon da yönetici olmalı.** Aksi
+halde Windows (UIPI) pencereye hiç dokundurmuyor — hata da vermiyor, eleman
+"bulunamıyor".
+
+**PowerShell varsayılan olarak DPI-farkında DEĞİL.** Ölçekli ekranda
+`GetWindowRect` sanallaştırılmış koordinat döndürüyor: pencere görüntüsü kırpık
+çıkıyor ve hesaplanan noktaya yapılan tıklama bambaska bir yere gidiyor. Her
+şeyden önce `SetProcessDpiAwarenessContext(-4)` çağrılmalı.
+
+**WPF'in `MessageBox`'ı masaüstünün DOĞRUDAN çocuğu değil.** `RootElement`
+altında `TreeScope::Children` ile aranınca bulunamıyor ve "diyalog gelmedi"
+sanılıyor — oysa diyalog ekranda duruyor. `Descendants` ile aranmalı. Belirtiden
+şaşma: düğme gri kaldıysa komut çalışıyor ve bir şeyi bekliyor demektir.
+
+**`MessageBox` düğmelerinin adı işletim sisteminin diline bağlı** ("Yes/No" mu
+"Evet/Hayır" mı) ve UIA ağacında hiç görünmeyebiliyor. Dilden ve ağaçtan bağımsız
+yol: pencereye doğrudan `WM_COMMAND` (IDYES=6, IDNO=7).
+
+**Duraklatınca başlat düğmesinin YAZISI değişiyor** ("ZAPRET'İ BAŞLAT" →
+"DEVAM ET"). Betik `ZAPRET*` arayıp "düğme kapalı" sandı; kodda hata yoktu.
+Otomasyonda düğmeyi adıyla ararken bunu hesaba kat.
+
+**PS 5.1, BOM'suz UTF-8 betikleri yanlış okuyor.** İçinde Türkçe harf geçen
+betikleri `utf-8-sig` ile yaz, yoksa `'Çıkış'` gibi karşılaştırmalar sessizce
+tutmaz.
+
+**Uzun yollar (>260 karakter) Python ve MSBuild'i düşürüyor.** Oturumun karalama
+dizini bu sınıra çok yakın; derleme çıktısını kısa bir dizine al.
+
 ---
 
 ## Tasarım kararları — geri alınmadan önce oku
@@ -793,7 +908,7 @@ beklendiğini, sürecin yaşayıp yaşamadığını (yaşamıyorsa çıkış kod
 durumu ayırıyor: süreç ölmüş / süreç yaşıyor ama portu bağlayamamış / port bağlı
 ama sorgu cevapsız. O makinede tekrar görülürse mesaj hangisi olduğunu söyler.
 
-Testler: 116 geçiyor. Merdiven toplamı 221 aday (QUIC 15 → 56).
+Testler: **159 geçiyor**. Merdiven toplamı 221 aday (QUIC 15 → 56).
 Kırpılmış Release yayını doğrulandı: 11.3 MB tek dosya + yanında `msquic.dll`,
 kırpma analizöründen tek uyarı yok.
 
@@ -816,3 +931,19 @@ kırpma analizöründen tek uyarı yok.
 `C:\Program Files\dotnet` SDK'sız olduğu için betik "No .NET SDKs were found" ile
 düşüyor. Depo hatası değil; yerelde koşarken PATH'e
 `%LOCALAPPDATA%\Microsoft\dotnet` eklenmeli. CI'da sorun yok.
+
+### 2026-09-09 oturumu sonu
+
+Son yayın **v0.1.18** (`releases/latest`, taslak değil). Üç CI iş akışı da yeşil:
+derle+test, kurulum testi, yayın. Yayındaki `SHA256SUMS.txt` paketin gerçek
+özetiyle örtüşüyor — tek tıkla güncelleme bu sürümü doğrulayabiliyor.
+
+Makine temiz ve kontrol edildi: `winws`/`dnscrypt-proxy` çalışmıyor, DNS DHCP'ye
+dönmüş (`192.168.8.1`, dnscrypt'in `127.0.0.1`'i değil).
+`%ProgramData%\ZapretTR\config.json` var (TTNET + `tt-443-fake-ttl4` + şifreli
+DNS açık), `learned.json` 3 kayıt taşıyor (tcp80, tcp443, quic — 2026-09-09).
+
+Bu oturumda arayüz gerçekten çalıştırılıp otomasyonla sürüldü: "Hata Bildir"
+uçtan uca doğrulandı (onay kutusu çıktı, "Hayır" tarayıcı açmadı, "Evet" GitHub
+formunu DOLU açtı, kullanıcının "Açılmayan site" kutusuna yazdığı adres formda
+çıkmadı) ve başarım ölçümü yapıldı. Otomasyonun tuzakları tuzaklar bölümünde.

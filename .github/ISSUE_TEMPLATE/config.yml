@@ -5,6 +5,10 @@
 blank_issues_enabled: true
 
 contact_links:
+  - name: Hangi hatlarda ölçüm eksik
+    url: https://github.com/superuser-d0/zapret-tr#hangi-hatlarda-doğrulandı
+    about: "Superonline, TurkNet, Vodafone ve diğerlerinde hâlâ tek bir doğrulanmış ölçüm yok."
+
   - name: Kurulum ve kullanim sorulari
     url: https://github.com/superuser-d0/zapret-tr#sık-sorulanlar
     about: "Servis durmus, parametre bulunamadi, DNS acilmiyor gibi bilinen durumlar burada yazili."

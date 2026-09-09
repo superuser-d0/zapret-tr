@@ -438,12 +438,26 @@ yaramadı" demek değil: engellenen bölümler ikincil olabiliyor.
 🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
 bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
 tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
-**"Ayrıntılar"** günlüğünü paylaşmanız bu profili doğrulanmışa çevirecek tek şey.
+**"Raporu Kaydet"** dosyasını [ölçüm bildirimi formuna](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
+bırakmanız bu profili doğrulanmışa çevirecek tek şey.
 
-Bu hatlardan birindeyseniz yapmanız gereken tek şey var: uygulamayı kurup **Parametre Testi**'ni
-çalıştırmak ve sonucu [bir issue'da](https://github.com/superuser-d0/zapret-tr/issues)
-paylaşmak. Test hiçbir yere veri göndermiyor; neyi paylaşacağınıza siz karar
-veriyorsunuz.
+### Bu hatlardan birindeyseniz
+
+Projenin eksiği kod değil, **saha verisi**. Yapmanız gereken üç şey var ve toplamı
+birkaç dakika:
+
+1. Uygulamayı kurun, **Parametre Testi**'ni çalıştırın.
+2. Bittiğinde **"Raporu Kaydet"** ile dosyayı kaydedin.
+3. [**Ölçüm bildirimi formunu**](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
+   açın, dosyayı sürükleyip bırakın.
+
+Test **hiçbir yere veri göndermiyor**; neyi paylaşacağınıza siz karar veriyorsunuz.
+Raporu göndermeden önce açıp bakın — içinde hattınızın sağlayıcısı, denenen
+parametreler ve test edilen adresler var, genel IP adresiniz yazmaz.
+
+**En değerlisi tekrarlanan koşum.** Bir profili "doğrulandı"ya çevirmek için aynı
+adayın tekrar tekrar kazandığını görmemiz gerekiyor; tek koşum gürültü taşıyabiliyor.
+Testi üç kez çalıştırıp sonucu yazarsanız o profil doğrudan doğrulanmışa geçebilir.
 
 Aynı sağlayıcı içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
 aldık (birinde düz HTTP engelliydi, diğerinde değildi). Yani "profil var" demek "sizde çalışır"

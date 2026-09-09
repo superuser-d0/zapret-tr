@@ -23,6 +23,19 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   (ölçüm sırasında oyun çalıştırılmadı), ve **indirme hızı için kesin bir şey
   söylenmiyor** — hattı doyurabilen, hız sınırı koymayan bir test sunucusu bulunamadı.
 
+- **Ölçüm bildirimi için konu şablonu.** Projenin asıl eksiği saha verisi: on profilin
+  sekizinde tek bir doğrulanmış ölçüm yok. Testçinin ne yazacağını tek tek düşünmesi
+  gerekmesin diye alanlar hazır geliyor — hangi hat, paylaşımlı ağ mı, ne oldu, günlük.
+  README'deki çağrı da somutlaştı: üç adım ve forma doğrudan bağlantı.
+
+- **`docs/DEVAM.md` güncellendi.** 19 commit geride kalmıştı. Eklenen dersler: kapalı
+  `Expander` içeriğinin görsel ağaca hiç girmemesi, motor hatasını "strateji yok" diye
+  raporlamanın yanlış teşhis olması, hatayı kullanıcının GEÇTİĞİ yola göre düzeltmek,
+  sürüm karşılaştırmasının metin olarak sessizce yanlış olması, öğrenilmiş kayıt
+  anahtarının çakışması, "kurulu" ile "çalışıyor"un ayrı sorular olması, ve arayüzü
+  otomasyonla sürerken çıkan tuzaklar (UIPI, DPI farkındalığı, MessageBox'ın ağaçtaki
+  yeri, düğme yazısının duraklatınca değişmesi).
+
 ## [0.1.18]
 
 ### Eklendi
