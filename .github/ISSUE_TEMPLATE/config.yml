@@ -1,0 +1,10 @@
+# Bos konu ACIK kalmali. Uygulamadaki "Hata Bildir" dugmesi formu
+# /issues/new?title=...&body=... adresiyle doldurulmus olarak aciyor; bos konu
+# kapatilirsa o adres sablon secme ekranina dusuyor ve doldurulmus metin
+# KAYBOLUYOR. Yani bu satir bir tercih degil, dugmenin calisma sarti.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Kurulum ve kullanim sorulari
+    url: https://github.com/superuser-d0/zapret-tr#sık-sorulanlar
+    about: "Servis durmus, parametre bulunamadi, DNS acilmiyor gibi bilinen durumlar burada yazili."

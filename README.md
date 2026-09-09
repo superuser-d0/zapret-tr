@@ -66,6 +66,7 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 | **Kendini günceller** | "Güncellemeleri Denetle" paketi indirir, SHA256 özetini doğrular, kurar |
 | **Arka planda çalışır** | Pencereyi kapatmak korumayı kapatmaz; uygulama bildirim alanına iner |
 | **Raporlanabilir** | "Raporu Kaydet" günlüğü ve ortam özetini tek dosyaya yazar |
+| **Hatayı bildirmesi kolay** | "Hata Bildir" GitHub formunu doldurulmuş açar; göndermeye siz karar verirsiniz |
 
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
 > kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
@@ -142,11 +143,21 @@ kurulumu başlatır. Ayarlarınız ve doğrulanmış stratejileriniz korunur. Ye
 varsa uygulama açılışta zaten haber verir.
 
 **Uygulama internete bir şey gönderiyor mu?** Ölçüm sonuçları, seçtiğiniz strateji ve
-raporlar **yalnızca diske** yazılır. Dışarı yapılan tek istek güncelleme kontrolüdür:
-açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir şey yok —
-ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. İstemezseniz
+raporlar **yalnızca diske** yazılır. Kendiliğinden yapılan tek istek güncelleme
+kontrolüdür: açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir
+şey yok — ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. ("Hata Bildir" düğmesi de
+GitHub'a gider ama yalnızca **siz bastığınızda**, ve tarayıcıda yalnızca formu açar:
+göndermeye siz karar verirsiniz.) İstemezseniz
 `%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
 yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
+
+**Bir hatayı nasıl bildiririm?** **"Hata Bildir"** düğmesi GitHub'daki bildirim formunu
+**doldurulmuş halde** açar: sürüm, motor sürümü, Windows, servis sağlayıcı, seçili
+parametre ve günlüğün son satırları formda hazır gelir. Düğme **hiçbir şey göndermez** —
+açılan sayfayı okuyup istemediğiniz satırı silebilir, sonra kendiniz gönderirsiniz
+(göndermek için GitHub hesabı gerekir). Kendi yazdığınız "Açılmayan site" adresi forma
+**bilerek konmaz**; paylaşmak isterseniz elle eklersiniz. Günlüğün tamamı gerekiyorsa
+**"Raporu Kaydet"** ile dosyayı kaydedip bildirime sürükleyin.
 
 **"SERVİS DURMUŞ" yazıyor, ne yapmalıyım?** Otomatik başlatma servisi kurulu ama
 çalışmıyor demektir — koruma o anda kapalıdır. En sık sebebi, bir yükseltmeden sonra

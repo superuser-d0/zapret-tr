@@ -196,6 +196,10 @@
                     Command="{Binding SaveReportCommand}"
                     Style="{StaticResource ActionButton}"
                     ToolTip="Günlüğü ve ortam özetini bir dosyaya yazar. Hiçbir yere gönderilmez; neyi paylaşacağınıza siz karar verirsiniz." />
+            <Button Content="Hata Bildir"
+                    Command="{Binding ReportIssueCommand}"
+                    Style="{StaticResource ActionButton}"
+                    ToolTip="GitHub'da hata bildirimi formunu doldurulmuş halde açar. Gönderilmez; okuyup siz gönderirsiniz." />
             <Button Content="Tüm Ayarları Sıfırla"
                     Command="{Binding ResetCommand}"
                     Style="{StaticResource DangerButton}" />

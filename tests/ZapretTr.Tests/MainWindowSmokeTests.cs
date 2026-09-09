@@ -36,28 +36,33 @@ public sealed class MainWindowSmokeTests
             window.Arrange(new Rect(0, 0, 440, 720));
             window.UpdateLayout();
 
-            // "Raporu Kaydet" AYNI pencerede sinaniyor: bir surecte yalnizca tek
-            // bir WPF Application olabildigi icin her kontrole ayri test sinifi
-            // acmak kosumu kilitliyordu.
-            var rapor = RaporDugmesiniBul(window)
-                        ?? throw new InvalidOperationException(
-                            "\"Raporu Kaydet\" dugmesi pencerede yok.");
-
-            if (rapor.Visibility != Visibility.Visible)
+            // Dugmeler AYNI pencerede sinaniyor: bir surecte yalnizca tek bir WPF
+            // Application olabildigi icin her kontrole ayri test sinifi acmak
+            // kosumu kilitliyordu.
+            foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir" })
             {
-                throw new InvalidOperationException(
-                    "\"Raporu Kaydet\" gorunur degil: " + rapor.Visibility);
-            }
+                var dugme = DugmeyiBul(window, etiket)
+                            ?? throw new InvalidOperationException(
+                                $"\"{etiket}\" dugmesi pencerede yok.");
 
-            // ASIL KONTROL. Dugme once kapali bir Expander'in icindeydi ve agacta
-            // GORUNUYORDU -- yani yukaridaki iki kontrol de geciyordu. Kullanici
-            // icin ise dugme yoktu: paneli acmadan goremiyordu ve gercek bir
-            // kurulumda tam olarak bunu bildirdi (0.1.10).
-            if (ExpanderAltinda(rapor))
-            {
-                throw new InvalidOperationException(
-                    "\"Raporu Kaydet\" bir Expander icinde: kullanici paneli " +
-                    "acmadan goremez.");
+                if (dugme.Visibility != Visibility.Visible)
+                {
+                    throw new InvalidOperationException(
+                        $"\"{etiket}\" gorunur degil: " + dugme.Visibility);
+                }
+
+                // ASIL KONTROL. "Raporu Kaydet" once kapali bir Expander'in
+                // icindeydi ve agacta GORUNUYORDU -- yani yukaridaki iki kontrol
+                // de geciyordu. Kullanici icin ise dugme yoktu: paneli acmadan
+                // goremiyordu ve gercek bir kurulumda tam olarak bunu bildirdi
+                // (0.1.10). Ayni tuzaga bir daha dusmeyelim diye her yeni dugme
+                // bu listeye ekleniyor.
+                if (ExpanderAltinda(dugme))
+                {
+                    throw new InvalidOperationException(
+                        $"\"{etiket}\" bir Expander icinde: kullanici paneli " +
+                        "acmadan goremez.");
+                }
             }
 
             window.Close();
@@ -173,25 +178,25 @@ public sealed class MainWindowSmokeTests
         return false;
     }
 
-    /// <summary>Mantiksal agacta icerigi "Raporu Kaydet" olan dugmeyi arar.</summary>
+    /// <summary>Mantiksal agacta icerigi verilen etiketi tasiyan dugmeyi arar.</summary>
     /// <remarks>
     /// GORSEL agac degil: pencere hic gosterilmediginde sablonlar uygulanmadigi
     /// icin gorsel agac eksik kaliyor ve var olan dugmeler de bulunamiyor.
     /// Mantiksal agac XAML'de yazdigimiz yapiyi yansitiyor -- sorulan soru da bu:
     /// dugme pencereye KONULMUS mu.
     /// </remarks>
-    private static Button? RaporDugmesiniBul(DependencyObject kok)
+    private static Button? DugmeyiBul(DependencyObject kok, string etiket)
     {
         foreach (var cocuk in LogicalTreeHelper.GetChildren(kok))
         {
             if (cocuk is Button b &&
                 b.Content is string metin &&
-                metin.Contains("Raporu Kaydet", StringComparison.Ordinal))
+                metin.Contains(etiket, StringComparison.Ordinal))
             {
                 return b;
             }
 
-            if (cocuk is DependencyObject d && RaporDugmesiniBul(d) is { } alt)
+            if (cocuk is DependencyObject d && DugmeyiBul(d, etiket) is { } alt)
             {
                 return alt;
             }

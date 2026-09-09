@@ -90,6 +90,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ExitCommand = new RelayCommand(ExitAsync);
         ServiceCommand = new RelayCommand(ToggleServiceAsync, () => !IsBusy && IsReady);
         SaveReportCommand = new RelayCommand(SaveReportAsync);
+        ReportIssueCommand = new RelayCommand(ReportIssueAsync);
         UpdateCommand = new RelayCommand(UpdateAsync, () => !IsBusy);
 
         try
@@ -180,6 +181,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     /// <summary>Gunlugu ve ortam ozetini bir dosyaya yazar.</summary>
     public RelayCommand SaveReportCommand { get; }
+
+    /// <summary>Doldurulmus hata bildirimi formunu tarayicida acar.</summary>
+    public RelayCommand ReportIssueCommand { get; }
     public RelayCommand ExitCommand { get; }
     public RelayCommand ServiceCommand { get; }
 
@@ -824,6 +828,67 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // rapor bir teshis araci, korumanin parcasi degil.
             Append("Rapor kaydedilemedi: " + ex.Message, isError: true);
         }
+    }
+
+    /// <summary>Hata bildirimi icin ortam ozetini toplar.</summary>
+    public IssueDetails BuildIssueDetails() => new(
+        AppVersion: SurumMetni(),
+        EngineVersion: EngineVersionText,
+        Windows: Environment.OSVersion.Version.ToString(),
+        Isp: SelectedIsp?.Display ?? string.Empty,
+        Strategy: SelectedStrategy?.Display ?? string.Empty,
+        StrategyArgs: SelectedStrategy?.Args ?? string.Empty,
+        SecureDns: IsSecureDnsEnabled,
+        ServiceState: IsServiceStopped
+            ? "kurulu ama durmuş"
+            : IsServiceInstalled ? "kurulu" : "kurulu değil",
+        Status: StatusHeadline,
+        LogLines: [.. LogLines]);
+
+    /// <summary>Doldurulmus hata bildirimi formunu tarayicida acar.</summary>
+    /// <remarks>
+    /// Buradan HICBIR SEY GONDERILMIYOR: tarayicida form aciliyor, gonderme
+    /// karari kullanicinin. Once onay kutusu cikiyor cunku acilan sayfada
+    /// kullanicinin hatti ve denedigi parametreler yaziyor olacak; bunu
+    /// habersiz yapmak, guncelleme denetimindeki tutumumuzla celisirdi.
+    /// </remarks>
+    private Task ReportIssueAsync()
+    {
+        try
+        {
+            var onay = MessageBox.Show(
+                "GitHub'da bir hata bildirimi formu açılacak. Sürüm, servis sağlayıcı, "
+                + "seçili parametre ve günlüğün son satırları form için önceden doldurulmuş "
+                + "olacak.\n\n"
+                + "Hiçbir şey gönderilmez: formu okuyup istemediğiniz satırı silebilir, "
+                + "sonra kendiniz gönderebilirsiniz. Göndermek için GitHub hesabı gerekir.\n\n"
+                + "Devam edilsin mi?",
+                "Hata bildir",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (onay != MessageBoxResult.Yes)
+            {
+                return Task.CompletedTask;
+            }
+
+            var adres = IssueReporter.BuildUrl(BuildIssueDetails());
+
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(adres) { UseShellExecute = true });
+
+            Append("Hata bildirimi formu tarayıcıda açıldı. Gönderme kararı sizin.");
+            Append("Günlüğün tamamı gerekirse \"Raporu Kaydet\" ile kaydedip konuya ekleyin.");
+        }
+        catch (Exception ex)
+        {
+            // Tarayici acilamadi diye kullaniciyi bildirimsiz birakmayalim:
+            // konu listesinin adresini gunluge yazip elle gitmesini saglayalim.
+            Append("Form açılamadı: " + ex.Message, isError: true);
+            Append("Bildirimi elle açabilirsiniz: " + IssueReporter.IssuesPage);
+        }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>Rapor metnini kurar.</summary>

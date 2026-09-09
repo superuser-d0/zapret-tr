@@ -8,6 +8,32 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.1.18]
+
+### Eklendi
+
+- **"Hata Bildir" düğmesi.** GitHub'daki bildirim formunu **doldurulmuş halde** açıyor:
+  sürüm, motor sürümü, Windows, servis sağlayıcı, seçili strateji ve parametre, şifreli
+  DNS durumu, otomatik başlatma durumu ve günlüğün son satırları formda hazır geliyor.
+
+  Neden: eldeki en öğretici saha bildirimi ("çıkış kodu 34") tek başına işe yaramadı,
+  ikinci bir koşum gerekti — çünkü hangi sürümde, hangi hatta, hangi parametreyle
+  olduğunu bilmiyorduk. Bunları kullanıcıdan tek tek istemek yerine forma önceden
+  koyuyoruz.
+
+  **Hiçbir şey gönderilmiyor.** Düğme tarayıcıda formu açmaktan ibaret; okuyup
+  düzenlemek ve göndermek kullanıcının. Uygulamanın içinden doğrudan issue açmak
+  bilerek yapılmadı: bunun için gereken GitHub belirteci exe'ye gömülseydi herkes
+  çıkartıp bizim adımıza konu açabilirdi, ve anonim gelen bir bildirime geri soru
+  sorulamıyor.
+
+  Kullanıcının "Açılmayan site" kutusuna **kendi yazdığı** adres forma **bilerek
+  konmuyor**: denenen parametreler ve varsayılan hedefler bizim listemiz, ama o adres
+  kullanıcıya ait ve genel bir forma kendiliğinden düşmemeli.
+
+- **Konu şablonu** (`.github/ISSUE_TEMPLATE`). GitHub'a elle gelenler de aynı alanları
+  dolduruyor.
+
 ## [0.1.17]
 
 ### Düzeltildi
