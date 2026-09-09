@@ -70,8 +70,21 @@ public static class IssueReporter
         => logLine.Contains("Kendi hedefiniz", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Konu basligini kurar.</summary>
+    /// <remarks>
+    /// Ayrac "·", uzun tire degil: durum metinlerinin KENDISI uzun tire
+    /// iceriyor ("ÇALIŞIYOR — AMA AÇMIYOR") ve ayrac da uzun tire olunca baslik
+    /// uc parcali mi dort parcali mi belli olmuyordu. Gercek ciktida goruldu.
+    ///
+    /// Surum basta: konu listesi tarandiginda ilk sorulan sey "bu hangi surum".
+    ///
+    /// Surumun "+sha" kuyrugu ATILIYOR. Gercek kosumda baslik soyle cikti:
+    /// "[hata] v0.1.18+a8a66ca13a4b2675ea2f8b6fe217a3ba9fd3bad8 · ..." -- 93
+    /// karakterin yarisi tek bir yapinin karmasiydi ve konu listesinde okunacak
+    /// hicbir sey birakmiyordu. Karma yine de kayboluyor degil: ortam
+    /// tablosunda tam haliyle duruyor, yani "hangi yapi" sorusu cevapsiz kalmiyor.
+    /// </remarks>
     public static string BuildTitle(IssueDetails details)
-        => $"[hata] {Bos(details.Status, "durum yok")} — {Bos(details.Isp, "ISS secilmemis")} (v{Bos(details.AppVersion, "?")})";
+        => $"[hata] v{Bos(details.AppVersion, "?").Split('+')[0]} · {Bos(details.Isp, "ISS seçilmemiş")} · {Bos(details.Status, "durum yok")}";
 
     /// <summary>Konu govdesini kurar.</summary>
     /// <param name="logLineBudget">

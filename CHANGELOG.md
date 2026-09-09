@@ -34,6 +34,12 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 - **Konu şablonu** (`.github/ISSUE_TEMPLATE`). GitHub'a elle gelenler de aynı alanları
   dolduruyor.
 
+  Gerçek bir makinede uçtan uca ölçüldü: düğmeye basıldı, onay kutusu çıktı,
+  **"Hayır" denince tarayıcı açılmadı**, "Evet" denince GitHub'ın formu **dolu**
+  geldi. "Açılmayan site" kutusuna yazılan adres formda **yoktu**. Bu koşumda
+  başlığın yapı karmasını (`0.1.18+a8a66ca…`) taşıdığı görülüp düzeltildi:
+  karma artık yalnızca ortam tablosunda, başlıkta değil.
+
 ## [0.1.17]
 
 ### Düzeltildi

@@ -117,6 +117,27 @@ public class IssueReporterTests
         Assert.Contains("v0.1.18", baslik, StringComparison.Ordinal);
         Assert.Contains("ÇALIŞIYOR", baslik, StringComparison.Ordinal);
         Assert.Contains("Turkcell", baslik, StringComparison.Ordinal);
+
+        // Ayrac, durum metninin KENDI uzun tiresiyle karismamali: gercek ciktida
+        // "[hata] ÇALIŞIYOR — AMA AÇMIYOR — Turkcell ..." okunmuyordu.
+        Assert.DoesNotContain("] ÇALIŞIYOR", baslik, StringComparison.Ordinal);
+        Assert.Equal(2, baslik.Split(" · ").Length - 1);
+    }
+
+    [Fact]
+    public void Basliktaki_surum_yapinin_karmasini_tasimiyor()
+    {
+        // Gercek kosumda goruldu: uygulamanin surum metni
+        // "0.1.18+a8a66ca13a4b..." seklinde geliyor ve baslik 93 karakterin
+        // yarisi karma olan bir seye donusuyordu. Karma ortam tablosunda tam
+        // haliyle duruyor; baslikta isi yok.
+        var d = Ornek() with { AppVersion = "0.1.18+a8a66ca13a4b2675ea2f8b6fe217a3ba9fd3bad8" };
+
+        Assert.Contains("v0.1.18 ·", IssueReporter.BuildTitle(d), StringComparison.Ordinal);
+        Assert.DoesNotContain("a8a66ca", IssueReporter.BuildTitle(d), StringComparison.Ordinal);
+
+        // Govdede ise KALMALI: hangi yapinin bildirimi oldugu kaybolmasin.
+        Assert.Contains("a8a66ca", IssueReporter.BuildBody(d), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -133,6 +154,6 @@ public class IssueReporterTests
         var adres = IssueReporter.BuildUrl(bos);
 
         Assert.True(Uri.TryCreate(adres, UriKind.Absolute, out _));
-        Assert.Contains("ISS secilmemis", IssueReporter.BuildTitle(bos), StringComparison.Ordinal);
+        Assert.Contains("ISS seçilmemiş", IssueReporter.BuildTitle(bos), StringComparison.Ordinal);
     }
 }
