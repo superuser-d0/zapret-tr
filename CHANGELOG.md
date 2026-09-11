@@ -8,6 +8,57 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Eklendi
+
+- **`docs/GUVENLIK.md` — dağıtılan her ikilinin kaynağı, özeti ve antivirüs rehberi.**
+  Paket imzasız ve çekirdek sürücüsü taşıyor; antivirüs uyarısı istisna değil beklenen
+  durum. Kullanıcıya söylenecek şeyin tek tek yazılması gerekiyordu, çünkü internette
+  bu soruya verilen standart cevap **yanlış**: "antivirüsünü kapat". Belge bunun neden
+  yanlış olduğunu (kapatmak gereksiz, riskli ve zaten işe yaramıyor — koruma geri
+  açıldığında dosyalar kurulumdan sonra karantinaya gidiyor) ve doğrusunun ne olduğunu
+  sekiz ürün için adım adım yazıyor: Defender, Avast/AVG, ESET, Kaspersky, Bitdefender,
+  Malwarebytes, Norton, McAfee. Her üründe genel istisnanın **yetmediği** ikinci bir
+  ayar var ve asıl tuzak orası (ESET'in "güvenli olmayan uygulamalar" algılaması,
+  Kaspersky'nin "Diğer yazılımlar" kutusu, Bitdefender'ın Advanced Threat Defense'i,
+  Norton'un SONAR listesi).
+
+  En kötü senaryo ayrıca yazıldı: `dnscrypt-proxy.exe` şifreli DNS açıkken karantinaya
+  alınırsa sistem DNS'i `127.0.0.1`'de kalır ve makine **hiçbir adı çözemez**.
+  Belirtisi "internet gitti" olur, oysa ölen şey ad çözümlemesi.
+
+- **Tedarik zinciri doğrulaması (2026-09-11).** Satıcı ikilileri ilk kez manifestle
+  değil, **kaynağındaki resmî yayınla** karşılaştırıldı — manifest kendi kendini
+  doğruluyordu, bu ise zinciri dışarıdan kapatıyor. `winws.exe`, `cygwin1.dll`,
+  `WinDivert.dll`, `WinDivert64.sys` sabitlenmiş bundle commit'iyle birebir;
+  `WinDivert64.sys` resmî `basil00/WinDivert` v2.2.2-A ile **birebir**;
+  `dnscrypt-proxy.exe` resmî DNSCrypt 2.1.18 win64 ile **birebir**; yayın dosyaları
+  `SHA256SUMS.txt` ve GitHub'ın kendi özetiyle aynı.
+
+  Tek fark `WinDivert.dll`'de ve **iki bayt**: `DllCharacteristics` `0x0000` → `0x0040`
+  (ASLR açılmış) ve ona karşılık gelen `CheckSum`. Kod bölümlerinde tek bayt fark yok,
+  yani değişiklik sertleştirme. Belgeye yazıldı, çünkü "resmî sürümle aynı değil"
+  cümlesi açıklanmadan bırakıldığında korkutucu.
+
+  Sürücünün imzası da kayda geçti: Sectigo EV (Çin merkezli bir şirket adına) +
+  Microsoft attestation. İmza sahibinin WinDivert'in yazarı olmaması rahatsız edici
+  görünüyor ama **resmî dosyanın kendisi böyle geliyor** ve bizdeki onunla bit bit aynı.
+
+- **`.github/workflows/virustotal.yml` + `tools/virustotal-scan.sh`.** Yayındaki
+  ikilileri (kurulum paketi, saha paketi ve içindeki satıcı dosyaları) VirusTotal'a
+  sokup sonucu iş özetine tablo olarak yazıyor. Önce özetle sorup yalnızca kayıt yoksa
+  yüklüyor: kota harcamıyor ve başkasının yüklediği kopyanın sonucunu da görüyor.
+  32 MB üstü dosyalar için ayrı `upload_url` yolu var — 55 MB'lik kurulum paketi
+  olmadan bu iş anlamsız olurdu.
+
+  Elle de çalıştırılabiliyor, kasıtlı: bir motorun yeni imzası **ikili hiç değişmeden**
+  aylar sonra tespit üretebiliyor, dolayısıyla "antivirüsüm uyardı" bildirimi geldiğinde
+  yeniden ölçülebilmeli. Tespit çıkması işi kırmızı yapmıyor — bu paket için bir miktar
+  tespit beklenen durum ve akışı kırmızıya boyamak gerçek bir regresyonu gürültüde
+  kaybederdi.
+
+  **Henüz koşulmadı: yayınlanmış bir VirusTotal ölçümümüz yok.** Belgede o bölüm boş
+  duruyor ve öyle yazıyor; ölçülmemiş şeye "ölçüldü" demiyoruz.
+
 ### Değişti
 
 - **README'ye "Bilgisayarı yavaşlatır mı" bölümü.** Gerçek bir makinede ölçüldü, dönüşümlü

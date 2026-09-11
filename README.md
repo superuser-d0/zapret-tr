@@ -128,7 +128,9 @@ açılmayan adresi "Açılmayan site" kutusuna girip yeniden deneyin.
 
 **Antivirüs uyarı verirse?** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
 false-positive üretebiliyor. Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler
-için garanti veremeyiz.
+için garanti veremeyiz. **Antivirüsünüzü kapatmayın** — doğrusu kurulum klasörüne istisna
+tanımlamak. Ürün ürün adımlar, dağıtılan her dosyanın özeti ve tedarik zinciri doğrulaması:
+[docs/GUVENLIK.md](docs/GUVENLIK.md).
 
 **İnternetim gitti, adresler çözülmüyor.** Uygulama şifreli DNS için sistem DNS'ini kendine
 yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa şu komut geri alır:
@@ -511,6 +513,8 @@ src/ZapretTr.App/              WPF arayüz
 profiles/isp/*.json            sağlayıcı başına sıralı aday listesi
 profiles/generic-ladder.json   Tier 3 kombinatoryal arama tarifi
 tools/fetch-upstream.ps1       upstream ikili indirme + SHA256 doğrulama
+tools/virustotal-scan.sh       yayın ikililerini VirusTotal'a sokar (CI'dan koşar)
+docs/GUVENLIK.md               dağıtılan dosyalar, tedarik zinciri, antivirüs rehberi
 ```
 
 ## Yol haritası
@@ -579,6 +583,9 @@ Sürüm tek bir kaynaktan geliyor: git tag'i. `Directory.Build.props` derlenen e
   (kırpma analizörü hata verirse burada patlar) ve `msquic.dll` kontrolü.
 - `.github/workflows/release.yml` — `v*` tag'i itildiğinde kurulum paketini, saha testi paketini
   ve `SHA256SUMS.txt` dosyasını üretip **taslak** yayın açar.
+- `.github/workflows/virustotal.yml` — yayındaki ikilileri (kurulum paketi ve içindeki satıcı
+  dosyaları) VirusTotal'a sokar. Yayında kendiliğinden, ayrıca elle de çalıştırılabiliyor:
+  bir motorun yeni imzası, ikili hiç değişmeden aylar sonra tespit üretebiliyor.
 
 Yayın notu CHANGELOG'dan üretiliyor; o sürümün bölümü yazılmamışsa yayın akışı başarısız oluyor.
 Yayının taslak açılması da kasıtlı: imzasız ikili dağıtıldığı için son bir gözden geçirme
@@ -592,7 +599,9 @@ Bütün değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
 ve `--help` için bile yükseltilmiş yetki istiyor.
 
 **Antivirüs uyarı verebilir.** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
-false-positive üretiyor. Kod imzalama sertifikamız yok.
+false-positive üretiyor. Kod imzalama sertifikamız yok. Ne dağıtıldığı, hangi dosyanın
+nereden geldiği ve uyarı alındığında ne yapılacağı [docs/GUVENLIK.md](docs/GUVENLIK.md)
+dosyasında — **çözüm antivirüsü kapatmak değil, istisna tanımlamak.**
 
 ## Teşekkür — Zapret Win TR
 

@@ -1,0 +1,103 @@
+name: virustotal
+
+# Yayindaki ikilileri VirusTotal'a sokar.
+#
+# NEDEN AYRI BIR IS AKISI: tarama yayin akisina bagli degil, cunku ilgilendigimiz
+# sey zamanla DEGISIYOR. Ayni dosya bugun 0 tespit alip alti hafta sonra bir
+# motorun yeni imzasiyla 3 tespit alabilir -- ikili degismeden. Bu yuzden akis
+# elle de kosturulabiliyor: kullanicidan "antivirusum uyari verdi" bildirimi
+# geldiginde YENIDEN olculebilmeli.
+#
+# ANAHTAR: depo ayarlarinda Settings -> Secrets and variables -> Actions ->
+# VT_API_KEY. Ucretsiz anahtar yeterli (https://www.virustotal.com/gui/my-apikey).
+# Anahtar yoksa akis erken ve acik bir mesajla duruyor.
+#
+# GIZLILIK NOTU: buraya yuklenen her dosya GitHub yayinindan indirilebilen
+# ZATEN HERKESE ACIK bir dosya. Ucretsiz VirusTotal anahtariyla yuklenen
+# dosyalar VirusTotal toplulugunda gorunur olur; burada sizan bir sey yok,
+# ama bu is akisina asla yayinlanmamis bir ikili eklenmemeli.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Taranacak yayin tag'i (bos birakilirsa en son yayin)"
+        required: false
+        type: string
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  tara:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: anahtar var mi
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          if [ -z "$VT_API_KEY" ]; then
+            echo "VT_API_KEY tanimli degil."
+            echo "Settings -> Secrets and variables -> Actions -> New repository secret"
+            echo "Ucretsiz anahtar: https://www.virustotal.com/gui/my-apikey"
+            exit 1
+          fi
+
+      - name: yayin varliklarini indir
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GIRDI_TAG: ${{ inputs.tag }}
+          OLAY_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          TAG="${GIRDI_TAG:-$OLAY_TAG}"
+          if [ -z "$TAG" ]; then
+            TAG=$(gh release view --json tagName -q .tagName)
+          fi
+          echo "Taranacak yayin: $TAG"
+          echo "TAG=$TAG" >>"$GITHUB_ENV"
+
+          mkdir -p tarama
+          gh release download "$TAG" --dir tarama --pattern '*.exe' --pattern '*.zip'
+          ls -la tarama
+
+      # Kurulum paketinin kendisini taramak yetmiyor. Kullanicinin antivirusu
+      # kurulum bittikten SONRA diskteki dosyalari da tariyor ve isaretlenen sey
+      # cogu zaman kurulum paketi degil, icindeki winws.exe / WinDivert64.sys
+      # oluyor. "Hangi dosya" sorusunun cevabi kullaniciya verilecek en pratik
+      # bilgi: istisna o dosya icin yazilacak.
+      #
+      # Saha paketi burada bir kolaylik: kurulum paketiyle AYNI satici ikililerini
+      # tasiyor ama duz bir zip, yani Inno Setup acmadan icine bakilabiliyor.
+      - name: satici ikililerini cikar
+        run: |
+          set -euo pipefail
+          # "|| true" ZORUNLU: set -o pipefail acikken zip yoksa ls basarisiz
+          # doner, atama da basarisiz sayilir ve set -e adimi HATA ile keser --
+          # oysa burada "zip yok" gecerli bir durum, asagida ele aliniyor.
+          zip=$(ls tarama/*.zip 2>/dev/null | head -n1 || true)
+          if [ -z "$zip" ]; then
+            echo "Saha paketi bulunamadi; yalnizca ust duzey varliklar taranacak."
+            exit 0
+          fi
+          mkdir -p tarama/ic
+          unzip -q -o "$zip" -d tarama/ic
+          find tarama/ic -type f \( -name '*.exe' -o -name '*.dll' -o -name '*.sys' \) -print
+
+      - name: VirusTotal taramasi
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          set -euo pipefail
+          mapfile -t dosyalar < <(
+            ls tarama/*.exe tarama/*.zip 2>/dev/null
+            find tarama/ic -type f \( -name '*.exe' -o -name '*.dll' -o -name '*.sys' \) 2>/dev/null | sort
+          )
+          echo "Taranacak ${#dosyalar[@]} dosya:"
+          printf '  %s\n' "${dosyalar[@]}"
+          tools/virustotal-scan.sh "${dosyalar[@]}"
