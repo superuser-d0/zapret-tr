@@ -51,11 +51,12 @@ En sık görülen sebepler:
 stratejilerde değil, makinenizde: motor paketleri hiç görememiş. Sırayla:
 
 1. Açıksa **GoodbyeDPI, ByeDPI, SpoofDPI** gibi başka bir DPI aracını ya da **VPN**'i kapatın.
-2. **Otomatik başlatma kuruluysa** önce "Otomatik Başlatmayı Kaldır" deyin. Arka planda
-   çalışan servis, testin kendi denemeleriyle çakışır.
-3. **Bilgisayarı yeniden başlatın.** Ağ sürücüsü önceki bir koşumdan çekirdekte asılı
+2. **Bilgisayarı yeniden başlatın.** Ağ sürücüsü önceki bir koşumdan çekirdekte asılı
    kalabiliyor; bu en sık sebep ve yeniden başlatmadan geçmiyor.
-4. Testi tekrar çalıştırın.
+3. Testi tekrar çalıştırın.
+4. Günlükte `UYARI: servis 15 saniyede durmadı` yazıyorsa "Otomatik Başlatmayı Kaldır"
+   deyin, bilgisayarı yeniden başlatın ve testi öyle çalıştırın. (Otomatik başlatma
+   kuruluysa uygulama onu test boyunca kendisi durdurur; bu uyarı durduramadığı anlamına gelir.)
 
 **Sebepler farklı farklıysa** ölçüm düzgün yapılmış ve adaylar gerçekten tutmamış demektir.
 O zaman:
@@ -89,10 +90,9 @@ strateji sorunu **değil**: hattınız hakkında hiçbir şey ölçülmedi.
 1. **Bilgisayarı yeniden başlatın.** Takılı kalmış ağ sürücüsü en sık sebep.
 2. GoodbyeDPI gibi başka bir DPI aracı açıksa kapatın. Kurulu bir servis olarak duruyorsa
    o aracın **kendi kaldırma yolunu** kullanın; "kapattım" sanılan araç açılışta geri gelir.
-3. Otomatik başlatma kuruluysa önce kaldırın.
-4. Antivirüs `WinDivert64.sys` dosyasını engelliyor olabilir. ZapretTR klasörünü
+3. Antivirüs `WinDivert64.sys` dosyasını engelliyor olabilir. ZapretTR klasörünü
    (`C:\Program Files\ZapretTR`) istisna listesine ekleyin.
-5. Testi yeniden çalıştırın.
+4. Testi yeniden çalıştırın.
 
 <a id="engel-bulunamadi"></a>
 
@@ -190,9 +190,10 @@ açılmadı**. Kayıtlı ayar büyük ihtimalle artık işe yaramıyor: servis s
 yöntemlerini zaman zaman değiştiriyor.
 
 1. **"PARAMETRE TESTİ YAP"** ile yeni bir ayar arayın.
-2. Otomatik başlatma kuruluysa testten **önce** kaldırın, yeni ayar bulunduktan sonra
-   yeniden kurun. Servis kurulduğu andaki ayarla çalışır; yeni test onu kendiliğinden
-   güncellemez.
+2. Otomatik başlatma kuruluysa yeni ayar bulunduktan sonra **"Otomatik Başlatmayı Kaldır"**,
+   ardından **"Servis Olarak Yükle"** deyin. Servis kurulduğu andaki ayarla çalışır; test
+   sırasında uygulama onu geçici olarak durdurup geri açar ama yeni ayarı ona kendiliğinden
+   geçirmez.
 3. Ağ değiştirdiyseniz (başka ev, telefon paylaşımı) servis sağlayıcı listesinden yeni hattı
    seçin.
 

@@ -51,6 +51,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly DnsCryptRunner? _dnsRunner;
     private CancellationTokenSource? _testCancellation;
 
+    /// <summary>Otomatik baslatma servisi parametre testi icin durduruldu mu.</summary>
+    private bool _serviceSuspendedForTest;
+
     private AppStatus _status = AppStatus.NotReady;
     private string _statusHeadline = "BAŞLATILIYOR";
     private string _statusDetail = string.Empty;
@@ -1547,8 +1550,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         IsLogExpanded = true;
         SetStatus(AppStatus.Testing, "PARAMETRE TESTİ", "Mevcut durum ölçülüyor...");
 
+        var yeniStratejiBulundu = false;
         try
         {
+            await SuspendServiceForTestAsync().ConfigureAwait(true);
+
             var targets = ProbeTargetStore.Load(_profiles.Root).ToList();
 
             var custom = ProbeTargetStore.TryParseUserTarget(CustomTarget);
@@ -1584,6 +1590,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 .ConfigureAwait(true);
 
             ReportResult(report);
+            yeniStratejiBulundu = report.Winners.Count > 0;
         }
         catch (OperationCanceledException)
         {
@@ -1613,10 +1620,109 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         finally
         {
+            await ResumeServiceAfterTestAsync(yeniStratejiBulundu).ConfigureAwait(true);
+
             IsBusy = false;
             IsProgressVisible = false;
             _testCancellation?.Dispose();
             _testCancellation = null;
+        }
+    }
+
+    /// <summary>
+    /// Otomatik baslatma servisi calisiyorsa test suresince durdurur.
+    /// </summary>
+    /// <remarks>
+    /// Test yalnizca uygulamanin KENDI baslattigi winws'i durduruyordu. Servis
+    /// kuruluyken arkada ikinci bir winws calismaya devam ediyor ve olcumu iki
+    /// yerden bozuyordu: mevcut durum taramasi servisin stratejisi acikken
+    /// yapildigi icin engel gorunmuyordu ("ENGEL BULUNAMADI"), adaylar ise ayni
+    /// filtreyle ikinci ornek olarak baslayamiyordu ("ÖLÇÜM YAPILAMADI").
+    ///
+    /// Servisin durumu burada YENIDEN soruluyor; acilistaki onbellege
+    /// guvenilmiyor, cunku servis o zamandan beri kurulmus ya da dusmus olabilir.
+    /// Kurulu ama zaten durmus bir servise dokunulmuyor: geri baslatilacak bir
+    /// sey yok ve test sonunda onu baslatmak kullanicinin gormedigi bir degisiklik
+    /// olurdu.
+    /// </remarks>
+    private async Task SuspendServiceForTestAsync()
+    {
+        ServiceStatus status;
+        try
+        {
+            status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Append("Servis durumu okunamadı: " + ex.Message, isError: true);
+            return;
+        }
+
+        if (!status.WinwsRunning)
+        {
+            return;
+        }
+
+        Append("Otomatik başlatma servisi test boyunca durduruluyor; test bitince geri açılacak.");
+
+        // Bayrak DURDURMADAN ONCE kaldiriliyor: durdurma yarida kalsa bile servis
+        // artik bizim elimizde ve test sonunda geri baslatilmali.
+        _serviceSuspendedForTest = true;
+
+        var stopped = await ServiceManager
+            .StopWinwsServiceAsync(TimeSpan.FromSeconds(15)).ConfigureAwait(true);
+
+        if (!stopped)
+        {
+            Append("UYARI: servis 15 saniyede durmadı ya da başka bir winws çalışıyor.", isError: true);
+            Append("  Test sonucu güvenilir olmayabilir. Olmazsa \"Otomatik Başlatmayı Kaldır\"");
+            Append("  deyip bilgisayarı yeniden başlatın ve testi öyle çalıştırın.");
+        }
+    }
+
+    /// <summary>
+    /// <see cref="SuspendServiceForTestAsync"/> ile durdurulan servisi geri acar.
+    /// </summary>
+    /// <remarks>
+    /// Birden fazla yoldan cagrilabilir (testin sonu, uygulamadan cikis); bayrak
+    /// beklemeden ONCE indiriliyor ki servis iki kez baslatilmasin.
+    ///
+    /// Servis KURULDUGU ANDAKI ayarla geri gelir. Test yeni bir strateji bulduysa
+    /// bu kendiliginden servise gecmez; bunu kullaniciya soylemek zorundayiz, yoksa
+    /// "test buldu ama hicbir sey degismedi" durumu yeniden ortaya cikar.
+    /// </remarks>
+    /// <param name="newStrategyFound">Test calisan bir parametre buldu mu.</param>
+    private async Task ResumeServiceAfterTestAsync(bool newStrategyFound)
+    {
+        if (!_serviceSuspendedForTest)
+        {
+            return;
+        }
+
+        _serviceSuspendedForTest = false;
+
+        var step = await ServiceManager.StartWinwsServiceAsync().ConfigureAwait(true);
+        Append((step.Succeeded ? "[+] " : "[!] ") + step.Description
+               + (string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail),
+               isError: !step.Succeeded);
+
+        if (!step.Succeeded)
+        {
+            Append("Koruma şu anda kapalı. Bilgisayarı yeniden başlatınca servis kendiliğinden açılır.",
+                isError: true);
+
+            // Yalnizca basarisizlikta tazeleniyor: basarili yolda durum bandi
+            // degismemeli, yoksa test sonucu ("STRATEJİ BULUNDU") ekrandan
+            // silinir ve yerine "SERVİS MODU AKTİF" yazar.
+            await RefreshServiceStatusAsync().ConfigureAwait(true);
+            return;
+        }
+
+        if (newStrategyFound)
+        {
+            Append("NOT: servis kurulduğu andaki ayarla çalışmaya devam ediyor. Yeni bulunan");
+            Append("parametreyi kullanmak için \"Otomatik Başlatmayı Kaldır\", ardından");
+            Append("\"Servis Olarak Yükle\" deyin.");
         }
     }
 
@@ -1820,6 +1926,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         _shutdownCompleted = true;
+
+        // Test surerken cikiliyorsa servis durdurulmus halde kalmamali: kaydi
+        // "auto" oldugu icin yeniden baslatmada geri gelirdi ama o zamana kadar
+        // kullanici korumasiz kalirdi.
+        _testCancellation?.Cancel();
+        await ResumeServiceAfterTestAsync(newStrategyFound: false).ConfigureAwait(true);
 
         if (_runner is not null)
         {

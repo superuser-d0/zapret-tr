@@ -225,6 +225,89 @@ public static class ServiceManager
     }
 
     /// <summary>
+    /// winws servisini GECICI olarak durdurur; servis kaydina dokunmaz.
+    /// </summary>
+    /// <returns>
+    /// Servis durdu ve ortalikta winws sureci kalmadiysa true. Sure dolduysa false:
+    /// cagiran taraf olcumun kirlenebilecegini kullaniciya soylemeli.
+    /// </returns>
+    /// <remarks>
+    /// Parametre testi winws'i aday aday kendisi baslatiyor. Servisin winws'i
+    /// arkada calisirken bu iki sekilde bozuluyordu: mevcut durum taramasi
+    /// engeli servisin stratejisi ACIKKEN olcuyor ve "engel yok" goruyor, adaylar
+    /// ise ayni filtreyle ikinci ornek olarak baslatilamiyor. Uygulama kendi
+    /// baslattigi winws'i testten once durduruyordu, servisinkini durdurmuyordu.
+    ///
+    /// <c>sc stop</c> yalnizca istegi iletir ve hemen doner; servisin gercekten
+    /// STOPPED olmasi ve surecin surucuyu birakmasi ayrica bekleniyor. Temiz bir
+    /// durdurma servis kurtarma tanimini (<c>sc failure</c>) tetiklemez, yani
+    /// servis test sirasinda kendiliginden geri gelmez.
+    /// </remarks>
+    public static async Task<bool> StopWinwsServiceAsync(
+        TimeSpan timeout, CancellationToken cancellationToken = default)
+    {
+        ElevationGuard.EnsureElevated();
+
+        await RunScAsync(["stop", WinwsServiceName], cancellationToken).ConfigureAwait(false);
+
+        var deadline = DateTimeOffset.UtcNow + timeout;
+        while (true)
+        {
+            var (_, output) = await RunScAsync(["query", WinwsServiceName], cancellationToken)
+                .ConfigureAwait(false);
+
+            if (IsStoppedQueryOutput(output) && !IsAnyWinwsProcessAlive())
+            {
+                return true;
+            }
+
+            if (DateTimeOffset.UtcNow >= deadline)
+            {
+                return false;
+            }
+
+            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// <see cref="StopWinwsServiceAsync"/> ile durdurulan winws servisini yeniden baslatir.
+    /// </summary>
+    public static async Task<CleanupStep> StartWinwsServiceAsync(CancellationToken cancellationToken = default)
+    {
+        ElevationGuard.EnsureElevated();
+
+        var (exitCode, output) = await RunScAsync(["start", WinwsServiceName], cancellationToken)
+            .ConfigureAwait(false);
+
+        return exitCode == 0
+            ? new CleanupStep($"{WinwsServiceName} servisi yeniden baslatildi", true)
+            : new CleanupStep($"{WinwsServiceName} servisi yeniden baslatilamadi", false, output.Trim());
+    }
+
+    /// <summary><c>sc query</c> ciktisi servisin durmus oldugunu mu soyluyor.</summary>
+    /// <remarks>
+    /// STOP_PENDING durmus SAYILMAZ: o anda surec hala surucuyu tutuyor olabilir.
+    /// Servis hic yoksa (1060) da durmus sayilir -- beklenecek bir sey kalmamistir.
+    /// </remarks>
+    public static bool IsStoppedQueryOutput(string scQueryOutput)
+        => scQueryOutput.Contains("STOPPED", StringComparison.Ordinal)
+           || scQueryOutput.Contains("1060", StringComparison.Ordinal);
+
+    private static bool IsAnyWinwsProcessAlive()
+    {
+        try
+        {
+            return Process.GetProcessesByName("winws").Length > 0;
+        }
+        catch (Exception)
+        {
+            // Surec listesi okunamiyorsa servis durumuna guveniyoruz.
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Sifreli DNS servisinin cevap vermesi icin taninan sure.
     /// </summary>
     /// <remarks>

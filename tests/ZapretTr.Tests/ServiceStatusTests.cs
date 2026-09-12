@@ -58,4 +58,55 @@ public sealed class ServiceStatusTests
         Assert.True(durum.AnyInstalled);
         Assert.False(durum.InstalledButStopped);
     }
+
+    // --- Parametre testi icin servisi durdurma -----------------------------------
+    //
+    // Test, servisin winws'i durana kadar bekliyor; bekleme "sc query" ciktisindan
+    // okunuyor. STOP_PENDING'i durmus saymak, surec surucuyu hala tutarken testi
+    // baslatmak demek -- duzeltilen hatanin ta kendisi.
+
+    [Fact]
+    public void Durmus_servis_durmus_sayilir()
+    {
+        const string cikti = """
+            SERVICE_NAME: ZapretTR
+                    TYPE               : 10  WIN32_OWN_PROCESS
+                    STATE              : 1  STOPPED
+                    WIN32_EXIT_CODE    : 0  (0x0)
+            """;
+
+        Assert.True(ServiceManager.IsStoppedQueryOutput(cikti));
+    }
+
+    [Fact]
+    public void Durmakta_olan_servis_durmus_sayilmaz()
+    {
+        const string cikti = """
+            SERVICE_NAME: ZapretTR
+                    TYPE               : 10  WIN32_OWN_PROCESS
+                    STATE              : 3  STOP_PENDING
+            """;
+
+        Assert.False(ServiceManager.IsStoppedQueryOutput(cikti));
+    }
+
+    [Fact]
+    public void Calisan_servis_durmus_sayilmaz()
+    {
+        const string cikti = """
+            SERVICE_NAME: ZapretTR
+                    TYPE               : 10  WIN32_OWN_PROCESS
+                    STATE              : 4  RUNNING
+            """;
+
+        Assert.False(ServiceManager.IsStoppedQueryOutput(cikti));
+    }
+
+    [Fact]
+    public void Servis_hic_yoksa_beklenecek_bir_sey_yok()
+    {
+        const string cikti = "[SC] EnumQueryServicesStatus:OpenService FAILED 1060:";
+
+        Assert.True(ServiceManager.IsStoppedQueryOutput(cikti));
+    }
 }

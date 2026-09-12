@@ -6,6 +6,22 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Düzeltildi
+
+- **Otomatik başlatma kuruluyken parametre testi yanlış sonuç veriyordu.** Test, uygulamanın
+  kendi başlattığı winws'i durduruyordu ama servisin winws'ini durdurmuyordu. Arkada çalışan
+  servis ölçümü iki yerden bozuyordu: mevcut durum taraması servisin stratejisi açıkken
+  yapıldığı için engel görünmüyordu (**"ENGEL BULUNAMADI"**), adaylar ise aynı filtreyle
+  ikinci örnek olarak başlayamıyordu (**"ÖLÇÜM YAPILAMADI"**). Çakışma taraması da bunu
+  yakalamıyordu, çünkü kendi motorumuzun adını bilerek dışarıda tutuyor.
+
+  Test artık servis çalışıyorsa onu **geçici olarak durduruyor** — kaydına dokunmadan — ve
+  test nasıl biterse bitsin (sonuç, iptal, hata ya da uygulamadan çıkış) **geri başlatıyor**.
+  Servis kurulduğu andaki ayarla geri geldiği için, test yeni bir parametre bulduysa bunu
+  servise geçirmenin yolu günlükte yazıyor.
+
 ## [0.1.19]
 
 ### Eklendi
