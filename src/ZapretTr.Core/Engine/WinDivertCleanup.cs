@@ -27,7 +27,20 @@ public sealed record CleanupStep(string Description, bool Succeeded, string? Det
 public static class WinDivertCleanup
 {
     /// <summary>ZapretTR'nin kurdugu Windows servisinin adi.</summary>
-    public const string ServiceName = "ZapretTR";
+    public const string ServiceName = ServiceManager.WinwsServiceName;
+
+    /// <summary>
+    /// Sifirlamada kaldirilan ZapretTR servislerinin tamami.
+    /// </summary>
+    /// <remarks>
+    /// Burada eskiden yalnizca <see cref="ServiceName"/> vardi; sifreli DNS servisi
+    /// (<c>ZapretTR-DNS</c>) hic silinmiyordu. Sifirlama onun surecini olduruyor,
+    /// servisin kurtarma tanimi ("coktuyse 5 sn sonra yeniden baslat") de sureci
+    /// geri getiriyordu. Sonuc: "her seyi sildim" diyen kullanicida acilista
+    /// kendiliginden baslayan ve 127.0.0.1:53'u tutan bir servis kaliyordu.
+    /// </remarks>
+    public static readonly string[] ServiceNames =
+        [ServiceManager.WinwsServiceName, ServiceManager.DnsServiceName];
 
     /// <summary>WinDivert surucusunun servis adi.</summary>
     public const string DriverServiceName = "windivert";
@@ -78,10 +91,27 @@ public static class WinDivertCleanup
         // "bir seyler bozuldu" diye buraya geliyor; ad cozumu calismiyorsa once o
         // duzelmeli, diger adimlar beklesin.
         steps.Add(await RestoreDnsAsync(cancellationToken).ConfigureAwait(false));
+
+        // SERVISLER SURECLERDEN ONCE.
+        //
+        // Sira eskiden tersti: once surecler olduruluyor, sonra servise "dur"
+        // deniyordu. Iki sonucu vardi. (1) Servisin sureci zaten olmus oldugu icin
+        // "sc stop" 1062 ("servis baslatilmamis") donuyor ve kullanici basarili bir
+        // adimi kirmizi hata olarak goruyordu. (2) Daha onemlisi: servisin sureci
+        // disaridan olduruldugunde Windows bunu COKME sayip kurtarma tanimini
+        // calistiriyor ve servisi 5 sn sonra geri getiriyordu.
+        //
+        // Simdi: once temiz durdurma (kurtarma tetiklenmez), sonra silme (silinmek
+        // uzere isaretlenen servis yeniden baslatilamaz), en son geride kalan
+        // surecler -- uygulamanin kendi baslattiklari ya da durmakta gec kalanlar.
+        foreach (var service in ServiceNames)
+        {
+            steps.Add(await RunScAsync("stop", service, $"{service} servisi durduruldu", cancellationToken).ConfigureAwait(false));
+            steps.Add(await RunScAsync("delete", service, $"{service} servisi silindi", cancellationToken).ConfigureAwait(false));
+        }
+
         steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
-        steps.Add(await RunScAsync("stop", ServiceName, "ZapretTR servisi durduruldu", cancellationToken).ConfigureAwait(false));
-        steps.Add(await RunScAsync("delete", ServiceName, "ZapretTR servisi silindi", cancellationToken).ConfigureAwait(false));
         foreach (var driver in DriverServiceNames)
         {
             steps.Add(await RunScAsync("stop", driver, $"{driver} surucusu durduruldu", cancellationToken).ConfigureAwait(false));
@@ -186,8 +216,23 @@ public static class WinDivertCleanup
         var (exitCode, output) = await RunProcessAsync("sc.exe", [verb, serviceName], cancellationToken)
             .ConfigureAwait(false);
 
-        // 1060 = "belirtilen servis yuklu degil". Sifirlama acisindan bu basaridir:
-        // ortada kaldirilacak bir sey yok demek.
+        return InterpretScResult(description, exitCode, output);
+    }
+
+    /// <summary>
+    /// <c>sc stop</c> / <c>sc delete</c> sonucunu sifirlama acisindan yorumlar.
+    /// </summary>
+    /// <remarks>
+    /// Sifirlamanin amaci bir DURUMA varmak; o durum zaten saglaniyorsa adim
+    /// basarilidir. Bunlari hata gostermek kullaniciyi olmayan bir sorunun
+    /// pesine dusuruyordu:
+    ///
+    ///   1060 = servis yuklu degil        -> kaldirilacak bir sey yok
+    ///   1062 = servis baslatilmamis      -> durdurulacak bir sey yok
+    ///   1072 = servis silinmek uzere isaretli -> silme zaten istenmis
+    /// </remarks>
+    public static CleanupStep InterpretScResult(string description, int exitCode, string output)
+    {
         if (exitCode == 0)
         {
             return new CleanupStep(description, true);
@@ -196,6 +241,16 @@ public static class WinDivertCleanup
         if (output.Contains("1060", StringComparison.Ordinal))
         {
             return new CleanupStep(description, true, "zaten yoktu");
+        }
+
+        if (output.Contains("1062", StringComparison.Ordinal))
+        {
+            return new CleanupStep(description, true, "zaten durmustu");
+        }
+
+        if (output.Contains("1072", StringComparison.Ordinal))
+        {
+            return new CleanupStep(description, true, "zaten silinmek uzere isaretli");
         }
 
         return new CleanupStep(description, false, output.Trim());

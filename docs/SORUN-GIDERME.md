@@ -316,9 +316,10 @@ elle indirip kurun; ayarlarınız korunur.
 
 ## Hiçbiri işe yaramadıysa
 
-**1. Her şeyi sıfırlayın.** **"Tüm Ayarları Sıfırla"** motoru durdurur, servisi ve ağ
-sürücüsünü kaldırır, kayıtlı ayarları ve öğrenilmiş sonuçları siler. DNS ayarlarınıza
-dokunmaz. Sonra:
+**1. Her şeyi sıfırlayın.** **"Tüm Ayarları Sıfırla"** motoru ve şifreli DNS'i durdurur,
+ZapretTR'nin servislerini ve ağ sürücüsünü kaldırır, kayıtlı ayarları ve öğrenilmiş
+sonuçları siler. ZapretTR sistem DNS ayarınızı değiştirdiyse ayar eski hâline döner; kendi
+yaptığınız DNS ayarına dokunulmaz. Sonra:
 
 1. Bilgisayarı **yeniden başlatın**.
 2. Uygulamayı açın, **"PARAMETRE TESTİ YAP"**.

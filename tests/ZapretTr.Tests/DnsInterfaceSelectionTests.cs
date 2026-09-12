@@ -48,4 +48,34 @@ public class DnsInterfaceSelectionTests
         // bunlarin DNS'ini degistirmek kazanc saglamaz, bozma ihtimali vardir.
         Assert.False(SystemDnsManager.IsOfflinePhysical(OperationalStatus.Down, type));
     }
+
+    // --- Sanal kartlar -----------------------------------------------------------
+    //
+    // Tur suzgeci sanal kartlari ayiramiyor: Wi-Fi Direct kartlari kendini
+    // Wireless80211 olarak bildiriyor. Gercek bir kullanici raporunda iki tanesinin
+    // DNS'i 127.0.0.1'e cevrilmisti. Aciklamalar o makinedeki Get-NetAdapter
+    // ciktisindan alindi.
+
+    [Theory]
+    [InlineData("Microsoft Wi-Fi Direct Virtual Adapter")]
+    [InlineData("Microsoft Wi-Fi Direct Virtual Adapter #2")]
+    [InlineData("Hyper-V Virtual Ethernet Adapter")]
+    [InlineData("VirtualBox Host-Only Ethernet Adapter")]
+    public void SanalKart_hedef_degil(string description)
+    {
+        Assert.True(SystemDnsManager.IsVirtualAdapterDescription(description));
+    }
+
+    [Theory]
+    [InlineData("Realtek Gaming 2.5GbE Family Controller")]
+    [InlineData("RZ616 Wi-Fi 6E 160MHz")]
+    [InlineData("Bluetooth Device (Personal Area Network)")]
+    [InlineData(null)]
+    public void FizikselKart_ve_BluetoothPAN_sanal_sayilmaz(string? description)
+    {
+        // Bluetooth PAN kasitli: telefondan baglanti paylasan kullanici o kartla
+        // internete cikiyor ve orada da korunmali. Windows onu "Virtual" bayragiyla
+        // bildirse de aciklamasinda o kelime yok.
+        Assert.False(SystemDnsManager.IsVirtualAdapterDescription(description));
+    }
 }

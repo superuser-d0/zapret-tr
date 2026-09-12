@@ -591,7 +591,30 @@ public static class SystemDnsManager
                   or NetworkInterfaceType.Wireless80211;
 
     private static bool IsOfflinePhysical(NetworkInterface nic)
-        => IsOfflinePhysical(nic.OperationalStatus, nic.NetworkInterfaceType);
+        => IsOfflinePhysical(nic.OperationalStatus, nic.NetworkInterfaceType)
+           && !IsVirtualAdapterDescription(nic.Description);
+
+    /// <summary>
+    /// Adaptorun surucu aciklamasi onun sanal bir kart oldugunu mu soyluyor.
+    /// </summary>
+    /// <remarks>
+    /// Tur suzgeci (<see cref="IsOfflinePhysical(OperationalStatus, NetworkInterfaceType)"/>)
+    /// sanal kartlari AYIRAMIYOR: Windows'un Wi-Fi Direct icin actigi
+    /// "Local Area Connection* 1/2" kartlari kendini <c>Wireless80211</c> olarak
+    /// bildiriyor ve bagli olmadiklari icin "bagli olmayan fiziksel kart" sayiliyordu.
+    /// Gercek bir kullanicinin raporunda ikisinin de DNS'i 127.0.0.1'e cevrilmisti.
+    /// O kartlar kullaniciyi internete cikarmiyor; DNS'lerini degistirmek yalnizca
+    /// geri alinacak bir degisiklik daha biriktiriyor.
+    ///
+    /// Aciklama surucu adidir ve Turkce Windows'ta da Ingilizce gelir
+    /// ("Microsoft Wi-Fi Direct Virtual Adapter #2"). Ayni kelime Hyper-V, VMware ve
+    /// VirtualBox kartlarini da yakaliyor. Bluetooth kisisel ag kasitli olarak
+    /// DISARIDA kaliyor ("Bluetooth Device (Personal Area Network)"): telefondan
+    /// baglanti paylasan kullanici o kartla internete cikiyor.
+    /// </remarks>
+    public static bool IsVirtualAdapterDescription(string? description)
+        => description is not null
+           && description.Contains("Virtual", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Bu arayuzun DNS'i cevrilecek mi.</summary>
     /// <remarks>

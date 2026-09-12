@@ -1178,6 +1178,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         IsBusy = true;
         IsLogExpanded = true;
+        var servisYeniKuruldu = false;
 
         try
         {
@@ -1259,10 +1260,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 SetStatus(AppStatus.Ready, "SERVİS MODU AKTİF",
                     "Koruma servis olarak çalışıyor. Uygulamayı kapatabilirsiniz; " +
                     "bilgisayar açıldığında kendiliğinden devreye girer.");
+
+                servisYeniKuruldu = true;
             }
 
             await RefreshServiceStatusAsync().ConfigureAwait(true);
             SaveSelection();
+
+            // Servis gercekten ayaktaysa hedefleri olc. Beklemiyoruz: kurulum
+            // bitmis sayilir, dogrulama arkadan gelir -- Baslat yolundaki gibi.
+            if (servisYeniKuruldu && IsServiceInstalled)
+            {
+                _ = VerifyAfterStartAsync(viaService: true);
+            }
         }
         catch (Exception ex)
         {
@@ -1395,13 +1405,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
     ///
     /// Dogrulama bir KOLAYLIK: kendisi hata verirse baslatma bozulmamali, cunku
     /// winws zaten calisiyor ve olcumun basarisizligi korumanin basarisizligi degil.
+    ///
+    /// Servis kurulumundan sonra da cagriliyor. Eskiden yalnizca "Başlat" yolunda
+    /// kosuyordu; servis kuran kullanicinin ekraninda "SERVİS MODU AKTİF" yaziyordu
+    /// ama servisin gercekten hedefleri actigi hic olculmemisti. Ustelik servis
+    /// yolu en cok kullanilan yol: README kullaniciya tam olarak onu oneriyor.
     /// </remarks>
-    private async Task VerifyAfterStartAsync()
+    /// <param name="viaService">
+    /// Koruma otomatik baslatma servisiyle mi calisiyor. O yolda durum degeri
+    /// <see cref="AppStatus.Ready"/> kaliyor (Baslat dugmesi servis varken kapali),
+    /// yani "hala calisiyor mu" sorusu farkli soruluyor.
+    /// </param>
+    private async Task VerifyAfterStartAsync(bool viaService = false)
     {
         if (_profiles is null)
         {
             return;
         }
+
+        // Olcum suresince kullanici durdurmus, test baslatmis ya da servisi
+        // kaldirmis olabilir: o durumda "acmiyor" yazmak kafa karistirir.
+        bool HalaDevrede() => viaService
+            ? Status == AppStatus.Ready && IsServiceInstalled
+            : Status == AppStatus.Running;
+
+        var uyariDurumu = viaService ? AppStatus.Ready : AppStatus.Running;
 
         try
         {
@@ -1411,7 +1439,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             // Bu arada winws coktuyse (Faulted) veya kullanici durdurduysa olcecek
             // bir sey yok: hatanin uzerine "acmiyor" yazmak kafa karistirir.
-            if (Status != AppStatus.Running)
+            if (!HalaDevrede())
             {
                 return;
             }
@@ -1439,7 +1467,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 (outcome.Succeeded ? acilan : acilmayan).Add(target.Host);
             }
 
-            if (Status != AppStatus.Running)
+            if (!HalaDevrede())
             {
                 return;
             }
@@ -1474,7 +1502,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("Açılmayanlar: " + string.Join(", ", acilmayan), isError: true);
                 Append("\"PARAMETRE TESTİ YAP\" ile yeni bir strateji aramanız önerilir.");
 
-                SetStatus(AppStatus.Running, "ÇALIŞIYOR — AMA AÇMIYOR",
+                SetStatus(uyariDurumu, "ÇALIŞIYOR — AMA AÇMIYOR",
                     "Kayıtlı strateji hedefleri açmadı; yeni bir parametre testi önerilir.");
                 return;
             }
@@ -1486,7 +1514,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("(örneğin Discord giriş ya da güncelleme ekranında kalabilir).");
             Append("\"PARAMETRE TESTİ YAP\" ile yeni bir strateji aramanız önerilir.");
 
-            SetStatus(AppStatus.Running, "ÇALIŞIYOR — KISMEN AÇIYOR",
+            SetStatus(uyariDurumu, "ÇALIŞIYOR — KISMEN AÇIYOR",
                 $"{acilmayan.Count} hedef hâlâ açılmıyor: {string.Join(", ", acilmayan)}");
         }
         catch (Exception)
@@ -1840,14 +1868,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         // Yikici islem: onaysiz calistirilmamali ve tam olarak ne yapacagi
         // onceden soylenmeli.
+        //
+        // Metin eskiden "DNS ayarlariniza dokunulmaz" diyordu; ayni anda gunluk
+        // "Sistem DNS ayari geri alindi" yaziyordu. Davranis dogru (sifirlama DNS'i
+        // bizde birakmamali), yanlis olan metindi: kullanicinin KENDI ayarina
+        // dokunulmuyor, ZapretTR'nin yaptigi yonlendirme geri aliniyor.
         var confirmation = MessageBox.Show(
             "Bu işlem şunları yapacak:\n\n" +
-            "  • Çalışan winws sürecini durdurur\n" +
-            "  • ZapretTR Windows servisini siler\n" +
+            "  • Çalışan winws ve şifreli DNS süreçlerini durdurur\n" +
+            "  • ZapretTR'nin Windows servislerini (otomatik başlatma ve şifreli DNS) siler\n" +
             "  • WinDivert sürücüsünü kaldırır\n" +
             "  • Kaydedilmiş yapılandırmayı ve öğrenilmiş sonuçları siler\n" +
             "  • DNS önbelleğini temizler\n\n" +
-            "DNS ayarlarınıza dokunulmaz.\n\nDevam edilsin mi?",
+            "ZapretTR sistem DNS ayarınızı değiştirdiyse ayar, ZapretTR'den önceki hâline " +
+            "döner. Kendi yaptığınız DNS ayarına dokunulmaz.\n\nDevam edilsin mi?",
             "Tüm ayarları sıfırla",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -1888,6 +1922,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IsSecureDnsEnabled = true;
             CustomTarget = string.Empty;
             IsServiceInstalled = false;
+            IsServiceStopped = false;
             UpdateMessage = null;
 
             LoadIspChoices();

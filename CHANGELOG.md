@@ -22,6 +22,38 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   Servis kurulduğu andaki ayarla geri geldiği için, test yeni bir parametre bulduysa bunu
   servise geçirmenin yolu günlükte yazıyor.
 
+- **"Tüm Ayarları Sıfırla" şifreli DNS servisini silmiyordu.** Yalnızca `ZapretTR` servisi
+  siliniyordu; `ZapretTR-DNS` için yalnızca süreç öldürülüyordu. Servisin "çökerse yeniden
+  başlat" tanımı süreci birkaç saniye sonra geri getiriyordu, yani "her şeyi sildim" diyen
+  kullanıcıda açılışta kendiliğinden başlayan ve `127.0.0.1:53`'ü tutan bir servis
+  kalıyordu. İki servis de artık siliniyor.
+
+- **Sıfırlamada başarılı bir adım hata olarak gösteriliyordu.** Süreçler servisten önce
+  öldürüldüğü için `sc stop` 1062 ("servis başlatılmamış") dönüyor ve günlükte kırmızı
+  `[!] ZapretTR servisi durduruldu -- FAILED 1062` satırı çıkıyordu. Asıl zararı bu değildi:
+  bir servisin süreci dışarıdan öldürülünce Windows bunu çökme sayıp servisi yeniden
+  başlatıyor — yukarıdaki maddenin sebebi buydu. Sıra artık: servisleri temiz durdur,
+  sil, en son geride kalan süreçleri öldür. 1062 ve 1072 ("silinmek üzere işaretli")
+  başarı sayılıyor.
+
+- **Sıfırlama penceresi "DNS ayarlarınıza dokunulmaz" diyordu**, aynı anda günlük "Sistem DNS
+  ayarı geri alındı" yazıyordu. Davranış doğruydu, metin yanlıştı: ZapretTR'nin yaptığı
+  yönlendirme geri alınıyor, kullanıcının kendi ayarına dokunulmuyor. Pencere ve sorun
+  giderme rehberi bunu söylüyor.
+
+- **Servis kurulduktan sonra koruma ölçülmüyordu.** "ZAPRET'İ BAŞLAT"tan sonra hedeflerin
+  gerçekten açıldığı ölçülüyordu, "Servis Olarak Yükle"den sonra ölçülmüyordu — oysa
+  kullanıcıya önerilen yol o. Ekranda "SERVİS MODU AKTİF" yazıyordu ama arkasında bir ölçüm
+  yoktu. Artık servis yolunda da aynı doğrulama yapılıyor ve hedefler açılmıyorsa
+  **"ÇALIŞIYOR — AMA AÇMIYOR"** / **"KISMEN AÇIYOR"** uyarısı çıkıyor.
+
+- **Şifreli DNS, Windows'un sanal Wi-Fi Direct kartlarına da yazılıyordu.** Bağlı olmayan
+  kartlar (kablo takılıyken WiFi gibi) bilerek hedefe alınıyor; ama "Local Area
+  Connection* 1/2" gibi sanal kartlar kendini kablosuz kart olarak bildirdiği için onlar
+  da giriyordu. Bir kullanıcı raporunda ikisinin de DNS'i `127.0.0.1` görünüyordu.
+  Sürücü adında "Virtual" geçen kartlar (Wi-Fi Direct, Hyper-V, VMware, VirtualBox) artık
+  atlanıyor. Telefondan paylaşım için Bluetooth kişisel ağ kartı bilerek listede kalıyor.
+
 ## [0.1.19]
 
 ### Eklendi
