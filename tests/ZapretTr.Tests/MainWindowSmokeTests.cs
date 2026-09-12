@@ -101,20 +101,6 @@ public sealed class MainWindowSmokeTests
                 Assert.Null(viewModel.SelectedStrategy);
                 Assert.Empty(viewModel.StrategyChoices);
                 Assert.False(viewModel.CanStart, "Saglayici bilinmeden Baslat acik olmamali.");
-
-                // DURUM BANDI "HAZIR" DEMEMELI.
-                //
-                // Bu haliyle koruma yok: strateji secilmemis, Baslat kapali, winws
-                // calismiyor. Ekranin en ustunde, en buyuk puntoyla "SİSTEM HAZIR"
-                // yaziyordu ve teknik olmayan kullanici bunu "kuruldu, calisiyor"
-                // diye okuyup pencereyi kapatiyordu. Sahadan gelen "kurdum, olmadi"
-                // bildirimlerinin en ucuz aciklamasi buydu.
-                //
-                // Iddia iki sey birden bekliyor: yanlis cumle GITMIS olmali ve
-                // yerine SIRADAKI ADIM yazilmis olmali. Yalnizca birincisini
-                // sinamak, basligi bos birakan bir degisiklige de yesil verirdi.
-                Assert.DoesNotContain("HAZIR", viewModel.StatusHeadline, StringComparison.Ordinal);
-                Assert.Contains("PARAMETRE TESTİ", viewModel.StatusDetail, StringComparison.Ordinal);
             }
 
             // Bir ISS SECILDIGINDE strateji listesi dolmali.
@@ -122,6 +108,30 @@ public sealed class MainWindowSmokeTests
             Assert.NotEmpty(viewModel.StrategyChoices);
             Assert.NotNull(viewModel.SelectedStrategy);
             Assert.True(viewModel.CanStart);
+
+            // DURUM BANDI, STRATEJI YOKKEN "HAZIR" DEMEMELI.
+            //
+            // Yeni kurulmus makinede tablo suydu: strateji secilmemis, Baslat
+            // kapali, winws calismiyor, koruma yok -- ve ekranin en ustunde, en
+            // buyuk puntoyla "SİSTEM HAZIR". Teknik olmayan kullanici bunu
+            // "kuruldu, calisiyor" diye okuyup pencereyi kapatiyordu. Sahadan
+            // gelen "kurdum, olmadi" bildiriminin en ucuz aciklamasi buydu.
+            //
+            // Iddia KOSULSUZ olarak burada: ilk acilis durumuna yukaridaki
+            // `if` icinde bakmak, kayitli yapilandirmasi olan bir makinede
+            // testin sessizce hic kosmamasi demekti -- yani her zaman yesil
+            // ama hicbir seyi sinamayan bir iddia. Onun yerine "Bilmiyorum"a
+            // ELLE donuluyor; bu, makinenin durumundan bagimsiz olarak
+            // stratejisiz hali kuruyor.
+            viewModel.SelectedIsp = viewModel.IspChoices.First(c => c.Profile is null);
+            Assert.Null(viewModel.SelectedStrategy);
+            Assert.False(viewModel.CanStart);
+
+            // Iki sey birden bekleniyor: yanlis cumle GITMIS olmali ve yerine
+            // SIRADAKI ADIM yazilmis olmali. Yalnizca birincisini sinamak,
+            // basligi bosaltan bir degisiklige de yesil verirdi.
+            Assert.DoesNotContain("HAZIR", viewModel.StatusHeadline, StringComparison.Ordinal);
+            Assert.Contains("PARAMETRE TESTİ", viewModel.StatusDetail, StringComparison.Ordinal);
         });
 
         Assert.Null(error);
