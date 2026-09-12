@@ -10,6 +10,11 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ### Değişti
 
+- **README'den "sonuç alınamayan koşum" uyarısı kaldırıldı.** `tcp80` ile QUIC bölümünü
+  hiçbir adayın açamadığı o koşum, aynı hattan gelen sonraki geri bildirimde bağlantının
+  kurulduğu doğrulanınca geçerliliğini yitirdi. Bekleyen bir soru olarak durmasının anlamı
+  kalmadı; hiçbir profile zaten işlenmemişti, dolayısıyla `profiles/` değişmedi.
+
 - **Saha bildirimi kaydedildi: kurulumdan sonra yeniden başlatmadan çalışmama.** Birkaç
   kullanıcı programın ancak yeniden başlatınca çalıştığını bildirdi; bildirenlerden biri
   daha önce GoodbyeDPI kullanıyordu. Bu bir **ölçüm değil, kullanıcı bildirimi** ve öyle

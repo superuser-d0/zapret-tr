@@ -440,21 +440,6 @@ Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama öl�
 | Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
 
-⚠️ **Sonuç alınamayan bir koşum — ama hangi hatta olduğunu bilmiyoruz.** Bir kullanıcıda
-49 aday denendi ve hiçbiri `tcp80` ile QUIC bölümünü açamadı. Motor düzgün çalışıyordu;
-bağlantılar gerçekten sıfırlanıyordu, yani ölçüm geçerliydi.
-
-Bu koşumu **hiçbir profile işlemiyoruz.** Otomatik tespit "Turkcell Mobil" dedi, ama
-kullanıcı o sırada paylaşımlı bir ağdaydı (aynı hattı bütün bir kat kullanıyor) ve
-trafiğin gerçekte hangi sağlayıcının DPI donanımından geçtiğini bilmiyoruz. ASN tespiti
-çıkış noktasını söyler, ağın yapısını değil. Bilmediğimiz bir hattın sonucunu bilinen bir
-profile yazmak, tam da bu projenin kaçındığı şey olurdu.
-
-Yine de bir şey öğretti ve o kısmı sağlam: **aynı koşumda `tcp443` tamamen açıktı**
-(`discord.com`, `gateway.discord.gg`, `updates.discord.com` — hepsi erişilebilir). Yani
-Discord'un ana trafiği zaten geçiyordu. "Çalışan strateji bulunamadı" her zaman "araç işe
-yaramadı" demek değil: engellenen bölümler ikincil olabiliyor.
-
 🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
 bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
 tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
