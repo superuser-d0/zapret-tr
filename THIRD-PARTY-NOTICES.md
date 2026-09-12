@@ -32,11 +32,44 @@ LGPL şartı gereği: bu bileşen değiştirilmemiştir ve kullanıcı isterse k
 sürümüyle değiştirebilir — `vendor/zapret-winws/` altındaki dosyaları elle değiştirmek
 yeterlidir, ZapretTR bu dosyaları yeniden imzalamaz veya kilitlemez.
 
+## Cygwin
+
+- **Kaynak:** https://cygwin.com (kaynak kodu: https://cygwin.com/git/newlib-cygwin.git)
+- **Yazar:** Cygwin geliştiricileri
+- **Lisans:** LGPL v3
+
+`winws.exe` Cygwin ile derlendiği için `cygwin1.dll` olmadan başlamaz. Bu DLL
+zapret-win-bundle içinde dağıtıldığı haliyle, **değiştirilmeden** `vendor/zapret-winws/`
+altına konur. WinDivert'te olduğu gibi kullanıcı onu kendi derlediği uyumlu bir sürümle
+değiştirebilir.
+
+## dnscrypt-proxy
+
+- **Kaynak:** https://github.com/DNSCrypt/dnscrypt-proxy
+- **Yazar:** Frank Denis ([@jedisct1](https://github.com/jedisct1))
+- **Lisans:** ISC
+
+İsteğe bağlı şifreli DNS için kullanılır. `tools/fetch-upstream.ps1` resmi yayın
+arşivini sabitlenmiş bir sürümden indirir, SHA256 ile doğrular ve yalnızca
+`dnscrypt-proxy.exe` ile `LICENSE` dosyasını çıkarır; ikisi de **değiştirilmeden**
+kurulumla birlikte `dnscrypt-proxy/` klasörüne konur. ISC lisansının istediği telif
+bildirimi o `LICENSE` dosyasındadır.
+
+## dnscrypt-resolvers
+
+- **Kaynak:** https://github.com/DNSCrypt/dnscrypt-resolvers
+- **Yazar:** DNSCrypt projesi
+
+`dnscrypt-proxy`'nin bağlandığı genel çözümleyici listesi (`public-resolvers.md`).
+Bu liste **bizimle dağıtılmaz**; `dnscrypt-proxy` çalışırken doğrudan kaynağından
+indirir ve projenin minisign imzasıyla doğrular.
+
 ---
 
 ## Zapret Win TR
 
-- **Yazar:** Ali Mali
+- **Kaynak:** https://github.com/alimali54/zapret-win-turkey
+- **Yazar:** Ali Mali ([@alimali54](https://github.com/alimali54))
 - **Ne aldık:** doğrudan kod değil — iki şey öğrendik ve kendi kodumuzda uyguladık.
 
 Projenin geliştiricisi, aracındaki hazır ISS stratejilerini kullanmamıza izin verdi

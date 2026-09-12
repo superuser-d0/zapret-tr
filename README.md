@@ -610,32 +610,21 @@ ve `--help` için bile yükseltilmiş yetki istiyor.
 **Antivirüs uyarı verebilir.** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
 false-positive üretiyor. Kod imzalama sertifikamız yok.
 
-## Teşekkür — Zapret Win TR
+## Teşekkürler
 
-**Zapret Win TR** geliştiricisi **Ali Mali**, kendi aracındaki hazır sağlayıcı stratejilerini
-kullanmamıza izin verdi ve kaynağını paylaştı.
+- **Zapret** projesinin DPI atlatma motoru `winws` için [@bol-van](https://github.com/bol-van)'a,
+- Paket yakalama sürücüsü [WinDivert](https://github.com/basil00/Divert) için
+  [@basil00](https://github.com/basil00)'a,
+- `winws.exe`'nin çalışmak için ihtiyaç duyduğu `cygwin1.dll` için [Cygwin](https://cygwin.com)
+  geliştiricilerine,
+- Şifreli DNS için [dnscrypt-proxy](https://github.com/DNSCrypt/dnscrypt-proxy) projesinin
+  geliştiricisi [@jedisct1](https://github.com/jedisct1)'e ve çözümleyici listesi
+  [dnscrypt-resolvers](https://github.com/DNSCrypt/dnscrypt-resolvers) için DNSCrypt ekibine,
+- Stratejilerini paylaşan, WinDivert kalıntı temizliği ve GoodbyeDPI çakışması fikirleri için
+  [zapret-win-turkey](https://github.com/alimali54/zapret-win-turkey) geliştiricisi
+  [@alimali54](https://github.com/alimali54)'e teşekkürler.
 
-Karşılaştırdık ve sonuç ilginç çıktı: klasik winws motoru için tanımladığı **sekiz stratejinin
-sekizi de bizim profillerimizde zaten vardı**, üstelik altısında onun tercihi bizim de ilk
-adayımızdı. Kalan ikisi bizde ikinci sırada — onun arayüzünde de adları "Alternatif". Yani
-buradan kopyalanmış bir parametre **yok**; birbirinden bağımsız iki proje aynı değerlere varmış.
-
-Bunu ayrıca yazıyoruz, çünkü o profillerin tohumlarına duyulacak güveni doğrudan etkiliyor:
-artık "toplulukta biri söylemiş" değil, gerçek kullanıcıları olan ayrı bir aracın gönderdiği
-değerlerle örtüşen bir liste. (Yine de `verified` değiller — dayanak "olumsuz dönüş olmadı" ve
-sessizlik ölçüm sayılmaz.)
-
-Kaynağından **öğrendiğimiz ve uyguladığımız** iki şey var, ikisi de 0.1.6'da:
-
-- WinDivert sürücüsünün yalnızca `windivert` adıyla değil, **`WinDivert14`** (GoodbyeDPI'ın da
-  kullandığı ad) ve **`monkey`** adlarıyla da geride kalabildiği. Temizliğimiz eskiden yalnızca
-  ilkini söküyordu; kalıntı bir servis ise bütün adayların aynı şekilde başarısız olmasına yol
-  açabiliyordu.
-- Aynı anda çalışan başka bir DPI atlatma aracının (özellikle **GoodbyeDPI**) ölçümü tümüyle
-  geçersiz kıldığı ve bunun kullanıcıya söylenmesi gerektiği.
-
-Bunlar fikir düzeyinde katkılar; kod bize ait. Ayrıntı için:
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Lisanslar ve ayrıntılar: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Lisans
 
