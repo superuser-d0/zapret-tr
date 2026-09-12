@@ -426,25 +426,35 @@ farkı korumak için var.
 
 ## Hangi hatlarda doğrulandı
 
-"Doğrulandı" burada dar bir anlam taşıyor: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
-koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmıyor.
-Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil.
+Tabloda iki ayrı şey var ve karıştırılmamaları önemli:
+
+- **doğrulandı (ölçüm)** — o hatta biz ölçtük, aynı komut üç bağımsız koşumda 3/3 geçti.
+  Sayı sütunlarındaki rakamlar bu adayların sayısı.
+- **çalıştığı doğrulandı (kullanıcı teyidi)** — o hattaki kullanıcı aracın işini gördüğünü
+  teyit etti, ama elimizde ölçüm raporu yok: hangi adayın kazandığını ve sonucun
+  tekrarlanıp tekrarlanmadığını bilmiyoruz. Sayı sütunları bu yüzden boş kalıyor.
+
+Mekanizmadan türetilmiş ya da "forumda biri söyledi" türü şeyler tabloya hiç girmiyor.
 
 | Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
 |---|:---:|:---:|:---:|---|
 | Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
 | Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
-| Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
+| Türksat Kablonet | — | — | — | ✅ **çalıştığı doğrulandı** (kullanıcı teyidi) — ölçüm raporu yok |
 | Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
 | Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
 
-🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
-bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
-tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
+✅ **Türksat Kablonet:** bu hattaki kullanıcı aracın çalıştığını teyit etti — bağlantı kuruldu
+ve giriş yapıldı (0.1.6). Yani "bu hatta işe yarıyor mu" sorusunun cevabı evet. Buna rağmen
+profil dosyasındaki adaylar `verified` işaretli **değil** ve bu bilerek böyle: hangi adayın
+kazandığını bilmiyoruz, uygulama da denenmemiş bir stratejiyi kendiliğinden trafiğe
+uygulamıyor. Pratikte fark şu — o hatta Parametre Testi'ni bir kez çalıştırmanız gerekiyor,
+sonuç kaydediliyor ve sonraki açılışlarda hazır geliyor. O hattaysanız ve testi
+çalıştırdıysanız, uygulamadaki
 **"Raporu Kaydet"** dosyasını [ölçüm bildirimi formuna](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
-bırakmanız bu profili doğrulanmışa çevirecek tek şey.
+bırakmanız, profildeki adayları **ölçümle** doğrulanmışa çevirecek tek şey.
 
 ### Bu hatlardan birindeyseniz
 

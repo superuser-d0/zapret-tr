@@ -648,12 +648,26 @@ kullandıysan. "Servis kurunca yeniden başlatmaya gerek yok" cümlesi de bu bil
 
 **Türksat Kablonet'ten ilk saha geri bildirimi (2026-09-07, 0.1.6).** Bir kullanıcı
 bağlantı kurabildiğini ve giriş yapabildiğini bildirdi. Profil `verified` YAPILMADI
-ve yapılmamalı: hangi adayın kazandığını bilmiyoruz, tekrar yok, rapor yok. README'de
-ayrı bir durum olarak duruyor ("kullanıcı bildirimi"), çünkü ölçümle karıştırılırsa
-o sütunun anlamı biter.
+ve yapılmamalı: hangi adayın kazandığını bilmiyoruz, tekrar yok, rapor yok.
 
-Bu profili doğrulanmışa çevirecek tek şey: o hattan gelen bir "Ayrıntılar" günlüğü
-ya da `--out` raporu. Hangi adayın tuttuğunu öğrenmeden profil sıralaması
+**README'deki satır 2026-09-12'de ✅'e çekildi (depo sahibinin kararı) ama ölçüm hâlâ
+yok.** İki farklı iddia ayrı tutuldu ve tablo açıklaması buna göre yeniden yazıldı:
+"doğrulandı (ölçüm)" bizim ölçtüğümüz hatlar, "çalıştığı doğrulandı (kullanıcı teyidi)"
+ise kullanıcının teyit ettiği ama raporu olmayan hatlar. Sayı sütunları ikincisinde boş
+kalıyor — orada yazılacak bir sayı yok, çünkü ölçülmüş aday yok. Bu ayrım kaybolursa o
+sütunların anlamı biter.
+
+**`profiles/isp/turksat.json`'a DOKUNULMADI ve dokunulmamalı.** Sebebi kozmetik değil:
+`RuntimeSelection` kullanıcının seçtiği stratejinin yanına **doğrulanmış** adayları
+ekliyor, yani orada bir adayı `verified` yapmak o adayı gerçek trafiğe uygulatır.
+Hangisinin kazandığını bilmeden birini işaretlemek, ölçülmemiş bir stratejiyi o hattaki
+herkese uygulamak demek — ve bu projede tam bu sınıftan ölçülmüş bir zarar kayıtlı
+(sorunsuz çalışan bir QUIC bağlantısı, üzerine denenmemiş bir QUIC stratejisi uygulanınca
+bozulmuştu). README'deki durum sütunu bir bilgi, profil dosyasındaki `verifiedFor` ise
+bir DAVRANIŞ; ikisi aynı şey değil.
+
+Bu profili ölçümle doğrulanmışa çevirecek tek şey: o hattan gelen bir "Ayrıntılar"
+günlüğü ya da `--out` raporu. Hangi adayın tuttuğunu öğrenmeden profil sıralaması
 düzeltilemez — Türksat profilinde şu an ölçülmüş hiçbir şey yok.
 
 **Duman testleri "arayüz çalışıyor" demiyor.** `MainWindowSmokeTests` pencerenin

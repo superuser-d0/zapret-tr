@@ -10,6 +10,14 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ### Değişti
 
+- **Türksat Kablonet satırı ✅ oldu — ama "ölçüm" değil "kullanıcı teyidi" olarak.** O hattaki
+  kullanıcı aracın çalıştığını teyit etti; elimizde hâlâ ölçüm raporu yok, dolayısıyla hangi
+  adayın kazandığını bilmiyoruz. Tablo açıklaması iki durumu ayıracak şekilde yeniden yazıldı
+  ve sayı sütunları boş kaldı. **`profiles/isp/turksat.json` değişmedi:** oradaki `verified`
+  işareti bir bilgi değil davranış — `RuntimeSelection` doğrulanmış adayları gerçek trafiğe
+  uyguluyor, hangisinin kazandığını bilmeden birini işaretlemek o hattaki herkese ölçülmemiş
+  bir strateji uygulatırdı.
+
 - **README'den "sonuç alınamayan koşum" uyarısı kaldırıldı.** `tcp80` ile QUIC bölümünü
   hiçbir adayın açamadığı o koşum, aynı hattan gelen sonraki geri bildirimde bağlantının
   kurulduğu doğrulanınca geçerliliğini yitirdi. Bekleyen bir soru olarak durmasının anlamı
