@@ -13,6 +13,12 @@ labels: ""
 
 <!-- Ne yapmaya çalıştınız, ne bekliyordunuz, ne oldu? Birkaç cümle yeterli. -->
 
+<!--
+Program hiç çalışmıyorsa iki şeyi de yazın, teşhisi doğrudan değiştiriyor:
+- Kurulumdan sonra bilgisayarı yeniden başlattınız mı?
+- Daha önce GoodbyeDPI benzeri başka bir DPI atlatma aracı kullandınız mı?
+-->
+
 ## Ortam
 
 | Alan | Değer |

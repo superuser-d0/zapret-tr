@@ -608,6 +608,44 @@ artık bunu tespit ediyor ve arayüz testten ÖNCE uyarıyor. Süreç öldürül
 başka bir aracı kapatmak kullanıcının kararı; yapılan tek şey 15 dakikayı körlemesine
 harcamasını engellemek.
 
+**Saha bildirimi: kurulumdan sonra YENİDEN BAŞLATMADAN çalışmıyor (2026-09-12).**
+Birden fazla kullanıcı, programı kurduktan sonra çalışmadığını, bilgisayarı yeniden
+başlatınca çalıştığını bildirdi. Forumdaki bildirimlerden birinin tam sözü:
+"Restart attım oldu... Çok iyiymiş ama GoodbyeDPI olmadı bu oldu" — yani o kullanıcı
+**bu araçtan ÖNCE GoodbyeDPI kullanmıştı**.
+
+Bu ölçüm DEĞİL, kullanıcı bildirimi. Ama mekanizma bu dosyada zaten iki kez kayıtlı:
+GoodbyeDPI `WinDivert14` adıyla sürücü bırakıyor ve **servis silinse bile sürücü
+görüntüsü çekirdekten ancak yeniden başlatmada düşüyor**. Kalıntı sürücü varken winws
+kendi sürücüsünü yükleyemiyor; belirti dışarıdan "hiçbir strateji çalışmadı" ya da
+"başlatılamadı" gibi görünüyor — yani kullanıcı hattını ya da aracı suçluyor.
+`fetch-upstream.ps1`'in "dosya başka bir süreç tarafından kullanılıyor" hatası da
+aynı kökten: sürücü kaldırılana kadar `WinDivert64.sys` kilitli kalıyor.
+
+Hipotezin desteği: en az bir bildirimde önce GoodbyeDPI vardı ve
+`DetectConflictingTools()` yalnızca ÇALIŞAN süreci görüyor — kapatılmış ama sürücüsü
+çekirdekte kalmış bir GoodbyeDPI bu kontrolden temiz geçiyor. Yani uyarı bu durumu
+yakalayamıyor.
+
+**Doğrulanmadı ve varsayılmamalı.** Alternatif açıklamalar elenmedi: kurulum sırasında
+sökülüp geri kurulan servisin o oturumda ayağa kalkmaması (0.1.8 ve 0.1.17'de tam
+olarak bu sınıftan iki hata çıktı), ya da kullanıcının kurulumdan önce çalışan eski
+sürümünün süreçlerinin kalması. Ayırt edecek şey belli: **başarısız oturumdan alınmış
+bir "Raporu Kaydet" dosyası** — winws'in çıkış kodu ve sürücü yükleme satırı orada
+görünüyor. Bu istendi, henüz gelmedi.
+
+Kod tarafında yapılacak şey buna bağlı; rapor gelmeden dokunulmadı. Olası yön:
+temizlik/başlatma adımında sürücü servisi silindiyse ama sürücü hâlâ yüklüyse
+("silme bekleniyor" durumu) kullanıcıya bunu SÖYLEMEK — README'deki genel tavsiye
+değil, o makinede ölçülmüş bir durum olarak. Sürücü yüklü mü sorusunun cevabı
+`sc query <ad>` + servis silindikten sonra `sc query` hâlâ `STOP_PENDING`/`RUNNING`
+dönüyor mu ile alınabilir.
+
+README'de bu arada kullanıcıya söylenecek hale getirildi: kurulumdan sonra
+çalışmıyorsa bir kez yeniden başlat, özellikle daha önce GoodbyeDPI benzeri bir araç
+kullandıysan. "Servis kurunca yeniden başlatmaya gerek yok" cümlesi de bu bildirimle
+çelişiyordu; olduğu gibi bırakılmadı, kalıntı sürücü istisnasıyla birlikte yazıldı.
+
 **Türksat Kablonet'ten ilk saha geri bildirimi (2026-09-07, 0.1.6).** Bir kullanıcı
 bağlantı kurabildiğini ve giriş yapabildiğini bildirdi. Profil `verified` YAPILMADI
 ve yapılmamalı: hangi adayın kazandığını bilmiyoruz, tekrar yok, rapor yok. README'de

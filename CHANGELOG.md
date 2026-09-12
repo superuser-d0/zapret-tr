@@ -10,6 +10,18 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ### Değişti
 
+- **Saha bildirimi kaydedildi: kurulumdan sonra yeniden başlatmadan çalışmama.** Birkaç
+  kullanıcı programın ancak yeniden başlatınca çalıştığını bildirdi; bildirenlerden biri
+  daha önce GoodbyeDPI kullanıyordu. Bu bir **ölçüm değil, kullanıcı bildirimi** ve öyle
+  yazıldı. En olası mekanizma dosyada zaten kayıtlı: WinDivert sürücüsü servis silinse bile
+  çekirdekten ancak yeniden başlatmada düşüyor, kalıntı sürücü varken winws kendi
+  sürücüsünü yükleyemiyor ve belirti "hiçbir strateji çalışmadı" gibi görünüyor.
+  README'ye kurulum adımına ve sık sorulanlara girdi eklendi; "servis kurunca yeniden
+  başlatmaya gerek yok" cümlesi bu istisnayla birlikte yeniden yazıldı. Hata bildirimi
+  formu artık iki şeyi soruyor: yeniden başlatıldı mı, daha önce başka bir DPI aracı
+  kullanıldı mı. Kod değişmedi — ayırt edici veri (başarısız oturumun "Raporu Kaydet"
+  dosyası) henüz gelmedi, gerekçesi `docs/DEVAM.md`'de.
+
 - **README'ye "Bilgisayarı yavaşlatır mı" bölümü.** Gerçek bir makinede ölçüldü, dönüşümlü
   (kapalı → açık → tekrar kapalı) — sondaki ikinci "kapalı", farkın ZapretTR'den mi yoksa
   hattın kendi dalgalanmasından mı geldiğini ayırmak için.

@@ -110,15 +110,35 @@ katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 **Sizde açılmayan belirli bir adres varsa** "Açılmayan site" kutusuna yazın ve testi öyle
 çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
 
+**Kurduktan sonra hiçbir şey çalışmıyorsa bilgisayarı bir kez yeniden başlatın.** Birkaç
+kullanıcı programın ancak yeniden başlatmadan sonra çalıştığını bildirdi ve bildirenlerden
+biri daha önce **GoodbyeDPI** kullanıyordu. Sebebi büyük olasılıkla şu: bu araçların hepsi
+aynı ağ sürücüsünü (WinDivert) kullanıyor ve sürücü, programı kapatsanız bile çekirdekten
+hemen düşmüyor. Kalıntı bir sürücü varken ZapretTR kendi sürücüsünü yükleyemiyor; dışarıdan
+"hiçbir strateji çalışmadı" ya da "başlatılamadı" gibi görünüyor. Yeniden başlatmak
+çekirdeği temizliyor. Daha önce başka bir DPI atlatma aracı kullandıysanız bunu **testten
+önce** yapmanız zaman kazandırır.
+
 **Her açılışta çalışmasını istiyorsanız** "Servis Olarak Yükle" düğmesi bir Windows servisi
-kurar. Bu durumda uygulamayı açmanız gerekmez ve **yeniden başlatmaya da gerek yok** —
-servis hemen çalışmaya başlar, sonraki açılışlarda kendiliğinden devreye girer.
+kurar. Bu durumda uygulamayı açmanız gerekmez: servis hemen çalışmaya başlar, sonraki
+açılışlarda kendiliğinden devreye girer. Normalde yeniden başlatmaya gerek yoktur — istisna
+yukarıdaki kalıntı sürücü durumudur.
 
 **Otomatik başlatmayı kaldırdıysanız** bilgisayarı bir kez yeniden başlatmanız iyi olur:
 ağ sürücüsü çekirdekten hemen düşmüyor ve kalıntı bir sürücü, sonraki parametre testinde
 bütün adayların aynı şekilde başarısız olmasına yol açabiliyor.
 
 ### Sık sorulanlar
+
+**Kurdum ama çalışmadı — hiçbir aday geçmedi ya da "BAŞLATILAMADI" diyor.** Önce
+bilgisayarı bir kez **yeniden başlatın**, sonra tekrar deneyin. Daha önce GoodbyeDPI gibi
+başka bir DPI atlatma aracı kullandıysanız bu adım neredeyse zorunlu: o araçların bıraktığı
+ağ sürücüsü çekirdekte kalıyor ve ZapretTR kendi sürücüsünü yükleyemiyor. Belirtisi
+yanıltıcı, çünkü "bütün stratejiler başarısız" gibi görünüyor — oysa ölçüm hiç yapılamamış
+oluyor. Yeniden başlattıktan sonra da düzelmiyorsa **"Tüm Ayarları Sıfırla"** kalıntı
+sürücüleri (`windivert`, `WinDivert14`, `monkey`) söker; ardından bir kez daha yeniden
+başlatın. Sorun sürerse **"Raporu Kaydet"** dosyasıyla bildirin — bu durumu ölçümle
+doğrulayabilmemiz için elimizde henüz rapor yok.
 
 **Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçüldüğü için.
 Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez.
