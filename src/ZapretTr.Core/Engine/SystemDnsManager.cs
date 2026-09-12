@@ -40,6 +40,24 @@ public sealed class DnsBackupEntry
 
     [JsonPropertyName("addresses")]
     public IReadOnlyList<string> Addresses { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Bu kayit IPv6 DNS bilgisini de tasiyor mu.
+    /// </summary>
+    /// <remarks>
+    /// Ayri bir bayrak, cunku 0.1.18 ve oncesinde yazilmis yedeklerde IPv6 alanlari
+    /// HIC YOK. Onlari "IPv6 DHCP'ydi" diye okumak, kullanicinin elle girdigi bir
+    /// IPv6 DNS'ini geri alma sirasinda silmek olurdu -- dokunmadigimiz bir seyi
+    /// bozmak. Bayrak yoksa IPv6 tarafina hic dokunulmuyor.
+    /// </remarks>
+    [JsonPropertyName("ipv6Captured")]
+    public bool Ipv6Captured { get; init; }
+
+    [JsonPropertyName("ipv6WasStatic")]
+    public bool Ipv6WasStatic { get; init; }
+
+    [JsonPropertyName("ipv6Addresses")]
+    public IReadOnlyList<string> Ipv6Addresses { get; init; } = Array.Empty<string>();
 }
 
 /// <summary>Diske yazilan yedek.</summary>
@@ -207,6 +225,27 @@ public static class SystemDnsManager
             if (exitCode == 0)
             {
                 changed.Add(nic.Name);
+
+                // IPv6 DNS'i AYRICA bosaltmak zorundayiz. Yalnizca IPv4'u
+                // 127.0.0.1'e cevirmek yetmiyor: arayuzde ISS'in verdigi bir IPv6
+                // cozumleyicisi duruyorsa (yonlendirici duyurusu ya da DHCPv6 ile
+                // gelir) Windows sorguyu pekala oraya yollar ve DNS kacirma
+                // katmani ayakta kalir. Disaridan gorunen sey tam olarak "sifreli
+                // DNS acik ama site yine acilmiyor" olur -- yani belirtisi
+                // stratejinin tutmamasiyla ayni.
+                //
+                // Yonlendirmek yerine BOSALTIYORUZ: dnscrypt-proxy yalnizca
+                // 127.0.0.1'i dinliyor ve onu [::1] de dinlemeye zorlamak,
+                // IPv6'nin kapali oldugu makinelerde baglanamayip surecin hic
+                // acilmamasina yol acardi. Bos birakinca Windows IPv4'e, yani
+                // bize duser.
+                //
+                // En iyi cabayla: bu adimin basarisizligi IPv4 yonlendirmesini
+                // gecersiz kilmaz, yalnizca IPv6 sizintisi ihtimali kalir.
+                await RunNetshAsync(
+                    ["interface", "ipv6", "delete", "dnsservers", $"name={nic.Name}", "all"],
+                    cancellationToken).ConfigureAwait(false);
+
                 continue;
             }
 
@@ -229,6 +268,24 @@ public static class SystemDnsManager
     /// Yedekteki ayarlari geri yukler ve yedegi siler.
     /// </summary>
     /// <returns>Geri yuklenen arayuz adlari. Yedek yoksa bos liste.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Makinede DURAN bir arayuzun ayari geri alinamazsa. O durumda yedek
+    /// SILINMEZ: silinirse geri donus yolu tamamen kaybolur.
+    /// </exception>
+    /// <remarks>
+    /// Bu metot iki hatayi birden kapatiyor ve ikisi de sessizdi:
+    ///
+    /// 1. <b>netsh cikis kodlari hic okunmuyordu.</b> Geri alma basarisiz olsa bile
+    ///    metot "geri aldim" deyip yedegi SILIYORDU. Sonuc, DEVAM'in "projedeki en
+    ///    kotu sonuc" dedigi tablonun ta kendisi: sistem DNS'i 127.0.0.1'de kalir,
+    ///    dnscrypt calismaz, makine hicbir adi cozemez ve elde geri donulecek kayit
+    ///    da kalmaz. Artik yalnizca HEPSI basarili olursa yedek siliniyor.
+    ///
+    /// 2. <b>Arayuz ADIYLA araniyordu.</b> Kullanici baglantiyi yeniden adlandirirsa
+    ///    ("Ethernet" -> "Ev") netsh o adi bulamaz; birinci hatayla birlesince geri
+    ///    alma sessizce hicbir sey yapmaz. Artik once yedekteki GUID ile su anki ad
+    ///    bulunuyor, ad yalnizca yedek cozum.
+    /// </remarks>
     public static async Task<IReadOnlyList<string>> RestoreAsync(CancellationToken cancellationToken = default)
     {
         if (!HasBackup)
@@ -255,34 +312,39 @@ public static class SystemDnsManager
             return [];
         }
 
+        var nics = SafeGetInterfaces();
         var restored = new List<string>();
+        var failed = new List<string>();
+
         foreach (var entry in backup.Entries)
         {
-            if (entry.WasStatic && entry.Addresses.Count > 0)
+            var alias = ResolveAlias(nics, entry);
+            if (alias is null)
             {
-                await RunNetshAsync(
-                    ["interface", "ipv4", "set", "dnsservers", $"name={entry.Alias}", "source=static",
-                     $"address={entry.Addresses[0]}", "validate=no"],
-                    cancellationToken).ConfigureAwait(false);
+                // Kart artik makinede yok (sokulmus USB WiFi, kaldirilmis sanal
+                // adaptor). Geri alinacak bir sey yok ve bu bir basarisizlik
+                // DEGIL: yoksa yedek sonsuza kadar diskte kalir ve her acilista
+                // ayni hata mesaji cikardi.
+                continue;
+            }
 
-                for (var i = 1; i < entry.Addresses.Count; i++)
-                {
-                    await RunNetshAsync(
-                        ["interface", "ipv4", "add", "dnsservers", $"name={entry.Alias}",
-                         $"address={entry.Addresses[i]}", $"index={i + 1}", "validate=no"],
-                        cancellationToken).ConfigureAwait(false);
-                }
+            if (await RestoreEntryAsync(entry, alias, cancellationToken).ConfigureAwait(false))
+            {
+                restored.Add(alias);
             }
             else
             {
-                // DHCP'ye don. Adresleri static yazmak yanlis olurdu: baska bir aga
-                // baglandiginda eski ag gecidinin DNS'ine sabitlenmis kalirdi.
-                await RunNetshAsync(
-                    ["interface", "ipv4", "set", "dnsservers", $"name={entry.Alias}", "source=dhcp"],
-                    cancellationToken).ConfigureAwait(false);
+                failed.Add(alias);
             }
+        }
 
-            restored.Add(entry.Alias);
+        if (failed.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Su baglantilarin DNS ayari geri alinamadi: " + string.Join(", ", failed) + ". " +
+                $"Yedek SILINMEDI ({BackupPath}); bir sonraki acilista yeniden denenecek. " +
+                "Hemen duzeltmek icin: Ag Baglantilari > ilgili baglanti > Ozellikler > " +
+                "\"Internet Protokolu Surum 4 (TCP/IPv4)\" > \"DNS sunucu adresini otomatik al\".");
         }
 
         // Yedek ancak geri yukleme bittikten SONRA siliniyor. Once silinseydi ve
@@ -290,6 +352,108 @@ public static class SystemDnsManager
         File.Delete(BackupPath);
 
         return restored;
+    }
+
+    /// <summary>Tek bir arayuzun ayarini geri yukler. IPv4 gercekten geri geldiyse true.</summary>
+    private static async Task<bool> RestoreEntryAsync(
+        DnsBackupEntry entry, string alias, CancellationToken cancellationToken)
+    {
+        var ipv4Ok = entry.WasStatic && entry.Addresses.Count > 0
+            ? await SetStaticAsync("ipv4", alias, entry.Addresses, cancellationToken).ConfigureAwait(false)
+            : await SetDhcpAsync("ipv4", alias, cancellationToken).ConfigureAwait(false);
+
+        // IPv6 yalnizca BIZIM bosalttigimiz kayitlarda geri yukleniyor.
+        //
+        // Sonucu bilerek dikkate almiyoruz: ad cozumu IPv4 uzerinden geri geldiyse
+        // makine calisiyor demektir, ve IPv6 tarafindaki bir aksilik yuzunden yedegi
+        // diskte tutmak kullaniciyi her acilista tekrarlanan bir hata mesajina
+        // mahkum ederdi. Kaybedilen sey en kotu ihtimalle o arayuzun IPv6 DNS'i;
+        // Windows IPv4'e duser.
+        if (entry.Ipv6Captured)
+        {
+            if (entry.Ipv6WasStatic && entry.Ipv6Addresses.Count > 0)
+            {
+                await SetStaticAsync("ipv6", alias, entry.Ipv6Addresses, cancellationToken).ConfigureAwait(false);
+            }
+            else
+            {
+                await SetDhcpAsync("ipv6", alias, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        return ipv4Ok;
+    }
+
+    private static async Task<bool> SetStaticAsync(
+        string family, string alias, IReadOnlyList<string> addresses, CancellationToken cancellationToken)
+    {
+        var (exitCode, _) = await RunNetshAsync(
+            ["interface", family, "set", "dnsservers", $"name={alias}", "source=static",
+             $"address={addresses[0]}", "validate=no"],
+            cancellationToken).ConfigureAwait(false);
+
+        for (var i = 1; i < addresses.Count; i++)
+        {
+            await RunNetshAsync(
+                ["interface", family, "add", "dnsservers", $"name={alias}",
+                 $"address={addresses[i]}", $"index={i + 1}", "validate=no"],
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return exitCode == 0;
+    }
+
+    /// <summary>
+    /// Otomatik (DHCP) ayara dondurur. Adresleri static yazmak yanlis olurdu: baska
+    /// bir aga baglandiginda eski ag gecidinin DNS'ine sabitlenmis kalirdi.
+    /// </summary>
+    private static async Task<bool> SetDhcpAsync(
+        string family, string alias, CancellationToken cancellationToken)
+    {
+        var (exitCode, _) = await RunNetshAsync(
+            ["interface", family, "set", "dnsservers", $"name={alias}", "source=dhcp"],
+            cancellationToken).ConfigureAwait(false);
+
+        return exitCode == 0;
+    }
+
+    /// <summary>
+    /// Yedekteki kaydin BUGUNKU arayuz adi. Kart artik yoksa <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// GUID once geliyor: kullanici baglantiyi yeniden adlandirmis olabilir ve
+    /// netsh yalnizca guncel adi taniyor. Arayuz listesi hic okunamadiysa (nadir,
+    /// ama olur) yedekteki ada guveniyoruz -- hicbir sey denememekten iyidir.
+    /// </remarks>
+    private static string? ResolveAlias(IReadOnlyList<NetworkInterface> nics, DnsBackupEntry entry)
+    {
+        if (nics.Count == 0)
+        {
+            return entry.Alias;
+        }
+
+        var byGuid = nics.FirstOrDefault(n =>
+            string.Equals(n.Id, entry.Guid, StringComparison.OrdinalIgnoreCase));
+
+        if (byGuid is not null)
+        {
+            return byGuid.Name;
+        }
+
+        return nics.FirstOrDefault(n =>
+            string.Equals(n.Name, entry.Alias, StringComparison.OrdinalIgnoreCase))?.Name;
+    }
+
+    private static IReadOnlyList<NetworkInterface> SafeGetInterfaces()
+    {
+        try
+        {
+            return NetworkInterface.GetAllNetworkInterfaces();
+        }
+        catch (NetworkInformationException)
+        {
+            return [];
+        }
     }
 
     /// <summary>
@@ -417,8 +581,15 @@ public static class SystemDnsManager
 
     private static DnsBackupEntry Capture(NetworkInterface nic)
     {
-        var addresses = nic.GetIPProperties().DnsAddresses
+        var dns = nic.GetIPProperties().DnsAddresses;
+
+        var addresses = dns
             .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            .Select(a => a.ToString())
+            .ToList();
+
+        var ipv6Addresses = dns
+            .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
             .Select(a => a.ToString())
             .ToList();
 
@@ -426,10 +597,21 @@ public static class SystemDnsManager
         {
             Alias = nic.Name,
             Guid = nic.Id,
-            WasStatic = IsStaticallyConfigured(nic.Id),
+            WasStatic = IsStaticallyConfigured(Ipv4ParametersKey, nic.Id),
             Addresses = addresses,
+
+            // IPv6 tarafi da yedekleniyor cunku yonlendirme onu BOSALTIYOR
+            // (gerekcesi RedirectToLocalAsync icinde). Yedeklemeden bosaltmak,
+            // DEVAM'in "yonlendirmenin kapsamini genisletmek yedegin kapsamini
+            // genisletmez" kuralini ikinci kez cignemek olurdu.
+            Ipv6Captured = true,
+            Ipv6WasStatic = IsStaticallyConfigured(Ipv6ParametersKey, nic.Id),
+            Ipv6Addresses = ipv6Addresses,
         };
     }
+
+    private const string Ipv4ParametersKey = @"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces";
+    private const string Ipv6ParametersKey = @"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters\Interfaces";
 
     /// <summary>
     /// Arayuzun DNS'i elle mi ayarlanmis. Kayit defterindeki NameServer degeri
@@ -439,12 +621,11 @@ public static class SystemDnsManager
     /// .NET API'si bu ayrimi vermiyor; <c>DnsAddresses</c> her iki durumda da ayni
     /// gorunuyor. Kayit defteri bunu ayirt edebilecegimiz tek yer.
     /// </remarks>
-    private static bool IsStaticallyConfigured(string interfaceGuid)
+    private static bool IsStaticallyConfigured(string parametersKey, string interfaceGuid)
     {
         try
         {
-            using var key = Registry.LocalMachine.OpenSubKey(
-                $@"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces\{interfaceGuid}");
+            using var key = Registry.LocalMachine.OpenSubKey($@"{parametersKey}\{interfaceGuid}");
 
             var nameServer = key?.GetValue("NameServer") as string;
             return !string.IsNullOrWhiteSpace(nameServer);

@@ -28,6 +28,15 @@ public partial class App : Application
     /// </remarks>
     private const string InstallServicesFlag = "--install-services";
 
+    /// <summary>
+    /// Ayni anda yalnizca bir arayuz ornegi calissin diye tutulan kilit.
+    /// </summary>
+    /// <remarks>
+    /// Alan olarak duruyor cunku Mutex toplanirsa kilit de birakilir; degiskeni
+    /// yerelde tutmak, ikinci ornegin ilkini gormemesine yol acardi.
+    /// </remarks>
+    private static Mutex? _instanceLock;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         if (e.Args.Any(a => string.Equals(a, UninstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
@@ -46,7 +55,110 @@ public partial class App : Application
             return;
         }
 
+        // Beklenmedik hatada SESSIZCE KAYBOLMA. Bu kanca olmadan, arayuz
+        // kurulurken cikan bir hata Windows'un kendi cokme penceresiyle
+        // sonuclaniyor ve kullanicinin elinde "acilmiyor"dan baska bir sey
+        // kalmiyordu -- teshis edilemeyen bildirimlerin en kotu sinifi.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            ReportCrash(args.Exception);
+
+            // Isaretleniyor ki uygulama ayakta kalsin: yarim calisan bir pencere,
+            // kaybolan bir pencereden iyidir -- kullanici en azindan "Raporu
+            // Kaydet" dugmesine ulasabilir.
+            args.Handled = true;
+        };
+
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+            ReportCrash(args.ExceptionObject as Exception);
+
+        if (!TryClaimSingleInstance())
+        {
+            // IKINCI ORNEK CALISMAMALI.
+            //
+            // Pencereyi X ile kapatmak uygulamayi bildirim alanina indiriyor, yani
+            // "kapattim" sanan kullanici masaustu kisayoluna tekrar tiklayabiliyor.
+            // O anda iki ZapretTR birden acik oluyor ve ikincisinde her sey
+            // bozuluyor: winws ayni filtreyle ikinci kez acilamadigi icin "1
+            // koduyla kapandi" veriyor (kullaniciya gore "Baslat calismiyor"), ve
+            // daha kotusu, ikinci ornek kapanirken sistem DNS yedegini geri alip
+            // SILIYOR -- birinci ornegin sifreli DNS'i sessizce devre disi
+            // kaliyor, geri donus kaydi da kalmiyor.
+            MessageBox.Show(
+                "ZapretTR zaten çalışıyor.\n\n"
+                + "Pencere kapalıysa saatin yanındaki bildirim alanındadır: "
+                + "simgeye çift tıklayarak geri getirebilirsiniz.\n\n"
+                + "Uygulamayı tamamen kapatmak için o simgeye sağ tıklayıp \"Çıkış\" deyin.",
+                "ZapretTR",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            Shutdown();
+            return;
+        }
+
         base.OnStartup(e);
+    }
+
+    /// <summary>Tek ornek kilidini alir. Baska bir ornek varsa false.</summary>
+    private static bool TryClaimSingleInstance()
+    {
+        try
+        {
+            // Global: uygulama her zaman yukseltilmis calisiyor ve yukseltilmis
+            // surec farkli bir oturumda acilabiliyor. Yerel ad alani o durumda
+            // iki ornegi birbirinden habersiz birakirdi.
+            _instanceLock = new Mutex(initiallyOwned: true, @"Global\ZapretTR-tek-ornek", out var yeni);
+            return yeni;
+        }
+        catch (Exception)
+        {
+            // Kilit kurulamadi. Tek ornek guvencesi bir kolaylik; uygulamanin
+            // hic acilmamasina sebep olmamali.
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Beklenmedik hatayi diske yazar ve kullaniciya soyler.
+    /// </summary>
+    /// <remarks>
+    /// Dosyaya yazmak sart: cokme uygulama kapanirken olursa pencere gosterecek
+    /// zaman kalmiyor, ama kullanicinin bize gonderebilecegi bir dosya kaliyor.
+    /// </remarks>
+    private static void ReportCrash(Exception? exception)
+    {
+        var metin = $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}{Environment.NewLine}"
+                    + (exception?.ToString() ?? "(ayrinti yok)")
+                    + Environment.NewLine + new string('-', 60) + Environment.NewLine;
+
+        string? yol = null;
+        try
+        {
+            Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
+            yol = Path.Combine(WinDivertCleanup.ConfigDirectory, "cokme.log");
+            File.AppendAllText(yol, metin);
+        }
+        catch (Exception)
+        {
+            // Diske yazamadiysak en azindan pencerede gosterelim.
+            yol = null;
+        }
+
+        try
+        {
+            MessageBox.Show(
+                "ZapretTR beklenmedik bir hatayla karşılaştı.\n\n"
+                + (exception?.Message ?? "(ayrıntı yok)")
+                + (yol is null ? string.Empty : "\n\nAyrıntılar: " + yol),
+                "ZapretTR",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        catch (Exception)
+        {
+            // Pencere de acilamiyorsa yapilabilecek bir sey kalmadi.
+        }
     }
 
     /// <summary>Kayitli yapilandirmayla servisleri kurar. Cikis kodu doner.</summary>

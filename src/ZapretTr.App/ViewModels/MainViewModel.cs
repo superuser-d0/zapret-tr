@@ -117,7 +117,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             LoadIspChoices();
             RestoreSavedSelection();
             _ = RefreshServiceStatusAsync();
-            SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
+            SetIdleStatus();
             Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
             // Beklemiyoruz: ag yavassa uygulamanin acilisini geciktirmesin.
@@ -263,7 +263,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Notify(nameof(CanStart));
                 Notify(nameof(IsSelectedStrategyUnverified));
                 Notify(nameof(VerificationNote));
-                UpdateStatusDetail();
+                RefreshIdlePresentation();
                 RefreshCommands();
             }
         }
@@ -378,7 +378,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             if (Set(ref _isSecureDnsEnabled, value))
             {
-                UpdateStatusDetail();
+                RefreshIdlePresentation();
                 SaveSelection();
             }
         }
@@ -395,16 +395,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Notify(nameof(ServiceButtonText));
                 Notify(nameof(CanStart));
                 RefreshCommands();
-                UpdateStatusDetail();
 
                 // Servis kuruluysa koruma acilistan itibaren zaten calisiyor.
                 // Kullanici bunu ekranda gormeli, yoksa "neden Baslat kapali"
-                // diye dusunur.
-                if (value && Status == AppStatus.Ready)
-                {
-                    SetStatus(AppStatus.Ready, "SERVİS MODU AKTİF",
-                        "Koruma otomatik başlatma servisiyle çalışıyor; elle başlatmaya gerek yok.");
-                }
+                // diye dusunur. Metnin kendisi SetIdleStatus icinde, tek yerde.
+                RefreshIdlePresentation();
             }
         }
     }
@@ -452,6 +447,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
             _runner.Start(arguments);
             SaveSelection();
+
+            // BU KORUMA YENIDEN BASLATMAYI ATLATMAZ VE BUNU SOYLEMEK ZORUNDAYIZ.
+            //
+            // "Başlat" yalnizca bu oturumda bir winws sureci aciyor. Kullanici
+            // bilgisayari kapatip actiginda geriye hicbir sey kalmiyor: uygulama
+            // kendiliginden acilmiyor, winws calismiyor, koruma yok. Ekranda
+            // bunu anlatan tek satir yoktu.
+            //
+            // Belirtisi tam olarak sahadan gelen cumle: "kurdum, calisti,
+            // bilgisayari yeniden baslattim, olmadi." Kullanici uygulamayi bir
+            // kez ayarlanip unutulacak bir sey sandi -- ki dogru beklenti bu, ve
+            // karsiligi olan dugme ("Servis Olarak Yükle") ekranda duruyordu ama
+            // hicbir yerde ONERILMIYORDU.
+            if (!IsServiceInstalled)
+            {
+                Append("NOT: bu koruma yalnızca şu an için geçerli. Bilgisayarı yeniden");
+                Append("başlattığınızda kendiliğinden açılmaz. Kalıcı olması için");
+                Append("\"Servis Olarak Yükle (Otomatik Başlat)\" düğmesini kullanın.");
+            }
 
             // Kayitli strateji HALA calisiyor mu. Beklemiyoruz: baslatma aninda
             // bitmis sayilir, dogrulama arkadan gelir.
@@ -924,6 +938,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
         sb.AppendLine("Durum            : " + StatusHeadline);
         sb.AppendLine();
 
+        // MAKINENIN OLCULEN DURUMU, gorunum modelinin bildikleri DEGIL.
+        //
+        // Eski rapor yalnizca yukaridaki alanlari ve gunlugu tasiyordu. Bir
+        // kullanici bilgisayari yeniden baslatip uygulamayi yeni actiysa gunluk
+        // neredeyse bos oluyor ve rapor "calismadi" cumlesine hicbir sey
+        // ekleyemiyordu -- oysa "olmadi" bildirimlerinde yanlis olan sey
+        // genellikle yukaridaki alanlarda degil, bu bolumde gorunuyor: yetki,
+        // eksik dosya, olu servis, DNS'in bizde asili kalmasi.
+        sb.AppendLine("Makine durumu");
+        sb.AppendLine("=============");
+        sb.AppendLine();
+
+        foreach (var satir in CollectEnvironmentLines())
+        {
+            sb.AppendLine(satir);
+        }
+
         sb.AppendLine("Gunluk");
         sb.AppendLine("------");
         foreach (var satir in LogLines)
@@ -932,6 +963,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Ortam ozetini toplar; toplanamazsa raporu bosa dusurmez.
+    /// </summary>
+    /// <remarks>
+    /// Bilerek eszamanli: <c>BuildReport</c> arayuz is parcacigindan cagriliyor ve
+    /// <see cref="EnvironmentReport"/> icindeki her bekleme
+    /// <c>ConfigureAwait(false)</c> ile yazildigi icin geri cagri arayuz kuyruguna
+    /// donmuyor -- yani kilitlenme yok. Sure birkac sc.exe cagrisi kadar.
+    /// </remarks>
+    private static IReadOnlyList<string> CollectEnvironmentLines()
+    {
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            return EnvironmentReport.CollectAsync(cts.Token).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            return ["(makine durumu toplanamadi: " + ex.Message + ")", string.Empty];
+        }
     }
 
     private static string SurumMetni()
@@ -986,8 +1039,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             //
             // Bu durumda servisi "kurulu degil" sayiyoruz: boylece Baslat
             // ACIK kaliyor ve kullanici korumasini elle baslatabiliyor.
-            IsServiceInstalled = status.WinwsInstalled && status.WinwsRunning;
             IsServiceStopped = status.InstalledButStopped;
+            IsServiceInstalled = status.WinwsInstalled && status.WinwsRunning;
 
             if (status.InstalledButStopped)
             {
@@ -995,10 +1048,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("  Koruma şu anda kapalı. \"ZAPRET'İ BAŞLAT\" ile elle başlatabilir,");
                 Append("  ya da \"Otomatik Başlatmayı Kaldır\" deyip yeniden kurabilirsiniz.");
                 Append("  Sorun sürerse bilgisayarı bir kez yeniden başlatın.");
-
-                SetStatus(AppStatus.Ready, "SERVİS DURMUŞ",
-                    "Otomatik başlatma servisi kurulu ama çalışmıyor; koruma kapalı.");
             }
+
+            if (Status == AppStatus.Ready)
+            {
+                SetIdleStatus();
+            }
+
+            await WarnIfSecureDnsServiceIsDeadAsync(status).ConfigureAwait(true);
         }
         catch (Exception)
         {
@@ -1007,11 +1064,77 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>
+    /// Sifreli DNS servisi olmusse -- ya da hic yoksa ama sistem DNS'i hala
+    /// bizdeyse -- kullaniciyi uyarir.
+    /// </summary>
+    /// <remarks>
+    /// Servis durumu bugune kadar YALNIZCA winws icin sorulmustu. Oysa iki
+    /// katmanli korumada ikinci servis (<c>ZapretTR-DNS</c>) sessizce dusebiliyor
+    /// ve sonucu winws'inkinden daha agir:
+    ///
+    ///   * winws duserse engelli siteler geri kapanir -- can sikici ama gorunur.
+    ///   * dnscrypt duserse sistem DNS'i hala 127.0.0.1'i gosteriyorken orada
+    ///     dinleyen kimse kalmaz ve makine HICBIR adi cozemez. Kullanicinin
+    ///     bunu anlatis bicimi de "internetim gitti" ya da sadece "olmadi".
+    ///
+    /// Bu durumda arayuz "SERVİS MODU AKTİF" diyordu, cunku sorulan tek soru
+    /// winws'in ayakta olup olmadigiydi ve winws gercekten ayaktaydi.
+    /// </remarks>
+    private async Task WarnIfSecureDnsServiceIsDeadAsync(ServiceStatus status)
+    {
+        if (!SystemDnsManager.HasBackup)
+        {
+            return;
+        }
+
+        if (await DnsCryptRunner.IsLocalResolverRespondingAsync().ConfigureAwait(true))
+        {
+            return;
+        }
+
+        Append("UYARI: sistem DNS'i ZapretTR'ye yönlendirilmiş ama çözümleyici cevap vermiyor.",
+            isError: true);
+        Append("  Bu haldeyken hiçbir adres çözülemez — internet tamamen gitmiş gibi görünür.",
+            isError: true);
+
+        if (status.DnsInstalled)
+        {
+            Append("  Şifreli DNS servisi kurulu ama çalışmıyor. \"Otomatik Başlatmayı Kaldır\"");
+            Append("  deyip yeniden kurmak ya da \"Tüm Ayarları Sıfırla\" bunu düzeltir.");
+        }
+        else
+        {
+            Append("  Şifreli DNS servisi kurulu değil; yönlendirme önceki bir oturumdan kalmış.");
+            Append("  Uygulama bunu kendiliğinden geri almayı deniyor.");
+        }
+    }
+
     /// <summary>Otomatik baslatmayi kurar ya da kaldirir.</summary>
     private async Task ToggleServiceAsync()
     {
-        if (_vendor is null || SelectedStrategy is null)
+        if (_vendor is null)
         {
+            return;
+        }
+
+        // SESSIZ CIKIS YOK. Bu kosul eskiden hicbir sey soylemeden geri
+        // donuyordu: strateji secilmemis bir kullanici "Servis Olarak Yükle"ye
+        // basiyor, ekranda hicbir sey degismiyor ve dugmenin bozuk oldugunu
+        // dusunuyordu. Kurulum sonrasi ilk acilista strateji listesi ZATEN bos
+        // oldugu icin bu, en olasi yol.
+        if (SelectedStrategy is null && !IsServiceInstalled)
+        {
+            MessageBox.Show(
+                "Önce çalışan bir parametre bulunmalı.\n\n"
+                + "\"PARAMETRE TESTİ YAP\" düğmesine basın; hattınıza uyan ayar bulunduktan "
+                + "sonra otomatik başlatmayı kurabilirsiniz.",
+                "Otomatik başlatma",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            Append("Otomatik başlatma kurulamadı: seçili bir parametre yok. Önce parametre testi yapın.",
+                isError: true);
             return;
         }
 
@@ -1058,7 +1181,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Şu anki ayarınız kullanılacak:
 
                     """
-                    + $"   {Describe(SelectedStrategy.Args)}"
+                    // Bu dala ancak strateji secilmisken giriliyor; yukaridaki
+                    // kontrol secimsiz kullaniciyi mesajla geri cevirdi.
+                    + $"   {Describe(SelectedStrategy!.Args)}"
                     + Environment.NewLine + Environment.NewLine
                     + dnsNote
                     + "Devam edilsin mi?",
@@ -1147,6 +1272,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
 
             var responding = await DnsCryptRunner.IsLocalResolverRespondingAsync().ConfigureAwait(true);
+
+            // YONLENDIRMEYI SERVIS YAPTIYSA HEMEN KARAR VERME.
+            //
+            // Kullanicilarin buyuk kismi uygulamayi acilistan hemen sonra aciyor
+            // ve o an ZapretTR-DNS servisi HENUZ ayaga kalkmamis olabiliyor:
+            // dnscrypt-proxy once agi bekliyor, sonra cozumleyici listesini
+            // cekiyor. Tek bir denemeye bakip "olmus" saymak, calisir durumdaki
+            // bir kurulumun sifreli DNS'ini sessizce sokmek demekti -- ustelik
+            // yedek de silindigi icin geri donusu yoktu. Kullanicinin gordugu
+            // sey "bir sure sonra engeller geri geldi" oluyordu.
+            //
+            // Uygulamanin kendi yonlendirmesinde bekleme yok: uygulama yeni
+            // aciliyorsa onu yapan onceki oturum zaten kapanmis demektir.
+            if (!responding && SystemDnsManager.IsOwnedByService)
+            {
+                Append("Sistem DNS'i servise yönlendirilmiş; şifreli DNS servisi bekleniyor...");
+                responding = await WaitForLocalResolverAsync(TimeSpan.FromSeconds(20)).ConfigureAwait(true);
+
+                if (!responding)
+                {
+                    Append("Şifreli DNS servisi 20 saniyede cevap vermedi; yönlendirme geri alınıyor.",
+                        isError: true);
+                }
+            }
+
             var recovered = await SystemDnsManager.TryRecoverAsync(responding).ConfigureAwait(true);
 
             if (recovered.Count > 0)
@@ -1159,6 +1309,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Append("DNS kurtarma denemesi başarısız: " + ex.Message, isError: true);
         }
+    }
+
+    /// <summary>127.0.0.1:53 cevap verene kadar bekler; sure dolarsa false.</summary>
+    private static async Task<bool> WaitForLocalResolverAsync(TimeSpan timeout)
+    {
+        var deadline = DateTimeOffset.UtcNow + timeout;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (await DnsCryptRunner.IsLocalResolverRespondingAsync().ConfigureAwait(true))
+            {
+                return true;
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(true);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -1361,7 +1529,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (OperationCanceledException)
         {
             Append("Test iptal edildi.");
-            SetStatus(AppStatus.Ready, "SİSTEM HAZIR", "Test iptal edildi.");
+            SetIdleStatus("Test iptal edildi.");
         }
         catch (ProbeEngineException ex)
         {
@@ -1718,11 +1886,38 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             SetStatus(AppStatus.Ready, "KISMEN ÇALIŞIYOR",
                 $"{report.Winners.Count} bölüm açıldı, {eksikler.Count} hedef hâlâ kapalı.");
+            SuggestNextStep();
             return;
         }
 
         SetStatus(AppStatus.Ready, "STRATEJİ BULUNDU",
-            $"{report.Winners.Count} bölüm için çalışan parametre bulundu.");
+            $"{report.Winners.Count} bölüm için çalışan parametre bulundu. " +
+            "Sıradaki adım: \"ZAPRET'İ BAŞLAT\".");
+
+        SuggestNextStep();
+    }
+
+    /// <summary>
+    /// Test bittikten sonra SIRADAKI ADIMI yazar.
+    /// </summary>
+    /// <remarks>
+    /// Test biten ekranda "STRATEJİ BULUNDU" yaziyordu ve orada kaliyordu. Bulunan
+    /// strateji KENDILIGINDEN uygulanmiyor -- kullanicinin ayrica Baslat'a basmasi,
+    /// kalici olmasini istiyorsa da servisi kurmasi gerekiyor. Bu iki adim hicbir
+    /// yerde soylenmedigi icin "test yaptim, buldu, ama hicbir sey degismedi"
+    /// tamamen makul bir kullanici deneyimiydi.
+    /// </remarks>
+    private void SuggestNextStep()
+    {
+        Append("Sıradaki adım: \"ZAPRET'İ BAŞLAT\" düğmesine basın — bulunan parametre");
+        Append("ancak o zaman trafiğe uygulanır.");
+
+        if (!IsServiceInstalled)
+        {
+            Append("Ardından, bilgisayar her açıldığında kendiliğinden çalışması için");
+            Append("\"Servis Olarak Yükle (Otomatik Başlat)\" düğmesini kullanın. Bu");
+            Append("yapılmazsa koruma yeniden başlatmadan sonra kapalı gelir.");
+        }
     }
 
     /// <summary>
@@ -1778,12 +1973,83 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 case WinwsState.Stopped:
                     if (Status == AppStatus.Running)
                     {
-                        SetStatus(AppStatus.Ready, "SİSTEM HAZIR");
+                        SetIdleStatus();
                     }
 
                     break;
             }
         });
+    }
+
+    /// <summary>
+    /// Koruma calismiyorken durum bandini yazar.
+    /// </summary>
+    /// <remarks>
+    /// Burasi eskiden kosulsuz "SİSTEM HAZIR" diyordu ve bu, teknik olmayan bir
+    /// kullanici icin YANLIS bir cumleydi. Yeni kurulmus bir makinede tablo
+    /// suydu: servis saglayici "Bilmiyorum", strateji listesi bos, Baslat dugmesi
+    /// kapali, winws calismiyor, koruma yok -- ve ekranin en ustunde, en buyuk
+    /// puntoyla "SİSTEM HAZIR". Kullanicinin yapmasi gereken tek sey (parametre
+    /// testi) hicbir yerde soylenmiyordu. "Kurdum, calismadi" bildirimlerinin en
+    /// ucuz aciklamasi bu: uygulama hazir oldugunu soyluyor, kullanici da
+    /// inaniyor.
+    ///
+    /// Baslik artik iki soruyu birden cevapliyor: koruma acik mi, ve acik degilse
+    /// SIRADAKI ADIM ne. Durum degeri <see cref="AppStatus.Ready"/> olarak
+    /// kaliyor -- degistirmek dugmelerin etkinligini bozardi; degisen yalnizca
+    /// kullaniciya soylenen sey.
+    /// </remarks>
+    /// <param name="note">Varsa basa eklenecek tek cumlelik baglam.</param>
+    private void SetIdleStatus(string? note = null)
+    {
+        string headline;
+        string guidance;
+
+        if (IsServiceStopped)
+        {
+            headline = "SERVİS DURMUŞ";
+            guidance = "Otomatik başlatma servisi kurulu ama çalışmıyor; koruma kapalı. " +
+                       "\"ZAPRET'İ BAŞLAT\" ile elle açabilirsiniz.";
+        }
+        else if (IsServiceInstalled)
+        {
+            headline = "SERVİS MODU AKTİF";
+            guidance = "Koruma otomatik başlatma servisiyle çalışıyor; elle başlatmaya gerek yok.";
+        }
+        else if (SelectedStrategy is null)
+        {
+            headline = "KORUMA KAPALI — KURULUM YARIM";
+            guidance = "Henüz bir parametre bulunmadı. \"PARAMETRE TESTİ YAP\" düğmesine basın; " +
+                       "hattınıza uyan ayar aranacak (birkaç dakika sürer).";
+        }
+        else
+        {
+            headline = "KORUMA KAPALI";
+            guidance = "Ayar hazır. \"ZAPRET'İ BAŞLAT\" düğmesiyle korumayı açın.";
+        }
+
+        SetStatus(AppStatus.Ready, headline,
+            string.IsNullOrWhiteSpace(note) ? guidance : note + " " + guidance);
+    }
+
+    /// <summary>
+    /// Secim degistiginde durum bandini tazeler.
+    /// </summary>
+    /// <remarks>
+    /// Yalnizca ayrintiyi guncellemek yetmiyordu: kullanici listeden bir strateji
+    /// sectiginde ayrinti satiri degisiyor ama BASLIK "KURULUM YARIM" olarak
+    /// kaliyordu -- yani artik dogru olmayan bir cumle ekranda asili duruyordu.
+    /// </remarks>
+    private void RefreshIdlePresentation()
+    {
+        if (Status == AppStatus.Ready)
+        {
+            SetIdleStatus();
+        }
+        else
+        {
+            UpdateStatusDetail();
+        }
     }
 
     private void SetStatus(AppStatus status, string headline, string? detail = null)

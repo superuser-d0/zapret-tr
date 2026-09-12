@@ -117,21 +117,60 @@ public static class ServiceManager
             else
             {
                 var dnsBin = $"\"{vendor.DnsCryptExe}\" -config \"{configPath}\"";
-                steps.Add(await CreateServiceAsync(
-                    DnsServiceName, dnsBin, "ZapretTR sifreli DNS", cancellationToken).ConfigureAwait(false));
+                var dnsStep = await CreateServiceAsync(
+                    DnsServiceName, dnsBin, "ZapretTR sifreli DNS", cancellationToken).ConfigureAwait(false);
 
-                // Servis DNS'i devraliyor: sahiplik "service" olarak isaretleniyor
-                // ki uygulama kapanirken geri almasin.
-                try
+                steps.Add(dnsStep);
+
+                // SISTEM DNS'I, COZUMLEYICININ GERCEKTEN CEVAP VERDIGI
+                // DOGRULANMADAN CEVRILMEZ.
+                //
+                // Bu kontrol uygulamanin kendi yolunda (DnsCryptRunner.StartAsync)
+                // bastan beri vardi, servis yolunda YOKTU: servis kurulur kurulmaz
+                // DNS 127.0.0.1'e ceviriliyordu -- "sc start" dusse bile. Sonuc,
+                // projedeki en kotu tablo: 127.0.0.1'i dinleyen kimse yok, makine
+                // hicbir adi cozemiyor, yani kullaniciya gore internet tamamen
+                // gitti. Ustelik bu yol acilistan acilista kalici: uygulama
+                // acilmadigi surece kurtarma (RecoverDnsIfNeeded) hic kosmuyor,
+                // dolayisiyla kullanici bilgisayari yeniden baslatinca durum
+                // duzelmiyor, PEKISIYOR.
+                //
+                // Cevap gelmiyorsa servis geri sokuluyor: acilista her seferinde
+                // ayaga kalkip DNS'i kapmaya calisan olu bir servis birakmak,
+                // hic kurmamaktan kotu.
+                if (!dnsStep.Succeeded)
                 {
-                    var changed = await SystemDnsManager
-                        .RedirectToLocalAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
-                    steps.Add(new CleanupStep("Sistem DNS'i servise yonlendirildi", true,
-                        string.Join(", ", changed)));
+                    await RunScAsync(["delete", DnsServiceName], cancellationToken).ConfigureAwait(false);
+                    steps.Add(new CleanupStep("Sistem DNS'i YONLENDIRILMEDI", false,
+                        "Sifreli DNS servisi baslatilamadi. DNS'i yine de 127.0.0.1'e cevirmek " +
+                        "makineyi hicbir adi cozemez halde birakirdi; koruma winws ile devam ediyor."));
                 }
-                catch (Exception ex)
+                else if (!await WaitForLocalResolverAsync(
+                             LocalResolverStartupTimeout, cancellationToken).ConfigureAwait(false))
                 {
-                    steps.Add(new CleanupStep("Sistem DNS'i yonlendirilemedi", false, ex.Message));
+                    await RunScAsync(["stop", DnsServiceName], cancellationToken).ConfigureAwait(false);
+                    await RunScAsync(["delete", DnsServiceName], cancellationToken).ConfigureAwait(false);
+
+                    steps.Add(new CleanupStep("Sistem DNS'i YONLENDIRILMEDI", false,
+                        $"Sifreli DNS servisi kuruldu ama {LocalResolverStartupTimeout.TotalSeconds:F0} " +
+                        "saniyede DNS sorgularina cevap vermedi; servis geri sokuldu. " +
+                        "Sistem DNS ayarina DOKUNULMADI. Koruma winws ile devam ediyor."));
+                }
+                else
+                {
+                    // Servis DNS'i devraliyor: sahiplik "service" olarak
+                    // isaretleniyor ki uygulama kapanirken geri almasin.
+                    try
+                    {
+                        var changed = await SystemDnsManager
+                            .RedirectToLocalAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
+                        steps.Add(new CleanupStep("Sistem DNS'i servise yonlendirildi", true,
+                            string.Join(", ", changed)));
+                    }
+                    catch (Exception ex)
+                    {
+                        steps.Add(new CleanupStep("Sistem DNS'i yonlendirilemedi", false, ex.Message));
+                    }
                 }
             }
         }
@@ -185,6 +224,37 @@ public static class ServiceManager
         return steps;
     }
 
+    /// <summary>
+    /// Sifreli DNS servisinin cevap vermesi icin taninan sure.
+    /// </summary>
+    /// <remarks>
+    /// Uygulamanin kendi yolundan (15 sn) daha uzun tutuldu: servis LocalSystem
+    /// olarak, kullanici oturumundan bagimsiz aciliyor ve dnscrypt-proxy once
+    /// cozumleyici listesini cekmek zorunda kalabiliyor.
+    /// </remarks>
+    private static readonly TimeSpan LocalResolverStartupTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>127.0.0.1:53 cevap verene kadar bekler; sure dolarsa false.</summary>
+    private static async Task<bool> WaitForLocalResolverAsync(
+        TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow + timeout;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            if (await DnsCryptRunner
+                    .IsLocalResolverRespondingAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                return true;
+            }
+
+            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+        }
+
+        return false;
+    }
+
     private static async Task<CleanupStep> CreateServiceAsync(
         string name, string binPath, string displayName, CancellationToken cancellationToken)
     {
@@ -197,6 +267,21 @@ public static class ServiceManager
         {
             return new CleanupStep($"{name} servisi kurulamadi", false, createOutput.Trim());
         }
+
+        // OLURSE KENDILIGINDEN GERI GELSIN.
+        //
+        // Acilista servisler agdan once ayaga kalkabiliyor; winws surucuyu
+        // acamayip ya da dnscrypt ag bulamayip hemen olurse, kurtarma tanimi
+        // olmadan bir daha HIC baslamiyor. Kullanicinin gordugu sey tam olarak
+        // "kurdum, yeniden baslattim, calismiyor" oluyor -- servis listede
+        // duruyor ama durmus. Uc kademeli yeniden deneme bu pencereyi kapatiyor.
+        //
+        // En iyi cabayla: basarisiz olursa adim listesine yazilmiyor. Kurulumun
+        // kendisi basarili ve bu yalnizca dayaniklilik; burada bir hata
+        // dondurmek kurulum sonunda gereksiz bir uyari penceresi acardi.
+        await RunScAsync(
+            ["failure", name, "reset=", "86400", "actions=", "restart/5000/restart/15000/restart/60000"],
+            cancellationToken).ConfigureAwait(false);
 
         var (startCode, startOutput) = await RunScAsync(["start", name], cancellationToken)
             .ConfigureAwait(false);

@@ -8,6 +8,113 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+
+Hepsinin çıkış noktası tek bir saha bildirimi: *"kurdum, bilgisayara restart attım,
+olmadı."* Tek cümle, ekran görüntüsü yok, günlük yok. Bu cümleyi üretebilecek bütün
+yollar tek tek tarandı; aşağıdakiler bulunanlar.
+
+- **Yeni kurulmuş bir makinede arayüz "SİSTEM HAZIR" diyordu — koruma kapalıyken.**
+  Kurulumdan hemen sonraki tablo şuydu: servis sağlayıcı "Bilmiyorum", strateji listesi
+  boş, Başlat düğmesi kapalı, `winws` çalışmıyor, koruma yok — ve ekranın en üstünde, en
+  büyük puntoyla **"SİSTEM HAZIR"**. Kullanıcının yapması gereken tek şey (parametre
+  testi) hiçbir yerde yazmıyordu.
+
+  Teknik olmayan bir kullanıcı için bu, yanlış bir cümleydi ve "kurdum, olmadı"nın en
+  ucuz açıklaması. Başlık artık iki soruyu birden cevaplıyor: **"KORUMA KAPALI —
+  KURULUM YARIM"** ve altında sıradaki adım. Durum değeri `Ready` olarak kaldı;
+  değiştirmek düğmelerin etkinliğini bozardı — değişen yalnızca kullanıcıya söylenen şey.
+
+- **"Başlat"ın yeniden başlatmayı atlatmadığı hiçbir yerde yazmıyordu.** "ZAPRET'İ
+  BAŞLAT" yalnızca o oturum için bir `winws` süreci açıyor; bilgisayar kapanıp
+  açıldığında geriye hiçbir şey kalmıyor. Karşılığı olan düğme ("Servis Olarak Yükle")
+  ekranda duruyordu ama **hiçbir zaman önerilmiyordu**. Artık hem başlatmadan sonra hem
+  de test bittiğinde açıkça söyleniyor, README'de de ayrı bir adım oldu.
+
+- **Servis kurulumu, çözümleyici cevap vermese bile sistem DNS'ini 127.0.0.1'e
+  çeviriyordu.** Bu kontrol uygulamanın kendi yolunda (`DnsCryptRunner`) baştan beri
+  vardı, **servis yolunda yoktu**: `sc start` düşse bile yönlendirme yapılıyordu. Sonuç
+  projedeki en kötü tablo — 127.0.0.1'i dinleyen kimse yok, makine hiçbir adı çözemiyor,
+  yani kullanıcıya göre internet tamamen gitti. Üstelik açılıştan açılışa **kalıcı**:
+  kurtarma yalnızca uygulama açıldığında koşuyor, dolayısıyla yeniden başlatmak durumu
+  düzeltmiyor, pekiştiriyordu.
+
+  Artık DNS, `127.0.0.1:53` gerçekten cevap verene kadar (en çok 30 sn) beklendikten
+  sonra çevriliyor. Cevap gelmezse sistem DNS ayarına **dokunulmuyor** ve ölü servis geri
+  sökülüyor.
+
+- **DNS geri alma, `netsh` çıkış kodlarına hiç bakmıyor ve yedeği her hâlükârda
+  siliyordu.** Geri alma başarısız olsa bile metot "geri aldım" deyip
+  `dns-backup.json`'ı siliyordu: DNS 127.0.0.1'de kalıyor, geri dönülecek kayıt da
+  kalmıyordu. İkinci bir sessiz hata da aynı yerdeydi — arayüz **adıyla** aranıyordu,
+  yani kullanıcı bağlantıyı yeniden adlandırmışsa ("Ethernet" → "Ev") geri alma hiçbir
+  şey yapmıyordu. Artık önce yedekteki GUID'den güncel ad bulunuyor, her `netsh`
+  çağrısının sonucu okunuyor ve yedek **yalnızca hepsi başarılıysa** siliniyor.
+
+- **Şifreli DNS yalnızca IPv4'ü kapsıyordu.** Arayüzde İSS'in verdiği bir IPv6
+  çözümleyicisi duruyorsa (yönlendirici duyurusu ya da DHCPv6 ile gelir) Windows sorguyu
+  pekâlâ oraya yolluyor ve DNS kaçırma katmanı ayakta kalıyor. Dışarıdan görünen şey
+  "şifreli DNS açık ama site yine açılmıyor" — yani belirtisi stratejinin tutmamasıyla
+  birebir aynı. Yönlendirilen arayüzlerin IPv6 DNS sunucuları artık boşaltılıyor;
+  boşaltılan değer yedekte taşınıyor ve geri alma simetrik.
+
+  Yönlendirmek yerine boşaltmak bilinçli: `dnscrypt-proxy`'yi `[::1]`'i de dinlemeye
+  zorlamak, IPv6'nın kapalı olduğu makinelerde bağlanamayıp sürecin hiç açılmamasına yol
+  açardı.
+
+- **İkinci bir uygulama örneği her şeyi bozuyordu.** Pencereyi X ile kapatmak uygulamayı
+  bildirim alanına indiriyor, yani "kapattım" sanan kullanıcı masaüstü kısayoluna tekrar
+  tıklayabiliyor. O anda `winws` aynı filtreyle ikinci kez açılamadığı için "1 koduyla
+  kapandı" veriyor (kullanıcıya göre "Başlat çalışmıyor"), ve daha kötüsü ikinci örnek
+  kapanırken DNS yedeğini geri alıp **siliyor** — birinci örneğin şifreli DNS'i sessizce
+  devre dışı kalıyordu. Artık tek örnek kilidi var ve ikinci başlatma nereye bakılacağını
+  söyleyip çıkıyor.
+
+- **Servisler öldüklerinde bir daha hiç başlamıyordu.** Açılışta servisler ağdan önce
+  ayağa kalkabiliyor; `winws` sürücüyü açamayıp ya da `dnscrypt` ağ bulamayıp hemen
+  ölürse kurtarma tanımı olmadan bir daha başlamıyor. Kullanıcının gördüğü şey tam olarak
+  "kurdum, yeniden başlattım, çalışmıyor" oluyor — servis listede duruyor ama durmuş. Her
+  iki servise de üç kademeli yeniden başlatma tanımı ekleniyor.
+
+- **Şifreli DNS servisinin ölü olup olmadığı hiç sorulmuyordu.** Servis durumu bugüne
+  kadar yalnızca `winws` için soruluyordu; arayüz "SERVİS MODU AKTİF" diyordu çünkü
+  `winws` gerçekten ayaktaydı. Oysa `dnscrypt` düşerse sonuç `winws`inkinden ağır:
+  sistem DNS'i hâlâ 127.0.0.1'i gösterirken orada dinleyen kimse kalmıyor. Artık ayrıca
+  soruluyor ve uyarı yazılıyor.
+
+- **Açılıştaki DNS kurtarması, servisin ayağa kalkmasını beklemiyordu.** Kullanıcıların
+  çoğu uygulamayı açılıştan hemen sonra açıyor ve o an `ZapretTR-DNS` henüz hazır
+  olmayabiliyor. Tek denemeye bakıp "ölmüş" saymak, çalışır durumdaki bir kurulumun
+  şifreli DNS'ini sessizce sökmek demekti — yedek de silindiği için geri dönüşü yoktu.
+  Yönlendirmeyi **servis** yaptıysa artık 20 saniye bekleniyor.
+
+- **"Servis Olarak Yükle" seçili parametre yokken sessizce hiçbir şey yapmıyordu.**
+  Kurulum sonrası ilk açılışta strateji listesi zaten boş olduğu için bu en olası yol:
+  kullanıcı basıyor, ekranda hiçbir şey değişmiyor, düğmeyi bozuk sanıyor. Artık ne
+  yapması gerektiğini söylüyor. Aynı düzeltmede, servis kuruluyken parametre seçili
+  olmasa da **kaldırma** yolu açık kaldı.
+
+- **Beklenmedik bir hata uygulamayı sessizce kaybettiriyordu.** Arayüz kurulurken çıkan
+  bir hata Windows'un kendi çökme penceresiyle sonuçlanıyor ve kullanıcının elinde
+  "açılmıyor"dan başka bir şey kalmıyordu. Artık hata `%ProgramData%\ZapretTR\cokme.log`
+  dosyasına yazılıyor, kullanıcıya gösteriliyor ve pencere ayakta kalıyor — yarım çalışan
+  bir pencere, kaybolan bir pencereden iyidir.
+
+### Eklendi
+
+- **"Raporu Kaydet" artık makinenin ölçülen durumunu da yazıyor.** Eski rapor yalnızca
+  görünüm modelinin *bildiği* şeyleri taşıyordu — seçili profil, seçili strateji, günlük.
+  Oysa "olmadı" bildirimlerinin çoğunda bunların hiçbiri yanlış değil; yanlış olan şey
+  görünüm modelinin **bakmadığı** yerde duruyor. Rapora giren yeni bölüm o soruları
+  cevaplıyor: yönetici yetkisi var mı, upstream dosyaları tam mı, `winws`/`dnscrypt`/
+  `ZapretTR` süreçlerinden kaç tane ayakta, iki servis kurulu ve çalışıyor mu, sistem
+  DNS'i kimde ve `127.0.0.1:53` cevap veriyor mu, hangi arayüzde hangi DNS yazılı,
+  GoodbyeDPI gibi çakışan bir araç açık mı, `learned.json`'da kaç kayıt var.
+
+  Asıl kazanç, kullanıcı bilgisayarı yeniden başlatıp uygulamayı **yeni** açtığında
+  görünüyor: o durumda günlük neredeyse boş ve eski rapor biçimi "çalışmadı" cümlesine
+  hiçbir şey ekleyemiyordu.
+
 ### Değişti
 
 - **README'ye "Bilgisayarı yavaşlatır mı" bölümü.** Gerçek bir makinede ölçüldü, dönüşümlü

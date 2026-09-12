@@ -96,23 +96,39 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
   Get-FileHash .\ZapretTR-Setup-<sürüm>.exe -Algorithm SHA256
   ```
 
-**3. Üç adımda kullanın.**
+**3. Dört adımda kullanın.**
 
 | Adım | Ne yapacaksınız | Ne göreceksiniz |
 |---|---|---|
-| 1 | Hiçbir ayara dokunmayın | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı |
+| 1 | Hiçbir ayara dokunmayın | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı, üstte **"KORUMA KAPALI — KURULUM YARIM"** |
 | 2 | **PARAMETRE TESTİ YAP** | Hattınız tespit edilir, çalışan parametre aranır (**birkaç dakika**) |
-| 3 | **ZAPRET'İ BAŞLAT** | Test bitince "STRATEJİ BULUNDU" yazar ve Başlat açılır |
+| 3 | **ZAPRET'İ BAŞLAT** | Test bitince "STRATEJİ BULUNDU" yazar ve Başlat açılır; basınca üst bant yeşile döner: **"KORUMA AKTİF"** |
+| 4 | **SERVİS OLARAK YÜKLE** | Koruma bilgisayar her açıldığında kendiliğinden çalışır |
+
+> **4. adımı atlamayın.** 3. adım korumayı **yalnızca o oturum için** açar. Bilgisayarı
+> kapatıp açtığınızda geriye hiçbir şey kalmaz: uygulama kendiliğinden açılmaz, koruma
+> kapalı gelir. Sahadan gelen "kurdum, çalıştı, yeniden başlattım, olmadı" bildiriminin
+> sebebi tam olarak budur. 4. adımdan sonra yeniden başlatmaya gerek yok; servis hemen
+> çalışmaya başlar.
 
 Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
 katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 
+**Bir şey çalışmıyorsa önce "Raporu Kaydet"e basın.** Dosya, günlüğün yanında makinenin o
+anki durumunu da yazar: yönetici yetkisi var mı, kurulum dosyaları tam mı, winws ve
+dnscrypt çalışıyor mu, servisler kurulu ve ayakta mı, sistem DNS'i kimde, GoodbyeDPI gibi
+çakışan bir araç açık mı. "Çalışmadı" cümlesi tek başına teşhis edilemiyor; bu dosya
+ediliyor. Hiçbir yere gönderilmez, sadece diske yazılır.
+
 **Sizde açılmayan belirli bir adres varsa** "Açılmayan site" kutusuna yazın ve testi öyle
 çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
 
-**Her açılışta çalışmasını istiyorsanız** "Servis Olarak Yükle" düğmesi bir Windows servisi
-kurar. Bu durumda uygulamayı açmanız gerekmez ve **yeniden başlatmaya da gerek yok** —
-servis hemen çalışmaya başlar, sonraki açılışlarda kendiliğinden devreye girer.
+**"Servis Olarak Yükle"** bir Windows servisi kurar: uygulamayı açmanız gerekmez ve
+**yeniden başlatmaya da gerek yok** — servis hemen çalışmaya başlar, sonraki açılışlarda
+kendiliğinden devreye girer. Şifreli DNS açıksa ikinci bir servis daha kurulur; sistem DNS
+ayarınız ona yönlendirilir ve bu **ancak çözümleyicinin gerçekten cevap verdiği
+doğrulandıktan sonra** yapılır. Cevap gelmezse DNS ayarınıza hiç dokunulmaz ve servis geri
+sökülür — yarım bir yönlendirme, hiç yönlendirmemekten kötüdür.
 
 **Otomatik başlatmayı kaldırdıysanız** bilgisayarı bir kez yeniden başlatmanız iyi olur:
 ağ sürücüsü çekirdekten hemen düşmüyor ve kalıntı bir sürücü, sonraki parametre testinde

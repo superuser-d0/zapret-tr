@@ -743,6 +743,70 @@ hiç çalışmıyordu ve kodu bozduğumda test hâlâ geçiyordu. Uzun satırlar
 yazıldı. **Her yeni testi mutasyonla dene**, yoksa yalnızca bir yanılsama
 ekliyorsun.
 
+**"Kurdum, restart attım, olmadı" — tek cümlelik bir bildirimden dokuz ayrı hata
+çıktı (0.1.18 sonrası).** Ekran görüntüsü yok, günlük yok, hangi adımda kaldığı
+belli değil. Bu cümleyi üretebilecek bütün yollar tarandı. Ders, hataların
+kendisinden çok **dağılımlarında**: dokuzun üçü kod hatası değil, uygulamanın
+kullanıcıya SÖYLEMEDİĞİ şeylerdi.
+
+- Yeni kurulmuş, hiçbir şeyi yapılandırılmamış makinede durum bandı **"SİSTEM
+  HAZIR"** diyordu. Koruma yok, Başlat kapalı, strateji listesi boş — ve ekranın
+  en üstünde en büyük puntoyla "hazır". Teknik olmayan kullanıcı için bu, doğru
+  bilginin eksikliği değil, **yanlış bilginin varlığı**. Kural: bir durum
+  başlığı "her şey yolunda" diyecekse, ölçülen bir şeye dayanmalı — varsayılan
+  duruma değil.
+- "ZAPRET'İ BAŞLAT" yalnızca o oturumu kapsıyor ve bu hiçbir yerde yazmıyordu.
+  Karşılığı olan düğme ekranda duruyordu. **Var olan ama önerilmeyen bir düğme,
+  olmayan bir düğmeyle aynıdır** — 0.1.11'deki Expander dersinin ikinci hâli:
+  o sefer düğme görünmüyordu, bu sefer görünüyor ama ne zaman gerektiği
+  bilinmiyordu.
+- Test bitince "STRATEJİ BULUNDU" yazıp orada kalıyordu; bulunan strateji
+  kendiliğinden uygulanmıyor. "Test yaptım, buldu, hiçbir şey değişmedi"
+  tamamen makul bir kullanıcı deneyimiydi.
+
+**Aynı korumanın iki uygulaması varsa, ikincisi neredeyse kesin eksiktir.**
+`DnsCryptRunner.StartAsync` sistem DNS'ini çevirmeden önce `127.0.0.1:53`'ün
+cevap verdiğini doğruluyordu. `ServiceManager.InstallAsync` **aynı işi
+yapıyordu ama doğrulamıyordu** — `sc start` düşse bile DNS çevriliyordu. İki yol
+ayrı ayrı yazıldığı için güvenlik kontrolü yalnızca birine kondu. Bu, DEVAM'daki
+"bölüme göre ölçüm seçimi dört ayrı yerde tekrarlanıyordu" tuzağının DNS
+tarafındaki eşi. Servis yolundaki hâli daha ağır: uygulama açılmadıkça kurtarma
+koşmuyor, dolayısıyla yeniden başlatmak durumu düzeltmiyor, **pekiştiriyor.**
+
+**Geri alma yolunun `netsh` çıkış kodlarını okumaması, yedeği silmesiyle
+birleşince telafisiz.** `RestoreAsync` bütün `netsh` sonuçlarını atıyor, sonra
+`dns-backup.json`'ı siliyordu. Tek bir başarısız çağrı, DNS'i 127.0.0.1'de bırakıp
+geri dönüş kaydını da yok ediyordu. Kural: **bir kurtarma kaydını silmeden önce
+kurtarmanın gerçekten olduğunu ölç.** Aynı fonksiyonda ikinci bir sessizlik daha
+vardı — arayüz ADIYLA aranıyordu ve kullanıcı bağlantıyı yeniden adlandırmışsa
+hiçbir şey olmuyordu. GUID yedekte zaten duruyordu, yalnızca kullanılmıyordu.
+
+**Şifreli DNS IPv4-only'di ve belirtisi "strateji tutmadı" ile birebir aynı.**
+Arayüzde İSS'in verdiği bir IPv6 çözümleyicisi varsa (RA/DHCPv6) Windows sorguyu
+oraya yollayabiliyor; DNS kaçırma katmanı ayakta kalıyor ve `winws` ne yaparsa
+yapsın site açılmıyor. Bu, TTNET ölçümlerinde görünmedi çünkü o hatta IPv6 DNS
+yoktu — yani **ölçümün sessizliği kapsamın kanıtı değil.** Çözümde bilinçli bir
+tercih var: IPv6'yı `::1`'e yönlendirmek yerine BOŞALTIYORUZ. `dnscrypt-proxy`'yi
+`[::1]`'i de dinlemeye zorlamak, IPv6'nın kapalı olduğu makinelerde bağlanamayıp
+sürecin hiç açılmamasına yol açardı — düzeltmenin bedeli, düzelttiği şeyden
+büyük olurdu.
+
+**Bildirim alanına inen bir uygulama, tek örnek kilidi olmadan tamamlanmış
+değil.** X ile kapatmak pencereyi gizliyor, kullanıcı "kapattım" sanıp kısayola
+tekrar tıklıyor. İkinci örnekte `winws` aynı filtreyle açılamıyor ("1 koduyla
+kapandı" — yani "Başlat bozuk"), ve ikinci örnek kapanırken DNS yedeğini geri
+alıp siliyor: birinci örneğin şifreli DNS'i sessizce düşüyor. 0.1.13'te eklenen
+tepsi simgesi bu yolu açtı ve o zaman fark edilmedi.
+
+**Rapor, yalnızca görünüm modelinin bildiklerini taşıdığı sürece teşhis aracı
+değil.** "Olmadı" bildirimlerinin çoğunda seçili profil, seçili strateji ve
+günlük satırlarının hepsi doğru; yanlış olan şey görünüm modelinin BAKMADIĞI
+yerde: yetki, eksik dosya, ölü servis, DNS'in bizde asılı kalması, çakışan araç.
+Üstelik en çok ihtiyaç duyulan anda — kullanıcı yeniden başlatıp uygulamayı yeni
+açtığında — günlük neredeyse boş oluyor. `EnvironmentReport` bu yüzden var ve
+yeni bir "sessizce başarısız olabilecek" alan eklendiğinde oraya da bir satır
+eklenmeli.
+
 ### Arayüzü otomasyonla sürerken (2026-09-09)
 
 **Uygulama yönetici hakkıyla çalışıyorsa otomasyon da yönetici olmalı.** Aksi

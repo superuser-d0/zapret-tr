@@ -62,5 +62,25 @@ public sealed class ReportTests
         {
             Assert.Contains(alan, rapor, StringComparison.Ordinal);
         }
+
+        // MAKINENIN OLCULEN DURUMU.
+        //
+        // Yukaridaki alanlarin hepsi gorunum modelinin kendi BILDIGI seyler ve
+        // "olmadi" bildirimlerinin cogunda hicbiri yanlis degil. Yanlis olan sey
+        // gorunum modelinin bakmadigi yerde duruyor: yonetici yetkisi yok, dosya
+        // eksik, servis kurulu ama durmus, sistem DNS'i bizde asili kalmis.
+        //
+        // Ozellikle onemli olan durum: kullanici bilgisayari yeniden baslatip
+        // uygulamayi YENI actiysa gunluk neredeyse bos oluyor ve raporun geri
+        // kalani "calismadi" cumlesine hicbir sey eklemiyordu.
+        foreach (var bolum in new[]
+                 {
+                     "Makine durumu", "Yonetici yetkisi", "Kurulum dosyalari",
+                     "Calisan surecler", "Servisler", "Sistem DNS'i",
+                     "Cakisan araclar", "Kullanici verisi",
+                 })
+        {
+            Assert.Contains(bolum, rapor, StringComparison.Ordinal);
+        }
     }
 }

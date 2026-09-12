@@ -101,6 +101,20 @@ public sealed class MainWindowSmokeTests
                 Assert.Null(viewModel.SelectedStrategy);
                 Assert.Empty(viewModel.StrategyChoices);
                 Assert.False(viewModel.CanStart, "Saglayici bilinmeden Baslat acik olmamali.");
+
+                // DURUM BANDI "HAZIR" DEMEMELI.
+                //
+                // Bu haliyle koruma yok: strateji secilmemis, Baslat kapali, winws
+                // calismiyor. Ekranin en ustunde, en buyuk puntoyla "SİSTEM HAZIR"
+                // yaziyordu ve teknik olmayan kullanici bunu "kuruldu, calisiyor"
+                // diye okuyup pencereyi kapatiyordu. Sahadan gelen "kurdum, olmadi"
+                // bildirimlerinin en ucuz aciklamasi buydu.
+                //
+                // Iddia iki sey birden bekliyor: yanlis cumle GITMIS olmali ve
+                // yerine SIRADAKI ADIM yazilmis olmali. Yalnizca birincisini
+                // sinamak, basligi bos birakan bir degisiklige de yesil verirdi.
+                Assert.DoesNotContain("HAZIR", viewModel.StatusHeadline, StringComparison.Ordinal);
+                Assert.Contains("PARAMETRE TESTİ", viewModel.StatusDetail, StringComparison.Ordinal);
             }
 
             // Bir ISS SECILDIGINDE strateji listesi dolmali.
