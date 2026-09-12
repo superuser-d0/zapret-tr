@@ -918,6 +918,49 @@ açılmıyorsa sebep 1 ya da başka bir şey. **Bunu ölçmeden `AddGlobalFilter
 dokunma** — bu dosyada "belirtiye değil varsayıma göre düzeltmek" bir kez iki
 sürüm birden harcattı.
 
+**Çakışma tespiti yalnızca ÇALIŞAN sürece bakıyordu; asıl vaka kapalı ama
+kurulu kalıntı.** Bu araca gelenlerin çoğu başka bir araçtan geliyor. Eski araç
+"kaldırıldı" sanılıyor, geride servis kaydı kalıyor, o kayıt açılışta ayağa
+kalkıp WinDivert'i kapıyor. Kullanıcı eski aracı kapatıyor ve bize "kapattım"
+diyor — süreç listesi gerçekten temiz, kontrol geçiyor, sonra ölçüm yine
+başarısız. Kontrolün doğru cevap verip yanlış soruyu sorduğu bir durum.
+
+`ConflictScanner` artık beş şeye birden bakıyor: çalışan süreçler, bilinen
+araçların **kurulu servisleri**, sahipsiz **sürücü kayıtları**,
+`127.0.0.1:53`'ü kim tutuyor, ve `hosts` dosyasında test hedeflerimizi
+yönlendiren satırlar.
+
+Üç tasarım kararı geri alınmadan önce okunmalı:
+
+- **Silinebilir olan tek şey KAYIT, dosya değil.** Bizi engelleyen şey diskteki
+  dosyalar değil, servis/sürücü kaydı; kayıt gidince dosyalar zararsız duruyor.
+  Başka bir ürünün klasörünü silmek ise çalışan bir kurulumu mahvetmek olur ve
+  geri dönüşü yok.
+- **İkilisi diskte DURAN bir servis kalıntı değil, kurulumdur.** Ayrımı
+  `File.Exists` yapıyor. Öksüz (ikilisi yok) → silinebilir; ikilisi var →
+  yalnızca adı ve yolu söyleniyor, kaldırma kullanıcının.
+- **WinDivert sürücü kaydı BİZİM de kullandığımız şey.** winws çalışırken orada
+  durması normal. Bu yüzden yalnızca ortalıkta hiçbir DPI aracı YOKKEN kalıntı
+  sayılıyor; süreç listesi okunamazsa "çalışıyor" varsayılıyor — yanlış tarafa
+  düşmek gerekiyorsa, kullanılan bir sürücüyü silmeye kalkmaktansa kalıntıyı
+  bildirmemek yeğlenir.
+
+Eski `WinDivertCleanup.DetectConflictingTools` **silindi**, delege edilmedi. İki
+liste tutmak bu depoda bir kez pahalıya patladı ("bölüme göre ölçüm seçimi dört
+ayrı yerde tekrarlanıyordu"); biri güncellenince öteki sessizce geride kalır.
+
+**DNS'i çevirmek yetmiyor, ÖNBELLEĞİ de boşaltmak gerekiyor.** Windows,
+yönlendirmeden önce alınmış cevapları tutmaya devam ediyor ve engel sunucusunun
+cevapları uzun TTL ile geliyor. Şifreli DNS açıldıktan sonra bile `discord.com`
+bir süre daha `195.175.254.2`'ye çözülüyor.
+
+Belirtisi birebir "strateji tutmadı": trafik hâlâ engel sunucusuna gidiyor,
+winws ne yaparsa yapsın site açılmıyor — sonra birkaç dakika içinde
+kendiliğinden düzeliyor. O "kendiliğinden düzelme" en yanıltıcı kısmı: kullanıcı
+Başlat'a basıp "olmadı" diyor, sonra çalışmaya başlıyor ve ikisi arasında
+yaptığı rastgele bir şeyi sebep sanıyor. `RedirectToLocalAsync` artık sonunda
+`ipconfig /flushdns` koşuyor.
+
 ### Arayüzü otomasyonla sürerken (2026-09-09)
 
 **Uygulama yönetici hakkıyla çalışıyorsa otomasyon da yönetici olmalı.** Aksi

@@ -256,23 +256,44 @@ public static class EnvironmentReport
                                 && SystemDnsManager.IsRedirectTarget(n));
     }
 
-    private static Task<IReadOnlyList<string>> CakismaAsync(CancellationToken _)
+    /// <summary>
+    /// Baska DPI araclarindan kalan izler ve DNS'i bozan durumlar.
+    /// </summary>
+    /// <remarks>
+    /// Burasi eskiden yalnizca CALISAN surece bakiyordu ve en sik karsilasilan
+    /// hali kaciriyordu: kapali ama kurulu kalinti. Kullanicilarin cogu bu araca
+    /// baska bir araçtan geliyor (Turkiye'de en yaygini GoodbyeDPI); eski arac
+    /// "kaldirildi" saniliyor ama servis kaydi kaliyor ve acilista WinDivert'i
+    /// kapiyor. Rapor bunu tasimazsa gelen bildirim yine "hicbir strateji
+    /// calismadi" cumlesinden ibaret kaliyor.
+    /// </remarks>
+    private static async Task<IReadOnlyList<string>> CakismaAsync(CancellationToken cancellationToken)
     {
-        var conflicts = WinDivertCleanup.DetectConflictingTools();
         var lines = new List<string>();
 
-        if (conflicts.Count == 0)
+        // Hedef listesi ProbeTargetStore'da ve o Prober projesinde; Core oraya
+        // bagimli degil. hosts kontrolu bu yuzden raporda bos gecmiyor, ama
+        // adlari veremedigimiz icin yalnizca arayuz tarafinda dolu kosuyor.
+        var bulgular = await ConflictScanner.ScanAsync(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+
+        if (bulgular.Count == 0)
         {
             lines.Add("  yok");
-        }
-        else
-        {
-            lines.Add("  CALISIYOR: " + string.Join(", ", conflicts));
-            lines.Add("  WinDivert surucusunu ayni anda iki arac kullanamaz. Bu acikken winws");
-            lines.Add("  paketleri hic goremez ve butun stratejiler ayni sekilde basarisiz olur.");
+            return lines;
         }
 
-        return Task.FromResult<IReadOnlyList<string>>(lines);
+        foreach (var bulgu in bulgular)
+        {
+            lines.Add($"  [{bulgu.Kind}] {bulgu.Description}");
+
+            if (!string.IsNullOrWhiteSpace(bulgu.Detail))
+            {
+                lines.Add("      " + bulgu.Detail);
+            }
+        }
+
+        return lines;
     }
 
     private static Task<IReadOnlyList<string>> VeriAsync(CancellationToken _)

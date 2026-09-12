@@ -8,6 +8,46 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Eklendi
+
+- **Parametre testinden önce kalıntı taraması.** Bu araca gelenlerin çoğu başka bir
+  araçtan geliyor — Türkiye'de en yaygını GoodbyeDPI. Eski araç "kaldırıldı" sanılıyor
+  ama geride bir **servis kaydı** kalıyor; o servis açılışta ayağa kalkıp WinDivert
+  sürücüsünü kapıyor, winws kendi sürücüsünü yükleyemiyor ve bütün adaylar aynı şekilde
+  düşüyor. Dışarıdan görünen şey "hiçbir strateji çalışmadı" — bir kullanıcıda ölçüldü:
+  176 aday, 1105 saniye, sonuç yok.
+
+  Eskiden yalnızca **çalışan sürece** bakılıyordu ve o kontrol en sık karşılaşılan hâli
+  hiç görmüyordu: kapalı ama kurulu kalıntı. Kullanıcı eski aracı kapatıyor, "kapattım"
+  diyor, servis yine de açılışta geri geliyor. Tarama artık şunlara bakıyor:
+
+  - bilinen araçların **çalışan süreçleri**;
+  - bilinen araçların **kurulu servisleri** — ikilisi diskte var mı, açılışta başlıyor mu;
+  - sahipsiz **WinDivert sürücü kayıtları** (hiçbir DPI aracı çalışmıyorken duranlar);
+  - `127.0.0.1:53` portunu **kim tutuyor** — orayı başkası tutuyorsa şifreli DNS hiç
+    açılamaz ve belirtisi sadece "şifreli DNS çalışmadı" olur;
+  - `hosts` dosyasında **test hedeflerimizi yönlendiren satırlar** — o satır sistemdeki
+    bütün DNS çözümlemesini atlar, şifreli DNS açık olsa bile.
+
+  **Silme ayrı bir karar ve kullanıcının.** Ne silineceği tek tek yazılıp onay isteniyor.
+  Silinebilir sayılan tek şey **kayıt**: ikilisi diskte olmayan öksüz servisler ve
+  sahipsiz sürücü kayıtları. Başka bir ürünün **dosyalarına dokunulmuyor** — bizi
+  engelleyen şey dosyalar değil kayıt, ve ikilisi yerinde duran bir araç çalışan bir
+  kurulumdur; onu bozmanın geri dönüşü yok. Öyle bir araç için yapılan tek şey adını ve
+  yolunu söylemek.
+
+  Aynı tarama "Raporu Kaydet" çıktısına da giriyor.
+
+- **DNS önbelleği, yönlendirmeden hemen sonra boşaltılıyor.** Yönlendirme tek başına
+  yetmiyordu: Windows, DNS çevrilmeden **önce** alınmış cevapları tutmaya devam ediyor ve
+  engel sunucusunun cevapları uzun TTL ile geliyor. Yani şifreli DNS açıldıktan sonra bile
+  `discord.com` bir süre daha engel sunucusuna çözülüyor — önbellekteki zehirli kayıt.
+
+  Dışarıdan görünen şey birebir "strateji tutmadı": trafik hâlâ engel sunucusuna gidiyor,
+  winws ne yaparsa yapsın site açılmıyor, sonra birkaç dakika içinde kendiliğinden
+  düzeliyor. Kafa karıştırıcılık sırasında en üst sıradaki belirti biçimi. Geri alırken de
+  boşaltılıyor.
+
 ### Düzeltildi
 
 Hepsi **tek bir gerçek kullanıcı raporundan** çıktı (2026-09-12, TTNET, 0.1.18).

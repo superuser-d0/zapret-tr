@@ -1531,14 +1531,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // calismadi" oluyor -- yani stratejiler kotu saniliyor, oysa olcum hic
         // yapilamamis. Testi engellemiyoruz; karar kullanicinin, ama korlemesine
         // 15 dakika beklemesin.
-        var conflicts = WinDivertCleanup.DetectConflictingTools();
-        if (conflicts.Count > 0)
-        {
-            Append("DİKKAT: başka bir DPI atlatma aracı çalışıyor: " + string.Join(", ", conflicts));
-            Append("WinDivert sürücüsünü aynı anda iki araç kullanamaz. Bu açıkken test");
-            Append("hiçbir strateji bulamayabilir — sebebi stratejiler değil, ölçümün");
-            Append("hiç yapılamaması olur. Önce o aracı kapatmanız önerilir.");
-        }
+        await ScanAndOfferCleanupAsync().ConfigureAwait(true);
 
         // "Bilmiyorum" secildiyse once ISS'i tespit etmeyi dene. Profil bilinmeden
         // yapilan test Tier 1'i tamamen atlar ve dogrudan genel aramaya duser --
@@ -1624,6 +1617,110 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IsProgressVisible = false;
             _testCancellation?.Dispose();
             _testCancellation = null;
+        }
+    }
+
+    /// <summary>
+    /// Testten ONCE baska araclarin kalintilarini arar ve silinebilir olanlar
+    /// icin kullanicidan onay ister.
+    /// </summary>
+    /// <remarks>
+    /// Burasi eskiden yalnizca CALISAN surece bakiyordu. O kontrol en sik
+    /// karsilasilan hali -- kapali ama kurulu kalintiyi -- hic gormuyordu:
+    /// kullanici eski araci kapatiyor, "kapattim" diyor, ama geride kalan servis
+    /// kaydi acilista geri geliyor ve WinDivert'i kapiyor. Sonuc, disaridan
+    /// "hicbir strateji calismadi" gibi gorunen bir olcum. Gercek bir
+    /// kullanicida olculdu: 176 aday, 1105 saniye, sonuc yok.
+    ///
+    /// Silme AYRI bir karar ve kullanicinin: ne silinecegi tek tek yaziliyor ve
+    /// onaysiz hicbir sey silinmiyor. Silinebilir sayilan tek sey KAYIT --
+    /// oksuz servisler ve sahipsiz surucu kayitlari. Baska bir urunun
+    /// dosyalarina dokunulmuyor; bizi engelleyen sey dosyalar degil kayit, ve
+    /// calisan bir kurulumu bozmanin geri donusu yok.
+    /// </remarks>
+    private async Task ScanAndOfferCleanupAsync()
+    {
+        IReadOnlyList<ConflictFinding> bulgular;
+
+        try
+        {
+            // hosts kontrolu icin test hedeflerimizin adlari veriliyor: DNS
+            // zehirlenmesi tam olarak o adlari baska bir adrese cevirir.
+            string[] hedefler = _profiles is null
+                ? []
+                : ProbeTargetStore.Load(_profiles.Root)
+                    .Select(t => t.Host)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+            bulgular = await ConflictScanner.ScanAsync(hedefler).ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            Append("Çakışma taraması yapılamadı: " + ex.Message, isError: true);
+            return;
+        }
+
+        if (bulgular.Count == 0)
+        {
+            Append("Çakışma taraması: temiz (başka DPI aracı, kalıntı servis ya da hosts kaydı yok).");
+            return;
+        }
+
+        Append($"ÇAKIŞMA TARAMASI: {bulgular.Count} bulgu.", isError: true);
+        foreach (var bulgu in bulgular)
+        {
+            Append("  • " + bulgu.Description, isError: true);
+            if (!string.IsNullOrWhiteSpace(bulgu.Detail))
+            {
+                Append("    " + bulgu.Detail);
+            }
+        }
+
+        var silinebilir = bulgular.Where(b => b.Removable).ToList();
+        if (silinebilir.Count == 0)
+        {
+            Append("Bunların hiçbirini uygulama kendisi kaldıramaz; yukarıdaki açıklamalara bakın.");
+            return;
+        }
+
+        var liste = string.Join(Environment.NewLine,
+            silinebilir.Select(b => "   • " + b.Name + " — " + b.Description));
+
+        var onay = MessageBox.Show(
+            "Başka DPI atlatma araçlarından kalmış kayıtlar bulundu. Bunlar açılışta "
+            + "ayağa kalkıp ağ sürücüsünü kapabiliyor ve ölçümün hiç yapılamamasına yol "
+            + "açıyor.\n\n"
+            + "Şunlar KALDIRILACAK:\n\n" + liste + "\n\n"
+            + "Yalnızca Windows servis kayıtları siliniyor. Başka bir programın "
+            + "dosyalarına dokunulmaz.\n\n"
+            + "Kaldırılsın mı?",
+            "Kalıntı temizliği",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (onay != MessageBoxResult.Yes)
+        {
+            Append("Kalıntı temizliği reddedildi; test mevcut haliyle devam ediyor.");
+            return;
+        }
+
+        try
+        {
+            foreach (var step in await ConflictScanner.RemoveAsync(silinebilir).ConfigureAwait(true))
+            {
+                Append((step.Succeeded ? "[+] " : "[!] ") + step.Description
+                       + (string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail),
+                       isError: !step.Succeeded);
+            }
+
+            Append("ÖNERİ: bilgisayarı bir kez yeniden başlatın, sonra testi çalıştırın.");
+            Append("  Ağ sürücüsü çekirdekten hemen düşmüyor; kayıt silinse bile sürücü");
+            Append("  görüntüsü yeniden başlatmaya kadar yüklü kalabiliyor.");
+        }
+        catch (Exception ex)
+        {
+            Append("Kalıntı temizliği başarısız: " + ex.Message, isError: true);
         }
     }
 

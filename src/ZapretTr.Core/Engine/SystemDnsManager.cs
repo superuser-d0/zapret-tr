@@ -261,8 +261,28 @@ public static class SystemDnsManager
                 $"'{nic.Name}' arayuzunun DNS ayari degistirilemedi: {output.Trim()}");
         }
 
+        // ONBELLEK BOSALTILMADAN YONLENDIRME YARIM.
+        //
+        // Windows, DNS'i cevirmeden ONCE alinmis cevaplari tutmaya devam ediyor
+        // ve Turkiye'deki engel sunucusunun cevaplari uzun TTL ile geliyor.
+        // Yani sifreli DNS acildiktan sonra bile discord.com bir sure daha
+        // 195.175.254.2'ye cozuluyor: onbellekteki ZEHIRLI kayit.
+        //
+        // Disaridan gorunen sey birebir "strateji tutmadi": trafik hala engel
+        // sunucusuna gidiyor, winws ne yaparsa yapsin site acilmiyor. Kullanici
+        // Baslat'a basip "olmadi" diyor, birkac dakika sonra kendiliginden
+        // duzeliyor -- yani en kafa karistirici belirti bicimi.
+        await FlushDnsCacheAsync(cancellationToken).ConfigureAwait(false);
+
         return changed;
     }
+
+    /// <summary>
+    /// Windows'un DNS onbellegini bosaltir. En iyi cabayla: basarisizligi
+    /// yonlendirmeyi gecersiz kilmaz.
+    /// </summary>
+    private static async Task FlushDnsCacheAsync(CancellationToken cancellationToken)
+        => await RunProcessAsync("ipconfig.exe", ["/flushdns"], cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Yedekteki ayarlari geri yukler ve yedegi siler.
@@ -350,6 +370,10 @@ public static class SystemDnsManager
         // Yedek ancak geri yukleme bittikten SONRA siliniyor. Once silinseydi ve
         // geri yukleme yarida kalsaydi, kullanicinin donebilecegi bir kayit kalmazdi.
         File.Delete(BackupPath);
+
+        // Geri alirken de bosaltiliyor: onbellekte bizim cozumleyicimizden gelen
+        // kayitlar duruyor ve kullanici artik baska bir cozumleyiciye dondu.
+        await FlushDnsCacheAsync(cancellationToken).ConfigureAwait(false);
 
         return restored;
     }
@@ -638,12 +662,16 @@ public static class SystemDnsManager
         }
     }
 
-    private static async Task<(int ExitCode, string Output)> RunNetshAsync(
+    private static Task<(int ExitCode, string Output)> RunNetshAsync(
         string[] arguments, CancellationToken cancellationToken)
+        => RunProcessAsync("netsh.exe", arguments, cancellationToken);
+
+    private static async Task<(int ExitCode, string Output)> RunProcessAsync(
+        string fileName, string[] arguments, CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = "netsh.exe",
+            FileName = fileName,
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -660,7 +688,7 @@ public static class SystemDnsManager
             using var process = Process.Start(startInfo);
             if (process is null)
             {
-                return (-1, "netsh baslatilamadi.");
+                return (-1, $"{fileName} baslatilamadi.");
             }
 
             var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);

@@ -47,44 +47,13 @@ public static class WinDivertCleanup
     /// </remarks>
     public static readonly string[] DriverServiceNames = ["windivert", "WinDivert14", "monkey"];
 
-    /// <summary>
-    /// Ayni anda calisan ve WinDivert'i ele geciren baska bir DPI atlatma araci var mi.
-    /// Bulunanlarin surec adlarini doner; bos liste = temiz.
-    /// </summary>
-    /// <remarks>
-    /// Neden gerekli: WinDivert'i ayni anda iki arac kullanamiyor. GoodbyeDPI acikken
-    /// winws paketleri goremiyor ve BUTUN adaylar ayni sekilde dusuyor. Kullanicinin
-    /// gordugu sey "176 aday denendi, hicbiri calismadi" oluyor -- yani stratejilerin
-    /// hepsi kotu saniliyor, oysa olcum hic yapilamamis.
-    ///
-    /// GoodbyeDPI Turkiye'de tam olarak ayni is icin cok yaygin, dolayisiyla bu
-    /// carpisma teorik degil. Zapret Win TR de acilista bu kontrolu yapiyor.
-    ///
-    /// Burada SUREC OLDURULMUYOR: baska bir aracin kapatilmasi kullanicinin karari.
-    /// Yapilan tek sey durumu gorunur kilmak.
-    /// </remarks>
-    public static IReadOnlyList<string> DetectConflictingTools()
-    {
-        string[] known = ["goodbyedpi", "ciadpi", "spoofdpi", "zapret", "winws2"];
-
-        var found = new List<string>();
-        foreach (var name in known)
-        {
-            try
-            {
-                if (Process.GetProcessesByName(name).Length > 0)
-                {
-                    found.Add(name + ".exe");
-                }
-            }
-            catch (Exception)
-            {
-                // Surec listesi okunamiyorsa teshis ugruna akisi durdurmuyoruz.
-            }
-        }
-
-        return found;
-    }
+    // Cakisan arac tespiti burada DEGIL: <see cref="ConflictScanner"/> icinde.
+    //
+    // Burada da bir tane vardi ve yalnizca CALISAN surece bakiyordu; kapali ama
+    // kurulu kalintiyi -- en sik karsilasilan hali -- hic gormuyordu. Ikisini
+    // birden tutmak, bu depoda bir kez pahaliya patlamis bir hatanin aynisi
+    // olurdu: ayni karar iki ayri yerde, biri guncellenince otekinin sessizce
+    // geride kalmasi. Tek yer var, orasi ConflictScanner.
 
     /// <summary>Yapilandirmanin tutuldugu dizin.</summary>
     public static string ConfigDirectory => Path.Combine(
