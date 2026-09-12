@@ -6,7 +6,7 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.1.20]
 
 ### Eklendi
 
@@ -101,7 +101,12 @@ Rapor "Raporu Kaydet" ile alınmıştı; yani kanal işe yaradı.
   `--wf-raw-part` giriyor, tcp443 ölçümünde ise o parça yok. Ayırt edici deney ve
   "ölçmeden dokunma" uyarısı `docs/DEVAM.md`'de.
 
-## [0.1.19]
+---
+
+**Buradan aşağısı 0.1.19 için hazırlanmıştı ama o sürüm yayınlanmadı.** Paketi üretildi,
+taslak açıldı, yayına çevrilmeden üzerine yeni düzeltmeler geldi ve taslak bayatladı.
+Dolayısıyla aşağıdakiler kullanıcıya **ilk kez bu sürümle** ulaşıyor; ayrı bir bölümde
+bırakmak, hiç var olmamış bir sürümün notunu yazmak olurdu.
 
 ### Düzeltildi
 
