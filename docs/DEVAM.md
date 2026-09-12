@@ -36,6 +36,13 @@ Depo: https://github.com/superuser-d0/zapret-tr (public)
 - Gerçek kurulum testi CI'da (`installer-test.yml`) — kur, yükselt, kaldır
 - Başarım ölçümü (aşağıda) — bellek, CPU, DPC, gecikme
 
+**0.1.19 bu listeye GİRMİYOR ve bu kasıtlı.** O sürümün on düzeltmesi (tuzaklar
+bölümünde) yalnızca CI'da doğrulandı: derleme, 161 birim testi ve kurulum testi.
+Hiçbiri gerçek donanımda çalıştırılmadı — o oturumda Windows makinesi yoktu.
+Listenin başlığı "gerçek donanımda doğrulanmış" diyor; oraya ölçülmemiş bir şey
+koymak, tam da bu dosyanın profillerde reddettiği şey olurdu. Neyin hâlâ
+ölçülmediği "Yapılacaklar / 1" başlığında.
+
 **Ölçülmüş sonuç (TTNET, gerçek hat):** şifreli DNS + `--dpi-desync=fake
 --dpi-desync-ttl=4` ile discord.com, pornhub.com, xvideos.com açılıyor.
 
@@ -205,7 +212,37 @@ sürücüsünün DPC/kesme süresi.
 
 ## Yapılacaklar
 
-### 1. Doğrulama kapsamı — 25 aday doğrulanmış, 8 profil hâlâ boş
+### 1. 0.1.19'un DNS değişikliklerini gerçek makinede koştur — EN ÖNCELİKLİ
+
+0.1.19'daki on düzeltmenin en ağırı sistem DNS'ine dokunuyor ve **CI o yolu
+bilerek hiç koşmuyor**: `installer-test.yml` `secureDnsEnabled=false` ile
+çalışıyor, çünkü açık olsaydı iş runner'ın kendi ad çözümünü kaybederdi
+(gerekçesi tuzaklar bölümünde). Yani en riskli değişiklik, en az kapsanan yol.
+
+Elle koşulması gerekenler — şifreli DNS **açık**:
+
+1. Parametre testi → Başlat → "Servis Olarak Yükle" → **yeniden başlat** → ad
+   çözümü çalışıyor mu. `ServiceManager.InstallAsync` artık `127.0.0.1:53`
+   cevap verene kadar (en çok 30 sn) bekliyor ve cevap gelmezse DNS'e
+   DOKUNMUYOR; bu yeni davranış hiç ölçülmedi.
+2. "Otomatik Başlatmayı Kaldır" → DNS gerçekten DHCP'ye döndü mü
+   (`ipconfig /all`, `127.0.0.1` görünmemeli) ve `dns-backup.json` silindi mi.
+   `RestoreAsync` artık netsh çıkış kodlarını okuyor ve **başarısızlıkta yedeği
+   SİLMİYOR** — bu yolun yanlış tarafa düşmesi kullanıcıyı ad çözemez bırakır.
+3. **Çift yığınlı (IPv6'lı) bir hatta**: yönlendirme sonrası arayüzün IPv6 DNS
+   sunucuları boşaldı mı, geri almada geri geldi mi. IPv6 boşaltma hiçbir
+   gerçek hatta ölçülmedi; TTNET ölçümlerinde IPv6 DNS yoktu, yani o
+   ölçümlerin sessizliği kapsam kanıtı değil.
+4. Kurulum sonrası ilk açılış: üst bant "KORUMA KAPALI — KURULUM YARIM" diyor
+   mu ve altında sıradaki adım yazıyor mu (ekran görüntüsü al).
+5. Uygulama açıkken kısayola ikinci kez tıkla: tek örnek kilidi mesajı çıkmalı,
+   ikinci pencere AÇILMAMALI ve birincinin şifreli DNS'i düşmemeli.
+
+Bu tur atlanırsa 0.1.19, düzelttiğini iddia ettiği hata sınıfının aynısını
+üretebilir. Bu dosyanın kendi kuralı: **arayüz ve kurulum hataları ancak
+paketlenip kurulduktan sonra görünüyor.**
+
+### 2. Doğrulama kapsamı — 25 aday doğrulanmış, 8 profil hâlâ boş
 
 Kod eksiği değil saha verisi eksiği. Gerçek hatta doğrulanan adaylar:
 
@@ -237,7 +274,7 @@ Kapsamı genişletmenin yolu artık bir bayrak: `--exhaustive` ilk başarıda du
 bütçe bitene kadar dener. Doğrulama verisi toplamak için olan tek şey bu;
 normal kullanımda gereksiz ve yavaş.
 
-### 2. Superonline saha testi — dış bağımlılık
+### 3. Superonline saha testi — dış bağımlılık
 
 Paket hazır: `dist/zapret-tr-saha-testi.zip`. Test kullanıcısında.
 Rapor gelince `learned.json`'a aktarılıp `profiles/isp/superonline.json`
@@ -252,7 +289,7 @@ türetmek de mümkün değil.
 
 Superonline için hâlâ gerçek bir AS34984 hattı gerekiyor.
 
-### 3. ~~Paket boyutu~~ — ÇÖZÜLDÜ (34.3 → 12.5 MB)
+### 4. ~~Paket boyutu~~ — ÇÖZÜLDÜ (34.3 → 12.5 MB)
 
 `PublishTrimmed` artık açık ve **güvenli**. Bütün JSON yolları kaynak üretimine
 taşındı: `CoreJsonContext` (yapılandırma, DNS yedeği, profil, merdiven),
@@ -972,7 +1009,8 @@ beklendiğini, sürecin yaşayıp yaşamadığını (yaşamıyorsa çıkış kod
 durumu ayırıyor: süreç ölmüş / süreç yaşıyor ama portu bağlayamamış / port bağlı
 ama sorgu cevapsız. O makinede tekrar görülürse mesaj hangisi olduğunu söyler.
 
-Testler: **159 geçiyor**. Merdiven toplamı 221 aday (QUIC 15 → 56).
+Testler: **161 geçiyor** (0.1.19'da +2: DNS yedeğinin IPv6 alanları ve eski
+yedeklerle geriye uyum). Merdiven toplamı 221 aday (QUIC 15 → 56).
 Kırpılmış Release yayını doğrulandı: 11.3 MB tek dosya + yanında `msquic.dll`,
 kırpma analizöründen tek uyarı yok.
 
@@ -1011,3 +1049,58 @@ Bu oturumda arayüz gerçekten çalıştırılıp otomasyonla sürüldü: "Hata 
 uçtan uca doğrulandı (onay kutusu çıktı, "Hayır" tarayıcı açmadı, "Evet" GitHub
 formunu DOLU açtı, kullanıcının "Açılmayan site" kutusuna yazdığı adres formda
 çıkmadı) ve başarım ölçümü yapıldı. Otomasyonun tuzakları tuzaklar bölümünde.
+
+### 2026-09-12 oturumu sonu (0.1.19)
+
+**DİKKAT: bu oturumda MAKİNE YOKTU.** Ne Windows, ne .NET SDK — SDK indirmesi de
+vekil tarafından engellendi (`builds.dotnet.microsoft.com` 403). Yukarıdaki
+"Makine durumu" bölümü ÖNCEKİ oturuma ait ve bu oturumda hiçbir şeyi
+doğrulamıyor. Kod okunarak yazıldı, doğrulama tamamen CI'dan geldi.
+
+Çıkış noktası tek cümlelik bir saha bildirimiydi: *"kurdum, bilgisayara restart
+attım, olmadı."* Ekran görüntüsü yok, günlük yok, hangi adımda kaldığı belli
+değil. O cümleyi üretebilecek bütün yollar tarandı; bulunan on tanesi
+kapatıldı ve hepsi tuzaklar bölümünde tek tek yazılı.
+
+**Neyin doğrulandığı, neyin doğrulanmadığı — karıştırma:**
+
+| | Durum |
+|---|---|
+| Derleme, 161 birim testi, kırpılmış yayın | CI'da yeşil |
+| Kurulum → servis kur → yükselt → kaldır | CI'da yeşil, **şifreli DNS KAPALI** |
+| Şifreli DNS servis yolu (en ağır değişiklik) | **hiç koşmadı** |
+| IPv6 DNS boşaltma | **hiç koşmadı** |
+| Arayüzün yeni durum metinleri | **hiç görülmedi** (ekran görüntüsü yok) |
+
+Yapılacaklar/1 tam olarak bu boşluğu kapatmak için var.
+
+**Derleyicisiz çalışmanın bedeli ölçüldü: bir CI turu.** İlk itiş üç `CS0103`
+ile düştü — `App` projesinde `System.IO` **örtük using DEĞİL** (`MainViewModel.cs`
+de bu yüzden açıkça yazıyor). Ders: bu depoda App projesine `Directory`/`Path`/
+`File` kullanan bir satır eklerken using'i elle yaz; Core'da gerek yok.
+
+**Yazdığım testin koşulsuz hale getirilmesi gerçek bir hata yakaladı.** "Durum
+bandı HAZIR demesin" iddiasını önce `if (ConfigStore.Load().SelectedIspId is
+null)` bloğunun içine koymuştum — o blok, makinede kayıtlı yapılandırma varsa hiç
+koşmuyor, yani iddia CI'da geçmiş görünürken gerçekte hiç çalışmamış olabilirdi.
+Koşulsuz hale getirince kırmızıya döndü ve sebebi gerçekti: `LoadStrategyChoices`,
+ayrıntı satırını `UpdateStatusDetail` ile eziyor ve yeni eklenen "sıradaki adım"
+cümlesini siliyordu. Bu dosyanın "geçen bir test, sınadığını sınadığını
+kanıtlamaz" uyarısının **üçüncü** kez ısırması.
+
+**Yayın bu sefer tag ile YAPILMADI.** `git push origin v0.1.19` ortam tarafından
+403 ile reddedildi (oturumun kimliği yalnızca dal itmesine izin veriyor), bu
+yüzden `release.yml` `workflow_dispatch` ile `version=0.1.19`, `ref=main`
+tetiklendi. Sonuç aynı paketler + **taslak** yayın, ama bir farkla: **taslak
+yayınlanana kadar tag YOK.** GitHub tag'i yayınlama anında `main`'in ucunda
+oluşturur, dolayısıyla:
+
+- taslağı yayınlamadan önce `main`'e commit itilirse tag YANLIŞ commit'e düşer;
+- oluşan tag *lightweight* olur, önceki 18'i ise açıklamalı.
+
+Bir sonraki yayında tag itmesi çalışıyorsa normal yola (tag it → akış tetiklensin)
+dön; bu yol yalnızca tag itilemediği için var.
+
+**Makine durumu:** bilinmiyor. Bu oturum hiçbir makineye dokunmadı, dolayısıyla
+`%ProgramData%\ZapretTR` içeriği, servisler ve DNS hakkında söylenebilecek
+güncel bir şey yok. Bir sonraki oturum ölçmeden varsayım yapmasın.
