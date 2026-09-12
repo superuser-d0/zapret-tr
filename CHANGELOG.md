@@ -6,7 +6,7 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.1.19]
 
 ### Düzeltildi
 
@@ -24,6 +24,13 @@ yollar tek tek tarandı; aşağıdakiler bulunanlar.
   ucuz açıklaması. Başlık artık iki soruyu birden cevaplıyor: **"KORUMA KAPALI —
   KURULUM YARIM"** ve altında sıradaki adım. Durum değeri `Ready` olarak kaldı;
   değiştirmek düğmelerin etkinliğini bozardı — değişen yalnızca kullanıcıya söylenen şey.
+
+- **Sıradaki adım, servis sağlayıcı "Bilmiyorum"a dönünce hemen siliniyordu.** Yukarıdaki
+  düzeltmenin kendi içindeki bir açık: strateji listesi boşaltılırken durum bandının ayrıntı
+  satırı `servis sağlayıcısı seçilmedi · strateji yok` ile eziliyor, yani kullanıcının tam da
+  o anda görmesi gereken tek cümle kayboluyordu. Başlık "KURULUM YARIM" derken altında ne
+  yapılacağı yazmıyordu. Bu hatayı, düzeltmeyi kilitlemek için yazılan testin **koşulsuz**
+  hâle getirilmesi yakaladı — koşulun içindeyken sessizce hiç koşmuyordu.
 
 - **"Başlat"ın yeniden başlatmayı atlatmadığı hiçbir yerde yazmıyordu.** "ZAPRET'İ
   BAŞLAT" yalnızca o oturum için bir `winws` süreci açıyor; bilgisayar kapanıp

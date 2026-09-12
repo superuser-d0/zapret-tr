@@ -1739,7 +1739,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (profile is null)
         {
             SelectedStrategy = null;
-            UpdateStatusDetail();
+
+            // RefreshIdlePresentation, UpdateStatusDetail DEGIL. Ikincisi
+            // ayrinti satirini "servis saglayicisi secilmedi · strateji yok"
+            // ile ezip siradaki adimi siliyordu -- yani kullanicinin tam da bu
+            // durumda gormesi gereken tek cumleyi. Ustuste iki hata vardi:
+            // yukaridaki atama zaten null'sa setter hic kosmuyor, dolayisiyla
+            // tazeleme burada ACIKCA cagrilmak zorunda.
+            RefreshIdlePresentation();
             return;
         }
 
