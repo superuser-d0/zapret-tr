@@ -6,6 +6,61 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Düzeltildi
+
+Hepsi **tek bir gerçek kullanıcı raporundan** çıktı (2026-09-12, TTNET, 0.1.18).
+Rapor "Raporu Kaydet" ile alınmıştı; yani kanal işe yaradı.
+
+- **Arayüz "Doğrulandı: 1/4 hedef açılıyor" deyip yeşil "KORUMA AKTİF" gösteriyordu.**
+  Başlatmadan sonraki doğrulama yalnızca **sıfır** hedef açıldığında uyarıyordu; 1/4'te
+  "Doğrulandı" kelimesini kullanıp susuyordu. O dört tcp443 hedefi `discord.com`,
+  `gateway.discord.gg`, `updates.discord.com` ve `www.youtube.com` — ve YouTube o hatta
+  zaten engelli değil. Yani açılan tek hedef büyük olasılıkla hiçbir şey gerektirmeyendi
+  ve Discord'un üçü de kapalıydı. Kullanıcı korunduğunu sanıyordu.
+
+  İkinci kusur raporlamadaydı: yalnızca **sayı** yazılıyordu. Sayı teşhis vermiyor,
+  **adlar** veriyor — bu rapordan hangi hedefin açılmadığını çıkarmak ancak hedef
+  listesine bakarak mümkün oldu. Artık açılmayanlar adıyla yazılıyor ve kısmi başarı
+  ayrı bir durum: **"ÇALIŞIYOR — KISMEN AÇIYOR"**.
+
+- **dnscrypt-proxy'nin açılış dökümü günlükteki her şeyi dışarı itiyordu.** 523 satırlık
+  raporun ~470 satırı çözümleyici listesiydi: sunucu başına üç satır, ardından 340
+  satırlık gecikme tablosu. Arayüz günlüğü 500 satırla sınırlı olduğu için teşhis için
+  gereken satırlar — başlatma komutu, winws'in söyledikleri, test sonuçları — ring
+  buffer'dan düşüyordu. Rapor yine de okunabildi çünkü kullanıcı testten hemen sonra
+  kaydetmişti; yani kurtaran şey tasarım değil şanstı.
+
+  Sunucu başına tekrar eden satırlar ve gecikme tablosu artık günlüğe girmiyor.
+  **Susturulan şey gürültü, bilgi değil:** hata/uyarı seviyeleri ve "en düşük gecikmeli
+  sunucu" özeti geçiyor.
+
+- **Arayüz "winws v72.13" yazıyordu; motor kendi ağzıyla "v72.12" diyor.** Kullanıcının
+  günlüğündeki `github version v72.12` satırı ele verdi. Sebep tedarik zincirinde:
+  `winws.exe` **`zapret-win-bundle`** deposundan bir *commit* ile sabitleniyor (o depoda
+  tag yok), `v72.13` ise yalnızca sahte yük dosyalarının ve filtre parçalarının geldiği
+  **`zapret`** deposunun tag'i. İki farklı kaynak tek bir numarayla etiketlenmişti.
+
+  Bunun bedeli doğrudan teşhiste: "bu seçenek bu sürümde var mı" sorusu yanlış sürüme
+  sorulursa cevap da yanlış olur — `docs/DEVAM.md`'deki iki çıkarım tam olarak buna
+  dayanıyordu ve düzeltildi. Artık motorun kendi bildirdiği sürüm gösteriliyor; hiç
+  çalışmadıysa uydurmak yerine ikilinin nereden geldiği yazılıyor.
+
+### Bilinen — çözülmedi
+
+- **Test 3 bölüm için çalışan strateji buluyor, 60 saniye sonra çalışma zamanında tcp443
+  açılmıyor.** Aynı raporda, aynı oturumda: 23:56:31'de HTTPS için `fake + ttl4`
+  doğrulanıyor ("açılan: discord-guncelleme, discord"), 23:57:37'de başlatma sonrası
+  doğrulama 1/4 veriyor. Aynı sonuç bir önceki başlatmada da görüldü, yani tek seferlik
+  değil.
+
+  İki aday sebep var ve hangisi olduğu **bilinmiyor**: (a) test her bölümü ayrı bir winws
+  örneğiyle ve `--ipset-ip` ile ölçüyor, çalışma zamanı üçünü tek örnekte ipset'siz
+  çalıştırıyor; (b) çalışma zamanı komutunda QUIC bölümü yüzünden global filtreye
+  `--wf-raw-part` giriyor, tcp443 ölçümünde ise o parça yok. Ayırt edici deney ve
+  "ölçmeden dokunma" uyarısı `docs/DEVAM.md`'de.
+
 ## [0.1.19]
 
 ### Düzeltildi

@@ -628,7 +628,7 @@ kullanıcı çoğu zaman geri bildirim yazmaz. Ama bir sonraki oturum bu profill
 bakarken bunu bilsin.
 
 Zapret2 (LUA motoru) stratejileri ALINMADI: `--lua-desync=` sözdizimi bizim
-sabitlediğimiz v72.13 ile uyumsuz.
+çalıştırdığımız winws ile uyumsuz (aşağıya bak — o ikili **v72.12**, v72.13 değil).
 
 **Sürücü servisi tek adla temizlenmiyor.** Aynı kaynaktan öğrenildi: WinDivert
 `windivert` dışında `WinDivert14` (WinDivert 1.4 ve GoodbyeDPI'ın adı) ve bazı
@@ -686,7 +686,8 @@ için UAC harcamaya gerek yok: ikiliden ASCII dizgi çıkarmak yeterli ve daha
 eksiksiz sonuç veriyor (yardımda görünmeyen karar satırları da çıkıyor).
 Bu oturumdaki bütün teşhis oradan geldi.
 
-**`--dpi-desync-fake-quic-mod` diye bir şey YOK (v72.13).** `--dpi-desync-fake-tls-mod`
+**`--dpi-desync-fake-quic-mod` diye bir şey YOK (çalıştırdığımız winws'te; o ikili
+**v72.12**, aşağıya bak).** `--dpi-desync-fake-tls-mod`
 SNI'yi runtime'da üretebiliyor ama QUIC'te karşılığı yok; tek eksen hazır yük
 dosyasının kendisi. Bu yüzden `files/fake/` altındaki `quic_initial_*`
 varyantları indiriliyor. Aramadan önce ikilide `strings` ile doğrula.
@@ -843,6 +844,79 @@ yerde: yetki, eksik dosya, ölü servis, DNS'in bizde asılı kalması, çakış
 açtığında — günlük neredeyse boş oluyor. `EnvironmentReport` bu yüzden var ve
 yeni bir "sessizce başarısız olabilecek" alan eklendiğinde oraya da bir satır
 eklenmeli.
+
+**Çalıştırdığımız `winws` v72.13 DEĞİL, v72.12 — ve arayüz yıllarca yanlış
+söyledi.** Bir kullanıcının raporundaki tek satır ele verdi:
+`github version v72.12 (5cc46a98...)`. Oysa `EngineVersionText` sabit olarak
+"winws v72.13" yazıyordu ve bu dosyada iki ayrı çıkarım o numaraya
+dayandırılmıştı.
+
+Sebep tedarik zincirinde ve `fetch-upstream.ps1`'e bakınca açık: `winws.exe`
+**`zapret-win-bundle`** deposundan bir COMMIT ile sabitleniyor (`32fbbebf`, o
+depoda tag yok); `v72.13` yalnızca sahte yük dosyalarının ve filtre parçalarının
+geldiği **`zapret`** deposunun tag'i. İki farklı kaynak, tek bir numarayla
+etiketlenmişti.
+
+Bunun bedeli doğrudan teşhiste: "bu seçenek bu sürümde var mı" sorusu yanlış
+sürüme sorulursa cevap da yanlış olur. Artık motorun KENDİ bildirdiği sürüm
+gösteriliyor (`WinwsRunner.ParseVersion`); hiç çalışmadıysa uydurmak yerine
+ikilinin nereden geldiği yazılıyor. **Yeni bir seçeneği doğrularken ikiliden
+`strings` çıkar — sürüm numarasına güvenme.**
+
+**dnscrypt-proxy'nin açılış dökümü, günlükteki HER ŞEYİ dışarı itiyordu.**
+Aynı kullanıcının 523 satırlık raporunun ~470 satırı çözümleyici listesiydi:
+sunucu başına üç satır (`OK (DNSCrypt)`, `additional certificate`,
+`post-quantum ... key exchange`) ve ardından 340 satırlık `Sorted latencies`
+tablosu. Arayüz günlüğü 500 satırla sınırlı, yani teşhis için gereken satırlar
+— başlatma komutu, winws'in söyledikleri, test sonuçları — ring buffer'dan
+düşüyordu.
+
+Rapor yine de okunabildi çünkü kullanıcı testten hemen sonra kaydetmişti; yani
+kurtaran şey tasarım değil şanstı. `DnsCryptRunner.IsNoise` artık sunucu başına
+tekrar eden satırları ve gecikme tablosunu susturuyor. **Susturulan şey gürültü,
+bilgi değil:** hata/uyarı seviyeleri ve "en düşük gecikmeli sunucu" özeti
+geçiyor. Kural: **arayüz günlüğüne bir alt sürecin ham çıktısını bağlarken, o
+sürecin en gürültülü anında kaç satır ürettiğini ölç.**
+
+**"Doğrulandı: 1/4 hedef açılıyor" + yeşil "KORUMA AKTİF" — aynı raporda.**
+`VerifyAfterStartAsync` yalnızca SIFIR hedef açıldığında uyarıyordu; 1/4'te
+"Doğrulandı" kelimesini kullanıp susuyordu. O dört tcp443 hedefi
+`discord.com`, `gateway.discord.gg`, `updates.discord.com` ve
+`www.youtube.com` — ve YouTube o hatta zaten engelli değil. Yani açılan tek
+hedef büyük olasılıkla hiçbir şey gerektirmeyendi ve Discord'un üçü de
+kapalıydı. Kullanıcı korunduğunu sanıyordu.
+
+İkinci kusur raporlamada: yalnızca SAYI yazılıyordu. Sayı teşhis vermiyor,
+ADLAR veriyor. Artık açılmayan hedefler adıyla yazılıyor ve kısmi başarı ayrı
+bir durum ("ÇALIŞIYOR — KISMEN AÇIYOR").
+
+**ÇÖZÜLMEMİŞ: aynı hatta test 3 bölüm için çalışan strateji buluyor, 60 saniye
+sonra çalışma zamanında tcp443 açılmıyor.** Aynı raporda, aynı oturumda:
+
+```
+23:56:31  [+] HTTPS: --dpi-desync=fake --dpi-desync-ttl=4
+23:56:31      açılan: discord-guncelleme, discord
+23:57:33  Başlatılıyor (3 bölüm): ...
+23:57:37  Doğrulandı: 1/4 hedef açılıyor.
+```
+
+Aynı 1/4 bir önceki başlatmada da (23:53:55) görüldü, yani tek seferlik değil.
+Test ile çalışma zamanı arasındaki farklar şunlar ve hangisinin sebep olduğu
+BİLİNMİYOR:
+
+1. Test her bölümü AYRI bir winws örneğiyle ve `--ipset-ip` ile ölçüyor;
+   çalışma zamanı üç bölümü TEK örnekte, ipset'siz çalıştırıyor.
+2. Çalışma zamanı komutunda QUIC bölümü yüzünden global filtreye
+   `--wf-raw-part=@windivert_part.quic_initial_ietf.txt` giriyor. tcp443 ölçümü
+   yapılırken o parça YOK. `--wf-raw-part`'ın global filtreye AND ile mi OR ile
+   mi girdiği doğrulanmadı; AND ise TCP paketleri hiç yakalanmıyor demektir ve
+   tablo birebir bu.
+
+Ayırt edici deney (tek makinede, birkaç dakika): aynı komutu QUIC bölümü
+OLMADAN elle çalıştır ve `curl https://discord.com` dene. Açılıyorsa sebep 2,
+açılmıyorsa sebep 1 ya da başka bir şey. **Bunu ölçmeden `AddGlobalFilters`'a
+dokunma** — bu dosyada "belirtiye değil varsayıma göre düzeltmek" bir kez iki
+sürüm birden harcattı.
 
 ### Arayüzü otomasyonla sürerken (2026-09-09)
 

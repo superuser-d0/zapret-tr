@@ -106,7 +106,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _runner.StateChanged += OnRunnerStateChanged;
 
             _dnsRunner = new DnsCryptRunner(_vendor);
-            _dnsRunner.LogLineReceived += line => Append(line);
+
+            // Cozumleyici dokumu SUZULUYOR. Suzulmezse acilisatki 470 satirlik
+            // sunucu listesi 500 satirlik gunlugu tasirip her seyi disari
+            // atiyor -- gercek bir kullanicinin raporunda tam olarak bu oldu.
+            // Gerekcesi ve neyin gectigi DnsCryptRunner.IsNoise icinde.
+            _dnsRunner.LogLineReceived += line =>
+            {
+                if (!DnsCryptRunner.IsNoise(line))
+                {
+                    Append(line);
+                }
+            };
 
             // Onceki calismada uygulama duzgun kapanmadiysa sistem DNS'i hala
             // 127.0.0.1'i gosteriyor olabilir ve o durumda hicbir ad cozulmez.
@@ -368,7 +379,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set => Set(ref _customTarget, value);
     }
 
-    public string EngineVersionText => "winws v72.13 · dnscrypt-proxy 2.1.18";
+    /// <summary>Alt bilgideki motor sürümü.</summary>
+    /// <remarks>
+    /// Burada eskiden sabit olarak "winws v72.13" yaziyordu ve bu YANLISTI.
+    /// Gercek bir kullanicinin gunlugu motoru kendi agziyla ele verdi:
+    /// <c>github version v72.12</c>. Sebebi tedarik zincirinde --
+    /// <c>winws.exe</c> <c>zapret-win-bundle</c> deposundan bir COMMIT ile
+    /// sabitleniyor (orada tag yok); v72.13 yalnizca sahte yuk dosyalarinin ve
+    /// filtre parcalarinin geldigi <c>zapret</c> tag'i. Yani o numara hicbir
+    /// zaman winws'in surumu degildi.
+    ///
+    /// Artik motor bir kez calistiysa ONUN soyledigi gosteriliyor; hic
+    /// calismadiysa uydurmak yerine ikilinin nereden geldigi yaziliyor.
+    /// </remarks>
+    public string EngineVersionText =>
+        (_runner?.ReportedVersion is { } surum ? "winws " + surum : "winws (zapret-win-bundle)")
+        + " · dnscrypt-proxy 2.1.18";
 
     /// <summary>
     /// Sifreli DNS kullanilsin mi. Varsayilan olarak ACIK.
@@ -1398,17 +1424,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
 
             using var client = new HttpProbeClient();
-            var opened = 0;
+            var acilan = new List<string>();
+            var acilmayan = new List<string>();
+
             foreach (var target in targets)
             {
                 var outcome = await StrategyProber
                     .ProbeAsync(target.Section, target.Host, null, client)
                     .ConfigureAwait(true);
 
-                if (outcome.Succeeded)
-                {
-                    opened++;
-                }
+                (outcome.Succeeded ? acilan : acilmayan).Add(target.Host);
             }
 
             if (Status != AppStatus.Running)
@@ -1416,18 +1441,50 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return;
             }
 
-            if (opened > 0)
+            if (acilmayan.Count == 0)
             {
-                Append($"Doğrulandı: {opened}/{targets.Count} hedef açılıyor.");
+                Append($"Doğrulandı: {acilan.Count}/{targets.Count} hedef açılıyor.");
                 return;
             }
 
-            Append("UYARI: kayıtlı strateji artık işe yaramıyor görünüyor —", isError: true);
-            Append("test hedeflerinin hiçbiri açılmadı. Engelleme değişmiş olabilir.", isError: true);
+            // HANGI HEDEFIN ACILMADIGINI YAZ.
+            //
+            // Eskiden yalnizca sayi yaziliyordu ve yalnizca SIFIR acildiginda
+            // uyariliyordu. Gercek bir kullanicinin raporunda sonuc suydu:
+            //
+            //     Doğrulandı: 1/4 hedef açılıyor.
+            //     Durum: KORUMA AKTİF
+            //
+            // O dort hedefin ucu Discord, biri YouTube -- ve YouTube o hatta
+            // zaten engelli degil. Yani acilan tek hedef muhtemelen hicbir sey
+            // gerektirmeyen hedefti ve Discord'un ucu de kapaliydi. Ekran yesil
+            // "KORUMA AKTİF" diyordu ve "Doğrulandı" kelimesi kullaniyordu.
+            //
+            // Bu, bu projedeki en pahali hata sinifi: kullanici korundugunu
+            // saniyor. Ustelik hangi hedefin acilmadigi yazilmadigi icin gelen
+            // rapordan da anlasilamiyordu -- sayinin kendisi teshis vermiyor,
+            // ADLAR veriyor.
+            if (acilan.Count == 0)
+            {
+                Append("UYARI: kayıtlı strateji artık işe yaramıyor görünüyor —", isError: true);
+                Append("test hedeflerinin hiçbiri açılmadı. Engelleme değişmiş olabilir.", isError: true);
+                Append("Açılmayanlar: " + string.Join(", ", acilmayan), isError: true);
+                Append("\"PARAMETRE TESTİ YAP\" ile yeni bir strateji aramanız önerilir.");
+
+                SetStatus(AppStatus.Running, "ÇALIŞIYOR — AMA AÇMIYOR",
+                    "Kayıtlı strateji hedefleri açmadı; yeni bir parametre testi önerilir.");
+                return;
+            }
+
+            Append($"UYARI: {targets.Count} hedeften yalnızca {acilan.Count} tanesi açılıyor.",
+                isError: true);
+            Append("Açılmayanlar: " + string.Join(", ", acilmayan), isError: true);
+            Append("Koruma çalışıyor ama bu adresleri açmıyor. İlgili uygulama takılabilir");
+            Append("(örneğin Discord giriş ya da güncelleme ekranında kalabilir).");
             Append("\"PARAMETRE TESTİ YAP\" ile yeni bir strateji aramanız önerilir.");
 
-            SetStatus(AppStatus.Running, "ÇALIŞIYOR — AMA AÇMIYOR",
-                "Kayıtlı strateji hedefleri açmadı; yeni bir parametre testi önerilir.");
+            SetStatus(AppStatus.Running, "ÇALIŞIYOR — KISMEN AÇIYOR",
+                $"{acilmayan.Count} hedef hâlâ açılmıyor: {string.Join(", ", acilmayan)}");
         }
         catch (Exception)
         {
@@ -1980,6 +2037,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             switch (state)
             {
                 case WinwsState.Running:
+                    // Motor artik kendi surumunu bildirdi; alt bilgi tazelensin.
+                    // Burada yapiliyor cunku bu geri cagri zaten arayuz is
+                    // parcaciginda kosuyor -- surum, ciktiyi okuyan AYRI bir
+                    // is parcaciginda yakalaniyor ve oradan bildirim gondermek
+                    // WPF baglamasini patlatirdi.
+                    Notify(nameof(EngineVersionText));
                     SetStatus(AppStatus.Running, "KORUMA AKTİF");
                     break;
                 case WinwsState.Faulted:

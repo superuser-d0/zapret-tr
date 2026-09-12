@@ -193,6 +193,85 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
+    /// Bu satir arayuz gunlugune GIRMEMELI mi.
+    /// </summary>
+    /// <remarks>
+    /// dnscrypt-proxy acilista butun cozumleyici listesini yokluyor ve her biri
+    /// icin satir yaziyor: "OK (DNSCrypt) rtt: ...", "additional certificate",
+    /// "post-quantum ... key exchange", ardindan da 340 satirlik bir "Sorted
+    /// latencies" tablosu. Toplam bes yuz satiri asiyor.
+    ///
+    /// Arayuz gunlugu 500 satirla sinirli. Yani bu dokum, gunlukteki HER SEYI
+    /// disari itiyor -- baslatma komutunu, winws'in soylediklerini, test
+    /// sonuclarini. Gercek bir kullanicinin gonderdigi raporda tam olarak bu
+    /// oldu: 523 satirlik dosyanin 470'i cozumleyici listesiydi ve teshis icin
+    /// gereken satirlarin cogu ring buffer'dan dusmustu.
+    ///
+    /// Gurultu susturuluyor, BILGI degil: hata ve uyari seviyeleri her zaman
+    /// geciyor, "en dusuk gecikmeli sunucu" ozeti de geciyor. Susturulan sey
+    /// yalnizca sunucu basina tekrar eden satirlar.
+    /// </remarks>
+    public static bool IsNoise(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return true;
+        }
+
+        // Hata ve uyarilar HER ZAMAN gecer: susturma yalnizca gurultu icin.
+        // dnscrypt'in bir sorunu varsa kullanicinin ad cozumu tehlikede demektir.
+        foreach (var seviye in new[] { "[ERROR]", "[WARNING]", "[CRITICAL]", "[FATAL]", "[PANIC]" })
+        {
+            if (line.Contains(seviye, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        foreach (var gurultu in new[]
+                 {
+                     "Sorted latencies:",
+                     "] OK (DNSCrypt)",
+                     "] OK (DoH)",
+                     "] OK (ODoH)",
+                     "additional certificate",
+                     "post-quantum",
+                 })
+        {
+            if (line.Contains(gurultu, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return IsLatencyRow(line);
+    }
+
+    /// <summary>Gecikme tablosunun bir satiri mi: "[NOTICE] -    19ms &lt;ad&gt;".</summary>
+    private static bool IsLatencyRow(string line)
+    {
+        var i = line.IndexOf("] -", StringComparison.Ordinal);
+        if (i < 0)
+        {
+            return false;
+        }
+
+        var j = i + 3;
+        while (j < line.Length && line[j] == ' ')
+        {
+            j++;
+        }
+
+        var basi = j;
+        while (j < line.Length && char.IsAsciiDigit(line[j]))
+        {
+            j++;
+        }
+
+        return j > basi && j + 1 < line.Length && line[j] == 'm' && line[j + 1] == 's';
+    }
+
+    /// <summary>
     /// Yerel cozumleyici cevap veriyor mu. Ag ayarina bakmadan, dogrudan
     /// 127.0.0.1:53'e bir sorgu atarak olcer.
     /// </summary>

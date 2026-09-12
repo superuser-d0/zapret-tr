@@ -47,6 +47,25 @@ public sealed class WinwsRunner : IAsyncDisposable
     /// <summary>Su an calisan komutun argumanlari. Durmusken null.</summary>
     public IReadOnlyList<string>? CurrentArguments { get; private set; }
 
+    /// <summary>
+    /// winws'in KENDI bildirdigi surum ("v72.12"). Hic calismadiysa null.
+    /// </summary>
+    /// <remarks>
+    /// Sabit bir metin yerine ikilinin kendi soyledigi tutuluyor, cunku ikisi
+    /// AYRISMIS durumdaydi: arayuz "winws v72.13" yaziyordu ama gercek bir
+    /// kullanicinin gunlugunde motor "github version v72.12" diyordu.
+    ///
+    /// Sebebi tedarik zincirinde: <c>winws.exe</c> <c>zapret-win-bundle</c>
+    /// deposundan bir COMMIT ile sabitleniyor (o depoda tag yok), yalnizca sahte
+    /// yuk dosyalari ve filtre parcalari <c>zapret</c> deposunun v72.13
+    /// tag'inden geliyor. Yani "v72.13" hicbir zaman winws'in surumu degildi.
+    ///
+    /// Yanlis surum bildirmek teshisi dogrudan bozar: gelen bir hata
+    /// bildiriminde hangi ikilinin kostugu bilinmezse, bir secenegin var olup
+    /// olmadigi bile tartisilamaz.
+    /// </remarks>
+    public string? ReportedVersion { get; private set; }
+
     public bool IsRunning
     {
         get
@@ -131,6 +150,11 @@ public sealed class WinwsRunner : IAsyncDisposable
                 if (string.IsNullOrWhiteSpace(satir))
                 {
                     return;
+                }
+
+                if (ParseVersion(satir) is { } surum)
+                {
+                    ReportedVersion = surum;
                 }
 
                 lock (ilkSatirlar)
@@ -269,6 +293,35 @@ public sealed class WinwsRunner : IAsyncDisposable
         return string.IsNullOrWhiteSpace(message)
             ? $"winws parametreleri reddetti (kod {process.ExitCode})"
             : message;
+    }
+
+    /// <summary>
+    /// winws'in acilista yazdigi surum satirindan surumu cikarir.
+    /// </summary>
+    /// <remarks>
+    /// Satir su bicimde geliyor: <c>github version v72.12 (5cc46a98...)</c>.
+    /// Eslesmezse null doner -- tahmin etmektense bilmemek daha iyi.
+    /// </remarks>
+    public static string? ParseVersion(string? line)
+    {
+        const string onEk = "github version ";
+
+        if (line is null)
+        {
+            return null;
+        }
+
+        var i = line.IndexOf(onEk, StringComparison.OrdinalIgnoreCase);
+        if (i < 0)
+        {
+            return null;
+        }
+
+        var kalan = line[(i + onEk.Length)..].TrimStart();
+        var bosluk = kalan.IndexOf(' ');
+        var surum = (bosluk < 0 ? kalan : kalan[..bosluk]).Trim();
+
+        return string.IsNullOrEmpty(surum) ? null : surum;
     }
 
     /// <summary>
