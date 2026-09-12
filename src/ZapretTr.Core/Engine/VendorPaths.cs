@@ -81,8 +81,18 @@ public sealed class VendorPaths
     /// yukari dogru depo kokunu arar (gelistirme hali).
     /// </summary>
     /// <exception cref="DirectoryNotFoundException">
-    /// Bulunamazsa. Mesaj cozumu de soyler: fetch-upstream.ps1 calistirilmamis olabilir.
+    /// Bulunamazsa. Mesaj once KULLANICININ yapabilecegi seyi soyler.
     /// </exception>
+    /// <remarks>
+    /// Mesajin sirasi kasitli. Eskiden yalnizca "depo kokunden
+    /// fetch-upstream.ps1 calistir" yaziyordu -- yani kurulum paketiyle gelen bir
+    /// kullaniciya, elinde olmayan bir depoda, kullanamayacagi bir komut. Oysa
+    /// KURULU bir makinede bu dosyanin kaybolmasinin en olasi sebebi belli:
+    /// WinDivert cekirdek surucusu tasidigi icin virus programlari
+    /// <c>winws.exe</c> ve <c>WinDivert64.sys</c>'i sik sik karantinaya aliyor.
+    /// Kurulum sorunsuz bitiyor, dosyalar sonradan siliniyor ve kullanicinin
+    /// gordugu tek sey uygulamanin calismamasi oluyor.
+    /// </remarks>
     public static VendorPaths Locate(string? startDirectory = null)
     {
         foreach (var candidate in EnumerateCandidates(startDirectory))
@@ -93,11 +103,26 @@ public sealed class VendorPaths
             }
         }
 
-        throw new DirectoryNotFoundException(
-            "vendor/zapret-winws bulunamadi (winws.exe yok). " +
-            "Upstream ikilileri henuz indirilmemis olabilir: depo kokunden " +
-            "'powershell -ExecutionPolicy Bypass -File tools\\fetch-upstream.ps1' calistir.");
+        throw new DirectoryNotFoundException(MissingFilesAdvice("winws.exe"));
     }
+
+    /// <summary>
+    /// Eksik dosya durumunda kullaniciya gosterilecek metin.
+    /// </summary>
+    /// <remarks>
+    /// Tek yerde duruyor cunku ayni durum uc ayri yoldan bildiriliyordu
+    /// (<see cref="Locate"/>, <c>WinwsRunner.Start</c>, <c>DnsCryptRunner</c>) ve
+    /// ucu de kullaniciya yalnizca gelistirici talimati veriyordu.
+    /// </remarks>
+    public static string MissingFilesAdvice(string missing) =>
+        $"Kurulum dosyalari eksik: {missing}. " +
+        "En sik sebep virus programinin dosyalari karantinaya almasi -- ZapretTR " +
+        "cekirdek modunda calisan bir ag surucusu (WinDivert) tasiyor ve bu " +
+        "surucu sik sik yanlis alarm veriyor. Cozum: virus programinin " +
+        "karantinasina bakip ZapretTR klasorunu istisna listesine ekleyin, sonra " +
+        "kurulum paketini yeniden calistirin. " +
+        "(Depodan calistiriyorsaniz: 'powershell -ExecutionPolicy Bypass -File " +
+        "tools\\fetch-upstream.ps1'.)";
 
     /// <summary>Bulunabildiyse dondurur, bulunamazsa null. Kullanicidan once durum gostermek isteyen kod icin.</summary>
     public static VendorPaths? TryLocate(string? startDirectory = null)

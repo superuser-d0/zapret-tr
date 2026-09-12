@@ -105,7 +105,7 @@ public static class EnvironmentReport
         if (vendor is null)
         {
             lines.Add("  winws.exe BULUNAMADI -- kurulum eksik ya da bozuk.");
-            lines.Add("  Cozum: uygulamayi kaldirip kurulum paketini yeniden calistirin.");
+            lines.Add("  " + VendorPaths.MissingFilesAdvice("winws.exe"));
             return Task.FromResult<IReadOnlyList<string>>(lines);
         }
 
@@ -119,7 +119,9 @@ public static class EnvironmentReport
         else
         {
             lines.Add($"  {missing.Count} DOSYA EKSIK: " + string.Join(", ", missing.Select(Path.GetFileName)));
-            lines.Add("  Bu haliyle hicbir strateji calisamaz. Kurulumu yenileyin.");
+            lines.Add("  Bu haliyle hicbir strateji calisamaz.");
+            lines.Add("  " + VendorPaths.MissingFilesAdvice(
+                string.Join(", ", missing.Select(Path.GetFileName))));
         }
 
         lines.Add("  dnscrypt-proxy.exe: " + (File.Exists(vendor.DnsCryptExe) ? "var" : "YOK"));

@@ -70,8 +70,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         if (!File.Exists(_vendor.DnsCryptExe))
         {
             throw new FileNotFoundException(
-                $"dnscrypt-proxy.exe bulunamadi: {_vendor.DnsCryptExe}. " +
-                "Depo kokunden 'tools/fetch-upstream.ps1' calistirin.",
+                VendorPaths.MissingFilesAdvice("dnscrypt-proxy.exe"),
                 _vendor.DnsCryptExe);
         }
 

@@ -1,3 +1,7 @@
+// System.IO acikca yaziliyor: bu projede ortulu using degil (MainViewModel.cs de
+// ayni sebeple yaziyor). Cokme gunlugunu diske yazan yol Directory/Path/File
+// kullaniyor.
+using System.IO;
 using System.Windows;
 using ZapretTr.Core.Engine;
 using ZapretTr.Core.Profiles;

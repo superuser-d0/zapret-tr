@@ -82,9 +82,8 @@ public sealed class WinwsRunner : IAsyncDisposable
         if (missing.Count > 0)
         {
             throw new FileNotFoundException(
-                "winws calistirilamaz, eksik dosya(lar): " +
-                string.Join(", ", missing.Select(Path.GetFileName)) +
-                ". Depo kokunden 'tools/fetch-upstream.ps1' calistirin.",
+                VendorPaths.MissingFilesAdvice(
+                    string.Join(", ", missing.Select(Path.GetFileName))),
                 missing[0]);
         }
 

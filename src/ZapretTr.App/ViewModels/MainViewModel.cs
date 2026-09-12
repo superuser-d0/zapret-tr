@@ -128,8 +128,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var missing = _vendor.FindMissingFiles();
             if (missing.Count > 0)
             {
-                SetStatus(AppStatus.NotReady, "EKSİK DOSYA",
-                    $"{missing.Count} upstream dosyası eksik — tools/fetch-upstream.ps1 çalıştırın.");
+                // Kullaniciya "fetch-upstream.ps1 calistirin" demek, kurulum
+                // paketiyle gelen birine elinde olmayan bir depoda
+                // kullanamayacagi bir komut vermekti. Kurulu bir makinede bu
+                // dosyalarin kaybolmasinin en olasi sebebi virus programinin
+                // WinDivert surucusunu karantinaya almasi.
+                SetStatus(AppStatus.NotReady, "KURULUM DOSYALARI EKSİK",
+                    $"{missing.Count} dosya eksik. Ayrıntılar ve çözüm günlükte.");
+
+                Append(VendorPaths.MissingFilesAdvice(
+                    string.Join(", ", missing.Select(Path.GetFileName))), isError: true);
+                IsLogExpanded = true;
             }
         }
         catch (Exception ex)
