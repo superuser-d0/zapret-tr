@@ -6,7 +6,7 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [0.1.20]
+## [0.1.19]
 
 ### Eklendi
 
@@ -48,6 +48,20 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   düzeliyor. Kafa karıştırıcılık sırasında en üst sıradaki belirti biçimi. Geri alırken de
   boşaltılıyor.
 
+
+- **"Raporu Kaydet" artık makinenin ölçülen durumunu da yazıyor.** Eski rapor yalnızca
+  görünüm modelinin *bildiği* şeyleri taşıyordu — seçili profil, seçili strateji, günlük.
+  Oysa "olmadı" bildirimlerinin çoğunda bunların hiçbiri yanlış değil; yanlış olan şey
+  görünüm modelinin **bakmadığı** yerde duruyor. Rapora giren yeni bölüm o soruları
+  cevaplıyor: yönetici yetkisi var mı, upstream dosyaları tam mı, `winws`/`dnscrypt`/
+  `ZapretTR` süreçlerinden kaç tane ayakta, iki servis kurulu ve çalışıyor mu, sistem
+  DNS'i kimde ve `127.0.0.1:53` cevap veriyor mu, hangi arayüzde hangi DNS yazılı,
+  GoodbyeDPI gibi çakışan bir araç açık mı, `learned.json`'da kaç kayıt var.
+
+  Asıl kazanç, kullanıcı bilgisayarı yeniden başlatıp uygulamayı **yeni** açtığında
+  görünüyor: o durumda günlük neredeyse boş ve eski rapor biçimi "çalışmadı" cümlesine
+  hiçbir şey ekleyemiyordu.
+
 ### Düzeltildi
 
 Hepsi **tek bir gerçek kullanıcı raporundan** çıktı (2026-09-12, TTNET, 0.1.18).
@@ -87,28 +101,6 @@ Rapor "Raporu Kaydet" ile alınmıştı; yani kanal işe yaradı.
   dayanıyordu ve düzeltildi. Artık motorun kendi bildirdiği sürüm gösteriliyor; hiç
   çalışmadıysa uydurmak yerine ikilinin nereden geldiği yazılıyor.
 
-### Bilinen — çözülmedi
-
-- **Test 3 bölüm için çalışan strateji buluyor, 60 saniye sonra çalışma zamanında tcp443
-  açılmıyor.** Aynı raporda, aynı oturumda: 23:56:31'de HTTPS için `fake + ttl4`
-  doğrulanıyor ("açılan: discord-guncelleme, discord"), 23:57:37'de başlatma sonrası
-  doğrulama 1/4 veriyor. Aynı sonuç bir önceki başlatmada da görüldü, yani tek seferlik
-  değil.
-
-  İki aday sebep var ve hangisi olduğu **bilinmiyor**: (a) test her bölümü ayrı bir winws
-  örneğiyle ve `--ipset-ip` ile ölçüyor, çalışma zamanı üçünü tek örnekte ipset'siz
-  çalıştırıyor; (b) çalışma zamanı komutunda QUIC bölümü yüzünden global filtreye
-  `--wf-raw-part` giriyor, tcp443 ölçümünde ise o parça yok. Ayırt edici deney ve
-  "ölçmeden dokunma" uyarısı `docs/DEVAM.md`'de.
-
----
-
-**Buradan aşağısı 0.1.19 için hazırlanmıştı ama o sürüm yayınlanmadı.** Paketi üretildi,
-taslak açıldı, yayına çevrilmeden üzerine yeni düzeltmeler geldi ve taslak bayatladı.
-Dolayısıyla aşağıdakiler kullanıcıya **ilk kez bu sürümle** ulaşıyor; ayrı bir bölümde
-bırakmak, hiç var olmamış bir sürümün notunu yazmak olurdu.
-
-### Düzeltildi
 
 Hepsinin çıkış noktası tek bir saha bildirimi: *"kurdum, bilgisayara restart attım,
 olmadı."* Tek cümle, ekran görüntüsü yok, günlük yok. Bu cümleyi üretebilecek bütün
@@ -207,20 +199,19 @@ yollar tek tek tarandı; aşağıdakiler bulunanlar.
   dosyasına yazılıyor, kullanıcıya gösteriliyor ve pencere ayakta kalıyor — yarım çalışan
   bir pencere, kaybolan bir pencereden iyidir.
 
-### Eklendi
+### Bilinen — çözülmedi
 
-- **"Raporu Kaydet" artık makinenin ölçülen durumunu da yazıyor.** Eski rapor yalnızca
-  görünüm modelinin *bildiği* şeyleri taşıyordu — seçili profil, seçili strateji, günlük.
-  Oysa "olmadı" bildirimlerinin çoğunda bunların hiçbiri yanlış değil; yanlış olan şey
-  görünüm modelinin **bakmadığı** yerde duruyor. Rapora giren yeni bölüm o soruları
-  cevaplıyor: yönetici yetkisi var mı, upstream dosyaları tam mı, `winws`/`dnscrypt`/
-  `ZapretTR` süreçlerinden kaç tane ayakta, iki servis kurulu ve çalışıyor mu, sistem
-  DNS'i kimde ve `127.0.0.1:53` cevap veriyor mu, hangi arayüzde hangi DNS yazılı,
-  GoodbyeDPI gibi çakışan bir araç açık mı, `learned.json`'da kaç kayıt var.
+- **Test 3 bölüm için çalışan strateji buluyor, 60 saniye sonra çalışma zamanında tcp443
+  açılmıyor.** Aynı raporda, aynı oturumda: 23:56:31'de HTTPS için `fake + ttl4`
+  doğrulanıyor ("açılan: discord-guncelleme, discord"), 23:57:37'de başlatma sonrası
+  doğrulama 1/4 veriyor. Aynı sonuç bir önceki başlatmada da görüldü, yani tek seferlik
+  değil.
 
-  Asıl kazanç, kullanıcı bilgisayarı yeniden başlatıp uygulamayı **yeni** açtığında
-  görünüyor: o durumda günlük neredeyse boş ve eski rapor biçimi "çalışmadı" cümlesine
-  hiçbir şey ekleyemiyordu.
+  İki aday sebep var ve hangisi olduğu **bilinmiyor**: (a) test her bölümü ayrı bir winws
+  örneğiyle ve `--ipset-ip` ile ölçüyor, çalışma zamanı üçünü tek örnekte ipset'siz
+  çalıştırıyor; (b) çalışma zamanı komutunda QUIC bölümü yüzünden global filtreye
+  `--wf-raw-part` giriyor, tcp443 ölçümünde ise o parça yok. Ayırt edici deney ve
+  "ölçmeden dokunma" uyarısı `docs/DEVAM.md`'de.
 
 ### Değişti
 
