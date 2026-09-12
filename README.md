@@ -12,7 +12,7 @@ Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığ
 [![lisans](https://img.shields.io/badge/lisans-MIT-blue)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-Windows%20x64-0078d4)](https://github.com/superuser-d0/zapret-tr/releases/latest)
 
-### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Yavaşlatır mı](#bilgisayarı-yavaşlatır-mı) · [Sık sorulanlar](#sık-sorulanlar)
+### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Yavaşlatır mı](#bilgisayarı-yavaşlatır-mı) · [Sık sorulanlar](#sık-sorulanlar) · [Sorun giderme](docs/SORUN-GIDERME.md)
 
 <img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
 
@@ -113,6 +113,10 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 
 Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
 katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
+
+**Ekranda bir hata görüyorsanız** ne anlama geldiği ve ne yapmanız gerektiği
+[sorun giderme rehberinde](docs/SORUN-GIDERME.md): parametre bulunamazsa, koruma
+başlamazsa, internet giderse.
 
 **Bir şey çalışmıyorsa önce "Raporu Kaydet"e basın.** Dosya, günlüğün yanında makinenin o
 anki durumunu da yazar: yönetici yetkisi var mı, kurulum dosyaları tam mı, winws ve

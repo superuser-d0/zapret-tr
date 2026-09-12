@@ -9,6 +9,10 @@ contact_links:
     url: https://github.com/superuser-d0/zapret-tr#hangi-hatlarda-doğrulandı
     about: "Superonline, TurkNet, Vodafone ve diğerlerinde hâlâ tek bir doğrulanmış ölçüm yok."
 
+  - name: Sorun giderme rehberi
+    url: https://github.com/superuser-d0/zapret-tr/blob/main/docs/SORUN-GIDERME.md
+    about: "Ekrandaki her hata için ne yapılacağı: parametre bulunamadı, başlatılamadı, servis durmuş, internet gitti."
+
   - name: Kurulum ve kullanim sorulari
     url: https://github.com/superuser-d0/zapret-tr#sık-sorulanlar
     about: "Servis durmus, parametre bulunamadi, DNS acilmiyor gibi bilinen durumlar burada yazili."
