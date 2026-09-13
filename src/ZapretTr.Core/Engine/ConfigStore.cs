@@ -51,6 +51,18 @@ public sealed class AppConfig
     /// </remarks>
     [JsonPropertyName("lastRunVersion")]
     public string? LastRunVersion { get; set; }
+
+    /// <summary>Otomatik baslatma servisi kullanici tarafindan duraklatildi mi.</summary>
+    /// <remarks>
+    /// Gercegin kaynagi servisin kendi baslangic turu
+    /// (<see cref="ServiceManager.GetStatusAsync"/>); bu alan yalnizca YUKSELTMEDE
+    /// gerekiyor. Kurulum paketi eski servisleri silip yeniden kuruyor ve silinen
+    /// servisle birlikte "duraklatildi" bilgisi de kayboluyordu -- VPN icin
+    /// korumayi kapatan kullanici, guncellemeden sonra VPN'inin yine
+    /// baglanmadigini gorurdu.
+    /// </remarks>
+    [JsonPropertyName("servicePaused")]
+    public bool ServicePaused { get; set; }
 }
 
 /// <summary>

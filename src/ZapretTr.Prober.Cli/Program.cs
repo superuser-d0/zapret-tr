@@ -197,7 +197,7 @@ if (options.ServiceCommand is { } serviceCommand)
         case "status":
         {
             var status = await ServiceManager.GetStatusAsync();
-            Console.WriteLine($"winws servisi      : {(status.WinwsInstalled ? "kurulu" : "yok")}");
+            Console.WriteLine($"winws servisi      : {(!status.WinwsInstalled ? "yok" : status.WinwsRunning ? "kurulu, calisiyor" : status.WinwsPaused ? "kurulu, DURAKLATILDI" : "kurulu, DURMUS")}");
             Console.WriteLine($"DNS servisi        : {(status.DnsInstalled ? "kurulu" : "yok")}");
             Console.WriteLine($"DNS yonlendirmesi  : {SystemDnsManager.BackupOwner ?? "yok"}");
             return 0;
@@ -258,8 +258,27 @@ if (options.ServiceCommand is { } serviceCommand)
             return 0;
         }
 
+        case "duraklat":
+        case "pause":
+        case "devam":
+        case "resume":
+        {
+            var sonuc = serviceCommand is "duraklat" or "pause"
+                ? await ServiceManager.PauseAsync()
+                : await ServiceManager.ResumeAsync();
+
+            foreach (var step in sonuc)
+            {
+                var mark = step.Succeeded ? "[+]" : "[!]";
+                var detail = string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail;
+                Console.WriteLine($"   {mark} {step.Description}{detail}");
+            }
+
+            return sonuc.All(s => s.Succeeded) ? 0 : 1;
+        }
+
         default:
-            Console.Error.WriteLine($"Bilinmeyen servis komutu: {serviceCommand} (kur | kaldir | durum)");
+            Console.Error.WriteLine($"Bilinmeyen servis komutu: {serviceCommand} (kur | kaldir | durum | duraklat | devam)");
             return 4;
     }
 }
@@ -1419,7 +1438,7 @@ internal sealed record CliOptions(
         Console.WriteLine("  --doh                   Hedefleri şifreli DNS ile çözer (DNS kaçırma varsa şart).");
         Console.WriteLine("  --dns ac|kapat|durum    Sistem geneli şifreli DNS (dnscrypt-proxy).");
         Console.WriteLine("  --dns test              Tam döngüyü dener ve sistemi mutlaka eski haline döndürür.");
-        Console.WriteLine("  --service kur|kaldir|durum   Otomatik başlatma servisi (--isp ve --doh ile).");
+        Console.WriteLine("  --service kur|kaldir|durum|duraklat|devam   Otomatik başlatma servisi (--isp ve --doh ile).");
         Console.WriteLine("  --apply                 Seçili ISS yapılandırmasını çalıştırıp önce/sonra farkını ölçer.");
         Console.WriteLine("  --cleanup               winws'i durdurur ve WinDivert sürücüsünü kaldırır.");
         Console.WriteLine("  -y, --yes               Onay sorusunu sormaz (otomatik çalıştırma için).");

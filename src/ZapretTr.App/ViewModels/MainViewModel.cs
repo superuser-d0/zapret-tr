@@ -68,6 +68,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isSecureDnsEnabled = true;
     private bool _isSecureDnsActive;
     private bool _isServiceInstalled;
+    private bool _isServicePaused;
 
     /// <summary>
     /// Kayitli ayarlar geri yuklenirken true.
@@ -86,7 +87,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public MainViewModel()
     {
         StartCommand = new RelayCommand(StartAsync, () => CanStart);
-        PauseCommand = new RelayCommand(PauseAsync, () => Status == AppStatus.Running);
+        PauseCommand = new RelayCommand(PauseAsync, () => CanPause);
         TestCommand = new RelayCommand(RunTestAsync, () => !IsBusy && IsReady);
         CancelTestCommand = new RelayCommand(CancelTestAsync, () => Status == AppStatus.Testing);
         ResetCommand = new RelayCommand(ResetAsync, () => !IsBusy);
@@ -336,8 +337,35 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     public bool CanStart => Status is AppStatus.Ready or AppStatus.Paused
-                            && SelectedStrategy is not null
-                            && !IsServiceInstalled;
+                            && !IsBusy
+                            && (IsServicePaused || (SelectedStrategy is not null && !IsServiceInstalled));
+
+    /// <summary>
+    /// Duraklatma mumkun mu: uygulamanin kendi korumasi calisiyorsa YA DA otomatik
+    /// baslatma servisi calisiyorsa.
+    /// </summary>
+    /// <remarks>
+    /// Eskiden yalnizca ilki vardi. Servis modunda dugme hep kapaliydi ve korumayi
+    /// gecici olarak kapatmanin tek yolu ayari silen "Otomatik Başlatmayı Kaldır"
+    /// ya da "Tüm Ayarları Sıfırla" idi. VPN kullanmak isteyen gercek bir kullanici
+    /// tam olarak bu yuzden sifirlamak zorunda kaldi; gerekcesi
+    /// <see cref="ServiceManager.PauseAsync"/> icinde.
+    /// </remarks>
+    public bool CanPause => !IsBusy
+                            && (Status == AppStatus.Running
+                                || (Status is AppStatus.Ready or AppStatus.Faulted
+                                    && ((IsServiceInstalled && !IsServicePaused) || _hasLeftovers)));
+
+    /// <summary>
+    /// Arkada ZapretTR'den kalan calisan bir sey var mi: winws, dnscrypt ya da DNS
+    /// yonlendirmesi. Varsa Duraklat, koruma "calisiyor" gorunmese de acik kalir.
+    /// </summary>
+    /// <remarks>
+    /// Motor coktugunde ("BEKLENMEDİK DURUŞ") ya da onceki bir oturumdan kalinti
+    /// varken dugme kapaliydi; kullanicinin elinde yalnizca ayari silen
+    /// sifirlama kaliyordu.
+    /// </remarks>
+    private bool _hasLeftovers;
 
     public bool IsBusy
     {
@@ -467,6 +495,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Otomatik baslatma servisi kullanici tarafindan duraklatildi mi.</summary>
+    /// <remarks>
+    /// Duraklatilmis servis <see cref="IsServiceInstalled"/> sayiliyor (kaldirma
+    /// dugmesi gorunur kalsin), ama koruma kapali ve ana dugme onu geri aciyor.
+    /// </remarks>
+    public bool IsServicePaused
+    {
+        get => _isServicePaused;
+        private set
+        {
+            if (Set(ref _isServicePaused, value))
+            {
+                RefreshCommands();
+                RefreshIdlePresentation();
+            }
+        }
+    }
+
     public string ServiceButtonText => IsServiceInstalled
         ? "Otomatik Başlatmayı Kaldır"
         : "Servis Olarak Yükle (Otomatik Başlat)";
@@ -482,6 +528,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task StartAsync()
     {
+        // Duraklatilmis servis KENDI kayitli ayariyla geri aciliyor; secili
+        // stratejiyle uygulama icinde ikinci bir koruma baslatilmiyor.
+        if (IsServicePaused)
+        {
+            await ResumeServiceAsync().ConfigureAwait(true);
+            return;
+        }
+
         if (_runner is null || _vendor is null || SelectedStrategy is null)
         {
             return;
@@ -1071,14 +1125,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            ConfigStore.Save(new AppConfig
-            {
-                SelectedIspId = SelectedIsp?.Profile?.Id,
-                SelectedStrategyId = SelectedStrategy?.Id,
-                SelectedStrategyArgs = SelectedStrategy?.Args,
-                SecureDnsEnabled = IsSecureDnsEnabled,
-                CustomTarget = string.IsNullOrWhiteSpace(CustomTarget) ? null : CustomTarget,
-            });
+            // Mevcut dosyanin USTUNE yaziliyor, yerine degil. Eskiden her kayit
+            // sifirdan bir AppConfig yaziyordu ve arayuzde karsiligi olmayan
+            // alanlar sessizce siliniyordu: elle kapatilan guncelleme denetimi
+            // (updateCheckEnabled) bir sonraki secimde yeniden aciliyor,
+            // lastRunVersion her seferinde null oluyordu -- gercek makinedeki
+            // config.json'da oyleydi.
+            var config = ConfigStore.Load();
+            config.SelectedIspId = SelectedIsp?.Profile?.Id;
+            config.SelectedStrategyId = SelectedStrategy?.Id;
+            config.SelectedStrategyArgs = SelectedStrategy?.Args;
+            config.SecureDnsEnabled = IsSecureDnsEnabled;
+            config.CustomTarget = string.IsNullOrWhiteSpace(CustomTarget) ? null : CustomTarget;
+            ConfigStore.Save(config);
         }
         catch (Exception ex)
         {
@@ -1102,8 +1161,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             //
             // Bu durumda servisi "kurulu degil" sayiyoruz: boylece Baslat
             // ACIK kaliyor ve kullanici korumasini elle baslatabiliyor.
+            _hasLeftovers = HasLeftoverProcessesOrRedirect();
             IsServiceStopped = status.InstalledButStopped;
-            IsServiceInstalled = status.WinwsInstalled && status.WinwsRunning;
+            IsServicePaused = status.WinwsPaused;
+            IsServiceInstalled = status.WinwsInstalled && (status.WinwsRunning || status.WinwsPaused);
+            SyncServicePausedSetting(status.WinwsPaused);
+            RefreshCommands();
 
             if (status.InstalledButStopped)
             {
@@ -1113,7 +1176,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("  Sorun sürerse bilgisayarı bir kez yeniden başlatın.");
             }
 
-            if (Status == AppStatus.Ready)
+            // Servis duraklatildiysa ya da duraklatmadan ciktiysa bant da degismeli.
+            // Uygulamanin KENDI duraklatmasina dokunulmuyor: onda servis kurulu degil.
+            if (Status == AppStatus.Ready
+                || (Status == AppStatus.Paused && IsServiceInstalled))
             {
                 SetIdleStatus();
             }
@@ -1124,6 +1190,43 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             IsServiceInstalled = false;
             IsServiceStopped = false;
+        }
+    }
+
+    private static bool HasLeftoverProcessesOrRedirect()
+    {
+        try
+        {
+            return System.Diagnostics.Process.GetProcessesByName("winws").Length > 0
+                   || System.Diagnostics.Process.GetProcessesByName("dnscrypt-proxy").Length > 0
+                   || SystemDnsManager.HasBackup;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Yapilandirmadaki "servis duraklatildi" bilgisini servisin gercek durumuna esitler.</summary>
+    /// <remarks>
+    /// Bilgi yalnizca yukseltmede okunuyor (bkz. <see cref="AppConfig.ServicePaused"/>).
+    /// Her durum okumasinda esitleniyor ki servis baska bir yoldan acildiysa ya da
+    /// kaldirildiysa guncelleme eski bir niyete gore davranmasin.
+    /// </remarks>
+    private void SyncServicePausedSetting(bool paused)
+    {
+        try
+        {
+            var config = ConfigStore.Load();
+            if (config.ServicePaused != paused)
+            {
+                config.ServicePaused = paused;
+                ConfigStore.Save(config);
+            }
+        }
+        catch (Exception ex)
+        {
+            Append("Duraklatma bilgisi kaydedilemedi: " + ex.Message, isError: true);
         }
     }
 
@@ -1474,7 +1577,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // Olcum suresince kullanici durdurmus, test baslatmis ya da servisi
         // kaldirmis olabilir: o durumda "acmiyor" yazmak kafa karistirir.
         bool HalaDevrede() => viaService
-            ? Status == AppStatus.Ready && IsServiceInstalled
+            ? Status == AppStatus.Ready && IsServiceInstalled && !IsServicePaused
             : Status == AppStatus.Running;
 
         var uyariDurumu = viaService ? AppStatus.Ready : AppStatus.Running;
@@ -1571,22 +1674,114 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // kendi hatasini korumanin hatasi gibi gostermek yanlis olur.
         }
     }
+    /// <summary>
+    /// "Duraklat": ZapretTR'nin arkada calisan HER SEYINI durdurur, ayari silmez.
+    /// </summary>
+    /// <remarks>
+    /// Eskiden iki ayri ve eksik yol vardi. Elle baslatilan korumada yalnizca
+    /// uygulamanin kendi winws'i ile sifreli DNS'i kapaniyordu; gercek makinede
+    /// olculdu (2026-09-13) ki WinDivert surucusu Duraklat'tan 20 saniye sonra bile
+    /// cekirdekte RUNNING kaliyordu, arkada kurulu bir servis varsa ona hic
+    /// dokunulmuyordu. Ayni kullanicida VPN koruma kapatildiktan sonra da baglanmadi
+    /// ve ancak sifirlamayla baglandi. Artik Duraklat sifirlamanin durdurdugu her seyi
+    /// durduruyor (<see cref="WinDivertCleanup.StopEverythingAsync"/>), yalnizca
+    /// hicbir seyi silmiyor; ardindan gercekten bir sey kalip kalmadigini OLCUP
+    /// yaziyor.
+    /// </remarks>
     private async Task PauseAsync()
     {
-        if (_runner is null)
+        IsBusy = true;
+        IsLogExpanded = true;
+
+        try
         {
-            return;
+            Append("Duraklatılıyor: koruma, şifreli DNS, servisler ve ağ sürücüsü kapatılıyor...");
+
+            if (_runner is not null)
+            {
+                await _runner.StopAsync().ConfigureAwait(true);
+            }
+
+            await StopSecureDnsAsync().ConfigureAwait(true);
+            AppendSteps(await WinDivertCleanup.StopEverythingAsync().ConfigureAwait(true));
+            await RefreshServiceStatusAsync().ConfigureAwait(true);
+
+            var kalan = await WinDivertCleanup.FindLeftoversAsync().ConfigureAwait(true);
+            if (kalan.Count > 0)
+            {
+                Append("UYARI: duraklatmadan sonra hâlâ duranlar: " + string.Join("; ", kalan), isError: true);
+                SetStatus(AppStatus.Faulted, "TAM DURAKLATILAMADI",
+                    "Bazı parçalar durdurulamadı; ayrıntılar günlükte. Olmazsa \"Tüm Ayarları Sıfırla\".");
+                return;
+            }
+
+            Append("Duraklatıldı. Arkada hiçbir şey kalmadı: winws ve dnscrypt çalışmıyor,");
+            Append("ağ sürücüsü çekirdekte değil, sistem DNS'i eski hâlinde. Ayarlarınız silinmedi.");
+
+            if (!IsServicePaused && SelectedStrategy is null)
+            {
+                // Devam ettirilecek bir koruma yok; yalnizca kalintilar temizlendi.
+                SetIdleStatus("Arkada kalan her şey durduruldu.");
+                return;
+            }
+
+            SetStatus(AppStatus.Paused, "DURAKLATILDI",
+                "Koruma, şifreli DNS ve ağ sürücüsü kapalı; DNS ayarınız eski hâlinde, VPN kullanabilirsiniz. "
+                + "\"DEVAM ET\" ile kaldığı yerden sürer.");
         }
+        catch (Exception ex)
+        {
+            Append(ex.Message, isError: true);
+            SetStatus(AppStatus.Faulted, "DURAKLATILAMADI", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
 
-        await _runner.StopAsync().ConfigureAwait(true);
+    /// <summary>Duraklatilmis servisi kayitli ayariyla geri acar.</summary>
+    private async Task ResumeServiceAsync()
+    {
+        IsBusy = true;
+        IsLogExpanded = true;
 
-        // Duraklatmak "korumayi gecici olarak kaldir" demek; DNS yonlendirmesi de
-        // korumanin parcasi. Onu acik birakmak, kullanicinin kapattigini sandigi
-        // bir seyin sistem ayarlarinda durmaya devam etmesi olurdu.
-        await StopSecureDnsAsync().ConfigureAwait(true);
+        try
+        {
+            Append("Otomatik başlatma servisi kaldığı yerden sürdürülüyor...");
+            AppendSteps(await ServiceManager.ResumeAsync().ConfigureAwait(true));
+            await RefreshServiceStatusAsync().ConfigureAwait(true);
 
-        SetStatus(AppStatus.Paused, "DURAKLATILDI", "Yapılandırma korundu.");
-        Append("Duraklatıldı. Ayarlar korundu, sistem DNS'i geri alındı.");
+            if (IsServiceInstalled && !IsServicePaused && !IsServiceStopped)
+            {
+                Append("Koruma yeniden açıldı; servis kurulduğu andaki ayarla çalışıyor.");
+                _ = VerifyAfterStartAsync(viaService: true);
+            }
+            else
+            {
+                SetStatus(AppStatus.Faulted, "DEVAM EDİLEMEDİ",
+                    "Servis yeniden başlatılamadı; ayrıntılar günlükte.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Append(ex.Message, isError: true);
+            SetStatus(AppStatus.Faulted, "DEVAM EDİLEMEDİ", ex.Message);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void AppendSteps(IEnumerable<CleanupStep> steps)
+    {
+        foreach (var step in steps)
+        {
+            Append((step.Succeeded ? "[+] " : "[!] ") + step.Description
+                   + (string.IsNullOrWhiteSpace(step.Detail) ? string.Empty : " — " + step.Detail),
+                   isError: !step.Succeeded);
+        }
     }
 
     private async Task RunTestAsync()
@@ -1971,6 +2166,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             CustomTarget = string.Empty;
             IsServiceInstalled = false;
             IsServiceStopped = false;
+            IsServicePaused = false;
             UpdateMessage = null;
 
             LoadIspChoices();
@@ -2025,6 +2221,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
         // DNS geri alinmadan cikmak, kullaniciyi ad cozemez bir makineyle
         // birakmak demek. Cikis yolunda atlanabilecek bir adim degil.
         await StopSecureDnsAsync().ConfigureAwait(true);
+
+        // SURUCU DE CEKIRDEKTEN DUSMELI.
+        //
+        // winws kapaninca WinDivert surucusu kendiliginden dusmuyor; olculdu:
+        // Duraklat'tan 20 saniye sonra hala RUNNING. Uygulamayi kapatan kullanici
+        // arkada hicbir sey kalmadigini dusunuyor. Otomatik baslatma servisi
+        // calisiyorsa surucu onun; dokunulmuyor.
+        try
+        {
+            var status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
+            if (!status.WinwsRunning)
+            {
+                await WinDivertDriver.TryUnloadIdleAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(true);
+            }
+        }
+        catch (Exception)
+        {
+            // Cikis bir surucu hatasi yuzunden takilmamali.
+        }
     }
 
     /// <summary>
@@ -2341,6 +2556,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 case WinwsState.Faulted:
                     SetStatus(AppStatus.Faulted, "BEKLENMEDİK DURUŞ",
                         "winws kendiliğinden kapandı. Ayrıntılar günlükte.");
+
+                    // Motor olse de sifreli DNS ve yonlendirme ayakta olabilir;
+                    // Duraklat onlari kapatabilsin.
+                    _hasLeftovers = HasLeftoverProcessesOrRedirect();
+                    RefreshCommands();
                     break;
                 case WinwsState.Stopped:
                     if (Status == AppStatus.Running)
@@ -2376,6 +2596,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         string headline;
         string guidance;
+
+        if (IsServicePaused)
+        {
+            // Durum degeri Paused: ana dugme "DEVAM ET" okunsun ve servisi geri acsin.
+            SetStatus(AppStatus.Paused, "DURAKLATILDI",
+                (string.IsNullOrWhiteSpace(note) ? string.Empty : note + " ")
+                + "Koruma ve şifreli DNS kapalı, DNS ayarınız eski hâlinde; VPN kullanabilirsiniz. "
+                + "\"DEVAM ET\" ile kaldığı yerden sürer.");
+            return;
+        }
 
         if (IsServiceStopped)
         {
@@ -2454,6 +2684,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void RefreshCommands()
     {
+        Notify(nameof(CanStart));
+        Notify(nameof(CanPause));
         StartCommand.RaiseCanExecuteChanged();
         PauseCommand.RaiseCanExecuteChanged();
         TestCommand.RaiseCanExecuteChanged();

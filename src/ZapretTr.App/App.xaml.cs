@@ -132,6 +132,23 @@ public partial class App : Application
         }
 
         base.OnStartup(e);
+
+        // PENCERE YALNIZCA BURADA KURULUR, App.xaml'daki StartupUri ile DEGIL.
+        //
+        // StartupUri, OnStartup Shutdown() cagirip donse BILE ana pencereyi
+        // kuruyordu -- Shutdown yalnizca siraya konuyor. Pencereyle birlikte
+        // gorunum modeli de kuruluyor ve kurucusu is yapiyor: servis durumunu
+        // okuyup yapilandirmaya yaziyor, DNS kurtarmasi deniyor, guncelleme
+        // sorusu gonderiyor. Yani --uninstall-services, --install-services,
+        // 10 dakikada bir kosan --dns-guard ve "zaten calisiyor" diyen ikinci
+        // ornek, hepsi arkada gorunmez bir arayuz calistiriyordu. Olculdu
+        // (2026-09-13): kurulum paketinin cagirdigi --uninstall-services,
+        // servisleri sildikten sonra bu yoldan config.json'a
+        // "servicePaused": false yazdi ve VPN icin duraklatilmis servis
+        // yukseltmeden sonra calisir halde geri geldi.
+        var window = new MainWindow();
+        MainWindow = window;
+        window.Show();
     }
 
     /// <summary>Tek ornek kilidini alir. Baska bir ornek varsa false.</summary>
@@ -224,8 +241,10 @@ public partial class App : Application
             var winners = RuntimeSelection.Build(profile, config.SelectedStrategyArgs);
             var arguments = new WinwsCommandBuilder(vendor).BuildRuntimeCommand(winners);
 
+            // Duraklatilmis servis duraklatilmis olarak geri kurulur: guncelleme,
+            // kullanicinin VPN icin kapattigi korumayi habersizce acmamali.
             var steps = ServiceManager
-                .InstallAsync(vendor, arguments, config.SecureDnsEnabled)
+                .InstallAsync(vendor, arguments, config.SecureDnsEnabled, startPaused: config.ServicePaused)
                 .GetAwaiter().GetResult();
 
             return steps.All(s => s.Succeeded) ? 0 : 1;

@@ -140,6 +140,138 @@ public static class WinDivertCleanup
         return steps;
     }
 
+    /// <summary>
+    /// "Duraklat": sifirlamanin durdurdugu HER SEYI durdurur, hicbir seyi SILMEZ.
+    /// </summary>
+    /// <remarks>
+    /// Duraklat eskiden yalnizca uygulamanin kendi baslattigi winws ile sifreli
+    /// DNS'i kapatiyordu. Gercek makinede olculdu (2026-09-13): elle "Başlat"
+    /// sonrasi "Duraklat" dendiginde winws ve dnscrypt kapaniyor, DNS geri
+    /// aliniyordu ama WinDivert SURUCUSU 20 saniye sonra bile cekirdekte RUNNING
+    /// duruyordu. Arkada kurulu bir servis varsa ona hic dokunulmuyordu. Ayni
+    /// kullanicida VPN (Proton) koruma kapatildiktan sonra da baglanmadi ve ancak
+    /// "Tüm Ayarları Sıfırla" ile -- surucuyu cekirdekten dusurdukten bir saniye
+    /// sonra -- baglandi. Kullanicinin haklı beklentisi: "duraklat" dediginde
+    /// arkada hicbir sey kalmamali.
+    ///
+    /// Adimlar <see cref="RunAsync"/> ile ayni sirada; farklar:
+    ///
+    ///   * servisler SILINMIYOR, duraklatiliyor (<see cref="ServiceManager.PauseAsync"/>):
+    ///     durur ve acilista baslamaz, kayit ve ayar yerinde kalir;
+    ///   * surucu kaydi silinmiyor, yalnizca durduruluyor (winws bir sonraki
+    ///     baslatmada zaten yeniden kuruyor);
+    ///   * yapilandirma ve ogrenilmis sonuclar SILINMIYOR.
+    /// </remarks>
+    public static async Task<IReadOnlyList<CleanupStep>> StopEverythingAsync(CancellationToken cancellationToken = default)
+    {
+        var steps = new List<CleanupStep>();
+
+        var status = await ServiceManager.GetStatusAsync(cancellationToken).ConfigureAwait(false);
+        if (status.AnyInstalled)
+        {
+            steps.AddRange(await ServiceManager.PauseAsync(cancellationToken).ConfigureAwait(false));
+        }
+
+        // Servisin olmayan (uygulamaya ait ya da yetim) yonlendirme de geri aliniyor.
+        steps.Add(await RestoreDnsAsync(cancellationToken).ConfigureAwait(false));
+
+        steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
+        steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
+
+        // Geri alma bir yerde basarisiz olduysa cozumleyici artik yok ve kart hala
+        // 127.0.0.1'de: otomatige dondur. Sifirlamadaki gerekceyle ayni.
+        steps.Add(await ResetOrphanedDnsAsync(cancellationToken).ConfigureAwait(false));
+        SystemDnsManager.ClearSuspended();
+
+        foreach (var driver in DriverServiceNames)
+        {
+            steps.Add(await RunScAsync("stop", driver, $"{driver} surucusu durduruldu", cancellationToken).ConfigureAwait(false));
+        }
+
+        steps.Add(await WaitDriversGoneAsync(cancellationToken).ConfigureAwait(false));
+        steps.Add(await FlushDnsAsync(cancellationToken).ConfigureAwait(false));
+
+        return steps;
+    }
+
+    /// <summary>
+    /// Duraklatmadan sonra arkada hala calisan ya da yerinde duran seyleri olcer.
+    /// Bos liste: gercekten hicbir sey kalmamis.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> FindLeftoversAsync(CancellationToken cancellationToken = default)
+    {
+        var yukluSuruculer = new List<string>();
+        foreach (var driver in DriverServiceNames)
+        {
+            var (_, output) = await RunProcessAsync("sc.exe", ["query", driver], cancellationToken).ConfigureAwait(false);
+            if (!WinDivertDriver.IsGoneOrStopped(output))
+            {
+                yukluSuruculer.Add(driver);
+            }
+        }
+
+        var status = await ServiceManager.GetStatusAsync(cancellationToken).ConfigureAwait(false);
+
+        return DescribeLeftovers(
+            ProcessCount("winws"), ProcessCount("dnscrypt-proxy"), yukluSuruculer,
+            SystemDnsManager.HasBackup, status.WinwsRunning);
+    }
+
+    /// <summary>Olculen kalintilari kullaniciya yazilacak satirlara cevirir.</summary>
+    public static IReadOnlyList<string> DescribeLeftovers(
+        int winwsProcesses, int dnsCryptProcesses, IReadOnlyList<string> loadedDrivers,
+        bool dnsRedirected, bool serviceRunning)
+    {
+        ArgumentNullException.ThrowIfNull(loadedDrivers);
+
+        var kalan = new List<string>();
+
+        if (winwsProcesses > 0)
+        {
+            kalan.Add($"{winwsProcesses} winws sureci calisiyor");
+        }
+
+        if (dnsCryptProcesses > 0)
+        {
+            kalan.Add($"{dnsCryptProcesses} dnscrypt-proxy sureci calisiyor");
+        }
+
+        if (loadedDrivers.Count > 0)
+        {
+            kalan.Add("ag surucusu cekirdekte (" + string.Join(", ", loadedDrivers) + ")");
+        }
+
+        if (dnsRedirected)
+        {
+            kalan.Add("sistem DNS'i hala ZapretTR'ye yonlendirilmis");
+        }
+
+        if (serviceRunning)
+        {
+            kalan.Add("otomatik baslatma servisi calisiyor");
+        }
+
+        return kalan;
+    }
+
+    private static int ProcessCount(string name)
+    {
+        try
+        {
+            var processes = Process.GetProcessesByName(name);
+            foreach (var process in processes)
+            {
+                process.Dispose();
+            }
+
+            return processes.Length;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
     private static async Task<CleanupStep> RestoreDnsAsync(CancellationToken cancellationToken)
     {
         try

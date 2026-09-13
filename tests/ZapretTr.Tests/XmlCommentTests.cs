@@ -21,7 +21,7 @@ namespace ZapretTr.Tests;
 /// </remarks>
 public sealed class XmlCommentTests
 {
-    private static string RepoRoot
+    internal static string RepoRoot
     {
         get
         {

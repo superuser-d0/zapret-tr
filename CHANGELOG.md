@@ -6,6 +6,73 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Düzeltildi
+
+- **"Duraklat" arkada çalışan her şeyi durdurmuyordu; VPN, koruma kapatıldıktan sonra da
+  bağlanmıyordu.** Gerçek bir kullanıcıda ölçüldü (2026-09-13, Proton VPN 5.1.8). Bağlantı her
+  denemede `dial tcp …:443: i/o timeout` ile düştü. Ancak "Tüm Ayarları Sıfırla" winws'i durdurup
+  WinDivert sürücüsünü çekirdekten düşürdükten **bir saniye sonra** bağlandı. Proton sunucu adını
+  her seferinde sorunsuz çözmüştü: engel DNS değil, paket yolundaydı. Duraklat'ın bıraktıkları:
+  - **Elle başlatılan korumada** yalnızca uygulamanın kendi winws'i ile şifreli DNS'i
+    kapanıyordu. WinDivert sürücüsü Duraklat'tan 20 sn sonra bile çekirdekte `RUNNING` kalıyor,
+    ağ filtreleme altyapısında (WFP) sağlayıcısı ve 20 alt katmanı kayıtlı duruyordu. Çıkış
+    düğmesi de aynısını bırakıyordu.
+  - **Otomatik başlatma servisine** hiç dokunulmuyordu; servis modunda düğme hep kapalıydı.
+  - **Motor çöktüğünde** ("BEKLENMEDİK DURUŞ") düğme kapanıyor, şifreli DNS ve yönlendirme
+    ayakta kalıyordu.
+
+  Aynı günün kayıtlarına göre VPN denemeleri sırasında otomatik başlatma servisinin winws'i
+  açılıştan beri çalışıyordu. Boşta kalan sürücünün tek başına VPN'i bozup bozmadığı ayrıca
+  ölçülmedi.
+
+  Artık **Duraklat, sıfırlamanın durdurduğu her şeyi durduruyor ama hiçbir şeyi silmiyor**:
+  - winws ve dnscrypt süreçleri kapanır;
+  - sistem DNS'i ZapretTR'den önceki hâline döner;
+  - WinDivert sürücüsü çekirdekten düşer;
+  - otomatik başlatma kuruluysa servisler durur ve açılışta başlamaz; yeniden başlatmada da
+    duraklatılmış kalır.
+
+  Ardından geride bir şey kalıp kalmadığı **ölçülüp** günlüğe yazılıyor. Bir şey kaldıysa bant
+  "TAM DURAKLATILAMADI" diyor. Ayar silinmiyor; ana düğme **"DEVAM ET"** oluyor ve korumayı kaldığı
+  yerden açıyor: elle modda aynı ayarla, servis modunda servislerin kayıtlı ayarıyla. Duraklat
+  motor çöktüğünde ve arkada kalıntı varken de açık. **Çıkış** da artık sürücüyü bırakıyor.
+  Diğer ayrıntılar:
+  - DNS geri alınamazsa şifreli DNS servisi internet kesilmesin diye hemen durdurulmuyor.
+  - Duraklatılmış servis "SERVİS DURMUŞ" uyarısı vermiyor, DNS bekçisi duraklatmayı geri almıyor.
+  - Güncelleme duraklatılmış servisi duraklatılmış olarak geri kuruyor.
+  - CLI'ye `--service duraklat|devam` eklendi.
+
+- **Bayrakla çalıştırılan uygulama arkada görünmez bir arayüz kuruyordu.** `App.xaml`'daki
+  `StartupUri`, `OnStartup` `Shutdown()` çağırıp dönse bile ana pencereyi ve görünüm modelini
+  kuruyordu. Görünüm modelinin kurucusu da iş yapıyordu: servis durumunu okuyup yapılandırmaya
+  yazma, DNS kurtarma denemesi, güncelleme sorusu. Bu yol `--uninstall-services`,
+  `--install-services`, 10 dakikada bir koşan `--dns-guard` ve "zaten çalışıyor" diyen ikinci
+  örnekte açıktı. Duraklatmayı sınarken ölçüldü: kurulum paketinin çağırdığı
+  `--uninstall-services` bu yoldan `config.json`'a `"servicePaused": false` yazdı ve duraklatılmış
+  servis yükseltmeden sonra çalışır hâlde geri geldi. Pencere artık yalnızca normal açılışta
+  kuruluyor.
+
+- **Seçim kaydı arayüzde karşılığı olmayan ayarları siliyordu.** Her kayıt yapılandırmayı
+  sıfırdan yazıyordu. Elle kapatılan güncelleme denetimi (`updateCheckEnabled`) bir sonraki
+  seçimde yeniden açılıyor, `lastRunVersion` her seferinde siliniyordu; bu yüzden "Sürüm değişti"
+  notu hiç görünmüyordu. Gerçek makinedeki `config.json`'da `lastRunVersion` `null` idi.
+
+Doğrulama: kurulum paketiyle gerçek makinede, düğmelere UIA ile basılarak iki tur koşuldu.
+
+- **Servis yolu, 88/88:** CLI ve arayüzden duraklat/devam, duraklatılmışken DNS bekçisi turu,
+  duraklatılmışken yükseltme, duraklatılmışken kaldırıp yeniden kurma.
+- **Duraklat'ın her şeyi durdurması, 68/68:** elle Başlat → Duraklat → DEVAM ET; motor çökmüşken
+  Duraklat; Çıkış; servis modunda Duraklat → DEVAM ET.
+
+Her Duraklat ve Çıkış'tan sonra winws ve dnscrypt yok, sürücü çekirdekte değil, DNS otomatik,
+WFP'de WinDivert kaydı sıfır (koruma açıkken 58). Elle modda duraklatma ~4 sn sürdü.
+
+**VPN ile doğrulandı:** aynı kullanıcı elle modda Duraklat'tan sonra Proton VPN'e bağlandı
+(2026-09-13 21:58, Proton günlüğünden). Protokol ve port, öğleden sonra her denemede zaman
+aşımına düşenle aynıydı (WireGuardTls, TCP 443); bağlantı 1,5 sn'de kuruldu.
+
 ## [0.1.20]
 
 Bu sürümün DNS ve motor değişiklikleri **gerçek bir makinede, kurulum paketiyle** sınandı

@@ -22,10 +22,13 @@ durumda ayrıntıyı ve çoğu zaman sebebini yazar; "Ayrıntılar" ile açabili
 | [ÇALIŞIYOR — KISMEN AÇIYOR](#calisiyor-kismen-aciyor) | Bazı adresler açılmıyor | Yeni parametre testi |
 | [BEKLENMEDİK DURUŞ](#beklenmedik-durus) | Koruma kendiliğinden kapandı | Tekrar Başlat, olmazsa yeniden başlatın |
 | [SERVİS DURMUŞ](#servis-durmus) | Otomatik başlatma kurulu ama çalışmıyor | Başlat'a basın ya da servisi yeniden kurun |
+| [DURAKLATILDI](#duraklatildi) | Korumayı siz duraklattınız | "DEVAM ET" ile açın |
+| [TAM DURAKLATILAMADI](#duraklatildi) | Duraklat bir parçayı durduramadı | Günlükteki `hâlâ duranlar` satırına bakın, tekrar Duraklat |
 | [SERVİS İŞLEMİ BAŞARISIZ](#servis-islemi-basarisiz) | Servis kurulamadı ya da kaldırılamadı | Günlükteki `[!]` satırına bakın |
 | [KURULUM DOSYALARI EKSİK](#kurulum-dosyalari-eksik) | Antivirüs büyük ihtimalle dosya sildi | Karantinadan geri alın, yeniden kurun |
 
 Ekranda yazmayan ama sık yaşanan durumlar:
+[VPN bağlanmıyor](#vpn-baglanmiyor) ·
 [İnternet tamamen gitti](#internet-gitti) ·
 [Yeniden başlatınca koruma kapalı geliyor](#yeniden-baslatinca) ·
 [Kalıntı temizliği penceresi](#kalinti-temizligi) ·
@@ -217,6 +220,43 @@ Koruma çalışırken motor kendiliğinden kapandı; o andan itibaren korumasız
 2. Tekrar kapanıyorsa antivirüsün müdahale edip etmediğine bakın ve ZapretTR klasörünü
    istisna listesine ekleyin.
 3. Olmuyorsa bilgisayarı yeniden başlatın. Hâlâ oluyorsa raporu kaydedip bildirin.
+
+<a id="duraklatildi"></a>
+
+### DURAKLATILDI
+
+Korumayı **"Duraklat"** ile siz kapattınız. Bu durumda winws, şifreli DNS ve ağ sürücüsü
+kapalıdır; sistem DNS ayarınız ZapretTR'den önceki hâlindedir. Otomatik başlatma kuruluysa
+bilgisayarı yeniden başlatsanız da kapalı kalır. Ayarlarınız silinmez.
+
+Korumayı geri açmak için **"DEVAM ET"** düğmesine basın. Kaldığı yerden, aynı ayarla sürer.
+
+**"TAM DURAKLATILAMADI"** yazıyorsa bir parça durdurulamamıştır; hangisi olduğu günlükte
+`UYARI: duraklatmadan sonra hâlâ duranlar` satırında yazar. Bir kez daha "Duraklat"a basın.
+Olmazsa "Tüm Ayarları Sıfırla" her şeyi temizler, ama bulunan ayarı da siler.
+
+<a id="vpn-baglanmiyor"></a>
+
+### VPN bağlanmıyor
+
+ZapretTR'nin motoru (winws) ya da ağ sürücüsü devredeyken VPN'ler bağlanamayabilir. Proton
+VPN ile ölçtük: koruma açıkken bağlantı her denemede zaman aşımına düştü; motor durup sürücü
+çekirdekten düştükten bir saniye sonra bağlandı. Sebep DNS değil. Pencereyi X ile kapatmak
+yetmez, çünkü pencere kapanınca koruma arka planda sürer.
+
+**"Duraklat"** arkada çalışan her şeyi kapatır: winws ve şifreli DNS süreçleri, DNS
+yönlendirmesi, ağ sürücüsü ve (kuruluysa) otomatik başlatma servisleri. Sonra geride bir şey
+kalıp kalmadığını ölçüp günlüğe yazar; kaldıysa bant **"TAM DURAKLATILAMADI"** der.
+
+1. VPN'e bağlanmadan önce ZapretTR'de **"Duraklat"** düğmesine basın.
+2. VPN'le işiniz bitince VPN'i kapatın ve **"DEVAM ET"** deyin.
+
+Duraklattıktan sonra da bağlanmıyorsa bant "TAM DURAKLATILAMADI" diyor mu, günlükte hangi
+parçanın durdurulamadığı yazıyor mu, ona bakın. Hiçbir şey kalmadığı yazıyorsa sorun ZapretTR'de
+değil; "Raporu Kaydet" dosyasıyla bildirin.
+
+"Tüm Ayarları Sıfırla" ya da "Otomatik Başlatmayı Kaldır" kullanmanıza **gerek yok**; ikisi
+de bulunan ayarı siler.
 
 <a id="yeniden-baslatinca"></a>
 

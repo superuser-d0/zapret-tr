@@ -171,7 +171,9 @@ public static class EnvironmentReport
         }
         else
         {
-            winws = status.WinwsRunning ? "kurulu ve calisiyor" : "KURULU AMA DURMUS";
+            winws = status.WinwsRunning ? "kurulu ve calisiyor"
+                : status.WinwsPaused ? "kurulu, KULLANICI DURAKLATTI (acilista baslamaz)"
+                : "KURULU AMA DURMUS";
         }
 
         var lines = new List<string>

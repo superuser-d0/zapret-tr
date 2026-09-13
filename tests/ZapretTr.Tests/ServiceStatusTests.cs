@@ -59,6 +59,55 @@ public sealed class ServiceStatusTests
         Assert.False(durum.InstalledButStopped);
     }
 
+    [Fact]
+    public void Kullanicinin_duraklattigi_servis_durmus_uyarisi_vermez()
+    {
+        // VPN icin bilerek kapatilan koruma "SERVİS DURMUŞ" diye alarm vermemeli.
+        var durum = new ServiceStatus(WinwsInstalled: true, DnsInstalled: true, WinwsRunning: false, WinwsPaused: true);
+
+        Assert.True(durum.AnyInstalled);
+        Assert.False(durum.InstalledButStopped);
+    }
+
+    // --- Duraklatmanin izi: baslangic turu ----------------------------------------
+
+    [Fact]
+    public void Elle_baslatilan_servis_duraklatilmis_sayilir()
+    {
+        const string cikti = """
+            [SC] QueryServiceConfig SUCCESS
+
+            SERVICE_NAME: ZapretTR
+                    TYPE               : 10  WIN32_OWN_PROCESS
+                    START_TYPE         : 3   DEMAND_START
+                    ERROR_CONTROL      : 1   NORMAL
+            """;
+
+        Assert.True(ServiceManager.IsDemandStartQcOutput(cikti));
+    }
+
+    [Fact]
+    public void Acilista_baslayan_servis_duraklatilmis_sayilmaz()
+    {
+        const string cikti = """
+            [SC] QueryServiceConfig SUCCESS
+
+            SERVICE_NAME: ZapretTR
+                    TYPE               : 10  WIN32_OWN_PROCESS
+                    START_TYPE         : 2   AUTO_START
+                    ERROR_CONTROL      : 1   NORMAL
+            """;
+
+        Assert.False(ServiceManager.IsDemandStartQcOutput(cikti));
+    }
+
+    [Fact]
+    public void Olmayan_servis_duraklatilmis_sayilmaz()
+    {
+        Assert.False(ServiceManager.IsDemandStartQcOutput(
+            "[SC] OpenService FAILED 1060: The specified service does not exist as an installed service."));
+    }
+
     // --- Parametre testi icin servisi durdurma -----------------------------------
     //
     // Test, servisin winws'i durana kadar bekliyor; bekleme "sc query" ciktisindan

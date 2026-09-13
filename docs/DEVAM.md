@@ -271,6 +271,20 @@ Elle koşulması gerekenler — şifreli DNS **açık**:
    `win32 error N` varsa mekanizma doğru tahmin edilmiş demektir; `A copy of winws
    is already running` varsa sebep sürücü değil servis çakışmasıdır. İkisi de yoksa
    iki hipotez de yanlış ve baştan bakılmalı.
+8. **Duraklat'tan sonra VPN (yayınlanmamış).** **Elle modda YAPILDI (2026-09-13):**
+   - Kullanıcı Duraklat'tan sonra Proton'a bağlandı: 21:58:22, WireGuardTls, TCP 443,
+     1,5 sn (Proton günlüğü).
+   - O an ZapretTR tam duraklatılmıştı: süreç yok, servis yok, son WinDivert olayı
+     21:53:08 UNLOAD.
+
+   **Kalanlar:**
+   - Servis modunda aynı deneme.
+   - Karşı deney: DEVAM ET → Proton bağlanmamalı.
+   - Açık soru, ölçülmedi: winws yokken yalnızca boşta kalan sürücü Proton'u bozuyor
+     mu? Yanıtı değişirse Çıkış/Duraklat'ın sürücüyü düşürmesi yine doğru; yalnızca
+     gerekçe daralır.
+
+   Proton'un günlük yerleri aşağıdaki "Üçüncü yarı" bölümünde.
 
 Bu tur atlanırsa bir sürüm, düzelttiğini iddia ettiği hata sınıfının aynısını
 üretebilir. Bu dosyanın kendi kuralı: **arayüz ve kurulum hataları ancak
@@ -1491,3 +1505,114 @@ içinde `dns-backup.json` (servis sahipliğinde, geçerli), testten kalan
 `dns-backup.bozuk-20260913-123045.json` ve `dns-bekci.log` var; ikisi zararsız.
 `dns-bekci.log`'un son satırı testin C5 senaryosundan (12:30:20) — test bittikten
 sonra bekçi bir şey yapmadı.
+
+#### Üçüncü yarı: VPN bağlanmıyor → servis duraklatma (aynı gün, yayınlanmamış)
+
+Kullanıcı bildirimi: "zapret kapandıktan sonra bile VPN açılmıyor; Tüm Ayarları
+Sıfırla deyince bağlandı." Kullanıcının hipotezi DNS'ti. **Ölçüm DNS'i eledi.**
+Zaman çizelgesi Proton VPN günlükleri ile System olay günlüğündeki WinDivert
+LOAD/UNLOAD olaylarından (sağlayıcı `WinDivert`, olay 12589) çıkarıldı:
+
+| Yerel saat | Olay |
+|---|---|
+| 17:31:38 | açılışta servis winws'i başladı, WinDivert LOAD |
+| 17:52 ve 20:54–20:55:44 | Proton her denemede `dial tcp 146.70.113.x:443: i/o timeout` (Stealth = WireGuard/TLS/TCP 443) |
+| 20:55:45 | sıfırlama winws'i durdurdu, WinDivert UNLOAD |
+| 20:55:46 | Proton **bir saniye sonra** bağlandı |
+
+Proton sunucu adını her seferinde `192.168.8.1` üzerinden sorunsuz çözmüştü
+(kendi UDP DNS'ini yapıyor). Engel paket yolundaki winws. Neden bozduğu
+(Proton'un WFP güvenlik duvarı ile WinDivert'in yeniden enjeksiyonu mu, fake
+paket mi) ölçülmedi; çözüm için gerekmedi. Uygulama modunda Duraklat zaten
+winws + DNS'i kapatıyordu. Eksik olan **servis modunda** bir yoldu: düğme orada hep
+kapalıydı, pencereyi kapatmak servise dokunmuyordu.
+
+**Yapılan** (CHANGELOG [Yayınlanmamış]):
+- `ServiceManager.PauseAsync`/`ResumeAsync`. Duraklatmanın izi servislerin
+  başlangıç türü (`demand`). Durum ayrı dosyada değil, `sc qc` ile okunuyor;
+  `config.json`'daki `servicePaused` yalnızca yükseltmede okunuyor.
+- Arayüzde servis modunda Duraklat → "DURAKLATILDI" → "DEVAM ET".
+- CLI `--service duraklat|devam`.
+
+**Proton günlükleri** (teşhis için; zamanlar UTC):
+- `%LocalAppData%\Proton\Proton VPN\Logs\client-logs.txt`
+- `C:\Program Files\Proton\VPN\v<sürüm>\ServiceData\Logs\service-logs.txt`
+  (protokol, port ve asıl hata burada; yönetici olmayan kabuk da okuyabiliyor).
+
+**Doğrulama: kurulum paketiyle 88/88** (`e2e3b.ps1`, karalama dizininde). Kapsanan yollar:
+- CLI ile duraklat/devam;
+- duraklatılmışken bekçi turu;
+- arayüzün duraklatılmış servisi tanıması (UIA);
+- duraklatılmışken yükseltme;
+- duraklatılmışken kaldır + yeniden kur;
+- arayüzden düğmeye basarak duraklat → devam → duraklat.
+
+Duraklatma ~1,2 sn, devam ~6,5 sn. İlk koşum 72/86'ydı. Yükseltme yolu duraklatılmış
+servisi çalışır geri getiriyordu; sebebi aşağıdaki ilk tuzak.
+
+**Kullanıcı düzeltmesi: "servisten değil, elle Başlat/Duraklat'tan bahsediyorum."**
+İstek: Duraklat, hangi modda olursa olsun arkada ZapretTR'den kalan HER ŞEYİ
+durdurmalı. Elle modda ölçüldü (`manuel-once.ps1`, düzeltmeden önceki paket):
+Başlat → Duraklat sonrası winws ve dnscrypt kapandı, DNS geri alındı, ama **WinDivert
+sürücüsü +20 sn'de hâlâ `RUNNING`**. Aynı durum WFP'de (`netsh wfp show state`,
+yönetici ister):
+
+| Durum | WFP'de "WinDivert" | Sürücü |
+|---|---|---|
+| winws çalışıyor | 58 (4 çağrı + 4 filtre dahil) | RUNNING |
+| winws kapatıldı, +20 sn (eski Duraklat/Çıkış) | 42: sağlayıcı + 20 alt katman, filtre yok | RUNNING |
+| `sc stop windivert` (yeni Duraklat) | 0 | yok (1060) |
+
+Boşta kalan sürücünün Proton'u tek başına bozup bozmadığı ölçülmedi.
+**Kayıtlar ayrıca şunu gösteriyor:** 15:38'de `ZapretTR` servisleri kurulmuştu
+(olay 7045) ve VPN denemeleri boyunca açılıştan (17:31:38) beri çalışıyordu.
+Kullanıcı elle kullandığını düşünüyor olabilir; önceki yarının e2e testi de makineyi
+servisler kurulu bırakmıştı ve kurulum paketi var olan servisi yükseltmede geri
+kuruyor. **Yeni bir oturum makineyi test sonrası bu hâlde BIRAKMAMALI** ya da
+bıraktığını kullanıcıya açıkça söylemeli.
+
+Yapılan:
+- `WinDivertCleanup.StopEverythingAsync`: sıfırlamanın adımları, ama hiçbir şeyi
+  silmeden. Servisler duraklatılıyor, sürücü yalnızca durduruluyor, config kalıyor.
+- `FindLeftoversAsync`/`DescribeLeftovers`: Duraklat sonrası ölçüm; bir şey kaldıysa
+  bant "TAM DURAKLATILAMADI".
+- Duraklat, "BEKLENMEDİK DURUŞ"ta ve kalıntı varken de açık.
+- Çıkış, servis çalışmıyorsa sürücüyü de düşürüyor.
+
+**Doğrulama `e2e5.ps1`: 68/68.** Kapsanan yollar:
+- elle Başlat → Duraklat → DEVAM ET;
+- winws dışarıdan öldürülünce Duraklat;
+- Çıkış;
+- servis modunda Duraklat → DEVAM ET.
+
+Her Duraklat ve Çıkış sonrası süreç 0, sürücü yok, DNS DHCP, WFP'de WinDivert 0.
+
+**Tuzaklar (bu yarıda ısırdı):**
+
+- **`StartupUri` bayraklı süreçte de pencere kuruyordu.** `OnStartup` içinde
+  `Shutdown(); return;` pencereyi ENGELLEMİYOR: WPF `StartupUri`'yi yine açıyor,
+  `MainViewModel` kurucusu koşuyor. Küçük bir WPF deneyiyle ölçüldü; gerçek
+  uygulamada kurucunun `await` devamları da tamamlandı. `--uninstall-services`
+  sürecinin `config.json`'a yazdığı `FileSystemWatcher` ile yakalandı. Bekçi
+  (`--dns-guard`) ve ikinci örnek de aynı yoldan görünmez bir arayüz kuruyordu.
+  Artık pencere `OnStartup`'ın sonunda elle kuruluyor; `AppStartupTests`
+  `StartupUri`'nin geri gelmesini yakalıyor. **Yapılacaklar/1 madde 5'i
+  (ikinci örnek) bu değişiklikten sonra koş.**
+- **`SaveSelection` yapılandırmayı sıfırdan yazıyordu.** `updateCheckEnabled` ve
+  `lastRunVersion` her seçimde siliniyordu; makinedeki `config.json`'da
+  `lastRunVersion: null` idi. Artık okuyup üzerine yazıyor.
+- **Git Bash heredoc'u içinde `\\n` bir dosyada literal, diğerinde satır sonu
+  oldu** (aynı betik, iki dosya). Kaçış karakteri taşıyan düzenlemeleri Write ile
+  dosyaya yazılmış Python betiğiyle yap. **Ek:** `open(p,'w')` istisnadan ÖNCE
+  dosyayı boşaltıyor — bir betik bu yüzden 0 bayta indi. Önce içeriği hazırla,
+  sonra yaz.
+- **UIA'da Türkçe düğme adı:** betik ASCII kalsın diye `'^\u00c7\u0131k\u0131\u015f$'`
+  (PowerShell tek tırnak, .NET regex kaçışı). PS 5.1 BOM'suz UTF-8 betiği ANSI okur.
+
+**Makine durumu (bu yarının sonu, ölçüldü):** yerel derleme kurulu
+(`0.1.20+5b061d0…`, commit'lenmemiş değişikliklerle). **Servis KURULU DEĞİL**
+(kullanıcı elle modda çalışıyor; e2e5 sonunda kaldırıldı). Arayüz açık, elle
+Başlat → Duraklat yapılmış: bant "DURAKLATILDI", winws/dnscrypt yok, WinDivert
+çekirdekte değil, WFP'de WinDivert 0, Ethernet DNS DHCP. Kullanıcı Proton'u bu durumda
+deneyebilir. Korumayı geri açmak için "DEVAM ET". **Kullanıcı bu durumda denedi: Proton
+21:58:22'de bağlandı** (Yapılacaklar/1 madde 8).

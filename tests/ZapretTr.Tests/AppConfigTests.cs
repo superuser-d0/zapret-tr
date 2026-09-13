@@ -1,4 +1,5 @@
-﻿using ZapretTr.Core.Engine;
+﻿using System.Text.Json;
+using ZapretTr.Core.Engine;
 
 namespace ZapretTr.Tests;
 
@@ -45,5 +46,33 @@ public sealed class AppConfigTests
         // cogu zaman once DNS katmaninda ve o katman asilmadan winws stratejisi
         // hicbir sey degistirmiyor.
         Assert.True(new AppConfig().SecureDnsEnabled);
+    }
+
+    // --- Servis duraklatma bilgisi -------------------------------------------------
+    //
+    // Yukseltme eski servisleri silip yeniden kuruyor; "duraklatildi" bilgisi
+    // servisle birlikte kaybolmasin diye yapilandirmada da duruyor.
+
+    [Fact]
+    public void ServisDuraklatildi_diske_yaziliyor_ve_geri_okunuyor()
+    {
+        var json = JsonSerializer.Serialize(
+            new AppConfig { ServicePaused = true }, CoreJsonContext.Default.AppConfig);
+
+        using var belge = JsonDocument.Parse(json);
+        Assert.True(belge.RootElement.GetProperty("servicePaused").GetBoolean());
+        Assert.True(JsonSerializer.Deserialize(json, CoreJsonContext.Default.AppConfig)!.ServicePaused);
+    }
+
+    [Fact]
+    public void Eski_yapilandirmada_alan_yoksa_duraklatilmamis_sayilir()
+    {
+        // 0.1.20 ve oncesinin yazdigi dosya. Alan yokken "duraklatilmis" saymak,
+        // yukseltmede calisan bir korumayi kapatmak olurdu.
+        const string eski = """
+            {"selectedIspId":"turk-telekom","selectedStrategyArgs":"--dpi-desync=fake --dpi-desync-ttl=4","secureDnsEnabled":true}
+            """;
+
+        Assert.False(JsonSerializer.Deserialize(eski, CoreJsonContext.Default.AppConfig)!.ServicePaused);
     }
 }

@@ -56,6 +56,11 @@ katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız.
 
 ## Bilmeniz gerekenler
 
+**VPN kullanacaksanız önce "Duraklat"a basın.** Koruma açıkken VPN'ler bağlanamayabilir.
+Duraklat arkada çalışan her şeyi kapatır: korumayı, şifreli DNS'i, ağ sürücüsünü ve kuruluysa
+otomatik başlatma servisini. DNS ayarınız eski hâline döner, ayarınız silinmez. VPN'le işiniz
+bitince **"DEVAM ET"** deyin.
+
 **Pencereyi kapatmak (X) korumayı kapatmaz.** Uygulama saatin yanındaki simgeye iner.
 Tamamen kapatmak için **Çıkış** düğmesini kullanın. Servis kuruluysa uygulamayı kapatmanız
 korumayı hiç etkilemez.

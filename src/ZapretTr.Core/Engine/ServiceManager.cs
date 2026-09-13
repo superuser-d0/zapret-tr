@@ -9,8 +9,12 @@ namespace ZapretTr.Core.Engine;
 /// <param name="WinwsRunning">
 /// Servis su anda CALISIYOR mu. Kurulu olmak calisiyor olmak demek degil.
 /// </param>
+/// <param name="WinwsPaused">
+/// Servis kullanici tarafindan DURAKLATILDI mi: kurulu, acilista baslamayacak
+/// sekilde ayarli ve calismiyor. Bkz. <see cref="ServiceManager.PauseAsync"/>.
+/// </param>
 public sealed record ServiceStatus(
-    bool WinwsInstalled, bool DnsInstalled, bool WinwsRunning = false)
+    bool WinwsInstalled, bool DnsInstalled, bool WinwsRunning = false, bool WinwsPaused = false)
 {
     public bool AnyInstalled => WinwsInstalled || DnsInstalled;
 
@@ -22,8 +26,11 @@ public sealed record ServiceStatus(
     /// arayuz "servis modu aktif" deyip Baslat dugmesini kapatiyordu; koruma
     /// yoktu ve kullanicinin yapabilecegi bir sey de yoktu. Gercek bir
     /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+    ///
+    /// Kullanicinin kendi duraklattigi servis bu sayilmaz: orada koruma BILEREK
+    /// kapali ve "servis durmus" uyarisi yanlis alarm olurdu.
     /// </remarks>
-    public bool InstalledButStopped => WinwsInstalled && !WinwsRunning;
+    public bool InstalledButStopped => WinwsInstalled && !WinwsRunning && !WinwsPaused;
 }
 
 /// <summary>
@@ -59,10 +66,25 @@ public static class ServiceManager
     /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
     /// </remarks>
     public static async Task<ServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default)
-        => new(
-            await ExistsAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false),
-            await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false),
-            await IsRunningAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false));
+    {
+        var (winwsInstalled, winwsQc) = await QueryConfigAsync(WinwsServiceName, cancellationToken)
+            .ConfigureAwait(false);
+        var dnsInstalled = await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
+        var running = await IsRunningAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false);
+
+        return new ServiceStatus(
+            winwsInstalled, dnsInstalled, running,
+            WinwsPaused: winwsInstalled && !running && IsDemandStartQcOutput(winwsQc));
+    }
+
+    /// <summary><c>sc qc</c> ciktisi servisin acilista KENDILIGINDEN baslamayacagini mi soyluyor.</summary>
+    /// <remarks>
+    /// Duraklatmanin diskteki izi bu: <see cref="PauseAsync"/> servisi "demand"
+    /// baslangicina ceviriyor. Durum ayri bir dosyada tutulmuyor, cunku servisin
+    /// kendi ayari zaten gercegin ta kendisi -- dosya ile servis ayrisabilirdi.
+    /// </remarks>
+    public static bool IsDemandStartQcOutput(string scQcOutput)
+        => scQcOutput.Contains("DEMAND_START", StringComparison.Ordinal);
 
     /// <summary>
     /// Servisleri kurar ve baslatir.
@@ -70,6 +92,12 @@ public static class ServiceManager
     /// <param name="vendor">Ikililerin yeri.</param>
     /// <param name="winwsArguments">winws'e verilecek argumanlar.</param>
     /// <param name="includeDns">Sifreli DNS servisi de kurulsun mu.</param>
+    /// <param name="startPaused">
+    /// Servisler DURAKLATILMIS olarak kurulsun mu: kayit yazilir ama hicbiri
+    /// baslatilmaz ve sistem DNS'ine dokunulmaz. Yukseltme bunu kullaniyor --
+    /// kullanici VPN icin duraklattiysa guncelleme korumayi habersizce geri
+    /// acmamali.
+    /// </param>
     /// <remarks>
     /// Once varsa eskiler kaldirilir: ayni adla ikinci kez kurmaya calismak
     /// hata verir ve kullanici "ayari degistirdim ama eskisi calisiyor" durumunda
@@ -79,7 +107,8 @@ public static class ServiceManager
         VendorPaths vendor,
         IReadOnlyList<string> winwsArguments,
         bool includeDns,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool startPaused = false)
     {
         ArgumentNullException.ThrowIfNull(vendor);
         ArgumentNullException.ThrowIfNull(winwsArguments);
@@ -108,35 +137,13 @@ public static class ServiceManager
         // kacisli yaziliyor; upstream'in service_create.cmd dosyasi da boyle yapiyor.
         var winwsBin = $"\"{vendor.WinwsExe}\" {string.Join(' ', winwsArguments.Select(QuoteIfNeeded))}";
         var winwsStep = await CreateServiceAsync(
-            WinwsServiceName, winwsBin, "ZapretTR DPI atlatma", cancellationToken).ConfigureAwait(false);
+            WinwsServiceName, winwsBin, "ZapretTR DPI atlatma", start: !startPaused, cancellationToken)
+            .ConfigureAwait(false);
 
-        // "BASLATILDI" DEMEK "CALISIYOR" DEMEK DEGIL.
-        //
-        // sc start, surec baslar baslamaz basari donuyor. winws ardindan WinDivert
-        // surucusunu acamayip olurse servis birkac saniye sonra STOPPED oluyor --
-        // yukseltmeden hemen sonra tam olarak bu oluyordu, cunku onceki surumun
-        // surucusu cekirdekte yarim birakilmis bir durdurmada kalmisti. Servisin
-        // kurtarma tanimi ise ise yaramiyor: ayni surucuye ayni sekilde carpiyor.
-        // Kullanicinin gordugu sey "kurulu ama durmus" ve yeniden baslatinca
-        // duzelen bir koruma. Surucu burada bosaltilip servis bir kez yeniden
-        // baslatiliyor.
-        if (winwsStep.Succeeded
-            && !await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
+        if (!startPaused)
         {
-            var unload = await WinDivertDriver
-                .TryUnloadIdleAsync(TimeSpan.FromSeconds(20), cancellationToken).ConfigureAwait(false);
-
-            if (unload.Cleared)
-            {
-                await RunScAsync(["start", WinwsServiceName], cancellationToken).ConfigureAwait(false);
-            }
-
-            winwsStep = await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false)
-                ? new CleanupStep($"{WinwsServiceName} servisi kuruldu ve baslatildi", true,
-                    "ilk denemede WinDivert surucusu acilamadi; " + unload.Detail)
-                : new CleanupStep($"{WinwsServiceName} servisi kuruldu ama CALISMIYOR", false,
-                    "winws WinDivert surucusunu acamadi. " + unload.Detail
-                    + " Surucuyu kullanan baska bir araci kapatin; olmazsa bilgisayari bir kez yeniden baslatin.");
+            winwsStep = await EnsureWinwsRunningAsync(
+                winwsStep, "kuruldu ve baslatildi", "kuruldu ama CALISMIYOR", cancellationToken).ConfigureAwait(false);
         }
 
         steps.Add(winwsStep);
@@ -166,7 +173,8 @@ public static class ServiceManager
             {
                 var dnsBin = $"\"{vendor.DnsCryptExe}\" -config \"{configPath}\"";
                 var dnsStep = await CreateServiceAsync(
-                    DnsServiceName, dnsBin, "ZapretTR sifreli DNS", cancellationToken).ConfigureAwait(false);
+                    DnsServiceName, dnsBin, "ZapretTR sifreli DNS", start: !startPaused, cancellationToken)
+                    .ConfigureAwait(false);
 
                 steps.Add(dnsStep);
 
@@ -192,6 +200,12 @@ public static class ServiceManager
                     steps.Add(new CleanupStep("Sistem DNS'i YONLENDIRILMEDI", false,
                         "Sifreli DNS servisi baslatilamadi. DNS'i yine de 127.0.0.1'e cevirmek " +
                         "makineyi hicbir adi cozemez halde birakirdi; koruma winws ile devam ediyor."));
+                }
+                else if (startPaused)
+                {
+                    // Duraklatilmis kurulum: cozumleyici calismiyor, DNS'e dokunulmaz.
+                    // Asagidaki yetim yonlendirme blogu onceki servisin yonlendirmesini
+                    // de geri aliyor.
                 }
                 else if (!await WaitForLocalResolverAsync(
                              LocalResolverStartupTimeout, cancellationToken).ConfigureAwait(false))
@@ -268,6 +282,50 @@ public static class ServiceManager
         }
 
         return steps;
+    }
+
+    /// <summary>
+    /// Baslatma istegi basarili donen winws servisinin gercekten CALISIR kaldigini dogrular;
+    /// kalmadiysa surucuyu bosaltip bir kez yeniden dener.
+    /// </summary>
+    /// <param name="startStep">Baslatma isteginin sonucu.</param>
+    /// <param name="basariEylemi">Basarida adimda yazacak eylem, ornegin "kuruldu ve baslatildi".</param>
+    /// <param name="basarisizlikEylemi">Basarisizlikta adimda yazacak eylem.</param>
+    /// <remarks>
+    /// "BASLATILDI" DEMEK "CALISIYOR" DEMEK DEGIL.
+    ///
+    /// sc start, surec baslar baslamaz basari donuyor. winws ardindan WinDivert
+    /// surucusunu acamayip olurse servis birkac saniye sonra STOPPED oluyor --
+    /// yukseltmeden hemen sonra tam olarak bu oluyordu, cunku onceki surumun
+    /// surucusu cekirdekte yarim birakilmis bir durdurmada kalmisti. Servisin
+    /// kurtarma tanimi ise ise yaramiyor: ayni surucuye ayni sekilde carpiyor.
+    /// Kullanicinin gordugu sey "kurulu ama durmus" ve yeniden baslatinca
+    /// duzelen bir koruma. Surucu burada bosaltilip servis bir kez yeniden
+    /// baslatiliyor.
+    /// </remarks>
+    private static async Task<CleanupStep> EnsureWinwsRunningAsync(
+        CleanupStep startStep, string basariEylemi, string basarisizlikEylemi, CancellationToken cancellationToken)
+    {
+        if (!startStep.Succeeded
+            || await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
+        {
+            return startStep;
+        }
+
+        var unload = await WinDivertDriver
+            .TryUnloadIdleAsync(TimeSpan.FromSeconds(20), cancellationToken).ConfigureAwait(false);
+
+        if (unload.Cleared)
+        {
+            await RunScAsync(["start", WinwsServiceName], cancellationToken).ConfigureAwait(false);
+        }
+
+        return await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false)
+            ? new CleanupStep($"{WinwsServiceName} servisi {basariEylemi}", true,
+                "ilk denemede WinDivert surucusu acilamadi; " + unload.Detail)
+            : new CleanupStep($"{WinwsServiceName} servisi {basarisizlikEylemi}", false,
+                "winws WinDivert surucusunu acamadi. " + unload.Detail
+                + " Surucuyu kullanan baska bir araci kapatin; olmazsa bilgisayari bir kez yeniden baslatin.");
     }
 
     /// <summary>
@@ -485,6 +543,219 @@ public static class ServiceManager
             : new CleanupStep($"{WinwsServiceName} servisi yeniden baslatilamadi", false, output.Trim());
     }
 
+    /// <summary>
+    /// Otomatik baslatmayi KALDIRMADAN korumayi tamamen kapatir: winws durur, surucu
+    /// bosaltilir, sistem DNS'i geri alinir, sifreli DNS durur ve servisler
+    /// acilista kendiliginden baslamaz.
+    /// </summary>
+    /// <remarks>
+    /// VPN'LE YAN YANA KULLANIM ICIN VAR.
+    ///
+    /// Servis modunda korumayi gecici olarak kapatmanin hicbir yolu yoktu:
+    /// "Duraklat" yalnizca uygulamanin kendi baslattigi winws'i durduruyordu,
+    /// pencereyi kapatmak servise dokunmuyordu. Geriye "Otomatik Başlatmayı
+    /// Kaldır" ve "Tüm Ayarları Sıfırla" kaliyordu -- ikisi de ayari siliyor.
+    /// Gercek bir kullanicida olculdu (2026-09-13): servis calisirken Proton VPN
+    /// (WireGuard, TCP 443 uzerinden TLS) her denemede <c>dial tcp ...:443: i/o
+    /// timeout</c> verdi; sifirlama winws'i durdurup WinDivert surucusu
+    /// cekirdekten dustukten BIR SANIYE sonra baglandi. Proton sunucu adini her
+    /// seferinde sorunsuz cozmustu: engel DNS degil, paket yolundaki winws.
+    ///
+    /// Sira onemli:
+    ///
+    ///   * Once winws, cunku VPN'i bozan o.
+    ///   * DNS, cozumleyici DURMADAN ONCE geri alinir; ters sira sistem DNS'ini
+    ///     dinleyeni olmayan 127.0.0.1'de birakirdi (<see cref="UninstallAsync"/>
+    ///     ile ayni gerekce). Geri alma basarisizsa sifreli DNS servisi calisir
+    ///     ve acilista baslar halde BIRAKILIR: koruma kismen acik kalir ama
+    ///     internet gitmez.
+    ///
+    /// Duraklatmanin izi servislerin baslangic turu ("demand"); yeniden
+    /// baslatmada da duraklatilmis kalir. Bkz. <see cref="ResumeAsync"/>.
+    /// </remarks>
+    public static async Task<IReadOnlyList<CleanupStep>> PauseAsync(CancellationToken cancellationToken = default)
+    {
+        ElevationGuard.EnsureElevated();
+
+        var steps = new List<CleanupStep>();
+
+        if (await ExistsAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
+        {
+            // Baslangic turu DURDURMADAN ONCE degisiyor: durdurma yarida kalip
+            // bilgisayar yeniden baslatilirsa servis geri gelmesin.
+            if (await SetStartTypeAsync(WinwsServiceName, "demand", cancellationToken).ConfigureAwait(false) is { } hata)
+            {
+                steps.Add(hata);
+            }
+
+            if (await StopWinwsServiceAsync(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false))
+            {
+                // Servis durunca winws surucuyu birakiyor; surucunun cekirdekten
+                // gercekten dustugunu de bekliyoruz ki "duraklatildi" dendiginde
+                // paket yolunda hicbir sey kalmamis olsun.
+                var unload = await WinDivertDriver
+                    .TryUnloadIdleAsync(TimeSpan.FromSeconds(10), cancellationToken).ConfigureAwait(false);
+                steps.Add(new CleanupStep($"{WinwsServiceName} servisi durduruldu", true,
+                    unload.Cleared ? "WinDivert surucusu cekirdekten dustu" : unload.Detail));
+            }
+            else
+            {
+                steps.Add(new CleanupStep($"{WinwsServiceName} servisi durdurulamadi", false,
+                    "15 saniyede durmadi ya da baska bir winws calisiyor."));
+            }
+        }
+
+        var dnsServisiniBirak = false;
+
+        if (SystemDnsManager.HasBackup
+            && !string.Equals(SystemDnsManager.BackupOwner, DnsBackupOwner.App, StringComparison.Ordinal))
+        {
+            try
+            {
+                var restored = await SystemDnsManager.RestoreAsync(cancellationToken).ConfigureAwait(false);
+                steps.Add(new CleanupStep("Sistem DNS'i geri alindi", true,
+                    restored.Count == 0 ? "degistirilecek kart kalmamisti" : string.Join(", ", restored)));
+            }
+            catch (Exception ex)
+            {
+                dnsServisiniBirak = true;
+                steps.Add(new CleanupStep("Sistem DNS'i geri alinamadi", false,
+                    ex.Message + " Sifreli DNS servisi, internet kesilmesin diye DURDURULMADI."));
+            }
+        }
+
+        var dnsServisiVar = await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
+
+        // Geri alma basarisiz olsa da acilista BASLAMASIN. Su an calismaya devam
+        // ediyor (internet kesilmesin), ama yeniden baslatmada kalkarsa DNS bekcisi
+        // yedegi ve cevap veren cozumleyiciyi gorup yonlendirmeyi yeniden yapardi --
+        // duraklatilmis bir korumanin yarisi geri gelirdi. Kalkmazsa bekci
+        // yonlendirmeyi geri alir.
+        if (dnsServisiVar
+            && await SetStartTypeAsync(DnsServiceName, "demand", cancellationToken).ConfigureAwait(false) is { } baslangicHatasi)
+        {
+            steps.Add(baslangicHatasi);
+        }
+
+        if (!dnsServisiniBirak)
+        {
+            SystemDnsManager.ClearSuspended();
+
+            if (dnsServisiVar)
+            {
+                var (exitCode, output) = await RunScAsync(["stop", DnsServiceName], cancellationToken)
+                    .ConfigureAwait(false);
+
+                // 1062 = "servis baslatilmamis": zaten durmus, amac gerceklesmis.
+                steps.Add(exitCode == 0 || output.Contains("1062", StringComparison.Ordinal)
+                    ? new CleanupStep($"{DnsServiceName} servisi durduruldu", true)
+                    : new CleanupStep($"{DnsServiceName} servisi durdurulamadi", false, output.Trim()));
+            }
+        }
+
+        return steps;
+    }
+
+    /// <summary>
+    /// <see cref="PauseAsync"/> ile duraklatilan servisleri KAYITLI AYARLARIYLA geri acar.
+    /// </summary>
+    /// <remarks>
+    /// Yeniden kurulum yapilmiyor: servisin komutu kayit defterinde duruyor ve
+    /// kullanicinin duraklattigi sey tam olarak o. "Kaldigi yerden devam" bu.
+    ///
+    /// Sira baslatmadaki gibi: once sifreli DNS, cunku winws engel sunucusuna
+    /// giden trafigi kurcalarsa hicbir sey kazanilmaz. Sistem DNS'i yine ANCAK
+    /// cozumleyici cevap verdikten sonra cevriliyor. Vermezse DNS'e dokunulmuyor
+    /// ve "askida" isareti birakiliyor: DNS bekcisi cozumleyici ayaga kalkinca
+    /// yonlendirmeyi kendisi yapar.
+    /// </remarks>
+    public static async Task<IReadOnlyList<CleanupStep>> ResumeAsync(CancellationToken cancellationToken = default)
+    {
+        ElevationGuard.EnsureElevated();
+
+        var steps = new List<CleanupStep>();
+
+        if (await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false))
+        {
+            if (await SetStartTypeAsync(DnsServiceName, "auto", cancellationToken).ConfigureAwait(false) is { } hata)
+            {
+                steps.Add(hata);
+            }
+
+            var dnsStep = await StartExistingServiceAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
+
+            if (!dnsStep.Succeeded)
+            {
+                steps.Add(dnsStep);
+                steps.Add(new CleanupStep("Sistem DNS'i YONLENDIRILMEDI", false,
+                    "Sifreli DNS servisi baslatilamadi; DNS ayariniza dokunulmadi."));
+            }
+            else if (!await WaitForLocalResolverAsync(LocalResolverStartupTimeout, cancellationToken)
+                         .ConfigureAwait(false))
+            {
+                SystemDnsManager.MarkSuspended();
+                steps.Add(dnsStep);
+                steps.Add(new CleanupStep("Sistem DNS'i henuz YONLENDIRILMEDI", false,
+                    $"Sifreli DNS servisi {LocalResolverStartupTimeout.TotalSeconds:F0} saniyede cevap vermedi; " +
+                    "DNS ayariniza dokunulmadi. Cevap vermeye baslayinca DNS bekcisi yonlendirmeyi yapacak."));
+            }
+            else
+            {
+                steps.Add(dnsStep);
+
+                try
+                {
+                    var changed = await SystemDnsManager
+                        .RedirectToLocalAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
+                    SystemDnsManager.ClearSuspended();
+                    steps.Add(new CleanupStep("Sistem DNS'i servise yonlendirildi", true,
+                        changed.Count == 0 ? "zaten yonlendirilmisti" : string.Join(", ", changed)));
+                }
+                catch (Exception ex)
+                {
+                    SystemDnsManager.MarkSuspended();
+                    steps.Add(new CleanupStep("Sistem DNS'i yonlendirilemedi", false, ex.Message));
+                }
+            }
+        }
+
+        if (await ExistsAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
+        {
+            if (await SetStartTypeAsync(WinwsServiceName, "auto", cancellationToken).ConfigureAwait(false) is { } hata)
+            {
+                steps.Add(hata);
+            }
+
+            var winwsStep = await StartExistingServiceAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false);
+            steps.Add(await EnsureWinwsRunningAsync(
+                winwsStep, "yeniden baslatildi", "baslatildi ama CALISMIYOR", cancellationToken).ConfigureAwait(false));
+        }
+
+        return steps;
+    }
+
+    /// <summary>Servisin baslangic turunu degistirir. Basariliysa null, degilse hata adimi doner.</summary>
+    private static async Task<CleanupStep?> SetStartTypeAsync(
+        string name, string startType, CancellationToken cancellationToken)
+    {
+        var (exitCode, output) = await RunScAsync(["config", name, "start=", startType], cancellationToken)
+            .ConfigureAwait(false);
+
+        return exitCode == 0
+            ? null
+            : new CleanupStep($"{name} servisinin baslangic turu '{startType}' yapilamadi", false, output.Trim());
+    }
+
+    /// <summary>Kurulu bir servisi baslatir; zaten calisiyorsa (1056) basarili sayar.</summary>
+    private static async Task<CleanupStep> StartExistingServiceAsync(string name, CancellationToken cancellationToken)
+    {
+        var (exitCode, output) = await RunScAsync(["start", name], cancellationToken).ConfigureAwait(false);
+
+        return exitCode == 0 || output.Contains("1056", StringComparison.Ordinal)
+            ? new CleanupStep($"{name} servisi baslatildi", true)
+            : new CleanupStep($"{name} servisi baslatilamadi", false, output.Trim());
+    }
+
     /// <summary><c>sc query</c> ciktisi servisin durmus oldugunu mu soyluyor.</summary>
     /// <remarks>
     /// STOP_PENDING durmus SAYILMAZ: o anda surec hala surucuyu tutuyor olabilir.
@@ -539,11 +810,11 @@ public static class ServiceManager
     }
 
     private static async Task<CleanupStep> CreateServiceAsync(
-        string name, string binPath, string displayName, CancellationToken cancellationToken)
+        string name, string binPath, string displayName, bool start, CancellationToken cancellationToken)
     {
         // sc'nin bicimi katidir: "binPath=" ile degerin ARASINDA bosluk olmali.
         var (createCode, createOutput) = await RunScAsync(
-            ["create", name, "binPath=", binPath, "DisplayName=", displayName, "start=", "auto"],
+            ["create", name, "binPath=", binPath, "DisplayName=", displayName, "start=", start ? "auto" : "demand"],
             cancellationToken).ConfigureAwait(false);
 
         if (createCode != 0)
@@ -565,6 +836,11 @@ public static class ServiceManager
         await RunScAsync(
             ["failure", name, "reset=", "86400", "actions=", "restart/5000/restart/15000/restart/60000"],
             cancellationToken).ConfigureAwait(false);
+
+        if (!start)
+        {
+            return new CleanupStep($"{name} servisi kuruldu (DURAKLATILMIS, baslatilmadi)", true);
+        }
 
         var (startCode, startOutput) = await RunScAsync(["start", name], cancellationToken)
             .ConfigureAwait(false);
@@ -590,11 +866,16 @@ public static class ServiceManager
     }
 
     private static async Task<bool> ExistsAsync(string name, CancellationToken cancellationToken)
+        => (await QueryConfigAsync(name, cancellationToken).ConfigureAwait(false)).Exists;
+
+    /// <summary>Servis kurulu mu, ve kuruluysa <c>sc qc</c> ciktisi.</summary>
+    private static async Task<(bool Exists, string Output)> QueryConfigAsync(
+        string name, CancellationToken cancellationToken)
     {
         var (exitCode, output) = await RunScAsync(["qc", name], cancellationToken).ConfigureAwait(false);
 
         // 1060 = "belirtilen servis yuklu degil".
-        return exitCode == 0 && !output.Contains("1060", StringComparison.Ordinal);
+        return (exitCode == 0 && !output.Contains("1060", StringComparison.Ordinal), output);
     }
 
     /// <summary>Icinde bosluk olan argumani tirnaklar; digerlerine dokunmaz.</summary>
