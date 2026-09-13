@@ -1169,32 +1169,79 @@ formunu DOLU açtı, kullanıcının "Açılmayan site" kutusuna yazdığı adre
 
 ### 2026-09-12 oturumu sonu (0.1.19)
 
-**DİKKAT: bu oturumda MAKİNE YOKTU.** Ne Windows, ne .NET SDK — SDK indirmesi de
-vekil tarafından engellendi (`builds.dotnet.microsoft.com` 403). Yukarıdaki
-"Makine durumu" bölümü ÖNCEKİ oturuma ait ve bu oturumda hiçbir şeyi
-doğrulamıyor. Kod okunarak yazıldı, doğrulama tamamen CI'dan geldi.
+#### ÖNCE BUNU OKU — devraldığın durum
+
+| | |
+|---|---|
+| `main` ve `claude/jolly-bardeen-tnz0c8` | ikisi de **`bbafe95`**, ayrışma yok |
+| Üç CI iş akışı | `bbafe95`/`ead4734` üzerinde **yeşil** |
+| `v0.1.19` yayını | **TASLAK, yayınlanmadı** (id `387718391`) |
+| `v0.1.19` tag'i | **YOK** — en son tag hâlâ `v0.1.18` |
+
+**İlk iş: taslak yayınlanmadan `main`'e commit itme.** GitHub, taslak yayınlar
+için tag oluşturmuyor; tag ancak yayınlama anında ve `main`'in O ANKİ ucunda
+oluşuyor. Şu an doğru commit'te (`bbafe95` — paketler de ondan derlendi). Araya
+bir commit girerse tag, ikililerin derlendiği ağaçtan farklı bir yere düşer.
+
+Yayınlandıktan sonra bu dosyanın kendi güncellemesi de dahil her şey serbest.
+
+#### Bu oturumda ne yapıldı
 
 Çıkış noktası tek cümlelik bir saha bildirimiydi: *"kurdum, bilgisayara restart
-attım, olmadı."* Ekran görüntüsü yok, günlük yok, hangi adımda kaldığı belli
-değil. O cümleyi üretebilecek bütün yollar tarandı; bulunan on tanesi
-kapatıldı ve hepsi tuzaklar bölümünde tek tek yazılı.
+attım, olmadı."* Ekran görüntüsü yok, günlük yok. O cümleyi üretebilecek bütün
+yollar tarandı. Dört turda ilerledi:
 
-**Neyin doğrulandığı, neyin doğrulanmadığı — karıştırma:**
+1. **On yol kapatıldı** (`325ead7`). Üçü kod hatası bile değildi — uygulamanın
+   söylemedikleri: yeni kurulumda "SİSTEM HAZIR" yazması, "Başlat"ın yeniden
+   başlatmayı atlatmadığının hiçbir yerde yazmaması, testten sonra sıradaki
+   adımın söylenmemesi. Dördü DNS'i öldüren yollardı, ikisi açılış sonrası
+   servis dayanıklılığı, biri ikinci uygulama örneği. Hepsi tuzaklar bölümünde.
+2. **Gerçek bir kullanıcı raporu geldi** (`17a21b8`) ve üç şey daha çıkardı:
+   yeşil ekranın altında `1/4`, günlüğü boğan dnscrypt dökümü, ve yanlış motor
+   sürümü. Üçü de aşağıda ayrı ayrı yazılı.
+3. **Kalıntı tarayıcısı** (`ead4734`): başka DPI araçlarından kalan servis ve
+   sürücü kayıtları, `127.0.0.1:53`'ü kim tutuyor, hosts yönlendirmeleri. Artı
+   yönlendirmeden sonra DNS önbelleğinin boşaltılması.
+4. **0.1.19 kesimi** (`2b6f773` → `bbafe95`). Önce 0.1.20 kesildi, sonra
+   `v0.1.19` tag'inin hiç oluşmadığı görülüp numara geri alındı.
+
+`docs/DEVAM.md` ve `CHANGELOG.md` her turda birlikte güncellendi; ayrıntı
+oralarda, burada tekrarlanmıyor.
+
+#### DOĞRULANMAYANLAR — en önemli bölüm
+
+**Bu oturumda MAKİNE YOKTU.** Ne Windows, ne .NET SDK; SDK indirmesi de vekil
+tarafından engellendi (`builds.dotnet.microsoft.com` 403). Kod okunarak yazıldı,
+doğrulama tamamen CI'dan geldi. Yukarıdaki "Makine durumu" bölümü ÖNCEKİ oturuma
+ait ve bu oturumda hiçbir şeyi doğrulamıyor.
 
 | | Durum |
 |---|---|
-| Derleme, 161 birim testi, kırpılmış yayın | CI'da yeşil |
+| Derleme, birim testleri, kırpılmış yayın | CI'da yeşil |
 | Kurulum → servis kur → yükselt → kaldır | CI'da yeşil, **şifreli DNS KAPALI** |
 | Şifreli DNS servis yolu (en ağır değişiklik) | **hiç koşmadı** |
 | IPv6 DNS boşaltma | **hiç koşmadı** |
+| `netsh` çıkış kodu okuyan yeni geri alma | **hiç koşmadı** |
+| Kalıntı SİLME yolu (`ConflictScanner.RemoveAsync`) | **hiç koşmadı** — CI'da bilinen araçların servisi yok, `ScanAsync` hep boş dönüyor |
 | Arayüzün yeni durum metinleri | **hiç görülmedi** (ekran görüntüsü yok) |
 
-Yapılacaklar/1 tam olarak bu boşluğu kapatmak için var.
+Yapılacaklar/1 tam olarak bu boşluğu kapatmak için var. Kalıntı silme yolunu
+ölçmek için üzerinde GoodbyeDPI kurulup kaldırılmış bir makine (ya da sanal
+makine) gerekiyor.
+
+#### ÇÖZÜLMEMİŞ — bir sonraki oturumun asıl işi
+
+Kullanıcı raporundaki tcp443 çelişkisi duruyor: aynı hatta, aynı oturumda, 60
+saniye arayla test 3 bölüm için çalışan strateji buluyor ama çalışma zamanı
+`1/4` veriyor. İki aday sebep ve ayırt edici deney tuzaklar bölümünde
+("ÇÖZÜLMEMİŞ" başlıklı madde). **Ölçmeden `AddGlobalFilters`'a dokunma.**
+
+#### Ortam tuzakları (bu oturumda öğrenildi)
 
 **Derleyicisiz çalışmanın bedeli ölçüldü: bir CI turu.** İlk itiş üç `CS0103`
 ile düştü — `App` projesinde `System.IO` **örtük using DEĞİL** (`MainViewModel.cs`
-de bu yüzden açıkça yazıyor). Ders: bu depoda App projesine `Directory`/`Path`/
-`File` kullanan bir satır eklerken using'i elle yaz; Core'da gerek yok.
+de bu yüzden açıkça yazıyor). Bu depoda App projesine `Directory`/`Path`/`File`
+kullanan bir satır eklerken using'i elle yaz; Core'da gerek yok.
 
 **Yazdığım testin koşulsuz hale getirilmesi gerçek bir hata yakaladı.** "Durum
 bandı HAZIR demesin" iddiasını önce `if (ConfigStore.Load().SelectedIspId is
@@ -1205,19 +1252,22 @@ ayrıntı satırını `UpdateStatusDetail` ile eziyor ve yeni eklenen "sıradaki
 cümlesini siliyordu. Bu dosyanın "geçen bir test, sınadığını sınadığını
 kanıtlamaz" uyarısının **üçüncü** kez ısırması.
 
-**Yayın bu sefer tag ile YAPILMADI.** `git push origin v0.1.19` ortam tarafından
-403 ile reddedildi (oturumun kimliği yalnızca dal itmesine izin veriyor), bu
-yüzden `release.yml` `workflow_dispatch` ile `version=0.1.19`, `ref=main`
-tetiklendi. Sonuç aynı paketler + **taslak** yayın, ama bir farkla: **taslak
-yayınlanana kadar tag YOK.** GitHub tag'i yayınlama anında `main`'in ucunda
-oluşturur, dolayısıyla:
+**Yayın tag ile YAPILAMADI.** `git push origin v0.1.19` ortam tarafından 403 ile
+reddedildi (oturumun kimliği yalnızca dal itmesine izin veriyor), bu yüzden
+`release.yml` `workflow_dispatch` ile `version=0.1.19`, `ref=main` tetiklendi.
+Aynı paketler üretiliyor ama iki fark var: **taslak yayınlanana kadar tag yok**
+(yukarıdaki uyarı), ve oluşacak tag *lightweight* olur — önceki 18'i açıklamalı.
+Bir sonraki yayında tag itmesi çalışıyorsa normal yola (tag it → akış kendi
+tetiklensin) dön; bu yol yalnızca tag itilemediği için var.
 
-- taslağı yayınlamadan önce `main`'e commit itilirse tag YANLIŞ commit'e düşer;
-- oluşan tag *lightweight* olur, önceki 18'i ise açıklamalı.
+**Yayın notu CHANGELOG'un TEK bölümünden üretiliyor.** 0.1.19 taslağı bir kez
+bayatlayıp yeniden kesilirken bu bir tuzağa dönüştü: notları ayrı bir
+`## [0.1.19]` bölümünde bırakıp `## [0.1.20]` kesmek, o turun bütün
+düzeltmelerini yayın notundan DÜŞÜRÜRDÜ. Bir sürüm yayınlanmadan üzerine yenisi
+kesilecekse bölümleri **birleştir**, alt başlıkları da tekilleştir.
 
-Bir sonraki yayında tag itmesi çalışıyorsa normal yola (tag it → akış tetiklensin)
-dön; bu yol yalnızca tag itilemediği için var.
+#### Makine durumu
 
-**Makine durumu:** bilinmiyor. Bu oturum hiçbir makineye dokunmadı, dolayısıyla
+Bilinmiyor. Bu oturum hiçbir makineye dokunmadı, dolayısıyla
 `%ProgramData%\ZapretTR` içeriği, servisler ve DNS hakkında söylenebilecek
 güncel bir şey yok. Bir sonraki oturum ölçmeden varsayım yapmasın.
