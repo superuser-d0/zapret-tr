@@ -268,8 +268,8 @@ sürücüsü taşıyor ve bu sürücü sık sık yanlış alarm veriyor.
 3. Kurulum paketini (`ZapretTR-Setup-<sürüm>.exe`) **yeniden çalıştırın**.
 
 Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler için garanti veremiyoruz.
-Dosyanın gerçekten bizden geldiğinden emin olmak isterseniz README'deki
-[SHA256 doğrulamasını](../README.md#kolay-kullanım) yapabilirsiniz.
+Dosyanın gerçekten bizden geldiğinden emin olmak isterseniz ayrıntılı belgedeki
+[SHA256 doğrulamasını](../README-DETAYLI.md#kolay-kullanım) yapabilirsiniz.
 
 <a id="uygulama-acilmiyor"></a>
 

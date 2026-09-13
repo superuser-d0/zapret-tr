@@ -2,17 +2,12 @@
 
 # ZapretTR
 
-**Türkiye'deki DPI engellemelerini aşan parametreyi sizin yerinize bulan Windows uygulaması.**
+**Türkiye'deki erişim engellerini aşan ayarı sizin hattınızda ölçerek bulan Windows uygulaması.**
 
-[zapret](https://github.com/bol-van/zapret) projesinin `winws` motoru üzerine kurulu bir arayüz.
-Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığını ölçerek buluyor.
-
-[![yayın](https://img.shields.io/github/v/release/superuser-d0/zapret-tr?label=s%C3%BCr%C3%BCm&color=2b7489)](https://github.com/superuser-d0/zapret-tr/releases/latest)
-[![derle ve test](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml/badge.svg)](https://github.com/superuser-d0/zapret-tr/actions/workflows/ci.yml)
+[![sürüm](https://img.shields.io/github/v/release/superuser-d0/zapret-tr?label=s%C3%BCr%C3%BCm&color=2b7489)](https://github.com/superuser-d0/zapret-tr/releases/latest)
 [![lisans](https://img.shields.io/badge/lisans-MIT-blue)](LICENSE)
-[![platform](https://img.shields.io/badge/platform-Windows%20x64-0078d4)](https://github.com/superuser-d0/zapret-tr/releases/latest)
 
-### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Yavaşlatır mı](#bilgisayarı-yavaşlatır-mı) · [Sık sorulanlar](#sık-sorulanlar) · [Sorun giderme](docs/SORUN-GIDERME.md)
+### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Sorun giderme](docs/SORUN-GIDERME.md) · [Ayrıntılar](README-DETAYLI.md)
 
 <img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
 
@@ -20,620 +15,115 @@ Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığ
 
 ---
 
-## Amaç
+Bu sayfa yalnızca kurmak ve kullanmak için gerekenleri anlatır. Nasıl çalıştığı, ölçüm
+sonuçları ve geliştirme bilgileri [ayrıntılı belgede](README-DETAYLI.md).
 
-Türkiye'de erişim engeli iki ayrı katmanda uygulanıyor: adres çözümlemesini bozan **DNS
-yönlendirmesi** ve bağlantının içine bakıp sonlandıran **DPI** (derin paket incelemesi).
-İkisini de aşmanın bilinen yolları var — ama hangi yolun işe yaradığı sabit değil.
+**Gereksinim:** Windows 10/11, 64 bit, yönetici yetkisi.
 
-Sebebi şu: her servis sağlayıcı kendi DPI donanımını kendi ayarlarıyla işletiyor. Bir hatta
-bağlantıyı sıfırlayan kutu, başka bir hatta yalnızca ilk paketi süzüyor olabilir. Bu yüzden bir
-sağlayıcıda çalışan parametre diğerinde hiçbir şey yapmayabilir. Aynı sağlayıcının farklı
-hatlarında bile farklı sonuç çıkabiliyor: üç ayrı Türk Telekom hattında üç farklı davranış
-ölçtük.
+## 1. İndirin
 
-ZapretTR'in işi tam burada başlıyor: **doğru parametreyi tahmin etmek yerine ölçerek
-kanıtlamak.** Uygulama, hattınız için bilinen adayları sırayla deniyor, her birini gerçekten
-bağlantı kurarak sınıyor ve hangisinin işe yaradığını kanıtıyla birlikte söylüyor. Bir aday
-ancak ölçümü geçtiyse "doğrulandı" etiketi alıyor.
+[Son sürüm sayfasından](https://github.com/superuser-d0/zapret-tr/releases/latest)
+**`ZapretTR-Setup-<sürüm>.exe`** dosyasını indirin.
 
-Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet, Vodafone ve
-diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
-hatlara erişimimiz yok. [Aşağıdaki tabloda](#hangi-hatlarda-doğrulandı) hangi hattın eksik
-olduğunu görebilirsiniz.
+> Aynı sayfadaki `zapret-tr-saha-testi.zip` **size gerekmez**: yalnızca ölçüm yapan bir test
+> aracıdır, internetinizi açmaz.
 
-> **Bir dürüstlük notu:** "Şu sağlayıcıda engelleme daha ağır" gibi bir sıralama yapmıyoruz,
-> çünkü elimizde bunu söyleyecek karşılaştırmalı ölçüm yok. Bildiğimiz tek şey, sağlayıcıların
-> birbirinden farklı davrandığı ve bu farkın ölçülmesi gerektiği.
+## 2. Kurun
 
----
+Dosyaya çift tıklayın.
 
-## Ne yapıyor
+- **"Windows bilgisayarınızı korudu"** uyarısı çıkarsa: **Ek bilgi → Yine de çalıştır.**
+  Paket imzasız olduğu için bu uyarı beklenen bir durum.
+- **Yönetici izni** isteyecek. Uygulama bir ağ sürücüsü kullandığı için gerekli.
 
-zapret ile çalışan bir parametre bulmanın alışıldık yolu `blockcheck.sh`: 10-40 dakika süren bir
-tarama ve sonunda elinizde bir `.cmd` dosyasına yapıştırmanız gereken komut satırı. ZapretTR
-bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bilinen adayları sırayla
-ölçüyor, çalışanı buluyor.
+## 3. Kullanın
 
-| | |
-|---|---|
-| **Otomatik sağlayıcı tespiti** | Hattınızı ASN üzerinden bulur; "Bilmiyorum" tam anlamıyla desteklenen bir seçenektir |
-| **Ölçerek bulur** | Her aday gerçekten bağlantı kurularak sınanır, tahmin edilmez |
-| **Bölüm bölüm arar** | `tcp80`, `tcp443`, `quic` ve `discord-voice` bağımsız aranıp birleştirilir |
-| **Şifreli DNS** | Engelleme çoğu zaman iki katmanlı olduğu için DNS katmanı da aşılır |
-| **Dokunmadığı yeri bozmaz** | Sorunu olmayan bölüme denenmemiş strateji uygulanmaz |
-| **Ne bildiğini söyler** | Her aday "doğrulandı" ya da "doğrulanmadı" etiketiyle gelir |
-| **Kendini günceller** | "Güncellemeleri Denetle" paketi indirir, SHA256 özetini doğrular, kurar |
-| **Arka planda çalışır** | Pencereyi kapatmak korumayı kapatmaz; uygulama bildirim alanına iner |
-| **Raporlanabilir** | "Raporu Kaydet" günlüğü ve ortam özetini tek dosyaya yazar |
-| **Hatayı bildirmesi kolay** | "Hata Bildir" GitHub formunu doldurulmuş açar; göndermeye siz karar verirsiniz |
-
-> **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
-> kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
-> sonra engelli adresler açıldı. Doğrulama bağımsız bir istemciyle (`curl`) yapıldı — ölçüm
-> motorunun kendi raporuyla değil. Şu an **25 aday** doğrulanmış durumda: 23'ü Türk Telekom
-> (AS9121), 2'si Turkcell Mobil (AS16135) hattında.
->
-> Eksik olan kod değil, **kapsam**. On profilin sekizinde henüz hiç saha verisi yok, çünkü o
-> hatlara erişemiyoruz. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
-
----
-
-## Kolay kullanım
-
-**1. İndirin.** [Releases](https://github.com/superuser-d0/zapret-tr/releases) sayfasından
-`ZapretTR-Setup-<sürüm>.exe` dosyasını alın.
-
-**2. Kurun.** Dosyaya çift tıklayın.
-
-- Windows **"bilgisayarınızı korudu"** uyarısı verirse bu **beklenen bir durum**: paket imzalı
-  değil, çünkü kod imzalama sertifikamız yok. "Ek bilgi" → "Yine de çalıştır".
-- **Yönetici izni** ister. Gerekçesi, uygulamanın çekirdek modunda çalışan bir ağ sürücüsü
-  kullanması.
-- İndirdiğiniz dosyanın gerçekten bu yayından geldiğini doğrulamak isterseniz yayındaki
-  `SHA256SUMS.txt` ile karşılaştırın:
-  ```powershell
-  Get-FileHash .\ZapretTR-Setup-<sürüm>.exe -Algorithm SHA256
-  ```
-
-**3. Dört adımda kullanın.**
-
-| Adım | Ne yapacaksınız | Ne göreceksiniz |
+| Adım | Ne yapacaksınız | Ekranda ne göreceksiniz |
 |---|---|---|
-| 1 | Hiçbir ayara dokunmayın | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"**, Başlat kapalı, üstte **"KORUMA KAPALI — KURULUM YARIM"** |
-| 2 | **PARAMETRE TESTİ YAP** | Hattınız tespit edilir, çalışan parametre aranır (**birkaç dakika**) |
-| 3 | **ZAPRET'İ BAŞLAT** | Test bitince "STRATEJİ BULUNDU" yazar ve Başlat açılır; basınca üst bant yeşile döner: **"KORUMA AKTİF"** |
-| 4 | **SERVİS OLARAK YÜKLE** | Koruma bilgisayar her açıldığında kendiliğinden çalışır |
+| 1 | Hiçbir ayara dokunmayın | Servis sağlayıcı: **"Bilmiyorum / otomatik tespit et"** |
+| 2 | **PARAMETRE TESTİ YAP** düğmesine basın | Birkaç dakika sürer, sonunda **"STRATEJİ BULUNDU"** yazar |
+| 3 | **ZAPRET'İ BAŞLAT** düğmesine basın | Üst bant yeşile döner: **"KORUMA AKTİF"** |
+| 4 | **Servis Olarak Yükle (Otomatik Başlat)** düğmesine basın | Koruma bilgisayar her açıldığında kendiliğinden çalışır |
 
-> **4. adımı atlamayın.** 3. adım korumayı **yalnızca o oturum için** açar. Bilgisayarı
-> kapatıp açtığınızda geriye hiçbir şey kalmaz: uygulama kendiliğinden açılmaz, koruma
-> kapalı gelir. Sahadan gelen "kurdum, çalıştı, yeniden başlattım, olmadı" bildiriminin
-> sebebi tam olarak budur. 4. adımdan sonra yeniden başlatmaya gerek yok; servis hemen
-> çalışmaya başlar.
+> ⚠️ **4. adımı atlamayın.** 3. adım korumayı yalnızca o oturum için açar; bilgisayarı yeniden
+> başlattığınızda koruma kapalı gelir. 4. adımdan sonra yeniden başlatmaya gerek yok.
 
-Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
-katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
+**"Şifreli DNS kullan (önerilir)" kutusu işaretli kalsın.** Engelleme çoğu zaman iki
+katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız.
 
-**Ekranda bir hata görüyorsanız** ne anlama geldiği ve ne yapmanız gerektiği
-[sorun giderme rehberinde](docs/SORUN-GIDERME.md): parametre bulunamazsa, koruma
-başlamazsa, internet giderse.
+**Belirli bir site açılmıyorsa** adresini **"Açılmayan site"** kutusuna yazıp testi öyle
+çalıştırın.
 
-**Bir şey çalışmıyorsa önce "Raporu Kaydet"e basın.** Dosya, günlüğün yanında makinenin o
-anki durumunu da yazar: yönetici yetkisi var mı, kurulum dosyaları tam mı, winws ve
-dnscrypt çalışıyor mu, servisler kurulu ve ayakta mı, sistem DNS'i kimde, GoodbyeDPI gibi
-çakışan bir araç açık mı. "Çalışmadı" cümlesi tek başına teşhis edilemiyor; bu dosya
-ediliyor. Hiçbir yere gönderilmez, sadece diske yazılır.
+## Bilmeniz gerekenler
 
-**Sizde açılmayan belirli bir adres varsa** "Açılmayan site" kutusuna yazın ve testi öyle
-çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
+**Pencereyi kapatmak (X) korumayı kapatmaz.** Uygulama saatin yanındaki simgeye iner.
+Tamamen kapatmak için **Çıkış** düğmesini kullanın. Servis kuruluysa uygulamayı kapatmanız
+korumayı hiç etkilemez.
 
-**"Servis Olarak Yükle"** bir Windows servisi kurar: uygulamayı açmanız gerekmez ve
-**yeniden başlatmaya da gerek yok** — servis hemen çalışmaya başlar, sonraki açılışlarda
-kendiliğinden devreye girer. Şifreli DNS açıksa ikinci bir servis daha kurulur; sistem DNS
-ayarınız ona yönlendirilir ve bu **ancak çözümleyicinin gerçekten cevap verdiği
-doğrulandıktan sonra** yapılır. Cevap gelmezse DNS ayarınıza hiç dokunulmaz ve servis geri
-sökülür — yarım bir yönlendirme, hiç yönlendirmemekten kötüdür.
+**Güncelleme:** **"Güncellemeleri Denetle"** düğmesi yeni sürümü indirir, doğrular ve kurar.
+Ayarlarınız korunur. Yeni sürüm varsa uygulama açılışta haber verir.
 
-**Otomatik başlatmayı kaldırdıysanız** bilgisayarı bir kez yeniden başlatmanız iyi olur:
-ağ sürücüsü çekirdekten hemen düşmüyor ve kalıntı bir sürücü, sonraki parametre testinde
-bütün adayların aynı şekilde başarısız olmasına yol açabiliyor.
+**WiFi ile kablo arasında geçiş** yaparsanız, aynı modemdeyseniz yeniden test gerekmez.
+**Başka bir ağa** geçerseniz (telefondan paylaşım, başka bir ev, iş yeri) o ağda testi bir
+kez çalıştırın. Sonuç kaydedilir; bir dahaki sefere listede **✓** işaretiyle hazır bekler.
 
-### Sık sorulanlar
+**Dün çalışıyordu, bugün açmıyor:** Servis sağlayıcılar ayarlarını değiştirebiliyor.
+Uygulama bunu fark ederse **"ÇALIŞIYOR — AMA AÇMIYOR"** yazar; parametre testini yeniden
+çalıştırın.
 
-**Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçüldüğü için.
-Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez.
+**Bilgisayarı yavaşlatmaz.** Koruma yaklaşık 10 MB bellek ve işlemcinin %0,2'sinden azını
+kullanır; ölçümlerde gecikmede fark çıkmadı. Tek fark şu: şifreli DNS açıkken bir siteyi
+**ilk kez** açarken kısa bir bekleme olabilir.
 
-**"ENGEL BULUNAMADI" yazarsa ne olur?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde
-açılmayan adresi "Açılmayan site" kutusuna girip yeniden deneyin.
+**Gizlilik:** Ölçüm sonuçlarınız ve ayarlarınız yalnızca bilgisayarınızda kalır. Uygulamanın
+kendiliğinden yaptığı tek internet isteği "yeni sürüm var mı" sorusudur.
 
-**Antivirüs uyarı verirse?** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
-false-positive üretebiliyor. Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler
-için garanti veremeyiz.
+**Antivirüs uyarısı:** Windows Defender paketi işaretlemiyor. Başka antivirüs programları
+ağ sürücüsü yüzünden yanlış alarm verebilir.
 
-**İnternetim gitti, adresler çözülmüyor.** Uygulama şifreli DNS için sistem DNS'ini kendine
-yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa şu komut geri alır:
+## Bir sorun olursa
+
+1. **Ekrandaki mesajı** [sorun giderme rehberinde](docs/SORUN-GIDERME.md) bulun; her mesajın
+   ne anlama geldiği ve ne yapmanız gerektiği orada yazıyor.
+2. **"Raporu Kaydet"** düğmesine basın. Bu dosya sorunun teşhisi için gerekli olan her şeyi
+   içerir ve hiçbir yere gönderilmez.
+3. **"Hata Bildir"** düğmesi GitHub'daki bildirim formunu doldurulmuş halde açar. Kendiliğinden
+   hiçbir şey göndermez; formu okuyup siz gönderirsiniz. Kaydettiğiniz rapor dosyasını forma
+   sürükleyin.
+
+### İnternet tamamen gitti
+
+Önce **ZapretTR'yi bir kez açıp kapatın**; uygulama DNS ayarını kendisi düzeltmeye çalışır.
+Olmazsa **yönetici olarak açtığınız PowerShell'de** şunu çalıştırın. Servisleri kaldırır ve
+DNS ayarınızı eski haline getirir:
+
 ```powershell
 & "$env:ProgramFiles\ZapretTR\ZapretTR.exe" --uninstall-services
 ```
-Program Ekle/Kaldır üzerinden kaldırmak da aynı temizliği yapıyor.
 
-**Yeni sürüm çıkınca ne yapmam gerekiyor?** Hiçbir şey indirmenize gerek yok:
-**"Güncellemeleri Denetle"** düğmesi yeni sürümü indirir, SHA256 özetini doğrular ve
-kurulumu başlatır. Ayarlarınız ve doğrulanmış stratejileriniz korunur. Yeni sürüm
-varsa uygulama açılışta zaten haber verir.
+Programı **Ayarlar → Uygulamalar** bölümünden kaldırmak da aynı temizliği yapar.
 
-**Uygulama internete bir şey gönderiyor mu?** Ölçüm sonuçları, seçtiğiniz strateji ve
-raporlar **yalnızca diske** yazılır. Kendiliğinden yapılan tek istek güncelleme
-kontrolüdür: açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir
-şey yok — ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. ("Hata Bildir" düğmesi de
-GitHub'a gider ama yalnızca **siz bastığınızda**, ve tarayıcıda yalnızca formu açar:
-göndermeye siz karar verirsiniz.) İstemezseniz
-`%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
-yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
+## Kaldırma
 
-**Bilgisayarımı yavaşlatır mı, oyunda FPS düşer mi?** Koruma çalışırken `winws` 10 MB bellek
-ve makinenin **%0,2'sinden azını** kullanıyor; çekirdek sürücüsünün DPC/kesme süresinde ölçülebilir
-bir artış yok — takılmanın çıkacağı yer orasıdır. Gecikme de değişmiyor. Tek gerçek maliyet
-şifreli DNS: bir adresi ilk kez açarken fazladan bekleme oluyor. Sayıların tamamı ve nasıl
-ölçüldüğü: [Bilgisayarı yavaşlatır mı](#bilgisayarı-yavaşlatır-mı).
+**Ayarlar → Uygulamalar → ZapretTR → Kaldır.** Servisler silinir ve DNS ayarınız eski haline
+döner.
 
-**Bir hatayı nasıl bildiririm?** **"Hata Bildir"** düğmesi GitHub'daki bildirim formunu
-**doldurulmuş halde** açar: sürüm, motor sürümü, Windows, servis sağlayıcı, seçili
-parametre ve günlüğün son satırları formda hazır gelir. Düğme **hiçbir şey göndermez** —
-açılan sayfayı okuyup istemediğiniz satırı silebilir, sonra kendiniz gönderirsiniz
-(göndermek için GitHub hesabı gerekir). Kendi yazdığınız "Açılmayan site" adresi forma
-**bilerek konmaz**; paylaşmak isterseniz elle eklersiniz. Günlüğün tamamı gerekiyorsa
-**"Raporu Kaydet"** ile dosyayı kaydedip bildirime sürükleyin.
+## Hangi hatlarda denendi
 
-**"SERVİS DURMUŞ" yazıyor, ne yapmalıyım?** Otomatik başlatma servisi kurulu ama
-çalışmıyor demektir — koruma o anda kapalıdır. En sık sebebi, bir yükseltmeden sonra
-servisin yeniden başlatılamamış olması. Üç seçeneğiniz var: **"ZAPRET'İ BAŞLAT"** ile
-elle başlatın, **"Otomatik Başlatmayı Kaldır"** deyip yeniden kurun, ya da bilgisayarı
-yeniden başlatın. Uygulama bu durumda Başlat düğmesini açık tutar; kilitli kalmazsınız.
-
-### Bağlantı ya da ağ değiştirdiğinizde
-
-**WiFi ile Ethernet arasında geçiş yaparsam yeniden test gerekir mi?** Aynı modeme bağlı
-oldukları sürece **hayır**. DPI, evinizdeki bağlantı türünde değil servis sağlayıcının
-ağında çalışıyor; kabloyla da WiFi ile de aynı sağlayıcıya, aynı DPI donanımına
-çıkıyorsunuz. Ölçtük: aynı strateji (`fake + ttl4`) iki bağlantıda da Discord'u açtı ve
-iki arayüzün ağ geçidi aynı çıktı — aynı IP, aynı MAC adresi, yani aynı modem.
-
-Şifreli DNS tarafı da 0.1.9'dan itibaren her iki karta birden uygulanıyor, dolayısıyla
-kabloyu takıp çıkarmak koruma durumunu değiştirmiyor.
-
-Yeni test gerektiren şey bağlantı türü değil, **ağın kendisi**: telefonunuzun mobil
-paylaşımına bağlanmak, başka bir eve ya da iş yerine gitmek. Orada farklı bir servis
-sağlayıcı, dolayısıyla farklı bir DPI yapılandırması var; bir hatta çalışan parametre
-orada işe yaramayabilir.
-
-Bu durumda ne yapmanız gerektiği:
-
-1. **Servis sağlayıcı** listesinden yeni hattı seçin (bilmiyorsanız "Bilmiyorum" seçeneği
-   hattı kendisi tespit eder).
-2. **Strateji** listesi o sağlayıcının adaylarıyla dolar. Daha önce o hatta test
-   yaptıysanız sonucunuz kaydedilmiştir ve listenin en üstünde `✓` işaretiyle çıkar;
-   onu seçip doğrudan Başlat'a basabilirsiniz, testi tekrarlamanız gerekmez.
-3. O hatta hiç test yapmadıysanız **Parametre Testi**'ni bir kez çalıştırın. Sonuç
-   kaydedilir ve bir dahaki sefere listede hazır bekler.
-
-Kaydedilmiş bir strateji zamanla işlevini yitirebilir — sağlayıcı DPI yapılandırmasını
-güncellerse dün çalışan parametre bugün çalışmaz. Uygulama bunu kendisi fark ediyor:
-başlattıktan birkaç saniye sonra hedefleri ölçüyor ve hiçbiri açılmıyorsa **"ÇALIŞIYOR —
-AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
-
-### Discord
-
-### Pencereyi kapatınca ne oluyor
-
-**X düğmesi korumayı kapatmaz.** Uygulama saat yanındaki bildirim alanına iner;
-`winws` ve şifreli DNS çalışmaya devam eder. Pencereyi geri getirmek için simgeye
-çift tıklayın.
-
-**Tamamen kapatmak için Çıkış düğmesini** kullanın (ya da simgeye sağ tıklayıp
-Çıkış). O yol koruma açıksa `winws`i durdurur ve sistem DNS ayarını geri alır.
-
-Otomatik başlatma servisi kuruluysa uygulamayı kapatmanız zaten korumayı etkilemez:
-servis bağımsız çalışır.
-
-**Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
-denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
-çünkü sesten çok daha ağır bir medya akışı.
-
-Mekanizması şöyle: o hatta ses zaten engelli değil; metin ve bağlantı engeli aşılınca ses
-kendiliğinden kuruluyor. ZapretTR ses trafiğine **hiç dokunmuyor**, çünkü "sorunu olmayan bölüme
-dokunma" kuralı gereği o bölüm komuta hiç girmiyor.
-
-Sizde ses **çalışmıyorsa** dürüst cevap şu: o durum için doğrulanmış bir stratejimiz yok ve araç
-size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP keşif
-protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulaması yapılmış bir ses oturumundan
-alınabiliyor. Dolayısıyla dışarıdan ölçemiyoruz.
-
----
-
-## Bilgisayarı yavaşlatır mı
-
-Kısa cevap: **korumanın kendisi ölçülebilir bir yük getirmiyor. Şifreli DNS'in ise bir
-bedeli var ve aşağıda yazıyor.**
-
-Ölçüm makinesi: AMD Ryzen 7 260 (16 iş parçacığı), Windows 11 (26200), Türk Telekom
-hattı (~95 MB/s), ZapretTR 0.1.18. Her ölçüm **dönüşümlü** yapıldı — kapalı → açık →
-tekrar kapalı. Sondaki ikinci "kapalı" bir sürüklenme denetimi: aradaki farkın gerçekten
-ZapretTR'den mi yoksa hattın kendi dalgalanmasından mı geldiğini ayırır.
-
-### Bellek
-
-Aşağıdaki sayılar **çalışma kümesi** — Görev Yöneticisi'nde "Bellek" sütununda
-göreceğiniz değer:
-
-| Süreç | Ne yapıyor | Bellek |
-|---|---|---|
-| `winws` | paket süzgeci — **asıl iş bu** | **10 MB** |
-| `dnscrypt-proxy` | şifreli DNS (isteğe bağlı) | 41–78 MB |
-| `ZapretTR.exe` | arayüz | 165–235 MB |
-
-Listenin en pahalı parçası arayüz — ve **çalışıyor olması gerekmiyor.** Pencereyi
-kapatınca bildirim alanına iner; otomatik başlatmayı kurduysanız hiç açmanız gerekmez.
-Korumayı yapan şey 10 MB'lık `winws`.
-
-### İşlemci
-
-Sürekli ~95 MB/s indirme altında, 30 saniyelik pencerede ölçüldü:
-
-| Süreç | Makinenin tamamına oranla | Tek çekirdeğe oranla |
-|---|---|---|
-| `winws` | **%0,14 – %0,19** | %2,3 – %3,1 |
-| `dnscrypt-proxy` | %0,013 | %0,21 |
-| arayüz (boşta) | ~%0 | ~%0 |
-
-### Oyun takılması
-
-Bir paket süzgecinin oyunu takabileceği yer bellidir: çekirdek sürücüsünün kesme ve
-**DPC** süresi. Kare sürelerinde ani sıçrama olacaksa oradan çıkar. Aynı indirme yükü
-altında ölçtük:
-
-| | Motor kapalı | Motor açık | Yeniden kapalı |
-|---|---|---|---|
-| DPC süresi | %0,33 | %0,31 | %0,35 |
-| Kesme süresi | %0,29 | %0,23 | %0,23 |
-| Makine geneli CPU | %4,6 | %6,2 | %5,7 |
-
-DPC ve kesme sürelerinde **ölçülebilir bir artış yok** — açıkken okunan değerler,
-kapalıyken okunanların arasında kalıyor.
-
-**Dürüst sınır:** FPS'i doğrudan ölçmedik, çünkü ölçüm sırasında oyun çalıştırmadık.
-Yukarıdaki sayılar, bir FPS düşüşünün *sebebi* olabilecek şeyin ölçümü. Elimizdeki
-kanıt bu; "hiç etkilemez" demiyoruz, "etkilemesini bekleyeceğimiz yerde bir şey
-göremedik" diyoruz. Gerçek bir oyunda ölçüm yapan olursa bildirsin, buraya yazalım.
-
-### Gecikme
-
-| | Motor kapalı | Motor açık |
-|---|---|---|
-| ping (1.1.1.1) | 3,8 ms | 3,7 ms |
-| TCP el sıkışma (github.com:443) | 56,5 ms | 57,2 ms |
-| TCP el sıkışma (1.1.1.1:443) | 4,9 ms | 4,8 ms |
-
-Fark yok. Beklenen de buydu: `winws` bağlantının yalnızca **ilk** paketlerine dokunuyor,
-sonrasında akış olduğu gibi geçiyor.
-
-### Şifreli DNS'in bedeli — tek gerçek maliyet
-
-Burada gerçek bir fark var ve saklamanın anlamı yok:
-
-| | Ad çözme süresi |
+| Servis sağlayıcı | Durum |
 |---|---|
-| ISS'nin çözücüsü (şifreli DNS kapalı) | ortanca **1 ms** |
-| ISS'nin çözücüsü + paket süzgeci açık | ortanca **0,9 ms** — süzgecin etkisi yok |
-| Şifreli DNS, bir adresi **ilk kez** çözerken | **45–606 ms** (12 adres, ortanca ~190 ms) |
-| Şifreli DNS, aynı adresi tekrar çözerken | **0,4 ms** — ISS'nin çözücüsünden bile hızlı |
+| Türk Telekom | ✅ ölçülerek doğrulandı |
+| Turkcell Mobil | ✅ ölçülerek doğrulandı |
+| Türksat Kablonet | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
+| Superonline, TurkNet, Vodafone ve diğerleri | ⬜ henüz test edilmedi |
 
-Yani ilk ziyarette gözle görülür bir bekleme oluyor, sonrasında `dnscrypt-proxy` kendi
-önbelleğinden anında cevaplıyor. Karşılığında ISS'nin DNS'i devrede olmadığı için
-adresler engel sunucusuna yönlendirilemiyor — Türkiye'de engellemenin **ilk** katmanı
-tam olarak budur. Bu takas hoşunuza gitmiyorsa "Şifreli DNS kullan" kutusunu
-kapatabilirsiniz; paket süzgeci tek başına da çalışır.
-
-### İndirme hızı
-
-Ölçtük ama **kesin bir şey söyleyemiyoruz** ve bunu olduğu gibi yazmak daha doğru:
-motor açıkken de kapalıyken de 85–96 MB/s ölçtük, tutarlı bir fark çıkmadı. Sayıların
-dağılımı her iki durumda da hız testi sunucusundan geliyordu — nitekim test sunucusu
-bir noktada bizi hız sınırına takti. Hattı doyurabilen, sınırlamayan bir kaynak
-bulamadığımız için bu satır, tablodaki öteki satırlardan **daha zayıf bir kanıt**.
-
-Elimizdeki asıl dayanak şu: `winws` saniyede ~95 MB veri geçerken makinenin **%0,2'sinden
-azını** kullanıyor. Bu kadar az iş yapan bir şeyin bant genişliğini kayda değer biçimde
-kısması beklenmez.
-
-### Yerel trafik hiç dokunulmuyor
-
-Ölçüm sırasında yan bir bulgu: makinenin kendi içindeki trafik (127.0.0.1) süzgeçten
-**hiç geçmiyor**. 400 MB'lık yerel aktarım boyunca `winws`'in işlemci süresi 0 ms arttı.
-Yerelde çalıştırdığınız sunucular, oyun sunucuları ve uygulamalar arası bağlantılar
-etkilenmiyor.
+Listede olmayan bir hattaysanız da uygulama çalışır, çünkü ayarı sizin hattınızda ölçerek
+bulur. Testi çalıştırıp **"Raporu Kaydet"** dosyasını
+[ölçüm bildirimi formuyla](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
+paylaşırsanız o hattı doğrulanmış listeye ekleyebiliriz.
 
 ---
 
-## Neden var
-
-zapret güçlü bir anti-DPI aracı, ama Windows'ta son kullanıcı için pratikte kullanılabilir
-değil. Çalışan bir strateji bulmanın tek yolu `blockcheck.sh`: cygwin üzerinde çalışan ve
-desync metodu × TTL × split pozisyonu × fooling kombinasyonlarını **tek tek, sırayla** deneyen
-bir bash betiği. Tam bir tarama tipik olarak 10-40 dakika sürüyor ve sonunda elinizde kalan şey,
-bir `.cmd` dosyasına elle yapıştırmanız gereken bir komut satırı oluyor.
-
-## Yaklaşım
-
-ZapretTR aramayı **sıralama yaparak** kısaltıyor. Bir sağlayıcının DPI kutusu tutarlı davrandığı
-için, o sağlayıcıda daha önce çalıştığı bilinen adaylar önce deneniyor:
-
-| Aşama | Kapsam | Tipik süre |
-|---|---|---|
-| Tier 1 | Seçilen sağlayıcının profili (5-19 aday) | saniyeler |
-| Tier 2 | Komşu TR profilleri | 1-2 dakika |
-| Tier 3 | Genel kombinatoryal arama (221 aday) | dakikalar |
-
-Kullanıcı sağlayıcısını bilmiyorsa ASN ve kuruluş adından otomatik tespit ediliyor.
-
-Genel aramada sıra **aileler arasında dolaşıyor**: önce her strateji ailesinden birer aday
-deneniyor, sonra derinleşiliyor. Aksi halde tek bir ailenin onlarca varyantı bütçeyi tüketiyor
-ve hiç denenmemiş mekanizmalara sıra gelmiyordu — ölçtüğümüz bir kullanıcıda tam olarak bu oldu.
-
-### Çalışan strateji tek bir parametre değildir
-
-Tasarımın merkezinde şu gözlem var: `--dpi-desync-fooling=md5sig` yalnızca hedef sunucu TCP MD5
-seçeneğini reddettiğinde işe yarıyor. Yani **çalışan strateji, sağlayıcının olduğu kadar hedef
-sunucunun da fonksiyonu** — aynı bağlantıda Discord'u açan parametre YouTube'u açmayabilir.
-
-Bu, doğrulanmış adayların ne kadar genellenebildiğini de bir soru haline getiriyordu:
-hedeflerimizin çoğu Cloudflare arkasında olduğu için "doğrulandı" damgası yalnızca tek bir
-sunucu ailesini yansıtıyor olabilirdi. TTNET hattında ölçtük ve öyle olmadığını gördük — aynı
-strateji, farklı barındırıcılarda da gerçek sunucuya ulaştırıyor:
-
-| Hedef | Barındıran | Koruma açıkken |
-|---|---|---|
-| discord.com | Cloudflare | HTTP 200 |
-| pornhub.com | Cloudflare **değil** | HTTP 301 |
-| xvideos.com | Cloudflare **değil** | HTTP 301 |
-| www.youtube.com | Google (engelli değil) | HTTP 200 — etkilenmedi |
-
-Hedef listesi bu yüzden dar, ama **keyfî değil**: bir hedef ancak yeni bilgi veriyorsa
-ekleniyor. "Barındırıcıya göre değişiyor mu" sorusu yukarıdaki ölçümle cevaplandığı için genel
-site listesi büyütülmedi. Buna karşılık `updates.discord.com` eklendi, çünkü Discord istemcisi
-güncelleme için oraya gidiyor; o adres açılmadığında uygulama güncelleme ekranında takılı
-kalıyor, test ise "başarılı" diyordu.
-
-Adaylar bu nedenle bölümlere ayrılmış durumda (`tcp80`, `tcp443`, `quic`, `discord-voice`). Her
-bölüm bağımsız test edilip kendi kazananını buluyor, nihai komut da bölümleri `--new` ile
-birleştiriyor — upstream'in kendi `preset1_example.cmd` dosyasıyla aynı yapı.
-
-### Her parametrenin kaynağı belli
-
-Her adayın nereden geldiği etiketli:
-
-| Etiket | Anlamı |
-|---|---|
-| `verified` | Bizim saha testimizde gerçekten çalıştı |
-| `community-unverified` | TR topluluğunda bildirilmiş, biz doğrulamadık |
-| `hypothesis` | Belgelenen mekanizmadan türetildi; kimse bildirmedi, biz çıkardık |
-| `upstream-preset` | zapret'in kendi örnek preset dosyasından geldi |
-
-Bu ayrım kozmetik değil. "Bu profil henüz doğrulanmadı" demekle "bu çalışıyor" demek arasındaki
-farkı korumak için var.
-
----
-
-## Hangi hatlarda doğrulandı
-
-"Doğrulandı" burada dar bir anlam taşıyor: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
-koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmıyor.
-Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil.
-
-| Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
-|---|:---:|:---:|:---:|---|
-| Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
-| Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
-| Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
-| Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
-| TurkNet | — | — | — | ⬜ **testçi aranıyor** |
-| Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
-| Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
-
-⚠️ **Sonuç alınamayan bir koşum — ama hangi hatta olduğunu bilmiyoruz.** Bir kullanıcıda
-49 aday denendi ve hiçbiri `tcp80` ile QUIC bölümünü açamadı. Motor düzgün çalışıyordu;
-bağlantılar gerçekten sıfırlanıyordu, yani ölçüm geçerliydi.
-
-Bu koşumu **hiçbir profile işlemiyoruz.** Otomatik tespit "Turkcell Mobil" dedi, ama
-kullanıcı o sırada paylaşımlı bir ağdaydı (aynı hattı bütün bir kat kullanıyor) ve
-trafiğin gerçekte hangi sağlayıcının DPI donanımından geçtiğini bilmiyoruz. ASN tespiti
-çıkış noktasını söyler, ağın yapısını değil. Bilmediğimiz bir hattın sonucunu bilinen bir
-profile yazmak, tam da bu projenin kaçındığı şey olurdu.
-
-Yine de bir şey öğretti ve o kısmı sağlam: **aynı koşumda `tcp443` tamamen açıktı**
-(`discord.com`, `gateway.discord.gg`, `updates.discord.com` — hepsi erişilebilir). Yani
-Discord'un ana trafiği zaten geçiyordu. "Çalışan strateji bulunamadı" her zaman "araç işe
-yaramadı" demek değil: engellenen bölümler ikincil olabiliyor.
-
-🟡 **Türksat Kablonet:** bir kullanıcı 0.1.6 ile bağlantı kurabildiğini ve giriş yapabildiğini
-bildirdi. Profil hâlâ `verified` değil, çünkü hangi adayın kazandığını ve sonucun tekrarlanıp
-tekrarlanmadığını bilmiyoruz. O hattaysanız ve testi çalıştırdıysanız, uygulamadaki
-**"Raporu Kaydet"** dosyasını [ölçüm bildirimi formuna](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
-bırakmanız bu profili doğrulanmışa çevirecek tek şey.
-
-### Bu hatlardan birindeyseniz
-
-Projenin eksiği kod değil, **saha verisi**. Yapmanız gereken üç şey var ve toplamı
-birkaç dakika:
-
-1. Uygulamayı kurun, **Parametre Testi**'ni çalıştırın.
-2. Bittiğinde **"Raporu Kaydet"** ile dosyayı kaydedin.
-3. [**Ölçüm bildirimi formunu**](https://github.com/superuser-d0/zapret-tr/issues/new?template=olcum-bildirimi.md)
-   açın, dosyayı sürükleyip bırakın.
-
-Test **hiçbir yere veri göndermiyor**; neyi paylaşacağınıza siz karar veriyorsunuz.
-Raporu göndermeden önce açıp bakın — içinde hattınızın sağlayıcısı, denenen
-parametreler ve test edilen adresler var, genel IP adresiniz yazmaz.
-
-**En değerlisi tekrarlanan koşum.** Bir profili "doğrulandı"ya çevirmek için aynı
-adayın tekrar tekrar kazandığını görmemiz gerekiyor; tek koşum gürültü taşıyabiliyor.
-Testi üç kez çalıştırıp sonucu yazarsanız o profil doğrudan doğrulanmışa geçebilir.
-
-Aynı sağlayıcı içinde bile davranış değişebiliyor: üç ayrı Türk Telekom hattında üç farklı sonuç
-aldık (birinde düz HTTP engelliydi, diğerinde değildi). Yani "profil var" demek "sizde çalışır"
-demek değil — ölçüm tam olarak bunun için var.
-
----
-
-## Saha testi paketi kimin için
-
-Yayınlarda `zapret-tr-saha-testi.zip` diye ikinci bir dosya var. **Son kullanıcı için değil** ve
-internetinizi açmaz: koruma sağlamaz, arka planda çalışmaz, bilgisayar açılışında devreye
-girmez. Yaptığı tek şey ölçmek — hangi parametrenin o hatta işe yaradığını bulup bir rapor
-dosyasına yazmak.
-
-Var oluş sebebi, henüz ölçemediğimiz hatlarda (başka bir sağlayıcı, başka bir şehir)
-engellemenin nasıl davrandığını öğrenmek. Kurulum yapmıyor, `--cleanup` ile kendini temizliyor
-ve raporu hiçbir yere göndermiyor; yalnızca diske yazıyor. Yardım etmek isterseniz raporu bize
-iletebilirsiniz.
-
-Kendi internetinizi açmak istiyorsanız ihtiyacınız olan dosya bu değil,
-`ZapretTR-Setup-<sürüm>.exe`.
-
----
-
-## Kurulum (geliştirme)
-
-Gereksinimler: .NET 8 SDK, PowerShell, Windows x64.
-
-```bash
-powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
-```
-
-Bu komut `winws.exe` ile WinDivert sürücüsünü sabitlenmiş bir upstream sürümünden indiriyor ve
-SHA256 ile doğruluyor. `vendor/` klasörü git'e girmiyor.
-
-```bash
-dotnet build
-dotnet test
-```
-
-Sıra önemli: arayüz duman testleri `vendor/` içindeki ikilileri aradığı için,
-`fetch-upstream.ps1` çalıştırılmadan `dotnet test` iki testte başarısız olur.
-
-## Depo yapısı
-
-```
-src/ZapretTr.Core/             winws süreç yönetimi, komut kurma, profil yükleme
-src/ZapretTr.Prober/           parametre test motoru (blockcheck.sh'ın yerini alır)
-src/ZapretTr.Prober.Cli/       saha testi için taşınabilir tek dosyalık araç
-src/ZapretTr.App/              WPF arayüz
-profiles/isp/*.json            sağlayıcı başına sıralı aday listesi
-profiles/generic-ladder.json   Tier 3 kombinatoryal arama tarifi
-tools/fetch-upstream.ps1       upstream ikili indirme + SHA256 doğrulama
-```
-
-## Yol haritası
-
-Tamamlananlar:
-
-- [x] Depo iskeleti, upstream indirme + SHA256 doğrulama
-- [x] Sağlayıcı profil veritabanı (10 profil) + genel kombinatoryal merdiven (221 aday)
-- [x] Komut kurucu, profil yükleyici, testler (151 test)
-- [x] winws süreç yönetimi + WinDivert temizliği
-- [x] Test motoru: baseline tarama, protokol sınıfı testleri, BTK engel sayfası tespiti
-- [x] WPF arayüz (Başlat / Duraklat / Çıkış / Parametre Testi / Sıfırla)
-- [x] Gerçek donanımda uçtan uca doğrulama — TTNET'te Discord, Pornhub, XVideos açıldı
-- [x] `--ipset-ip` izolasyonunun çalıştığı doğrulandı (winws `--debug=1` çıktısıyla)
-- [x] Şifreli DNS (dnscrypt-proxy) + her çıkış yolunda geri alma
-- [x] Taşınabilir saha testi paketi (kurulum yapmaz, kendini temizler)
-- [x] Kalıcılık: seçimler ve öğrenilen doğrulamalar `%ProgramData%\ZapretTR\` altında
-- [x] Otomatik başlatma: `ZapretTR` ve `ZapretTR-DNS` Windows servisleri
-- [x] Servis kaldırma yolu gerçek koşumda doğrulandı
-- [x] Şifreli DNS bağlı olmayan kartlara da uygulanıyor — kablo/WiFi geçişinde koruma
-      yarım kalmıyor (gerçek makinede ölçüldü)
-- [x] ASN otomatik tespiti — "Bilmiyorum" artık çalışıyor
-- [x] Kurulum paketi (Inno Setup, kendi kendine yeten) — tam yaşam döngüsü koşuldu
-- [x] Paralel hedef sınaması
-- [x] Discord ses (UDP/STUN) ölçümü — bölüm artık sessiz değil
-- [x] **QUIC.** Hem ölçüm yolu hem çalışan strateji bulundu. Uzun süre "engelli" sanılan şeyin
-      bir kısmı bizim ölçüm hatamızmış; ayrıntısı `docs/DEVAM.md` dosyasında.
-- [x] **Kurulum testi CI'da.** Paket gerçekten kuruluyor, servis kurduruluyor, üzerine
-      yükseltme yapılıp servisin sağ kalıp kalmadığına bakılıyor, sonra kaldırılıyor.
-      Düzeltme geri alınarak testin hatayı gerçekten yakaladığı kanıtlandı.
-- [x] **Teşhis kanalı.** "Raporu Kaydet" düğmesi ve saha paketinin her yolda rapor
-      bırakması — hata durumunda ve engel bulunamadığında da.
-- [x] **Tek tıkla güncelleme.** Paketi indirir, SHA256 özetini doğrular, kurulumu başlatır.
-- [x] **Bildirim alanı simgesi.** Pencereyi kapatmak korumayı kapatmıyor.
-- [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak üretimine
-      taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
-
-Kalanlar:
-
-- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin sekizinde
-      sıfır saha verisi var. Kod eksiği değil, o hatlara erişim eksiği.
-- [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.** Discord'un
-      ses yolu kendi IP keşif protokolünü kullanıyor; sunucu adresi ancak kimlik doğrulaması
-      yapılmış bir ses oturumundan alınabiliyor. Genel STUN engellenmediği için vekil bir
-      hedefle de ölçülemiyor. (`tcp80` artık doğrulandı — eksik olan şey hattın temizliği değil,
-      hedef listesinde engelli bir tcp80 adresinin bulunmamasıydı.)
-- [ ] **Kurulumdan sonra takılan yeni ağ adaptörü.** Şifreli DNS, kurulum sırasında makinede
-      bulunan Ethernet ve WiFi kartlarına uygulanıyor. Sonradan takılan bir adaptör (örneğin USB
-      WiFi) kapsam dışında kalıyor; onun için uygulamayı açıp servisi bir kez yeniden kurmak
-      gerekiyor.
-- [ ] **Kod imzalama sertifikası yok.** Defender bu paketi işaretlemiyor (ölçtük), ama
-      SmartScreen "bilinmeyen yayımcı" uyarısı verecek. Sertifika alınana kadar kullanıcının
-      elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
-- [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir makinede
-      hem sıcak hem soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor (sistem DNS'ine
-      dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini söylemesi için hata mesajı artık
-      süreç ve port durumunu taşıyor.
-
-## Yayın ve sürüm
-
-Sürüm tek bir kaynaktan geliyor: git tag'i. `Directory.Build.props` derlenen exe'lerin sürümünü,
-`installer/setup.iss` kurulum paketininkini taşıyor; ikisi de yayın akışında tag'den besleniyor
-(`-p:Version=`, `/DAppVersion=`).
-
-- `.github/workflows/ci.yml` — her itmede upstream indirme, derleme, testler, kırpılmış yayın
-  (kırpma analizörü hata verirse burada patlar) ve `msquic.dll` kontrolü.
-- `.github/workflows/release.yml` — `v*` tag'i itildiğinde kurulum paketini, saha testi paketini
-  ve `SHA256SUMS.txt` dosyasını üretip **taslak** yayın açar.
-
-Yayın notu CHANGELOG'dan üretiliyor; o sürümün bölümü yazılmamışsa yayın akışı başarısız oluyor.
-Yayının taslak açılması da kasıtlı: imzasız ikili dağıtıldığı için son bir gözden geçirme
-yapılıyor.
-
-Bütün değişiklikler [CHANGELOG.md](CHANGELOG.md) dosyasında.
-
-## Uyarılar
-
-**Yönetici yetkisi zorunlu.** `winws.exe` çekirdek modunda çalışan WinDivert sürücüsünü kullanıyor
-ve `--help` için bile yükseltilmiş yetki istiyor.
-
-**Antivirüs uyarı verebilir.** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
-false-positive üretiyor. Kod imzalama sertifikamız yok.
-
-## Teşekkürler
-
-- **Zapret** projesinin DPI atlatma motoru `winws` için [@bol-van](https://github.com/bol-van)'a,
-- Paket yakalama sürücüsü [WinDivert](https://github.com/basil00/Divert) için
-  [@basil00](https://github.com/basil00)'a,
-- `winws.exe`'nin çalışmak için ihtiyaç duyduğu `cygwin1.dll` için [Cygwin](https://cygwin.com)
-  geliştiricilerine,
-- Şifreli DNS için [dnscrypt-proxy](https://github.com/DNSCrypt/dnscrypt-proxy) projesinin
-  geliştiricisi [@jedisct1](https://github.com/jedisct1)'e ve çözümleyici listesi
-  [dnscrypt-resolvers](https://github.com/DNSCrypt/dnscrypt-resolvers) için DNSCrypt ekibine,
-- Stratejilerini paylaşan, WinDivert kalıntı temizliği ve GoodbyeDPI çakışması fikirleri için
-  [zapret-win-turkey](https://github.com/alimali54/zapret-win-turkey) geliştiricisi
-  [@alimali54](https://github.com/alimali54)'e teşekkürler.
-
-Lisanslar ve ayrıntılar: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-
-## Lisans
-
-MIT — bkz. [LICENSE](LICENSE).
-
-Bu bir **türev üründür**. DPI atlatma işini zapret'in `winws` motoru yapıyor; ZapretTR onu yöneten
-arayüz ve otomatik parametre bulma katmanı. Üçüncü taraf bileşenler ve yükümlülükler için
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+MIT lisanslı. DPI atlatma işini [zapret](https://github.com/bol-van/zapret) projesinin `winws`
+motoru yapar. Emeği geçenler ve lisanslar: [Teşekkürler](README-DETAYLI.md#teşekkürler) ·
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)
