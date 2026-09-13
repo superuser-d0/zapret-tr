@@ -6,7 +6,12 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.1.21]
+
+Bu sürümün ana konusu **VPN ile yan yana kullanım**. "Duraklat" artık arkada çalışan her şeyi
+durduruyor: motor, şifreli DNS, ağ sürücüsü ve otomatik başlatma servisi. Ayar silinmiyor;
+"DEVAM ET" korumayı kaldığı yerden açıyor. Kurulum paketiyle gerçek bir makinede sınandı ve
+Proton VPN duraklatılmışken bağlandı (ayrıntılar aşağıda).
 
 ### Düzeltildi
 

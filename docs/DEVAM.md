@@ -1616,3 +1616,20 @@ Başlat → Duraklat yapılmış: bant "DURAKLATILDI", winws/dnscrypt yok, WinDi
 çekirdekte değil, WFP'de WinDivert 0, Ethernet DNS DHCP. Kullanıcı Proton'u bu durumda
 deneyebilir. Korumayı geri açmak için "DEVAM ET". **Kullanıcı bu durumda denedi: Proton
 21:58:22'de bağlandı** (Yapılacaklar/1 madde 8).
+
+**CI (`0c8f03f`):** derle ve test 264/264, kurulum testi 20 adım yeşil. CI Duraklat'ı
+SINAMIYOR (kurulum testi şifreli DNS kapalı koşuyor); o yol yalnızca yerelde, gerçek
+paketle doğrulandı.
+
+**0.1.21 yayına hazırlandı:**
+- `Directory.Build.props` 0.1.21'e çekildi, CHANGELOG `[Yayınlanmamış]` → `[0.1.21]`.
+- `tools/release-notes.ps1 -Version 0.1.21` yerelde notu üretti.
+
+**Commit, açıklamalı tag ve yayın kullanıcıda.** Yayın akışı taslak açar. DEVAM'a
+"yayınlandı" yazmadan önce ölç:
+
+```bash
+gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
+```
+
+(0.1.20 tuzağı.)
