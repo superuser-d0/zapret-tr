@@ -43,6 +43,11 @@ Depo: https://github.com/superuser-d0/zapret-tr (public)
   ölü/karantinadaki çözümleyici, uygulama çökmesi, DNS kapalı yeniden kurulum,
   kayıp/bozuk yedek, başarısız geri alma, kaldırıcı, 0.1.19 → 0.1.20 yükseltmesi.
   Ayrıntı "2026-09-13 oturumu / İkinci yarı" bölümünde.
+- **0.1.21 tam Duraklat, elle modda** (2026-09-13, TTNET) — kurulum paketiyle
+  88/88 + 68/68: Duraklat ve Çıkış sonrası süreç 0, sürücü yok, DNS DHCP, WFP'de
+  WinDivert 0; ardından Proton VPN duraklatılmışken bağlandı. Servis modunda VPN
+  denemesi ve karşı deney yapılmadı (Yapılacaklar/1 madde 8). Ayrıntı
+  "2026-09-13 oturumu / Üçüncü yarı" bölümünde.
 
 **Bu listeye GİRMEYENLER ve bu kasıtlı:** 0.1.19'un arayüz metinleri ve ikinci
 örnek kilidi; 0.1.20'nin **takılı WinDivert sürücüsü kurtarması** (kod yolu var ama
@@ -271,7 +276,7 @@ Elle koşulması gerekenler — şifreli DNS **açık**:
    `win32 error N` varsa mekanizma doğru tahmin edilmiş demektir; `A copy of winws
    is already running` varsa sebep sürücü değil servis çakışmasıdır. İkisi de yoksa
    iki hipotez de yanlış ve baştan bakılmalı.
-8. **Duraklat'tan sonra VPN (yayınlanmamış).** **Elle modda YAPILDI (2026-09-13):**
+8. **Duraklat'tan sonra VPN (0.1.21).** **Elle modda YAPILDI (2026-09-13):**
    - Kullanıcı Duraklat'tan sonra Proton'a bağlandı: 21:58:22, WireGuardTls, TCP 443,
      1,5 sn (Proton günlüğü).
    - O an ZapretTR tam duraklatılmıştı: süreç yok, servis yok, son WinDivert olayı
@@ -1171,8 +1176,8 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-> **GÜNCEL DURUM EN ALTTA:** "2026-09-13 oturumu" → "Yayın: v0.1.20" →
-> "Makine durumu (oturum sonu, ölçüldü)". Bu başlığın hemen altındaki ilk bölüm
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-13 oturumu" → "Üçüncü yarı" →
+> "Yayın: v0.1.21". Bu başlığın hemen altındaki ilk bölüm
 > 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
 
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
@@ -1506,7 +1511,7 @@ içinde `dns-backup.json` (servis sahipliğinde, geçerli), testten kalan
 `dns-bekci.log`'un son satırı testin C5 senaryosundan (12:30:20) — test bittikten
 sonra bekçi bir şey yapmadı.
 
-#### Üçüncü yarı: VPN bağlanmıyor → servis duraklatma (aynı gün, yayınlanmamış)
+#### Üçüncü yarı: VPN bağlanmıyor → tam Duraklat (aynı gün, 0.1.21'de yayınlandı)
 
 Kullanıcı bildirimi: "zapret kapandıktan sonra bile VPN açılmıyor; Tüm Ayarları
 Sıfırla deyince bağlandı." Kullanıcının hipotezi DNS'ti. **Ölçüm DNS'i eledi.**
@@ -1527,7 +1532,7 @@ paket mi) ölçülmedi; çözüm için gerekmedi. Uygulama modunda Duraklat zate
 winws + DNS'i kapatıyordu. Eksik olan **servis modunda** bir yoldu: düğme orada hep
 kapalıydı, pencereyi kapatmak servise dokunmuyordu.
 
-**Yapılan** (CHANGELOG [Yayınlanmamış]):
+**Yapılan** (CHANGELOG [0.1.21]):
 - `ServiceManager.PauseAsync`/`ResumeAsync`. Duraklatmanın izi servislerin
   başlangıç türü (`demand`). Durum ayrı dosyada değil, `sc qc` ile okunuyor;
   `config.json`'daki `servicePaused` yalnızca yükseltmede okunuyor.
@@ -1621,15 +1626,37 @@ deneyebilir. Korumayı geri açmak için "DEVAM ET". **Kullanıcı bu durumda de
 SINAMIYOR (kurulum testi şifreli DNS kapalı koşuyor); o yol yalnızca yerelde, gerçek
 paketle doğrulandı.
 
-**0.1.21 yayına hazırlandı:**
-- `Directory.Build.props` 0.1.21'e çekildi, CHANGELOG `[Yayınlanmamış]` → `[0.1.21]`.
-- `tools/release-notes.ps1 -Version 0.1.21` yerelde notu üretti.
+#### Yayın: v0.1.21 (2026-09-13)
 
-**Commit, açıklamalı tag ve yayın kullanıcıda.** Yayın akışı taslak açar. DEVAM'a
-"yayınlandı" yazmadan önce ölç:
+**Yayınlandı ve güncel (ölçüldü):** `releases/latest` = `v0.1.21`, taslak değil, ön
+sürüm değil, yayın anı 2026-09-13T19:21:34Z. Açıklamalı tag (`Cem`, 22:13:10 +0300),
+commit `04f9fbf` = `origin/main`'in ucu. Bu sefer ilk "yayınladım"da API zaten
+yayınlanmış gösteriyordu.
 
-```bash
-gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
-```
+**CI, `04f9fbf`'te üç iş akışı yeşil:** derle ve test (2 dk 14 sn), kurulum testi
+(3 dk 8 sn), yayın (3 dk 13 sn).
 
-(0.1.20 tuzağı.)
+**Paketler:**
+- `ZapretTR-Setup-0.1.21.exe`: 55 656 186 bayt, `ProductVersion 0.1.21`.
+- `zapret-tr-saha-testi.zip`: 13 134 363 bayt.
+- `SHA256SUMS.txt`: 185 bayt.
+
+Bu kez paketler indirildi ve yerelde `sha256sum` ile hesaplandı. İki özet hem
+SHA256SUMS ile hem GitHub'ın `digest` alanıyla eşleşti. Yayın notu CHANGELOG
+`[0.1.21]`'den geldi (7456 karakter).
+
+**Tuzak — `sha256sum -c SHA256SUMS.txt` Git Bash'te "FAILED open or read" diyor.**
+Dosya CRLF satır sonlu, ad `ZapretTR-Setup-0.1.21.exe\r` olarak aranıyor. Özet
+yanlış değil. `tr -d '\r' < SHA256SUMS.txt | sha256sum -c` iki satırda da OK
+veriyor. Uygulamanın güncelleyicisi etkilenmiyor:
+`UpdateDownloader.FetchExpectedHashAsync` her satırı `Trim()` ediyor. Bu kod okunarak
+söyleniyor; 0.1.20 → 0.1.21 tek tıkla güncelleme gerçekten koşturulmadı.
+
+**Makine durumu:** değişmedi (üstteki "Üçüncü yarı" sonu). Kurulu olan hâlâ yerel
+test derlemesi `0.1.20+5b061d0…`, yayındaki 0.1.21 ikilisi değil. Yayındaki ikiliyi
+veya 0.1.20 → 0.1.21 tek tıkla güncellemeyi sınamak gerekirse yayından kur.
+
+**CHANGELOG'un alttaki bağlantı tanımları bayat (önceden beri).** Tanımlar
+`[Yayınlanmamış]` → `compare/v0.1.6...HEAD` ve `[0.1.6]`..`[0.1.0]` ile sınırlı.
+Başlıklar köşeli parantezli, ama 0.1.7 ve sonrası için tanım yok. GitHub bunları
+düz metin gösteriyor; işlev kaybı yok.
