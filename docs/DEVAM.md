@@ -38,11 +38,19 @@ Depo: https://github.com/superuser-d0/zapret-tr (public)
 - **0.1.19 şifreli DNS servis yolu** (2026-09-13, TTNET) — kurulu paketten
   "Servis Olarak Yükle" → yeniden başlat → ad çözümü ve engelli hedefler, A/B/A
   kontrollü. Ayrıntı "2026-09-13 oturumu" bölümünde.
+- **0.1.20 DNS bekçisi ve DNS geri alma düzeltmeleri** (2026-09-13, TTNET) —
+  kurulum paketiyle 71/71: sonradan eklenen kart, gerçek ağ olayı tetikleyicisi,
+  ölü/karantinadaki çözümleyici, uygulama çökmesi, DNS kapalı yeniden kurulum,
+  kayıp/bozuk yedek, başarısız geri alma, kaldırıcı, 0.1.19 → 0.1.20 yükseltmesi.
+  Ayrıntı "2026-09-13 oturumu / İkinci yarı" bölümünde.
 
-**0.1.19'un geri kalanı bu listeye GİRMİYOR ve bu kasıtlı.** On düzeltmenin çoğu
-yalnızca CI'da doğrulandı. Listenin başlığı "gerçek donanımda doğrulanmış" diyor;
-oraya ölçülmemiş bir şey koymak, tam da bu dosyanın profillerde reddettiği şey
-olurdu. Neyin hâlâ ölçülmediği "Yapılacaklar / 1" başlığında.
+**Bu listeye GİRMEYENLER ve bu kasıtlı:** 0.1.19'un arayüz metinleri ve ikinci
+örnek kilidi; 0.1.20'nin **takılı WinDivert sürücüsü kurtarması** (kod yolu var ama
+tetikleyen durum bu makinede üretilemedi, yani kurtarma dalı gerçek bir hatayla hiç
+koşmadı); IPv6 DNS boşaltma; bekçinin açılış tetikleyicisi (yeniden başlatma
+yapılmadı). Listenin başlığı "gerçek donanımda doğrulanmış" diyor; oraya
+ölçülmemiş bir şey koymak, tam da bu dosyanın profillerde reddettiği şey olurdu.
+Neyin hâlâ ölçülmediği "Yapılacaklar / 1" başlığında.
 
 **Ölçülmüş sonuç (TTNET, gerçek hat):** şifreli DNS + `--dpi-desync=fake
 --dpi-desync-ttl=4` ile discord.com, pornhub.com, xvideos.com açılıyor.
@@ -213,12 +221,17 @@ sürücüsünün DPC/kesme süresi.
 
 ## Yapılacaklar
 
-### 1. 0.1.19'un DNS değişikliklerini gerçek makinede koştur — EN ÖNCELİKLİ
+### 1. DNS ve kurulum yolunun kalan elle doğrulamaları (0.1.19 + 0.1.20)
 
-0.1.19'daki on düzeltmenin en ağırı sistem DNS'ine dokunuyor ve **CI o yolu
-bilerek hiç koşmuyor**: `installer-test.yml` `secureDnsEnabled=false` ile
-çalışıyor, çünkü açık olsaydı iş runner'ın kendi ad çözümünü kaybederdi
-(gerekçesi tuzaklar bölümünde). Yani en riskli değişiklik, en az kapsanan yol.
+**Durum (0.1.20 yayınından sonra):** en ağır kısım kapandı — madde 1 ve 2 yapıldı,
+0.1.20'nin DNS değişiklikleri gerçek kurulum paketiyle 71/71 ölçüldü. Kalanlar
+aşağıda: 3, 4, 5 ve yeni eklenen 6, 7.
+
+Neden hâlâ elle: sistem DNS'ine dokunan yol **CI'da bilerek hiç koşmuyor** —
+`installer-test.yml` `secureDnsEnabled=false` ile çalışıyor, çünkü açık olsaydı iş
+runner'ın kendi ad çözümünü kaybederdi (gerekçesi tuzaklar bölümünde). CI 0.1.20'den
+beri bekçi görevinin kurulup kaldırıldığını ve boş bir turun 0 ile bittiğini
+sınıyor, ama yönlendirme yapan bir turu sınamıyor.
 
 Elle koşulması gerekenler — şifreli DNS **açık**:
 
@@ -242,9 +255,24 @@ Elle koşulması gerekenler — şifreli DNS **açık**:
 4. Kurulum sonrası ilk açılış: üst bant "KORUMA KAPALI — KURULUM YARIM" diyor
    mu ve altında sıradaki adım yazıyor mu (ekran görüntüsü al).
 5. Uygulama açıkken kısayola ikinci kez tıkla: tek örnek kilidi mesajı çıkmalı,
-   ikinci pencere AÇILMAMALI ve birincinin şifreli DNS'i düşmemeli.
+   ikinci pencere AÇILMAMALI ve birincinin şifreli DNS'i düşmemeli. Bekçi de bu
+   kilide bakarak "arayüz açık mı" kararı veriyor (`DnsGuard.AppInstanceMutexName`),
+   yani bu madde artık iki şeyi birden sınıyor.
+6. **Yeniden başlatma — bekçinin açılış tetikleyicisi (0.1.20).** Servis modunda
+   yeniden başlat; açılıştan ~1 dk sonra görev çalışmış olmalı
+   (`Get-ScheduledTaskInfo "ZapretTR DNS Bekcisi"`, **yükseltilmiş** kabukta — tuzak:
+   yönetici olmayan kabuk görevi hiç göremiyor, "Access is denied" dönüyor) ve
+   `dns-bekci.log`'a satır EKLENMEMİŞ olmalı (her şey yerindeyse bekçi susar).
+   Uygulama modunda koruma açıkken güç kesintisi benzetimi (süreçleri öldür,
+   yeniden başlat) bekçinin asıl kurtardığı durum; o da açılıştan sonra ölçülmedi.
+7. **Takılı sürücü kurtarması (0.1.20) gerçek bir hatayla hiç koşmadı.** Sahadan
+   "motor çalışmıyor, yeniden başlatınca açılıyor" yine gelirse o kişiden "Raporu
+   Kaydet" iste. Rapordaki winws satırında `windivert: error opening filter` /
+   `win32 error N` varsa mekanizma doğru tahmin edilmiş demektir; `A copy of winws
+   is already running` varsa sebep sürücü değil servis çakışmasıdır. İkisi de yoksa
+   iki hipotez de yanlış ve baştan bakılmalı.
 
-Bu tur atlanırsa 0.1.19, düzelttiğini iddia ettiği hata sınıfının aynısını
+Bu tur atlanırsa bir sürüm, düzelttiğini iddia ettiği hata sınıfının aynısını
 üretebilir. Bu dosyanın kendi kuralı: **arayüz ve kurulum hataları ancak
 paketlenip kurulduktan sonra görünüyor.**
 
@@ -1129,6 +1157,10 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-13 oturumu" → "Yayın: v0.1.20" →
+> "Makine durumu (oturum sonu, ölçüldü)". Bu başlığın hemen altındaki ilk bölüm
+> 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
+
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
 değil. Belirtileri: .NET SDK yoktu (yalnızca 8.0.30 runtime),
 `%ProgramData%\ZapretTR` yoktu, `vendor/` boştu. Aşağıdakiler bu yeni makine için
@@ -1396,13 +1428,66 @@ Windows hata kodu içinde.
   Doğrulamayı UIA ile metin okuyarak yap; görüntü gerekiyorsa pencereyi
   `PrintWindow` ile yakala.
 
-**Yapılacaklar/1 durumu:** madde 1 ve 2 yapıldı (2'yi kullanıcı arayüzde koştu, bekçi
-senaryoları ayrıca ölçtü); madde 3 bu hatta ölçülemez; madde 4 ve 5 hâlâ koşulmadı.
+- **Yönetici olmayan kabuk bekçi görevini GÖREMİYOR.** `Get-ScheduledTask` boş,
+  `schtasks /Query` "Access is denied", `Test-Path C:\Windows\System32\Tasks\...`
+  erişim hatası. "Görev silinmiş" sanma: SYSTEM görevleri yalnızca yükseltilmiş
+  kabukta okunuyor. Uygulama ve CLI zaten yükseltilmiş çalıştığı için
+  `EnvironmentReport`'un "DNS bekcisi gorevi" satırı doğru; ama elle bakarken
+  kabuğun yetkisini kontrol et.
 
-**Makine durumu (oturum sonu):** **0.1.20 kurulu** (yerel derleme,
-`0.1.20+01c262a…` — commit özeti derleme anındaki `HEAD`, değişiklikler o sırada
-commit'lenmemişti). `ZapretTR` + `ZapretTR-DNS` servisleri çalışıyor, bekçi görevi
-kayıtlı, `config.json` TTNET + `tt-443-fake-ttl4` + şifreli DNS açık (testin
-yazdığı), Ethernet/WiFi/BT `127.0.0.1`, discord.com 200. `learned.json` YOK
-(sıfırlamada silindi). `%ProgramData%\ZapretTR` içinde testten kalan
-`dns-backup.bozuk-*.json` ve `dns-bekci.log` var — zararsız.
+**Yapılacaklar/1 durumu:** madde 1 ve 2 yapıldı; 3 bu hatta ölçülemez; 4, 5, 6, 7
+açık (ayrıntısı o başlıkta).
+
+#### Yayın: v0.1.20 (2026-09-13)
+
+**Yayınlandı ve güncel:** `v0.1.20`, `releases/latest`, taslak değil, yayın anı
+2026-09-13T12:51:30Z. Commit `5814eda` (`main`'in ucu). CI'da üç iş akışı yeşil:
+derle ve test (249/249, yeni 31 test dahil), kurulum testi (20 adım; bekçi görevinin
+kurulduğu, doğru komutu gösterdiği, boş turun 0 döndüğü ve kaldırmada silindiği
+günlükten ayrıca doğrulandı), yayın.
+
+**Paketler:** `ZapretTR-Setup-0.1.20.exe` (55 662 427 bayt), `zapret-tr-saha-testi.zip`
+(13 130 197 bayt), `SHA256SUMS.txt`. SHA256SUMS'taki iki özet, GitHub'ın sunucu
+tarafında hesapladığı asset özetiyle (`digest` alanı) birebir eşleşti — yani tek
+tıkla güncelleme 0.1.19'dan bu paketi doğrulayabilir. Karşılaştırma paketi
+indirmeden, API'nin `digest` alanıyla yapıldı; yeni yayında da aynı yol yeterli:
+
+```bash
+gh api repos/superuser-d0/zapret-tr/releases/<id>/assets --jq '.[] | "\(.name) \(.digest)"'
+```
+
+**Yayın normal yola döndü.** 0.1.19'daki `workflow_dispatch` + lightweight tag
+yolunun sebebi, o oturumun tag itememesiydi. 0.1.20'de kullanıcı **açıklamalı**
+tag'i (`git tag -a`) kendisi itti, akış tag'den tetiklendi ve taslak doğru commit'te
+oluştu. Tag itebilen biri varsa bu yolu kullan.
+
+**Tuzak — "yayınladım" demek yayınlandı demek değil.** Kullanıcı ilk "yayınladım"
+dediğinde API `draft=true`, `releases/latest` = 0.1.19 döndürüyordu; ancak ikinci
+denemede yayınlandı. Taslak kalırsa "Güncellemeleri Denetle" yeni sürümü HİÇ görmez
+ve belirtisi yoktur. DEVAM'a yayın durumu yazmadan önce ölç:
+
+```bash
+gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
+```
+
+**Commit ve push kullanıcıda.** Bu oturum kodu yazdı ve doğruladı, git'e dokunmadı;
+kullanıcı commit'ledi ve itti. Commit mesajında `Co-Authored-By` satırı yok —
+kullanıcının tercihi, kod eksiği değil.
+
+**`claude/jolly-bardeen-tnz0c8` dalı artık tamamen bayat.** `bbafe95`'ten ayrışmış,
+yalnızca DEVAM değişikliği taşıyor ve "taslak yayınlanmadı, tag yok" diyor —
+v0.1.19 ve v0.1.20 ikisi de yayınlandı. `main`'e birleştirilirse `b5e6338`..`5814eda`
+arasındaki bütün işi geri alır. Silinebilir; silme kararı kullanıcının.
+
+**Makine durumu (oturum sonu, ölçüldü):** **0.1.20 kurulu, ama yayındaki paket DEĞİL**:
+test için yerelde derlenmiş paket (`ProductVersion 0.1.20+01c262a…`; commit özeti
+derleme anındaki `HEAD`, değişiklikler o sırada commit'lenmemişti). Kod aynı ama
+ikili birebir yayındaki değil — yayındaki ikiliyi sınamak gerekirse yayından
+yeniden kur. `ZapretTR` + `ZapretTR-DNS` servisleri çalışıyor, bekçi görevi kayıtlı
+(yükseltilmiş kabukta görülür), Ethernet DNS `127.0.0.1`, discord.com gerçek adrese
+çözülüyor ve 200. `config.json` testin yazdığı haliyle: TTNET + `tt-443-fake-ttl4`
++ şifreli DNS açık. `learned.json` YOK (sıfırlamada silindi). `%ProgramData%\ZapretTR`
+içinde `dns-backup.json` (servis sahipliğinde, geçerli), testten kalan
+`dns-backup.bozuk-20260913-123045.json` ve `dns-bekci.log` var; ikisi zararsız.
+`dns-bekci.log`'un son satırı testin C5 senaryosundan (12:30:20) — test bittikten
+sonra bekçi bir şey yapmadı.
