@@ -112,8 +112,109 @@ public static class SystemDnsManager
 
     private static string BackupPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "dns-backup.json");
 
+    /// <summary>
+    /// Servisin yonlendirmesi, cozumleyici uzun sure cevap vermedigi icin
+    /// <see cref="DnsGuard"/> tarafindan ASKIYA alindi mi.
+    /// </summary>
+    private static string SuspendedMarkerPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "dns-askida.flag");
+
     /// <summary>Diskte bir yedek duruyor mu (yani DNS bizim tarafimizdan degistirilmis mi).</summary>
     public static bool HasBackup => File.Exists(BackupPath);
+
+    /// <summary>
+    /// Servis yonlendirmesi askida mi: yedek geri yuklendi ama servis hala kurulu
+    /// ve cozumleyici geri geldiginde yonlendirme yeniden yapilmali.
+    /// </summary>
+    public static bool IsSuspended => File.Exists(SuspendedMarkerPath);
+
+    internal static void MarkSuspended()
+    {
+        Directory.CreateDirectory(WinDivertCleanup.ConfigDirectory);
+        File.WriteAllText(SuspendedMarkerPath, DateTimeOffset.UtcNow.ToString("O"));
+    }
+
+    /// <summary>Askida isaretini kaldirir. Yoksa bir sey yapmaz.</summary>
+    public static void ClearSuspended()
+    {
+        try
+        {
+            File.Delete(SuspendedMarkerPath);
+        }
+        catch (Exception)
+        {
+            // Isaret silinemezse bekci bir sonraki turda servisin yoklugunu
+            // gorup kendisi temizler.
+        }
+    }
+
+    /// <summary>
+    /// DNS ayarini degistiren islemleri SURECLER ARASINDA siraya sokan kilit.
+    /// </summary>
+    /// <remarks>
+    /// Sistem DNS'ine artik ayni anda uc ayri surec dokunabiliyor: arayuz,
+    /// kaldirici/kurulum (<c>--uninstall-services</c>) ve SYSTEM olarak calisan
+    /// bekci (<c>--dns-guard</c>). Iki geri alma ayni anda kosarsa biri yedegi
+    /// silerken oteki okuyor olabilir; bir yonlendirme ile bir geri alma ic ice
+    /// girerse kartlarin yarisi 127.0.0.1'de, yarisi DHCP'de kalir ve yedek
+    /// hicbirini dogru anlatmaz.
+    ///
+    /// Mutex degil semafor: Mutex is parcacigina bagli ve async metotlar
+    /// <c>await</c> sonrasi baska is parcacigindan devam ediyor -- Mutex'i orada
+    /// birakmak istisna firlatir. Kilit alinamazsa (sure doldu, yetki yok) islem
+    /// YINE DE yapiliyor: DNS'i geri almayi bir kilit yuzunden atlamak, kullaniciyi
+    /// ad cozemez halde birakabilir.
+    /// </remarks>
+    internal static IDisposable AcquireLock(TimeSpan? timeout = null)
+        => DnsLock.Acquire(timeout ?? TimeSpan.FromSeconds(60));
+
+    private sealed class DnsLock : IDisposable
+    {
+        private Semaphore? _semaphore;
+
+        public static DnsLock Acquire(TimeSpan timeout)
+        {
+            var dnsLock = new DnsLock();
+
+            try
+            {
+                var semaphore = new Semaphore(1, 1, @"Global\ZapretTR-dns");
+                if (semaphore.WaitOne(timeout))
+                {
+                    dnsLock._semaphore = semaphore;
+                }
+                else
+                {
+                    semaphore.Dispose();
+                }
+            }
+            catch (Exception)
+            {
+                // Kilitsiz devam: gerekcesi AcquireLock'ta.
+            }
+
+            return dnsLock;
+        }
+
+        public void Dispose()
+        {
+            var semaphore = Interlocked.Exchange(ref _semaphore, null);
+            if (semaphore is null)
+            {
+                return;
+            }
+
+            try
+            {
+                semaphore.Release();
+            }
+            catch (Exception)
+            {
+                // Birakilamadiysa tutacak kimse kalmayinca cekirdek nesneyi siliyor.
+            }
+
+            semaphore.Dispose();
+        }
+    }
 
     /// <summary>
     /// Mevcut yonlendirmenin sahibi. Yedek yoksa null.
@@ -156,6 +257,26 @@ public static class SystemDnsManager
     {
         ElevationGuard.EnsureElevated();
 
+        using (AcquireLock())
+        {
+            return await RedirectCoreAsync(owner, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// <see cref="RedirectToLocalAsync"/>'in kilitsiz govdesi. Kilidi zaten tutan
+    /// <see cref="DnsGuard"/> bunu cagiriyor.
+    /// </summary>
+    /// <remarks>
+    /// Tekrar tekrar cagrilabilir ve her cagri YALNIZCA eksigi tamamlar: yedekte
+    /// olmayan karti yedege ekler, DNS'i henuz 127.0.0.1 olmayan karti cevirir.
+    /// Bekci bunu her ag degisikliginde calistiriyor; zaten cevrilmis kartlara
+    /// yeniden netsh kosmak ve onbellegi bosaltmak her seferinde gereksiz bir
+    /// kesinti olurdu.
+    /// </remarks>
+    internal static async Task<IReadOnlyList<string>> RedirectCoreAsync(
+        string owner, CancellationToken cancellationToken)
+    {
         var targets = GetRedirectTargets();
 
         // Su an internete cikan bir arayuz yoksa yapilacak anlamli bir sey yok:
@@ -199,15 +320,24 @@ public static class SystemDnsManager
                 .Select(t => Capture(t.Nic))
                 .ToList();
 
-            if (eksik.Count > 0)
+            // SERVIS, UYGULAMANIN YONLENDIRMESINI DEVRALIR.
+            //
+            // Uygulama korumayi calistirirken "Servis Olarak Yukle"ye basilirsa
+            // yedek "app" sahipligiyle duruyordu ve oyle KALIYORDU: sahip
+            // korunuyordu. Uygulama kapaninca yonlendirmeyi kendisininki sanip
+            // geri aliyor, servis kurulu oldugu halde sifreli DNS sessizce devreden
+            // cikiyordu. Tarih korunuyor; ters yon (servisinkini uygulamanin
+            // devralmasi) yok, cunku uygulamanin kapanmasi kalici bir kurulumu
+            // bozmamali.
+            var sahip = DecideOwner(existing.Owner, owner);
+
+            if (eksik.Count > 0 || !string.Equals(sahip, existing.Owner, StringComparison.Ordinal))
             {
                 await WriteBackupAsync(
                     new DnsBackup
                     {
-                        // Sahip ve tarih KORUNUYOR: yonlendirmeyi kimin yaptigi
-                        // degismedi, yalnizca kapsami genisledi.
                         CreatedAt = existing.CreatedAt,
-                        Owner = existing.Owner,
+                        Owner = sahip,
                         Entries = [.. existing.Entries, .. eksik],
                     },
                     cancellationToken).ConfigureAwait(false);
@@ -217,6 +347,12 @@ public static class SystemDnsManager
         var changed = new List<string>();
         foreach (var (nic, required) in targets)
         {
+            // Zaten bizde: dokunma. Gerekcesi RedirectCoreAsync'in aciklamasinda.
+            if (IsOnlyLocalResolver(ReadStaticNameServer(Ipv4ParametersKey, nic.Id)))
+            {
+                continue;
+            }
+
             var (exitCode, output) = await RunNetshAsync(
                 ["interface", "ipv4", "set", "dnsservers", $"name={nic.Name}", "source=static",
                  $"address={LocalResolver}", "validate=no"],
@@ -261,21 +397,31 @@ public static class SystemDnsManager
                 $"'{nic.Name}' arayuzunun DNS ayari degistirilemedi: {output.Trim()}");
         }
 
-        // ONBELLEK BOSALTILMADAN YONLENDIRME YARIM.
-        //
-        // Windows, DNS'i cevirmeden ONCE alinmis cevaplari tutmaya devam ediyor
-        // ve Turkiye'deki engel sunucusunun cevaplari uzun TTL ile geliyor.
-        // Yani sifreli DNS acildiktan sonra bile discord.com bir sure daha
-        // 195.175.254.2'ye cozuluyor: onbellekteki ZEHIRLI kayit.
-        //
-        // Disaridan gorunen sey birebir "strateji tutmadi": trafik hala engel
-        // sunucusuna gidiyor, winws ne yaparsa yapsin site acilmiyor. Kullanici
-        // Baslat'a basip "olmadi" diyor, birkac dakika sonra kendiliginden
-        // duzeliyor -- yani en kafa karistirici belirti bicimi.
-        await FlushDnsCacheAsync(cancellationToken).ConfigureAwait(false);
+        if (changed.Count > 0)
+        {
+            // Bir ONLEM, olculmus bir sebep degil. Bu satir "Windows zehirli kaydi
+            // DNS cevrildikten sonra da tutuyor" varsayimiyla eklenmisti; 2026-09-13'te
+            // Windows 11 (26200) uzerinde olculdu ve TEKRARLANMADI: sunucu degisince
+            // onbellek kendiliginden gecersiz oluyor. Baska surumlerde olculmedigi ve
+            // zararsiz oldugu icin duruyor.
+            await FlushDnsCacheAsync(cancellationToken).ConfigureAwait(false);
+        }
 
         return changed;
     }
+
+    /// <summary>
+    /// Mevcut yedek varken yeni bir yonlendirme istendiginde yedegin sahibi.
+    /// </summary>
+    /// <remarks>
+    /// Servis her zaman kazanir: servis kurulu oldugu surece yonlendirme acilistan
+    /// acilisa surmeli ve uygulamanin kapanmasi onu geri almamali.
+    /// </remarks>
+    public static string DecideOwner(string existingOwner, string requestedOwner)
+        => string.Equals(existingOwner, DnsBackupOwner.Service, StringComparison.Ordinal)
+           || string.Equals(requestedOwner, DnsBackupOwner.Service, StringComparison.Ordinal)
+            ? DnsBackupOwner.Service
+            : existingOwner;
 
     /// <summary>
     /// Windows'un DNS onbellegini bosaltir. En iyi cabayla: basarisizligi
@@ -313,23 +459,32 @@ public static class SystemDnsManager
             return [];
         }
 
-        DnsBackup? backup;
-        try
+        using (AcquireLock())
         {
-            backup = JsonSerializer.Deserialize(
-                await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false),
-                CoreJsonContext.Default.DnsBackup);
+            return await RestoreCoreAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex)
+    }
+
+    /// <summary><see cref="RestoreAsync"/>'in kilitsiz govdesi.</summary>
+    internal static async Task<IReadOnlyList<string>> RestoreCoreAsync(CancellationToken cancellationToken)
+    {
+        // Kilit beklenirken baska bir surec geri almis olabilir.
+        if (!HasBackup)
         {
-            throw new InvalidDataException(
-                $"DNS yedegi okunamadi ({BackupPath}): {ex.Message}. " +
-                "Ag ayarlarindan DNS'i elle 'otomatik' yapabilirsiniz.", ex);
+            return [];
         }
+
+        var backup = await ReadBackupAsync(cancellationToken).ConfigureAwait(false);
 
         if (backup is null)
         {
-            return [];
+            // BOZUK YEDEK: orijinal ayar okunamiyor, ama yonlendirme bu yuzden
+            // KALICI olmamali. Eskiden burada hata firlatiliyordu ve yedek diskte
+            // kaliyordu; her geri alma denemesi ayni hatayla dusuyor, makine
+            // 127.0.0.1'de ve cozumleyicisiz kalabiliyordu. Bilinebilecek tek
+            // dogru sey "127.0.0.1 bizimdi": o kartlar otomatige donuyor. Elle
+            // girilmis eski bir DNS varsa kaybolur -- ama o bilgi zaten okunamiyor.
+            return await ResetOrphanedRedirectsCoreAsync(cancellationToken).ConfigureAwait(false);
         }
 
         var nics = SafeGetInterfaces();
@@ -345,6 +500,19 @@ public static class SystemDnsManager
                 // adaptor). Geri alinacak bir sey yok ve bu bir basarisizlik
                 // DEGIL: yoksa yedek sonsuza kadar diskte kalir ve her acilista
                 // ayni hata mesaji cikardi.
+                continue;
+            }
+
+            // KARTIN DNS'I ARTIK BIZDE DEGILSE DOKUNMA.
+            //
+            // Yonlendirme ile geri alma arasinda aylar gecebiliyor (servis modu).
+            // Kullanici o arada bir kartin DNS'ini elle degistirmis ya da Windows'un
+            // "ag sifirlama"si onu otomatige dondurmus olabilir. Eskiden yedek KORU
+            // KORUNE yaziliyordu ve kullanicinin sonradan yaptigi ayar sessizce
+            // eziliyordu. Bizim birakacagimiz tek iz 127.0.0.1; o yoksa geri
+            // alinacak bir sey de yok ve bu bir basarisizlik degil.
+            if (!ShouldRestore(ReadStaticNameServer(Ipv4ParametersKey, entry.Guid)))
+            {
                 continue;
             }
 
@@ -382,8 +550,14 @@ public static class SystemDnsManager
     private static async Task<bool> RestoreEntryAsync(
         DnsBackupEntry entry, string alias, CancellationToken cancellationToken)
     {
-        var ipv4Ok = entry.WasStatic && entry.Addresses.Count > 0
-            ? await SetStaticAsync("ipv4", alias, entry.Addresses, cancellationToken).ConfigureAwait(false)
+        // Yedekte 127.0.0.1 "orijinal" diye durabilir: yedek bir sekilde kaybolmus
+        // ve yonlendirme ustune ikinci kez yapilmis olabilir (0.1.19 ve oncesinde
+        // Capture bunu elemiyordu). Onu geri yazmak, yonlendirmeyi KALICI yapmak
+        // demek -- kaldirmadan sonra dnscrypt yok ve makine hicbir adi cozemez.
+        var (wasStatic, addresses) = SanitizeCaptured(entry.WasStatic, entry.Addresses);
+
+        var ipv4Ok = wasStatic
+            ? await SetStaticAsync("ipv4", alias, addresses, cancellationToken).ConfigureAwait(false)
             : await SetDhcpAsync("ipv4", alias, cancellationToken).ConfigureAwait(false);
 
         // IPv6 yalnizca BIZIM bosalttigimiz kayitlarda geri yukleniyor.
@@ -503,9 +677,15 @@ public static class SystemDnsManager
 
     /// <summary>Diskteki yedegi okur; yoksa ya da bozuksa <c>null</c> doner.</summary>
     /// <remarks>
-    /// Bozuk yedek burada <c>null</c> sayilmiyor -- <c>null</c> donmek cagiranin
-    /// uzerine yeni bir yedek yazmasina yol acar ve o an DNS bizde ise 127.0.0.1
-    /// "orijinal" olarak kaydedilir. Bozuk dosya bilerek hata olarak yukseliyor.
+    /// Bozuk yedek eskiden hata olarak yukseliyordu, cunku <c>null</c> donmek
+    /// cagiranin uzerine yeni bir yedek yazmasina yol aciyor ve o an DNS bizdeyse
+    /// 127.0.0.1 "orijinal" olarak kaydediliyordu. Bunun bedeli agirdi: bozuk bir
+    /// dosya sifreli DNS'i KALICI olarak acilamaz yapiyordu -- her yonlendirme ayni
+    /// okuma hatasiyla dusuyordu ve kullanicinin dosyanin yerini bilmesi gerekiyordu.
+    ///
+    /// Artik <see cref="Capture"/> 127.0.0.1'i asla orijinal saymadigi icin o
+    /// korunmaya gerek kalmadi. Bozuk dosya silinmiyor, yanina tasiniyor: teshis
+    /// icin icerigi lazim olabilir.
     /// </remarks>
     private static async Task<DnsBackup?> ReadBackupAsync(CancellationToken cancellationToken)
     {
@@ -514,10 +694,42 @@ public static class SystemDnsManager
             return null;
         }
 
-        var json = await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false);
-        return JsonSerializer.Deserialize(json, CoreJsonContext.Default.DnsBackup)
-               ?? throw new InvalidOperationException(
-                   $"DNS yedegi okunamadi: {BackupPath}. Elle geri almak icin --cleanup kullanin.");
+        try
+        {
+            var json = await File.ReadAllTextAsync(BackupPath, cancellationToken).ConfigureAwait(false);
+            if (JsonSerializer.Deserialize(json, CoreJsonContext.Default.DnsBackup) is { } backup)
+            {
+                return backup;
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException or ArgumentException)
+        {
+            // Asagida karantinaya aliniyor.
+        }
+
+        QuarantineBackup();
+        return null;
+    }
+
+    private static void QuarantineBackup()
+    {
+        try
+        {
+            File.Move(BackupPath,
+                Path.Combine(WinDivertCleanup.ConfigDirectory, $"dns-backup.bozuk-{DateTime.Now:yyyyMMdd-HHmmss}.json"),
+                overwrite: true);
+        }
+        catch (Exception)
+        {
+            try
+            {
+                File.Delete(BackupPath);
+            }
+            catch (Exception)
+            {
+                // Silinemiyorsa bir sonraki deneme ayni yoldan gecer.
+            }
+        }
     }
 
     private static async Task WriteBackupAsync(DnsBackup backup, CancellationToken cancellationToken)
@@ -552,8 +764,10 @@ public static class SystemDnsManager
     /// ayar kalici, arayuz bagliginca gecerli oluyor. Yedek de onlari kapsiyor,
     /// dolayisiyla geri alma simetrik kaliyor.
     ///
-    /// Kapsam disinda kalan tek durum: kurulumdan SONRA takilan yeni bir adaptor
-    /// (or. USB WiFi). Onun icin uygulamayi acip servisi yeniden kurmak gerekir.
+    /// Kurulumdan SONRA takilan yeni bir adaptor (USB WiFi, telefonla USB paylasim)
+    /// bu listeye ancak bir sonraki cagrida girer. Servis modunda o cagriyi
+    /// <see cref="DnsGuard"/> her ag baglantisinda yapiyor; eskiden hic yapilmiyordu
+    /// ve o kartta DNS engellemesi sessizce geri geliyordu.
     /// </remarks>
     private static List<RedirectTarget> GetRedirectTargets()
         => NetworkInterface.GetAllNetworkInterfaces()
@@ -630,21 +844,29 @@ public static class SystemDnsManager
     {
         var dns = nic.GetIPProperties().DnsAddresses;
 
-        var addresses = dns
-            .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-            .Select(a => a.ToString())
-            .ToList();
-
         var ipv6Addresses = dns
             .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
             .Select(a => a.ToString())
             .ToList();
 
+        // BIZIM 127.0.0.1'IMIZ ASLA "ORIJINAL" DIYE KAYDEDILMEZ.
+        //
+        // Yedek yokken kartin DNS'i zaten 127.0.0.1 olabilir: yedek dosyasi elle ya
+        // da bir temizlik aracinca silinmis, onceki bir surum kaldirilirken yarim
+        // kalmis. Eskiden bu deger "elle girilmis DNS" diye yedege giriyordu ve
+        // geri alma onu SADAKATLE geri yaziyordu -- uygulama kaldirildiktan sonra
+        // o kart hicbir adi cozemiyordu, projedeki en kotu tablo.
+        var (wasStatic, addresses) = SanitizeCaptured(
+            IsStaticallyConfigured(Ipv4ParametersKey, nic.Id),
+            dns.Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                .Select(a => a.ToString())
+                .ToList());
+
         return new DnsBackupEntry
         {
             Alias = nic.Name,
             Guid = nic.Id,
-            WasStatic = IsStaticallyConfigured(Ipv4ParametersKey, nic.Id),
+            WasStatic = wasStatic,
             Addresses = addresses,
 
             // IPv6 tarafi da yedekleniyor cunku yonlendirme onu BOSALTIYOR
@@ -669,20 +891,120 @@ public static class SystemDnsManager
     /// gorunuyor. Kayit defteri bunu ayirt edebilecegimiz tek yer.
     /// </remarks>
     private static bool IsStaticallyConfigured(string parametersKey, string interfaceGuid)
+        // Okuyamiyorsak (null) DHCP varsayiyoruz: yanlis tarafa dusmek istersek,
+        // DHCP'ye dondurmek static yazmaktan daha guvenli.
+        => !string.IsNullOrWhiteSpace(ReadStaticNameServer(parametersKey, interfaceGuid));
+
+    /// <summary>
+    /// Kartin elle yazilmis DNS degeri. DHCP'deyse bos dize, okunamazsa <c>null</c>.
+    /// </summary>
+    private static string? ReadStaticNameServer(string parametersKey, string interfaceGuid)
     {
         try
         {
             using var key = Registry.LocalMachine.OpenSubKey($@"{parametersKey}\{interfaceGuid}");
+            if (key is null)
+            {
+                return null;
+            }
 
-            var nameServer = key?.GetValue("NameServer") as string;
-            return !string.IsNullOrWhiteSpace(nameServer);
+            return key.GetValue("NameServer") as string ?? string.Empty;
         }
         catch (Exception)
         {
-            // Okuyamiyorsak DHCP varsayiyoruz: yanlis tarafa dusmek istersek,
-            // DHCP'ye dondurmek static yazmaktan daha guvenli.
-            return false;
+            return null;
         }
+    }
+
+    /// <summary>Kayit defterindeki NameServer degeri ("a,b" ya da "a b") adreslere ayrilir.</summary>
+    private static IReadOnlyList<string> SplitNameServers(string? nameServer)
+        => string.IsNullOrWhiteSpace(nameServer)
+            ? []
+            : nameServer.Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>Kartin elle yazilmis DNS'i yalnizca bizim cozumleyicimiz mi.</summary>
+    public static bool IsOnlyLocalResolver(string? staticNameServer)
+    {
+        var adresler = SplitNameServers(staticNameServer);
+        return adresler.Count > 0 && adresler.All(a => a == LocalResolver);
+    }
+
+    /// <summary>
+    /// Yedekteki bir kart geri alinmali mi, kartin SU ANKI elle yazilmis DNS'ine gore.
+    /// </summary>
+    /// <param name="currentStaticNameServer">
+    /// Kayit defterindeki deger; DHCP'de bos dize, okunamadiysa <c>null</c>.
+    /// </param>
+    /// <remarks>
+    /// Okunamiyorsa geri aliniyor: bizim yonlendirmemiz duruyor olabilir ve onu
+    /// yerinde birakmak kullaniciyi ad cozemez halde birakabilir. Gereksiz bir
+    /// geri alma ise en kotu ihtimalle kartin DNS'ini yedekteki haline dondurur.
+    /// </remarks>
+    public static bool ShouldRestore(string? currentStaticNameServer)
+        => currentStaticNameServer is null
+           || SplitNameServers(currentStaticNameServer).Contains(LocalResolver);
+
+    /// <summary>
+    /// Yedege girecek (ya da yedekten geri yazilacak) IPv4 DNS bilgisinden bizim
+    /// cozumleyicimizi ayiklar.
+    /// </summary>
+    /// <returns>
+    /// Elle yazilmis adreslerden geriye bir sey kalmiyorsa kart DHCP sayilir.
+    /// </returns>
+    public static (bool WasStatic, IReadOnlyList<string> Addresses) SanitizeCaptured(
+        bool wasStatic, IReadOnlyList<string> addresses)
+    {
+        var gercek = addresses.Where(a => a != LocalResolver).ToList();
+        return (wasStatic && gercek.Count > 0, gercek);
+    }
+
+    /// <summary>
+    /// YEDEGI OLMAYAN 127.0.0.1 yonlendirmelerini otomatige dondurur.
+    /// </summary>
+    /// <returns>Duzeltilen kartlarin adlari.</returns>
+    /// <remarks>
+    /// Yalnizca "Tum Ayarlari Sifirla" ve kaldirma yolunda, bizim cozumleyicimiz
+    /// silindikten SONRA ve 127.0.0.1:53 cevap VERMIYORKEN cagrilmali. O anda
+    /// DNS'i yalnizca 127.0.0.1 olan bir kart hicbir adi cozemiyor demektir;
+    /// geri alinacak yedek kaybolmus ya da geri yukleme basarisiz olmus olabilir.
+    /// Kullanicinin kendi yerel cozumleyicisi (AdGuard Home, Acrylic...) cevap
+    /// verdigi icin bu kosula girmez.
+    /// </remarks>
+    public static async Task<IReadOnlyList<string>> ResetOrphanedRedirectsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        ElevationGuard.EnsureElevated();
+
+        using (AcquireLock())
+        {
+            return await ResetOrphanedRedirectsCoreAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static async Task<IReadOnlyList<string>> ResetOrphanedRedirectsCoreAsync(CancellationToken cancellationToken)
+    {
+        var fixedNames = new List<string>();
+
+        foreach (var nic in SafeGetInterfaces())
+        {
+            if (!IsOnlyLocalResolver(ReadStaticNameServer(Ipv4ParametersKey, nic.Id)))
+            {
+                continue;
+            }
+
+            if (await SetDhcpAsync("ipv4", nic.Name, cancellationToken).ConfigureAwait(false))
+            {
+                await SetDhcpAsync("ipv6", nic.Name, cancellationToken).ConfigureAwait(false);
+                fixedNames.Add(nic.Name);
+            }
+        }
+
+        if (fixedNames.Count > 0)
+        {
+            await FlushDnsCacheAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return fixedNames;
     }
 
     private static Task<(int ExitCode, string Output)> RunNetshAsync(

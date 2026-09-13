@@ -35,13 +35,14 @@ Depo: https://github.com/superuser-d0/zapret-tr (public)
 - "Hata Bildir" (0.1.18) — GitHub formunu doldurulmuş açar, göndermez
 - Gerçek kurulum testi CI'da (`installer-test.yml`) — kur, yükselt, kaldır
 - Başarım ölçümü (aşağıda) — bellek, CPU, DPC, gecikme
+- **0.1.19 şifreli DNS servis yolu** (2026-09-13, TTNET) — kurulu paketten
+  "Servis Olarak Yükle" → yeniden başlat → ad çözümü ve engelli hedefler, A/B/A
+  kontrollü. Ayrıntı "2026-09-13 oturumu" bölümünde.
 
-**0.1.19 bu listeye GİRMİYOR ve bu kasıtlı.** O sürümün on düzeltmesi (tuzaklar
-bölümünde) yalnızca CI'da doğrulandı: derleme, 161 birim testi ve kurulum testi.
-Hiçbiri gerçek donanımda çalıştırılmadı — o oturumda Windows makinesi yoktu.
-Listenin başlığı "gerçek donanımda doğrulanmış" diyor; oraya ölçülmemiş bir şey
-koymak, tam da bu dosyanın profillerde reddettiği şey olurdu. Neyin hâlâ
-ölçülmediği "Yapılacaklar / 1" başlığında.
+**0.1.19'un geri kalanı bu listeye GİRMİYOR ve bu kasıtlı.** On düzeltmenin çoğu
+yalnızca CI'da doğrulandı. Listenin başlığı "gerçek donanımda doğrulanmış" diyor;
+oraya ölçülmemiş bir şey koymak, tam da bu dosyanın profillerde reddettiği şey
+olurdu. Neyin hâlâ ölçülmediği "Yapılacaklar / 1" başlığında.
 
 **Ölçülmüş sonuç (TTNET, gerçek hat):** şifreli DNS + `--dpi-desync=fake
 --dpi-desync-ttl=4` ile discord.com, pornhub.com, xvideos.com açılıyor.
@@ -221,18 +222,23 @@ bilerek hiç koşmuyor**: `installer-test.yml` `secureDnsEnabled=false` ile
 
 Elle koşulması gerekenler — şifreli DNS **açık**:
 
-1. Parametre testi → Başlat → "Servis Olarak Yükle" → **yeniden başlat** → ad
-   çözümü çalışıyor mu. `ServiceManager.InstallAsync` artık `127.0.0.1:53`
-   cevap verene kadar (en çok 30 sn) bekliyor ve cevap gelmezse DNS'e
-   DOKUNMUYOR; bu yeni davranış hiç ölçülmedi.
-2. "Otomatik Başlatmayı Kaldır" → DNS gerçekten DHCP'ye döndü mü
+1. ~~Parametre testi → Başlat → "Servis Olarak Yükle" → **yeniden başlat** → ad
+   çözümü çalışıyor mu.~~ **YAPILDI (2026-09-13)** — başarılı dal: servis
+   23:17:58'de kuruldu, DNS yedeği 23:18:01'de yazıldı (yani yönlendirme
+   `127.0.0.1:53` cevap verdikten sonra), yeniden başlatmadan sonra iki servis de
+   kendiliğinden kalktı ve engelli hedefler açıldı. **Başarısız dal** (30 sn içinde
+   cevap gelmezse DNS'e dokunmama) hâlâ koşmadı; onu üretmek için 53'ü başka bir
+   sürecin tutması gerekiyor.
+2. **YAPILDI (2026-09-13, kullanıcı arayüzde koştu: DNS otomatiğe döndü).** "Otomatik Başlatmayı Kaldır" → DNS gerçekten DHCP'ye döndü mü
    (`ipconfig /all`, `127.0.0.1` görünmemeli) ve `dns-backup.json` silindi mi.
    `RestoreAsync` artık netsh çıkış kodlarını okuyor ve **başarısızlıkta yedeği
    SİLMİYOR** — bu yolun yanlış tarafa düşmesi kullanıcıyı ad çözemez bırakır.
 3. **Çift yığınlı (IPv6'lı) bir hatta**: yönlendirme sonrası arayüzün IPv6 DNS
    sunucuları boşaldı mı, geri almada geri geldi mi. IPv6 boşaltma hiçbir
    gerçek hatta ölçülmedi; TTNET ölçümlerinde IPv6 DNS yoktu, yani o
-   ölçümlerin sessizliği kapsam kanıtı değil.
+   ölçümlerin sessizliği kapsam kanıtı değil. **2026-09-13'te de ölçülemedi:**
+   bu makinenin hattında hiçbir arayüzde genel IPv6 adresi yok (yalnızca `::1`),
+   yedekteki bütün `ipv6Addresses` boş. IPv6 veren bir hat gerekiyor.
 4. Kurulum sonrası ilk açılış: üst bant "KORUMA KAPALI — KURULUM YARIM" diyor
    mu ve altında sıradaki adım yazıyor mu (ekran görüntüsü al).
 5. Uygulama açıkken kısayola ikinci kez tıkla: tek örnek kilidi mesajı çıkmalı,
@@ -918,6 +924,33 @@ açılmıyorsa sebep 1 ya da başka bir şey. **Bunu ölçmeden `AddGlobalFilter
 dokunma** — bu dosyada "belirtiye değil varsayıma göre düzeltmek" bir kez iki
 sürüm birden harcattı.
 
+**2026-09-13 ölçümü — iki sebep de bu hatta ELENDİ, DNS önbelleği de.** Kurulu
+0.1.19 servisi birebir o çalışma zamanı komutuyla koşuyordu: üç bölüm, TEK örnek,
+ipset YOK, global filtrede `quic_initial_ietf` parçası VAR. Servis açık → kapalı →
+açık, her hedef `127.0.0.1`'den alınan gerçek IP'ye `--resolve` ile sabitlenerek:
+
+| Hedef | açık | kapalı (kontrol) | tekrar açık |
+|---|---|---|---|
+| https://discord.com | 200 | curl 35 (TLS'de RST) | 200 |
+| https://gateway.discord.gg | 404 | 35 | 404 |
+| https://updates.discord.com | 404 | 35 | 404 |
+| https://pornhub.com / xvideos.com | 301 | 35 | 301 |
+| http://discord.com | 301 | curl 56 | 301 |
+| https://www.youtube.com | 200 | 200 | 200 |
+
+Yani `--wf-raw-part` TCP'yi kesmiyor (sebep 2 değil) ve tek örnek/ipset'siz
+çalışma zamanı tcp443'ü açıyor (sebep 1 değil). `AddGlobalFilters`'a dokunmak için
+artık hiçbir gerekçe yok.
+
+Üçüncü aday da ölçüldü ve elendi: `VerifyAfterStartAsync` IP sabitlemeden
+`Dns.GetHostAddressesAsync` ile, yani Windows önbelleğinden çözüyor; engel
+sunucusunun cevapları TTL ~3400 sn ile geliyor ve 0.1.18'de `flushdns` yoktu.
+"Test DoH'lu IP'yle geçiyor, doğrulama sistem DNS'iyle 1/4" tablosuna birebir
+uyuyordu — ama Windows zehirli kaydı DNS sunucusu değişince **kendisi bırakıyor**
+(aşağıdaki önbellek tuzağına bak). Kalan aday: 0.1.18'in IPv4-only
+yönlendirmesi + o kullanıcının hattında İSS'in IPv6 DNS vermesi. Ölçülmedi; IPv6
+veren bir hat gerekiyor (Yapılacaklar/1, madde 3 ile aynı deney).
+
 **Çakışma tespiti yalnızca ÇALIŞAN sürece bakıyordu; asıl vaka kapalı ama
 kurulu kalıntı.** Bu araca gelenlerin çoğu başka bir araçtan geliyor. Eski araç
 "kaldırıldı" sanılıyor, geride servis kaydı kalıyor, o kayıt açılışta ayağa
@@ -960,6 +993,23 @@ kendiliğinden düzeliyor. O "kendiliğinden düzelme" en yanıltıcı kısmı: 
 Başlat'a basıp "olmadı" diyor, sonra çalışmaya başlıyor ve ikisi arasında
 yaptığı rastgele bir şeyi sebep sanıyor. `RedirectToLocalAsync` artık sonunda
 `ipconfig /flushdns` koşuyor.
+
+**DÜZELTME (2026-09-13, ölçüldü): yukarıdaki paragrafın mekanizması bu makinede
+TEKRARLANMADI.** Makinesiz bir oturumda yazılmıştı. Deney (Windows 11 26200,
+TTNET): Ethernet DNS'i modeme çevrildi, önbellek boşaltılıp `discord.com`
+çözüldü → önbellekte `195.175.254.2`, TTL 3353. Sonra ürünün kullandığı birebir
+`netsh interface ipv4 set dnsservers ... source=static address=127.0.0.1
+validate=no` koşuldu, **flush YAPILMADAN**. 0 saniyede `Resolve-DnsName`,
+`[System.Net.Dns]::GetHostAddresses` ve `curl` üçü de gerçek adresi verdi;
+önbellekte zehirli kayıt kalmadı. Aynı sonuç hem statik→statik hem DHCP→statik
+geçişte. Yani Windows'un DNS istemcisi sunucu değişikliğinde önbelleği kendisi
+geçersiz kılıyor.
+
+`flushdns` satırı KALDIRILMADI: zararsız, ucuz ve başka Windows sürümlerinde
+davranışın aynı olduğu ölçülmedi. Ama bu paragraf "strateji tutmadı, sonra
+kendiliğinden düzeldi" belirtisinin açıklaması olarak kullanılmamalı. O belirti
+yine görülürse önce **tarayıcının kendi ad önbelleğine** (Chromium ~1 dk tutar,
+`flushdns` ona dokunmaz) ve IPv6 DNS'e bak — ikisi de ölçülmedi.
 
 ### Arayüzü otomasyonla sürerken (2026-09-09)
 
@@ -1221,3 +1271,138 @@ dön; bu yol yalnızca tag itilemediği için var.
 **Makine durumu:** bilinmiyor. Bu oturum hiçbir makineye dokunmadı, dolayısıyla
 `%ProgramData%\ZapretTR` içeriği, servisler ve DNS hakkında söylenebilecek
 güncel bir şey yok. Bir sonraki oturum ölçmeden varsayım yapmasın.
+
+### 2026-09-13 oturumu (gerçek makine, TTNET / AS9121)
+
+Makine VAR: Windows 11 Pro 26200, Ethernet, modem `192.168.8.1`. .NET SDK yok
+(PATH'te yalnızca `C:\Program Files\dotnet`, SDK'sız) — bu oturumda derleme
+yapılmadı, ölçümler **kurulu 0.1.19 paketi** (`0.1.19+bbafe95`) üzerinde.
+Uygulama kabuğu yönetici DEĞİL; yükseltilmiş her adım UAC ile, makinenin başındaki
+kullanıcı onaylayarak koştu.
+
+**Devralınan durum `claude/jolly-bardeen-tnz0c8` dalındaki DEVAM'dan farklı.** O
+dal "taslak yayınlanmadı, tag yok" diyor; ölçüldü: `v0.1.19` yayınlanmış
+(2026-09-12T22:14:57Z) ve tag `bbafe95`'te, yani doğru commit'te. O dal ayrıca
+`main`'deki son dört commit'ten ÖNCE ayrıştığı için olduğu gibi birleştirilirse
+o dört commit'i geri alır. Birleştirilmemeli; içindeki yararlı notlar (yayın
+notunun CHANGELOG'un tek bölümünden üretilmesi, kalıntı SİLME yolunun hiç
+koşmaması) elle taşınmalı.
+
+**DNS zehirlenmesi — bu hatta ölçülen tablo:**
+
+| Çözümleyici | discord.com | pornhub.com | www.youtube.com |
+|---|---|---|---|
+| modem (`192.168.8.1`, İSS) | `195.175.254.2`, TTL ~3400 | `195.175.254.2` | gerçek |
+| `8.8.8.8` / `1.1.1.1` / `9.9.9.9`, düz 53 | **zaman aşımı** | **zaman aşımı** | gerçek |
+| `127.0.0.1` (dnscrypt) | gerçek (Cloudflare) | gerçek | gerçek |
+| sistem (Windows) | gerçek | gerçek | gerçek |
+
+İkinci satır yeni bilgi: bu hatta **düz DNS içeriğe bakılarak süzülüyor** —
+engelli bir adı soran paket hangi genel sunucuya giderse gitsin düşürülüyor (üçü
+de ~7 sn'de zaman aşımı), engelli olmayan ad aynı sunucudan hemen dönüyor. Yani
+"DNS'i 8.8.8.8 yap" tavsiyesi burada çalışmaz; şifreli DNS isteğe bağlı değil.
+
+Aynı bulgunun bir yan sonucu: `zapret-tr-dnscrypt.toml`'daki
+`bootstrap_resolvers = ['9.9.9.9:53', '1.1.1.1:53']` düz 53 kullanıyor. Şu an
+sorun değil, çünkü önyüklemede sorulan adlar (çözümleyici listesi, DoH sunucu
+adları) engelli değil. Bir gün engellenirlerse soğuk başlangıç zaman aşımıyla
+düşer ve belirtisi "şifreli DNS açılmadı" olur.
+Engel sunucusu HTTPS'te RST değil **zaman aşımı** veriyor, HTTP'de
+`erisime_engellenmis` sayfası dönüyor.
+
+Kurulu servisin durumu: bütün arayüzlerde IPv4 DNS `127.0.0.1`, IPv6 DNS boş,
+`127.0.0.1:53`'ü dnscrypt tutuyor, `hosts` temiz, Windows önbelleğinde
+`195.175.254.2` kaydı yok. Servislerin kurtarma tanımı yerinde (5/15/60 sn yeniden
+başlat). Engelli hedef ölçümü ve kontrol tablosu "ÇÖZÜLMEMİŞ" maddesinin altında.
+
+**Bu kurulumda Wi-Fi Direct sanal kartları da `127.0.0.1`'e yazılmıştı**
+(`Local Area Connection* 1/2`) — 0.1.19'un davranışı. `01c262a` bunu düzeltti ve
+0.1.20 paketiyle ölçüldü: sanal kartlar artık yönlendirilmiyor.
+
+#### İkinci yarı: DNS hata taraması ve 0.1.20 (aynı gün)
+
+Kullanıcı "Tüm Ayarları Sıfırla" yapıp makineyi bu oturuma bıraktı ve iki şey
+istedi: DNS'in bütün hata olasılıklarının taranıp çözülmesi, ve sahadan gelen
+**"yeni sürümü indirip parametre testi yapınca motor çalışmıyor, yeniden
+başlatınca açılıyor"** bildiriminin ele alınması. Kullanıcı ayrıca Yapılacaklar/1
+madde 2'yi arayüzde kendisi koştu: "Otomatik Başlatmayı Kaldır" → DNS otomatiğe
+döndü; uygulamayı kapatıp açınca "Başlat" sorunsuz.
+
+Kod okunarak bulunan ve düzeltilen DNS hataları CHANGELOG 0.1.20'de tek tek yazılı;
+en ağırları: servis yeniden kurulumunda yetim `127.0.0.1` (internet tamamen
+gidiyordu), koruma açıkken servis kurulunca yedeğin "app" sahipliğinde kalması,
+kaldırmada çözümleyicinin DNS geri alınmadan silinmesi, `Capture`'ın `127.0.0.1`'i
+orijinal diye kaydetmesi, bozuk yedeğin şifreli DNS'i kalıcı olarak kilitlemesi.
+İlk yarıda "açık risk" olarak kaydedilen **sonradan takılan ağ kartının yönlendirilmemesi** DNS bekçisiyle kapandı
+(`DnsGuard.cs`, gerekçesi orada).
+
+**Doğrulama: gerçek kurulum paketiyle 71/71** (`e2e2.ps1`, sonuç günlüğü oturumun
+karalama dizininde; betik depoya girmedi). Ölçülenlerden bir sonraki oturumun
+bilmesi gerekenler:
+
+| Senaryo | Ölçülen |
+|---|---|
+| Yedekte olmayan, DHCP'deki kart | bekçi turu 3 sn, kart yedeğe DHCP olarak eklendi |
+| Ethernet kapat/aç (gerçek ağ olayı) | bekçi **kendiliğinden** tetiklendi, 15 sn'de yönlendirdi |
+| `ZapretTR-DNS` durduruldu | önce `COZULEMEDI`; bekçi 90 sn bekleyip askıya aldı, internet geri geldi |
+| Servis geri başlatıldı | bir sonraki turda yeniden yönlendirme, askı işareti silindi |
+| `dnscrypt-proxy.exe` yok | beklemeden (3 sn) askıya alındı; dosya dönünce devam |
+| DNS kapalı yeniden kurulum | yetim yönlendirme geri alındı, internet var |
+| Yedek silinmişken yeniden kurulum | Ethernet kaydı `wasStatic:false`, `127.0.0.1` yok |
+| DNS servisi çalışırken `--dns ac` | ikinci dnscrypt açılmadı, servisinki kullanıldı |
+| Uygulama modu çökmesi (CLI + dnscrypt öldürüldü) | `COZULEMEDI` → bekçi 92 sn'de geri aldı |
+| Geri alma netsh ile başarısız | DNS servisi **bırakıldı**, internet var; `--cleanup` yetimi kapattı |
+| Bozuk yedek | karantinaya alındı, yeniden yönlendirme çalıştı |
+| Kaldırıcı | görev, servisler silindi; DNS otomatik |
+| 0.1.19 servis çalışırken 0.1.20 kurulumu | servis çalışıyor, motor hemen ölçüm yaptı |
+| Pencere başlığı / alt bilgi (UIA ile okundu) | `ZapretTR 0.1.20` |
+
+**Motor sorunu YENİDEN ÜRETİLEMEDİ — düzeltme savunma amaçlı, bunu karıştırma.**
+Yeniden başlatmanın düzelttiği tek mekanizma çekirdekte takılı WinDivert sürücüsü.
+İki ham deney (ürün kodu değil, doğrudan `winws.exe` + `sc.exe`) koşuldu:
+
+1. Eski kurulumun yarışı — `taskkill /F winws` ardından HEMEN `sc stop` + `sc delete
+   windivert`: sürücü anında `STOPPED` ve kayıt yok (1060); hemen başlatılan yeni
+   winws `capture is started` dedi. **Bozmadı.**
+2. winws sürücüyü tutarken `sc stop windivert`: `STOP_PENDING` kaldı, winws
+   öldürülünce `STOPPED`'a düştü, hemen başlatılan winws açıldı. **Bozmadı.**
+
+Yani bu makinede takılma ancak **başka bir WinDivert kopyası/sürümü** çekirdekteyken
+(hata 654) oluşabilir ve onu üretmek başka bir aracın sürücüsünü yüklemeyi
+gerektirir — yapılmadı. Yapılan: `WinwsRunner.StartAsync` winws'in çıktısından
+sürücü hatasını tanıyor (`windivert: error opening filter`, `win_dark_init failed.
+win32 error N` — ikisi de ikiliden `strings` ile çıkarıldı), kimse kullanmıyorsa
+sürücüyü boşaltıp bir kez yeniden deniyor; servis kurulumu da "başlatıldı ama
+düştü" durumunu yakalıyor. **İkinci aday sebep** zaten 0.1.20'de: 0.1.19'da
+parametre testi servisin winws'ini durdurmuyordu (`b39591f`) ve aynı filtreyle
+çakışma "ÖLÇÜM YAPILAMADI" veriyordu. Hangisinin sahadaki sebep olduğu bilinmiyor;
+etkilenen birinden "Raporu Kaydet" çıktısı gelirse artık winws'in hata satırı ve
+Windows hata kodu içinde.
+
+**Ortam tuzakları (bu yarıda ısırdı):**
+
+- **PowerShell 5.1'de `curl` ve `cli` takma ad.** Betikteki `function Curl`,
+  `Invoke-WebRequest` takma adının arkasında kaldı ve test yarıda düştü; `function
+  Cli` ise `Clear-Item`'ın takma adıydı — o satıra gelinseydi yol sanılan
+  argümanlarla `Clear-Item` çağrılacaktı. Otomasyon betiğinde fonksiyon adı
+  seçerken `Get-Alias <ad>` ile bak.
+- **Yönlendirilmiş CLI çıktısı UTF-8 geliyor, PS 5.1 onu ANSI okuyor:** "BAŞARILI"
+  `BAÅžARILI` olarak geldi ve iki doğru sonuç KALDI sayıldı. Türkçe kelimeye göre
+  eşleşme yapma; çıkış kodu ya da ASCII bir işaret kullan.
+- **UAC penceresi iptal edilirse `Start-Process -Verb RunAs` hata verip "bitti"
+  der ve betik hiç çalışmaz.** Sonuç dosyasının VARLIĞINI kontrol et.
+- **Ekran görüntüsü için `SetForegroundWindow` yetmedi:** alınan görüntüde
+  kullanıcının önündeki başka bir pencere çıktı; görüntü silindi, gönderilmedi.
+  Doğrulamayı UIA ile metin okuyarak yap; görüntü gerekiyorsa pencereyi
+  `PrintWindow` ile yakala.
+
+**Yapılacaklar/1 durumu:** madde 1 ve 2 yapıldı (2'yi kullanıcı arayüzde koştu, bekçi
+senaryoları ayrıca ölçtü); madde 3 bu hatta ölçülemez; madde 4 ve 5 hâlâ koşulmadı.
+
+**Makine durumu (oturum sonu):** **0.1.20 kurulu** (yerel derleme,
+`0.1.20+01c262a…` — commit özeti derleme anındaki `HEAD`, değişiklikler o sırada
+commit'lenmemişti). `ZapretTR` + `ZapretTR-DNS` servisleri çalışıyor, bekçi görevi
+kayıtlı, `config.json` TTNET + `tt-443-fake-ttl4` + şifreli DNS açık (testin
+yazdığı), Ethernet/WiFi/BT `127.0.0.1`, discord.com 200. `learned.json` YOK
+(sıfırlamada silindi). `%ProgramData%\ZapretTR` içinde testten kalan
+`dns-backup.bozuk-*.json` ve `dns-bekci.log` var — zararsız.

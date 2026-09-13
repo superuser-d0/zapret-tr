@@ -480,7 +480,7 @@ public sealed class StrategyProber(
                 return opened;
             }
 
-            runner.Start(arguments);
+            await runner.StartAsync(arguments, cancellationToken).ConfigureAwait(false);
 
             // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
             // atarsak strateji henuz devrede olmaz ve calisan bir aday basarisiz

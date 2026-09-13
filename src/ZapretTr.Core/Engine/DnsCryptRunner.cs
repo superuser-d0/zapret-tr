@@ -74,6 +74,29 @@ public sealed class DnsCryptRunner : IAsyncDisposable
                 _vendor.DnsCryptExe);
         }
 
+        // SIFRELI DNS SERVISI ZATEN AYAKTAYSA IKINCI BIR KOPYA ACILMAZ.
+        //
+        // winws servisi kurulu ama durmussa arayuz "Baslat"i acik birakiyor (bu
+        // dogru: koruma yok ve kullanici elle baslatabilmeli). Ama o durumda
+        // ZapretTR-DNS servisi cogu zaman CALISIYOR ve 127.0.0.1:53'u tutuyor.
+        // Eskiden uygulama yine de kendi dnscrypt'ini aciyordu; o surec portu
+        // baglayamayip hemen oluyor, dogrulama "surec yasamiyor" diye dusuyor ve
+        // "Baslat" tamamen BASARISIZ oluyordu -- sifreli DNS aslinda calisirken.
+        // Servisin cozumleyicisi kullaniliyor ve yonlendirme servise ait sayiliyor:
+        // uygulama kapaninca geri alinmamali, cozumleyici uygulamayla birlikte gitmiyor.
+        var dnsServisi = await ServiceManager.GetDnsServiceStateAsync(cancellationToken).ConfigureAwait(false);
+        if (dnsServisi.Running
+            && await IsLocalResolverRespondingAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        {
+            var servisle = await SystemDnsManager
+                .RedirectToLocalAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
+            SystemDnsManager.ClearSuspended();
+            _dnsRedirected = true;
+            Publish("Sifreli DNS servisi zaten calisiyor; onun cozumleyicisi kullaniliyor."
+                    + (servisle.Count == 0 ? string.Empty : " Yonlendirilen: " + string.Join(", ", servisle)));
+            return;
+        }
+
         var configPath = await EnsureConfigAsync(cancellationToken).ConfigureAwait(false);
 
         lock (_gate)
@@ -402,9 +425,21 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     /// Kendi toml'umuzu uretiyoruz; dagitimla gelen 40 KB'lik ornek dosya bize
     /// gereken ondan cok daha dar bir yapilandirmanin yaninda okunamaz kaliyor.
     /// </remarks>
-    private async Task<string> EnsureConfigAsync(CancellationToken cancellationToken)
+    private Task<string> EnsureConfigAsync(CancellationToken cancellationToken)
+        => WriteConfigAsync(_vendor, cancellationToken);
+
+    /// <summary>
+    /// Yapilandirmayi yazar; servis kurulumu da bunu kullaniyor.
+    /// </summary>
+    /// <remarks>
+    /// Servis kurulumu eskiden dosyanin VAR OLMASINI bekliyordu ve dosyayi yalnizca
+    /// uygulamanin "Baslat"i yaziyordu. Arayuzsuz kurulumda (<c>--install-services</c>:
+    /// yukseltme ve sessiz dagitim) uygulama hic baslatilmamissa sifreli DNS servisi
+    /// sessizce KURULMUYORDU -- ayarlarda "sifreli DNS acik" yazarken.
+    /// </remarks>
+    internal static async Task<string> WriteConfigAsync(VendorPaths vendor, CancellationToken cancellationToken)
     {
-        var directory = Path.GetDirectoryName(_vendor.DnsCryptExe)!;
+        var directory = Path.GetDirectoryName(vendor.DnsCryptExe)!;
         var path = Path.Combine(directory, "zapret-tr-dnscrypt.toml");
 
         var config = $"""
@@ -496,6 +531,14 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     {
         if (!_dnsRedirected)
         {
+            return;
+        }
+
+        // Yonlendirmeyi bu arada servis devraldiysa DNS artik bu surece bagli
+        // degil; geri almak servisin sifreli DNS'ini sokmek olurdu.
+        if (SystemDnsManager.IsOwnedByService)
+        {
+            _dnsRedirected = false;
             return;
         }
 

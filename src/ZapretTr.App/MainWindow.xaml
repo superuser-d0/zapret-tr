@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:ZapretTr.App.ViewModels"
         xmlns:local="clr-namespace:ZapretTr.App"
-        Title="ZapretTR" Height="720" Width="440"
+        Title="{Binding WindowTitle}" Height="720" Width="440"
         MinHeight="600" MinWidth="420"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F9"
@@ -232,7 +232,7 @@
         </Expander>
 
         <!-- ================= ALT BILGI ================= -->
-        <TextBlock Grid.Row="6" Text="{Binding EngineVersionText}"
+        <TextBlock Grid.Row="6" Text="{Binding FooterText}"
                    Foreground="{StaticResource TextMutedBrush}"
                    FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0" />
     </Grid>

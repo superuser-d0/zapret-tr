@@ -399,6 +399,31 @@ public sealed class MainViewModel : INotifyPropertyChanged
         (_runner?.ReportedVersion is { } surum ? "winws " + surum : "winws (zapret-win-bundle)")
         + " · dnscrypt-proxy 2.1.18";
 
+    /// <summary>Pencere basligi: uygulamanin surumuyle.</summary>
+    /// <remarks>
+    /// Uygulamanin KENDI surumu ekranda hicbir yerde yazmiyordu; alt bilgide
+    /// yalnizca motorun surumu vardi. "Hangi surumdesiniz" sorusunun cevabi ancak
+    /// "Raporu Kaydet" dosyasinda bulunuyordu -- yani yeni surumu indirdigini
+    /// soyleyen kullanicinin gercekten onu calistirip calistirmadigi bilinemiyordu.
+    /// </remarks>
+    public string WindowTitle => "ZapretTR " + ShortVersion(SurumMetni());
+
+    /// <summary>Alt bilgi: uygulama, motor ve cozumleyici surumleri tek satirda.</summary>
+    public string FooterText => "ZapretTR " + ShortVersion(SurumMetni()) + " · " + EngineVersionText;
+
+    /// <summary>
+    /// "0.1.20+5cc46a98..." gibi bir surum metninden kullaniciya gosterilecek kismi alir.
+    /// </summary>
+    /// <remarks>
+    /// Commit ozeti rapora giriyor (teshis icin gerekli) ama baslikta 40 karakterlik
+    /// bir ozet kullaniciya bir sey soylemiyor.
+    /// </remarks>
+    public static string ShortVersion(string informationalVersion)
+    {
+        var arti = informationalVersion.IndexOf('+');
+        return arti < 0 ? informationalVersion : informationalVersion[..arti];
+    }
+
     /// <summary>
     /// Sifreli DNS kullanilsin mi. Varsayilan olarak ACIK.
     /// </summary>
@@ -483,7 +508,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var arguments = builder.BuildRuntimeCommand(winners);
 
             Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
-            _runner.Start(arguments);
+            await _runner.StartAsync(arguments).ConfigureAwait(true);
             SaveSelection();
 
             // BU KORUMA YENIDEN BASLATMAYI ATLATMAZ VE BUNU SOYLEMEK ZORUNDAYIZ.
@@ -1193,13 +1218,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 }
 
                 Append("Otomatik başlatma kaldırıldı.");
-                Append("ÖNERİ: bilgisayarı bir kez yeniden başlatın.");
-                Append("  Ağ sürücüsü çekirdekten hemen düşmüyor; kalıntı bir sürücü,");
-                Append("  sonraki parametre testinde bütün adayların aynı şekilde");
-                Append("  başarısız olmasına yol açabiliyor.");
 
+                // Eskiden burada "bilgisayari yeniden baslatin" oneriliyordu: surucu
+                // cekirdekte takili kalirsa sonraki testte motor acilmiyordu. Motor
+                // artik bu durumda surucuyu kendisi bosaltip yeniden deniyor
+                // (WinwsRunner.StartAsync); kullaniciya yeniden baslatma yuku
+                // bindirmek gereksiz.
                 SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KAPATILDI",
-                    "Yeni bir parametre testi yapacaksanız önce bilgisayarı yeniden başlatın.");
+                    "Koruma şu an kapalı. \"ZAPRET'İ BAŞLAT\" ya da yeni bir parametre testiyle devam edebilirsiniz.");
             }
             else
             {
@@ -1233,6 +1259,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 if (confirmation != MessageBoxResult.Yes)
                 {
                     return;
+                }
+
+                // UYGULAMANIN KENDI KORUMASI ONCE DURMALI; SERVIS DEVRALACAK.
+                //
+                // Dugme koruma calisirken de acik. Eskiden oyle kurulum yapildiginda
+                // uc sey birden bozuluyordu: servisin winws'i ayni filtreyle ikinci
+                // ornek olarak acilamiyordu, servisin dnscrypt'i 127.0.0.1:53'u
+                // uygulamanin dnscrypt'i tuttugu icin baglayamiyordu -- ama "cevap
+                // veriyor mu" kontrolu UYGULAMANINKINDEN cevap alip geciyordu -- ve
+                // DNS yedegi "uygulama" sahipligiyle kaliyordu. Uygulama kapaninca
+                // yonlendirmeyi geri aliyor, kendi dnscrypt'ini de kapatiyordu:
+                // ekranda "SERVİS MODU AKTİF", arkada sifreli DNS yok.
+                if (_runner?.IsRunning == true || _dnsRunner?.IsRunning == true)
+                {
+                    Append("Uygulamanın kendi koruması durduruluyor; servis devralacak...");
+
+                    if (_runner is not null)
+                    {
+                        await _runner.StopAsync().ConfigureAwait(true);
+                    }
+
+                    await StopSecureDnsAsync().ConfigureAwait(true);
                 }
 
                 // Servise, arayuzun calistirdigi komutun AYNISI veriliyor. Ayrisirsa
@@ -2287,6 +2335,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     // is parcaciginda yakalaniyor ve oradan bildirim gondermek
                     // WPF baglamasini patlatirdi.
                     Notify(nameof(EngineVersionText));
+                    Notify(nameof(FooterText));
                     SetStatus(AppStatus.Running, "KORUMA AKTİF");
                     break;
                 case WinwsState.Faulted:

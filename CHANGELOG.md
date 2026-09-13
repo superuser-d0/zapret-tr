@@ -6,9 +6,81 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.1.20]
+
+Bu sürümün DNS ve motor değişiklikleri **gerçek bir makinede, kurulum paketiyle** sınandı
+(2026-09-13, Windows 11 26200, TTNET): 0.1.19 servis çalışırken üzerine yükseltme, kaldırma
+ve yeniden kurulum dahil 71 kontrolün 71'i geçti.
+
+### Eklendi
+
+- **DNS bekçisi.** Servis modunda sistem DNS'ini izleyen hiçbir şey yoktu: yönlendirme kurulum
+  anında bir kez yapılıyor ve uygulama açılmadıkça bir daha bakılmıyordu. Bekçi, SYSTEM olarak
+  çalışan bir zamanlanmış görev ("ZapretTR DNS Bekcisi"); açılışta, her ağ bağlantısında ve 10
+  dakikada bir birkaç saniyelik bir tur atıp çıkıyor. Kuralı: **koruma kesilebilir, internet
+  kesilmemeli.** Ölçülen davranışları:
+
+  - **Sonradan takılan ağ kartı** (telefonla USB paylaşım, USB Wi-Fi) eskiden İSS'in DNS'inde
+    kalıyordu ve o kartta DNS engellemesi geri geliyordu. Bekçi kartı yedeğe ekleyip yönlendiriyor;
+    ağ bağlanma olayıyla kendiliğinden, ~15 sn içinde.
+  - **Şifreli DNS servisi ölürse** eskiden sistem DNS'i `127.0.0.1`'de kalıyor ve **hiçbir adres
+    çözülmüyordu** — uygulama açılana kadar, yeniden başlatmada da. Bekçi 90 sn bekliyor, servis
+    dönmezse yönlendirmeyi askıya alıp interneti geri getiriyor; servis dönünce yeniden yönlendiriyor.
+    `dnscrypt-proxy.exe` karantinaya alınmışsa beklemeden aynısını yapıyor.
+  - **Uygulama çökerse ya da elektrik kesilirse** (servissiz kullanım) aynı "internet yok" tablosu
+    açılıştan sonra da sürüyordu. Bekçi bunu yakalayıp geri alıyor.
+
+  Kurulum paketi görevi kuruyor, kaldırıcı siliyor.
+
+- **Pencere başlığında ve alt bilgide uygulama sürümü.** Uygulamanın kendi sürümü ekranda hiçbir
+  yerde yazmıyordu; alt bilgide yalnızca motorun sürümü vardı.
 
 ### Düzeltildi
+
+- **Parametre testi motoru çalışmıyor, bilgisayarı yeniden başlatınca açılıyordu.** winws, çekirdekte
+  takılı kalmış bir WinDivert sürücüsünü (başka bir araçtan, farklı bir sürümden ya da yarım kalmış
+  bir durdurmadan) açamadığında her aday aynı hatayla düşüyordu ve arayüz servis kaldırıldıktan sonra
+  kullanıcıya "önce bilgisayarı yeniden başlatın" diyordu. Motor artık sürücü hatasını winws'in kendi
+  çıktısından tanıyor, sürücüyü kullanan başka bir süreç yoksa onu çekirdekten boşaltıp **bir kez
+  yeniden deniyor**. Düzeltilemeyecek hatalarda (imza reddi, güvenlik yazılımı engeli, kapalı BFE
+  servisi) boşuna beklemeden sebebini söylüyor. Aynı kontrol servis kurulumunda da var: "başlatıldı"
+  denen ama saniyeler içinde düşen servis artık yakalanıyor. Kurulum paketi de winws'i öldürdükten
+  sonra süreç gerçekten kapanmadan sürücüyü durdurmuyor.
+
+  **Dürüst not:** bu belirti test makinesinde yeniden **üretilemedi** — eski kurulumun yarışı ve
+  sürücü tutulurken durdurma, ikisi de motoru bozmadı. Düzeltme, yeniden başlatmanın düzelttiği tek
+  mekanizmaya (çekirdekte takılı sürücü) karşı yazıldı. Bu belirtiyi yaşayan birinden "Raporu Kaydet"
+  çıktısı, artık winws'in hata satırını ve Windows hata kodunu taşıyor.
+
+- **Servis yeniden kurulurken internet tamamen gidebiliyordu.** Şifreli DNS kapalı seçilerek ya da DNS
+  servisi açılamadan yeniden kurulumda eski servis silinip yönlendirme yerinde bırakılıyordu: sistem
+  DNS'i `127.0.0.1`, dinleyen yok. Durum yeniden başlatmada da sürüyordu. Önceki yönlendirme artık
+  geri alınıyor.
+
+- **Koruma açıkken "Servis Olarak Yükle" denirse şifreli DNS sessizce düşüyordu.** DNS yedeği
+  "uygulama" sahipliğinde kalıyor, uygulama kapanınca geri alınıyordu. Uygulamanın kendi koruması
+  artık kurulumdan önce durduruluyor ve yönlendirmeyi servis devralıyor.
+
+- **Şifreli DNS servisi çalışırken "Başlat" başarısız oluyordu.** İkinci bir dnscrypt açılıp port
+  çakışmasıyla düşüyordu. Servisin çözümleyicisi kullanılıyor.
+
+- **Kaldırmada DNS geri alınamazsa çözümleyici yine de siliniyordu.** Sıra tersine çevrildi: önce DNS
+  geri alınıyor, başarısızsa şifreli DNS servisi internet kesilmesin diye yerinde bırakılıyor.
+  Sıfırlama ise yedeğin yetmediği yerde yalnızca `127.0.0.1` gösteren kartları otomatiğe döndürüyor.
+
+- **Yedek kaybolmuşsa `127.0.0.1` "orijinal ayar" diye kaydediliyordu**; kaldırmadan sonra o kartta
+  ad çözülmüyordu. Bizim adresimiz artık hiçbir zaman orijinal sayılmıyor ve geri yazılmıyor.
+
+- **Bozuk `dns-backup.json` şifreli DNS'i kalıcı olarak açılamaz yapıyordu.** Bozuk dosya kenara
+  alınıyor, yönlendirme temiz bir yedekle yeniden yapılabiliyor.
+
+- **Geri alma, kullanıcının sonradan elle değiştirdiği DNS'i eziyordu.** Yalnızca hâlâ bizde olan
+  kartlar geri alınıyor.
+
+- **Arayüzsüz servis kurulumu (yükseltmede kullanılan yol) şifreli DNS servisini kurmuyordu**, çünkü
+  yapılandırma dosyasını yalnızca uygulamanın "Başlat"ı yazıyordu. Kurulum artık dosyayı kendisi yazıyor.
+
+- Uygulama, kaldırıcı ve bekçi aynı anda DNS'e dokunmasın diye süreçler arası kilit eklendi.
 
 - **Otomatik başlatma kuruluyken parametre testi yanlış sonuç veriyordu.** Test, uygulamanın
   kendi başlattığı winws'i durduruyordu ama servisin winws'ini durdurmuyordu. Arkada çalışan
@@ -95,6 +167,14 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   winws ne yaparsa yapsın site açılmıyor, sonra birkaç dakika içinde kendiliğinden
   düzeliyor. Kafa karıştırıcılık sırasında en üst sıradaki belirti biçimi. Geri alırken de
   boşaltılıyor.
+
+  **Düzeltme (2026-09-13, ölçüldü):** yukarıdaki mekanizma gerçek bir makinede
+  tekrarlanmadı. Windows 11 (26200) üzerinde, TTNET hattında önbelleğe engel sunucusunun
+  cevabı (TTL ~3400 sn) alındıktan sonra DNS, uygulamanın kullandığı `netsh` komutuyla
+  `127.0.0.1`'e çevrildi ve önbellek **boşaltılmadı**: ad anında gerçek adrese çözüldü.
+  Windows sunucu değişikliğinde önbelleği kendisi geçersiz kılıyor. Boşaltma adımı zararsız
+  olduğu için duruyor, ama "şifreli DNS açık, site yine açılmıyor" belirtisinin açıklaması
+  bu değil.
 
 
 - **"Raporu Kaydet" artık makinenin ölçülen durumunu da yazıyor.** Eski rapor yalnızca

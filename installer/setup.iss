@@ -81,6 +81,18 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription: "Ek görevler:"
 
 [Run]
+; DNS bekcisi: SYSTEM olarak calisan zamanlanmis gorev. Servis modunda arkada DNS'i
+; izleyen baska hicbir sey yok -- sonradan takilan ag karti yonlendirilmiyor,
+; dnscrypt kalici olarak olurse makine hicbir adi cozemiyordu. Gerekcesi
+; DnsGuard.cs'de. Her kurulumda yeniden yaziliyor ki gorev yeni exe'yi gostersin.
+Filename: "{app}\{#AppExe}"; Parameters: "--register-dns-guard"; Flags: runhidden waituntilterminated; StatusMsg: "DNS bekcisi kuruluyor..."
+
+; Kurulum biterken bir bekci turu. Yukseltmenin onceki surumu sokerken DNS geri
+; alinamamis ve servis geri kurulmamissa sistem DNS'i 127.0.0.1'de, cozumleyicisiz
+; kalmis olabilir; bir sonraki tetikleyiciyi (en gec 10 dk) beklemeye gerek yok.
+; nowait: bekci cozumleyiciyi 90 sn'ye kadar bekleyebiliyor, kurulum beklememeli.
+Filename: "{app}\{#AppExe}"; Parameters: "--dns-guard"; Flags: runhidden nowait
+
 ; shellexec ZORUNLU. Uygulamanin manifesti requireAdministrator ve Inno, kurulum
 ; sonu "simdi baslat" girdisini yukseltilmemis baglamda CreateProcess ile
 ; calistiriyor -- CreateProcess UAC yukseltmesi yapamaz, yalnizca ShellExecute
@@ -91,6 +103,10 @@ Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription
 Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent shellexec
 
 [UninstallRun]
+; Bekci ONCE siliniyor: servisler sokulurken bir bekci turu araya girerse
+; yarim kalmis bir durumu gorup DNS'i yeniden yonlendirmeye kalkabilir.
+Filename: "{app}\{#AppExe}"; Parameters: "--unregister-dns-guard"; Flags: runhidden waituntilterminated; RunOnceId: "ZapretTrDnsGuard"
+
 ; Kaldirmadan ONCE servisleri sokup DNS'i geri al. Bu adim atlanirsa kullanicinin
 ; sistem DNS'i 127.0.0.1'de kalir, dnscrypt-proxy de silinmis olur ve makine
 ; hicbir adi cozemez. Kaldirma sirasinda yapilabilecek en kotu sey bu.
@@ -121,6 +137,45 @@ var
 begin
   Result := Exec(ExpandConstant('{sys}\sc.exe'), 'query ' + Ad, '',
                  SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+// Bir komutun ciktisinda metin geciyor mu (find bulunca 0 doner).
+function CiktidaVar(const Komut, Metin: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec(ExpandConstant('{cmd}'), '/c ' + Komut + ' | find /I "' + Metin + '" >nul',
+                 '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+// taskkill /F surecin OLDUGUNU beklemeden donuyor: sonlandirma istegi gonderiliyor,
+// tutamaclar birkac yuz milisaniye sonra kapaniyor. O arada surucuye "dur"
+// denirse surucu kimse kullanmiyor olsa bile "durduruluyor" durumunda takili
+// kalabiliyor ve yeni winws onu acamiyordu -- sahadan gelen "yeni surumu kurdum,
+// motor calismiyor, yeniden baslatinca aciliyor" bildiriminin en olasi yolu.
+procedure SurecBitsin(const Ad: String);
+var
+  i: Integer;
+begin
+  for i := 1 to 40 do
+  begin
+    if not CiktidaVar('tasklist /FI "IMAGENAME eq ' + Ad + '" /NH', Ad) then
+      Exit;
+    Sleep(250);
+  end;
+end;
+
+// Surucu servisi STOP_PENDING'den cikana kadar bekle (en cok 10 sn).
+procedure SurucuDussun(const Ad: String);
+var
+  i: Integer;
+begin
+  for i := 1 to 40 do
+  begin
+    if not CiktidaVar('sc query ' + Ad, 'PENDING') then
+      Exit;
+    Sleep(250);
+  end;
 end;
 
 // Kurulum baslamadan once calisan bir surum varsa kapat: acik bir uygulama
@@ -199,14 +254,20 @@ begin
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM winws.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM dnscrypt-proxy.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+  // Surucuye dokunmadan once surecin GERCEKTEN bitmesini bekle; gerekcesi SurecBitsin'de.
+  SurecBitsin('winws.exe');
+
   // Uc ad birden: WinDivert'i baska araclar da kuruyor. WinDivert14 GoodbyeDPI'in
   // ve WinDivert 1.4'un adi, monkey bazi dagitimlarinki. Biri geride kalip surucusu
   // cekirdege yuklu duruyorsa dosya yine kilitli kalir ve ayni kod 5 hatasi doner.
   Exec(Sc, 'stop windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  SurucuDussun('windivert');
   Exec(Sc, 'delete windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(Sc, 'stop WinDivert14', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  SurucuDussun('WinDivert14');
   Exec(Sc, 'delete WinDivert14', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(Sc, 'stop monkey', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  SurucuDussun('monkey');
   Exec(Sc, 'delete monkey', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Surucu goruntusunun cekirdekten dusmesi anlik degil.

@@ -9,7 +9,7 @@
     Ikisi de verilmezse buradaki deger kullanilir.
   -->
   <PropertyGroup>
-    <Version Condition="'$(Version)' == ''">0.1.19</Version>
+    <Version Condition="'$(Version)' == ''">0.1.20</Version>
     <Company>ZapretTR</Company>
     <Product>ZapretTR</Product>
     <Copyright>MIT</Copyright>

@@ -101,6 +101,24 @@ jobs:
             if (ServisVar $ad) { throw "$ad servisi temiz kurulumda kurulmus olmamaliydi." }
           }
 
+          # DNS bekcisi her kurulumda kurulmali: servis modunda sonradan takilan
+          # karti yonlendiren ve olu cozumleyicide interneti geri getiren tek sey o.
+          # Kurulum paketi --register-dns-guard'in cikis kodunu kullaniciya
+          # gostermiyor; kaybolursa bunu yalnizca bu kontrol gorur.
+          $gorev = Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi' -ErrorAction SilentlyContinue
+          if (-not $gorev) { throw "DNS bekcisi gorevi kurulmadi." }
+          $eylem = $gorev.Actions | Select-Object -First 1
+          if ($eylem.Arguments -ne '--dns-guard' -or $eylem.Execute -notlike '*\ZapretTR\ZapretTR.exe') {
+            throw "DNS bekcisi gorevi yanlis komutu gosteriyor: $($eylem.Execute) $($eylem.Arguments)"
+          }
+
+          # Yedek yokken bekci turu hicbir sey yapmamali ve 0 ile bitmeli.
+          Start-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi'
+          for ($i = 0; $i -lt 60 -and (Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi').State -eq 'Running'; $i++) { Start-Sleep -Seconds 1 }
+          Start-Sleep -Seconds 2
+          $sonuc = (Get-ScheduledTaskInfo -TaskName 'ZapretTR DNS Bekcisi').LastTaskResult
+          if ($sonuc -ne 0) { throw "DNS bekcisi turu $sonuc koduyla bitti." }
+
           exit 0
 
       # --- 2. Servis kurulumu -------------------------------------------------
@@ -248,6 +266,11 @@ jobs:
             if (ServisVar $ad) { throw "Kaldirmadan sonra $ad servisi duruyor." }
           }
 
+          # Kalinti gorev silinmis bir exe'yi her 10 dakikada calistirmaya calisir.
+          if (Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi' -ErrorAction SilentlyContinue) {
+            throw "Kaldirmadan sonra DNS bekcisi gorevi duruyor."
+          }
+
           exit 0
 
       # Is hangi adimda duserse dussen runner temiz kalmali; kalinti bir surucu
@@ -261,4 +284,5 @@ jobs:
             sc.exe delete $ad *> $null
           }
           Get-Process winws,dnscrypt-proxy -ErrorAction SilentlyContinue | Stop-Process -Force
+          Unregister-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi' -Confirm:$false -ErrorAction SilentlyContinue
           exit 0

@@ -92,27 +92,75 @@ public static class ServiceManager
         }
 
         var steps = new List<CleanupStep>();
+        var dnsYonlendirildi = false;
+        var dnsServisiAyakta = false;
 
         // Ayni adla ikinci kurulum hata verir; once temizle.
+        //
+        // DNS burada BILEREK geri alinmiyor: yeniden kurulumda yonlendirme yerinde
+        // kalir ve yeni servis ayaga kalkinca devam eder, arada kullanicinin
+        // engellenen adlari yeniden ISS'e sormasina gerek yok. Ama bunun bedeli
+        // metodun SONUNDA odeniyor -- asagidaki "yetim yonlendirme" bloguna bak.
         await UninstallAsync(restoreDns: false, cancellationToken).ConfigureAwait(false);
 
         // --- winws servisi ---
         // sc, binPath icindeki tirnaklari kendi ayristirdigi icin ic tirnaklar
         // kacisli yaziliyor; upstream'in service_create.cmd dosyasi da boyle yapiyor.
         var winwsBin = $"\"{vendor.WinwsExe}\" {string.Join(' ', winwsArguments.Select(QuoteIfNeeded))}";
-        steps.Add(await CreateServiceAsync(
-            WinwsServiceName, winwsBin, "ZapretTR DPI atlatma", cancellationToken).ConfigureAwait(false));
+        var winwsStep = await CreateServiceAsync(
+            WinwsServiceName, winwsBin, "ZapretTR DPI atlatma", cancellationToken).ConfigureAwait(false);
+
+        // "BASLATILDI" DEMEK "CALISIYOR" DEMEK DEGIL.
+        //
+        // sc start, surec baslar baslamaz basari donuyor. winws ardindan WinDivert
+        // surucusunu acamayip olurse servis birkac saniye sonra STOPPED oluyor --
+        // yukseltmeden hemen sonra tam olarak bu oluyordu, cunku onceki surumun
+        // surucusu cekirdekte yarim birakilmis bir durdurmada kalmisti. Servisin
+        // kurtarma tanimi ise ise yaramiyor: ayni surucuye ayni sekilde carpiyor.
+        // Kullanicinin gordugu sey "kurulu ama durmus" ve yeniden baslatinca
+        // duzelen bir koruma. Surucu burada bosaltilip servis bir kez yeniden
+        // baslatiliyor.
+        if (winwsStep.Succeeded
+            && !await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
+        {
+            var unload = await WinDivertDriver
+                .TryUnloadIdleAsync(TimeSpan.FromSeconds(20), cancellationToken).ConfigureAwait(false);
+
+            if (unload.Cleared)
+            {
+                await RunScAsync(["start", WinwsServiceName], cancellationToken).ConfigureAwait(false);
+            }
+
+            winwsStep = await WaitUntilRunningStableAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false)
+                ? new CleanupStep($"{WinwsServiceName} servisi kuruldu ve baslatildi", true,
+                    "ilk denemede WinDivert surucusu acilamadi; " + unload.Detail)
+                : new CleanupStep($"{WinwsServiceName} servisi kuruldu ama CALISMIYOR", false,
+                    "winws WinDivert surucusunu acamadi. " + unload.Detail
+                    + " Surucuyu kullanan baska bir araci kapatin; olmazsa bilgisayari bir kez yeniden baslatin.");
+        }
+
+        steps.Add(winwsStep);
 
         // --- dnscrypt servisi ---
         if (includeDns)
         {
-            var configPath = Path.Combine(
-                Path.GetDirectoryName(vendor.DnsCryptExe)!, "zapret-tr-dnscrypt.toml");
-
-            if (!File.Exists(configPath))
+            string? configPath = null;
+            string? configError = null;
+            try
             {
-                steps.Add(new CleanupStep("Sifreli DNS servisi", false,
-                    "Yapilandirma dosyasi yok; once uygulamadan bir kez baslatin."));
+                configPath = File.Exists(vendor.DnsCryptExe)
+                    ? await DnsCryptRunner.WriteConfigAsync(vendor, cancellationToken).ConfigureAwait(false)
+                    : null;
+                configError = configPath is null ? "dnscrypt-proxy.exe bulunamadi: " + vendor.DnsCryptExe : null;
+            }
+            catch (Exception ex)
+            {
+                configError = "Yapilandirma dosyasi yazilamadi: " + ex.Message;
+            }
+
+            if (configPath is null)
+            {
+                steps.Add(new CleanupStep("Sifreli DNS servisi kurulamadi", false, configError));
             }
             else
             {
@@ -158,14 +206,18 @@ public static class ServiceManager
                 }
                 else
                 {
+                    dnsServisiAyakta = true;
+
                     // Servis DNS'i devraliyor: sahiplik "service" olarak
                     // isaretleniyor ki uygulama kapanirken geri almasin.
                     try
                     {
                         var changed = await SystemDnsManager
                             .RedirectToLocalAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
+                        dnsYonlendirildi = true;
+                        SystemDnsManager.ClearSuspended();
                         steps.Add(new CleanupStep("Sistem DNS'i servise yonlendirildi", true,
-                            string.Join(", ", changed)));
+                            changed.Count == 0 ? "zaten yonlendirilmisti" : string.Join(", ", changed)));
                     }
                     catch (Exception ex)
                     {
@@ -175,7 +227,126 @@ public static class ServiceManager
             }
         }
 
+        // YETIM YONLENDIRME: ONCEKI SERVISIN DNS'I, YENI SERVIS OLMADAN.
+        //
+        // Yukaridaki temizlik eski ZapretTR-DNS servisini sildi ama yonlendirmeyi
+        // yerinde birakti. Yeni kurulum DNS'i yeniden devralmadiysa -- sifreli DNS
+        // bu sefer kapali secildi, yapilandirma dosyasi yok, servis baslamadi ya
+        // da cevap vermedi -- sistem DNS'i 127.0.0.1'i gosteriyor ve orada dinleyen
+        // KIMSE YOK. Eskiden bu durumda "Sistem DNS'ine DOKUNULMADI" yaziliyordu;
+        // cumle dogruydu ama makine hicbir adi cozemiyordu ve durum acilistan
+        // acilisa kaliciydi. Tetikleyen yol sik: servis kurulu ama durmussa arayuz
+        // "Servis Olarak Yukle"yi yeniden gosteriyor ve kullanici ona basiyor.
+        if (!dnsYonlendirildi && SystemDnsManager.IsOwnedByService)
+        {
+            try
+            {
+                var restored = await SystemDnsManager.RestoreAsync(cancellationToken).ConfigureAwait(false);
+                steps.Add(new CleanupStep("Onceki servisin DNS yonlendirmesi geri alindi", true,
+                    string.Join(", ", restored)));
+            }
+            catch (Exception ex)
+            {
+                steps.Add(new CleanupStep("Onceki servisin DNS yonlendirmesi geri alinamadi", false, ex.Message));
+            }
+        }
+
+        // Servis cevap veriyor ama yonlendirme yapilamadiysa (en olasi sebep: o an
+        // internete cikan bir kart yoktu) is DNS bekcisine birakiliyor. "Askida"
+        // isareti olmadan bekci yedek gormedigi icin hicbir sey yapmaz ve servis
+        // kurulu oldugu halde DNS hic yonlendirilmemis kalirdi.
+        if (!dnsYonlendirildi)
+        {
+            if (dnsServisiAyakta)
+            {
+                SystemDnsManager.MarkSuspended();
+            }
+            else
+            {
+                SystemDnsManager.ClearSuspended();
+            }
+        }
+
         return steps;
+    }
+
+    /// <summary>
+    /// Servis birkac saniye boyunca CALISIR kaliyor mu.
+    /// </summary>
+    /// <remarks>
+    /// Tek bakis yetmiyor: winws surucu hatasiyla oldugunde servis bir an RUNNING
+    /// gorunup sonra STOPPED'a dusuyor. Ust uste iki olumlu olcum, aralarinda
+    /// winws'in surucuyu acmasina yetecek bir sure ariyoruz.
+    /// </remarks>
+    private static async Task<bool> WaitUntilRunningStableAsync(string name, CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(8);
+        var arkaArkaya = 0;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            await Task.Delay(750, cancellationToken).ConfigureAwait(false);
+
+            if (await IsRunningAsync(name, cancellationToken).ConfigureAwait(false))
+            {
+                if (++arkaArkaya >= 3)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                var (_, output) = await RunScAsync(["query", name], cancellationToken).ConfigureAwait(false);
+                if (output.Contains("STOPPED", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                arkaArkaya = 0;
+            }
+        }
+
+        return arkaArkaya > 0;
+    }
+
+    /// <summary>Sifreli DNS servisinin durumu.</summary>
+    /// <param name="Installed">Servis kaydi var mi.</param>
+    /// <param name="Running">Servis su an calisiyor mu.</param>
+    /// <param name="BinaryExists">
+    /// Kayittaki dnscrypt-proxy.exe diskte duruyor mu. Kaydi olup ikilisi olmayan
+    /// servis (virusten koruma karantinaya aldi, klasor elle silindi) bir daha
+    /// hic calismaz; yonlendirme onu beklememeli.
+    /// </param>
+    public sealed record DnsServiceState(bool Installed, bool Running, bool BinaryExists);
+
+    /// <summary>Sifreli DNS servisinin kurulu, calisir ve ikilisinin yerinde olup olmadigini doner.</summary>
+    public static async Task<DnsServiceState> GetDnsServiceStateAsync(CancellationToken cancellationToken = default)
+    {
+        var installed = await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
+        if (!installed)
+        {
+            return new DnsServiceState(false, false, false);
+        }
+
+        var running = await IsRunningAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
+        return new DnsServiceState(true, running, ServiceBinaryExists(DnsServiceName));
+    }
+
+    private static bool ServiceBinaryExists(string name)
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Services\{name}");
+            var imagePath = ConflictScanner.ExtractExecutablePath(key?.GetValue("ImagePath") as string);
+
+            // Okunamiyorsa var sayiyoruz: yanlis tarafa dusmek gerekirse, calisan
+            // bir kurulumun yonlendirmesini sokmektense beklemek yeglenir.
+            return imagePath is null || File.Exists(Environment.ExpandEnvironmentVariables(imagePath));
+        }
+        catch (Exception)
+        {
+            return true;
+        }
     }
 
     /// <summary>
@@ -193,8 +364,50 @@ public static class ServiceManager
 
         var steps = new List<CleanupStep>();
 
+        // DNS, COZUMLEYICI SILINMEDEN ONCE GERI ALINIR.
+        //
+        // Sira eskiden tersti: once iki servis de siliniyor, sonra DNS geri
+        // aliniyordu. Geri alma basarisiz olursa (netsh hatasi, bozuk yedek)
+        // sistem DNS'i 127.0.0.1'de kaliyor ve orada dinleyen servis az once
+        // silinmis oluyordu -- kaldirmanin birakabilecegi en kotu tablo. Simdi
+        // geri alma basarisizsa sifreli DNS servisi YERINDE birakiliyor: koruma
+        // kapanmamis olur ama internet de gitmez, ve bir sonraki deneme ayni
+        // yedekle yeniden yapilabilir.
+        var dnsServisiniBirak = false;
+
+        // Sahibi okunamayan (bozuk) yedek de geri aliniyor: servis silindikten
+        // sonra onu geri alacak kimse kalmaz. Yalnizca ACIKCA uygulamaya ait
+        // yonlendirmeye dokunulmuyor -- o calisan uygulamanin kendi isi.
+        if (restoreDns
+            && SystemDnsManager.HasBackup
+            && !string.Equals(SystemDnsManager.BackupOwner, DnsBackupOwner.App, StringComparison.Ordinal))
+        {
+            try
+            {
+                var restored = await SystemDnsManager.RestoreAsync(cancellationToken).ConfigureAwait(false);
+                steps.Add(new CleanupStep("Sistem DNS'i geri alindi", true,
+                    restored.Count == 0 ? "degistirilecek kart kalmamisti" : string.Join(", ", restored)));
+            }
+            catch (Exception ex)
+            {
+                dnsServisiniBirak = true;
+                steps.Add(new CleanupStep("Sistem DNS'i geri alinamadi", false,
+                    ex.Message + " Sifreli DNS servisi, internet kesilmesin diye KALDIRILMADI."));
+            }
+        }
+
+        if (restoreDns)
+        {
+            SystemDnsManager.ClearSuspended();
+        }
+
         foreach (var name in new[] { WinwsServiceName, DnsServiceName })
         {
+            if (name == DnsServiceName && dnsServisiniBirak)
+            {
+                continue;
+            }
+
             if (!await ExistsAsync(name, cancellationToken).ConfigureAwait(false))
             {
                 continue;
@@ -206,19 +419,6 @@ public static class ServiceManager
             steps.Add(exitCode == 0
                 ? new CleanupStep($"{name} servisi kaldirildi", true)
                 : new CleanupStep($"{name} servisi kaldirilamadi", false, output.Trim()));
-        }
-
-        if (restoreDns && SystemDnsManager.IsOwnedByService)
-        {
-            try
-            {
-                var restored = await SystemDnsManager.RestoreAsync(cancellationToken).ConfigureAwait(false);
-                steps.Add(new CleanupStep("Sistem DNS'i geri alindi", true, string.Join(", ", restored)));
-            }
-            catch (Exception ex)
-            {
-                steps.Add(new CleanupStep("Sistem DNS'i geri alinamadi", false, ex.Message));
-            }
         }
 
         return steps;

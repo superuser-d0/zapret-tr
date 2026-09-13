@@ -144,6 +144,9 @@ public sealed class WinwsRunner : IAsyncDisposable
             // sebebini kimse ogrenemedi. Motorun soyledigi sey teshisin
             // kendisiydi ve biz onu atiyorduk.
             var ilkSatirlar = new List<string>();
+            _startupLines = ilkSatirlar;
+            var yakalama = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            _captureStarted = yakalama;
 
             void Kaydet(string? satir)
             {
@@ -157,11 +160,17 @@ public sealed class WinwsRunner : IAsyncDisposable
                     ReportedVersion = surum;
                 }
 
+                if (satir.Contains(CaptureStartedLine, StringComparison.OrdinalIgnoreCase))
+                {
+                    yakalama.TrySetResult();
+                }
+
                 lock (ilkSatirlar)
                 {
                     // Ilk birkac satir yetiyor: winws sebebi hemen basta
-                    // yaziyor, sonrasi paket gunlugu.
-                    if (ilkSatirlar.Count < 5)
+                    // yaziyor, sonrasi paket gunlugu. Surucu hatasi satirlari
+                    // sinirdan bagimsiz tutuluyor: teshis onlarin icinde.
+                    if (ilkSatirlar.Count < 5 || WinDivertDriver.IsOpenFailure([satir]))
                     {
                         ilkSatirlar.Add(satir.Trim());
                     }
@@ -183,7 +192,11 @@ public sealed class WinwsRunner : IAsyncDisposable
             {
                 // Beklenmedik cikis: kullanici durdurmadiysa bu bir hatadir ve
                 // arayuzde yesil gozukmeye devam etmesi kabul edilemez.
-                if (State == WinwsState.Running)
+                // Baslatma penceresindeki olum ise StartAsync'in isi: orada
+                // siniflandirilip (gerekirse surucu bosaltilip) yeniden deneniyor.
+                // Burada da "Faulted" yayinlamak arayuzde bir anlik "BEKLENMEDIK
+                // DURUS" gosterirdi, sonra her sey duzelmis olurdu.
+                if (State == WinwsState.Running && !_starting)
                 {
                     SetState(WinwsState.Faulted);
                 }
@@ -198,34 +211,14 @@ public sealed class WinwsRunner : IAsyncDisposable
             // arayuz "calisiyor" gosterir ve kullanici korundugunu saniir.
             if (process.WaitForExit(StartupGraceMilliseconds))
             {
-                var exitCode = process.ExitCode;
-                // "1" neredeyse her zaman TEK bir seyi anlatiyor: winws ayni
-                // filtreyle zaten calisiyor ve ikinci ornegi reddediyor
-                // ("A copy of winws is already running with the same filter").
-                // En sik sebebi otomatik baslatma servisinin acik olmasi.
-                // Ciplak "1 koduyla kapandi" mesaji kullaniciya hicbir sey
-                // soylemiyordu; gercek bir kullanici bu duvara tosladi.
-                var ipucu = exitCode == 1
-                    ? " En olasi sebep: winws zaten calisiyor (otomatik baslatma servisi acik" +
-                      " olabilir ya da onceki bir kosum surmus olabilir). Ayni filtreyle ikinci" +
-                      " bir ornek baslatilamaz."
-                    : string.Empty;
-
                 // Cikis kodundan SONRA kisa bir bekleme: cikti okuma geri
                 // cagrilari ayri bir is parcaciginda geliyor ve surec olduktan
                 // hemen sonra bakarsak son satirlari kacirabiliyoruz.
                 process.WaitForExit();
 
-                string soyledigi;
-                lock (ilkSatirlar)
-                {
-                    soyledigi = ilkSatirlar.Count > 0
-                        ? " winws: " + string.Join(" | ", ilkSatirlar)
-                        : " (winws hicbir sey yazmadan cikti)";
-                }
-
-                throw new InvalidOperationException(
-                    $"winws baslar baslamaz {exitCode} koduyla kapandi." + ipucu + soyledigi);
+                var exitCode = process.ExitCode;
+                process.Dispose();
+                throw BuildEarlyExitException(exitCode, ilkSatirlar);
             }
 
             _process = process;
@@ -233,6 +226,169 @@ public sealed class WinwsRunner : IAsyncDisposable
         }
 
         SetState(WinwsState.Running);
+    }
+
+    private List<string> _startupLines = [];
+    private TaskCompletionSource _captureStarted = new();
+
+    /// <summary>winws'in yakalamayi baslattiginda yazdigi satir.</summary>
+    private const string CaptureStartedLine = "capture is started";
+
+    /// <summary>
+    /// Surucu acma hatasinin gorunebilecegi en uzun pencere.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Start"/> yalnizca ilk 250 ms'deki olumu yakaliyor. Surucu
+    /// yuklemesi yavas bir makinede (virusten koruma surucuyu tararken) daha uzun
+    /// surebiliyor ve o zaman winws "calisiyor" sayilip birkac yuz milisaniye sonra
+    /// sessizce oluyordu: parametre testi aday adina zaman asimi yaziyor, yani
+    /// motor hatasi DPI engeli gibi gorunuyordu. Normalde bekleme winws
+    /// "capture is started" dedigi anda bitiyor.
+    /// </remarks>
+    private static readonly TimeSpan CaptureWindow = TimeSpan.FromMilliseconds(1500);
+
+    /// <summary>
+    /// winws'i baslatir; surucu cekirdekte takili kaldigi icin acilamazsa surucuyu
+    /// bosaltip BIR KEZ yeniden dener.
+    /// </summary>
+    /// <remarks>
+    /// Butun baslatma yollari (arayuzun "Baslat"i, parametre testi, CLI) bunu
+    /// cagirmali. Gerekcesi <see cref="WinDivertDriver"/>'da: eskiden bu durumda
+    /// her aday ayni hatayla dusuyor ve tek cikis yolu bilgisayari yeniden
+    /// baslatmakti.
+    /// </remarks>
+    public async Task StartAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await StartAndWaitForCaptureAsync(arguments, cancellationToken).ConfigureAwait(false);
+        }
+        catch (WinDivertOpenException ex) when (ex.Recoverable)
+        {
+            PublishLine("WinDivert surucusu acilamadi; cekirdekte takili surucu bosaltilip yeniden deneniyor...", isError: true);
+
+            var unload = await WinDivertDriver
+                .TryUnloadIdleAsync(TimeSpan.FromSeconds(20), cancellationToken).ConfigureAwait(false);
+            PublishLine(unload.Detail, isError: !unload.Cleared);
+
+            if (!unload.Cleared)
+            {
+                throw new WinDivertOpenException(ex.Win32Error,
+                    ex.Message + " " + unload.Detail
+                    + " Surucuyu kullanan baska bir araci kapatin; olmazsa bilgisayari bir kez yeniden baslatin.",
+                    recoverable: false);
+            }
+
+            await StartAndWaitForCaptureAsync(arguments, cancellationToken).ConfigureAwait(false);
+            PublishLine("Surucu bosaltildiktan sonra winws basladi.", isError: false);
+        }
+    }
+
+    private volatile bool _starting;
+
+    private async Task StartAndWaitForCaptureAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
+    {
+        Process? process;
+        Task done;
+        Task exited;
+
+        _starting = true;
+        try
+        {
+            Start(arguments);
+
+            lock (_gate)
+            {
+                process = _process;
+            }
+
+            if (process is null)
+            {
+                return;
+            }
+
+            exited = process.WaitForExitAsync(cancellationToken);
+            done = await Task.WhenAny(_captureStarted.Task, exited, Task.Delay(CaptureWindow, cancellationToken))
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            _starting = false;
+        }
+
+        if (done != exited)
+        {
+            // Pencere kapandiktan hemen sonra olmusse Exited olayi "Faulted"i
+            // kacirmis olabilir; normal yola birak.
+            try
+            {
+                if (process.HasExited && State == WinwsState.Running)
+                {
+                    SetState(WinwsState.Faulted);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Bu arada StopAsync sureci birakti.
+            }
+
+            return;
+        }
+
+        lock (_gate)
+        {
+            if (!ReferenceEquals(_process, process))
+            {
+                // Bu arada biri durdurdu; hata degil.
+                return;
+            }
+
+            _process = null;
+            CurrentArguments = null;
+        }
+
+        SetState(WinwsState.Stopped);
+        var exitCode = process.ExitCode;
+        process.Dispose();
+        throw BuildEarlyExitException(exitCode, _startupLines);
+    }
+
+    /// <summary>winws'in erken olumunu, soylediklerine gore siniflandirilmis bir hataya cevirir.</summary>
+    private static InvalidOperationException BuildEarlyExitException(int exitCode, List<string> lines)
+    {
+        List<string> kopya;
+        lock (lines)
+        {
+            kopya = [.. lines];
+        }
+
+        var soyledigi = kopya.Count > 0
+            ? " winws: " + string.Join(" | ", kopya)
+            : " (winws hicbir sey yazmadan cikti)";
+
+        if (WinDivertDriver.IsOpenFailure(kopya))
+        {
+            var kod = WinDivertDriver.ParseWin32Error(kopya);
+            return new WinDivertOpenException(
+                kod,
+                WinDivertDriver.Explain(kod) + $" winws {exitCode} koduyla kapandi." + soyledigi,
+                WinDivertDriver.IsRecoverable(kod));
+        }
+
+        // "1" neredeyse her zaman TEK bir seyi anlatiyor: winws ayni
+        // filtreyle zaten calisiyor ve ikinci ornegi reddediyor
+        // ("A copy of winws is already running with the same filter").
+        // En sik sebebi otomatik baslatma servisinin acik olmasi.
+        // Ciplak "1 koduyla kapandi" mesaji kullaniciya hicbir sey
+        // soylemiyordu; gercek bir kullanici bu duvara tosladi.
+        var ipucu = exitCode == 1
+            ? " En olasi sebep: winws zaten calisiyor (otomatik baslatma servisi acik" +
+              " olabilir ya da onceki bir kosum surmus olabilir). Ayni filtreyle ikinci" +
+              " bir ornek baslatilamaz."
+            : string.Empty;
+
+        return new InvalidOperationException(
+            $"winws baslar baslamaz {exitCode} koduyla kapandi." + ipucu + soyledigi);
     }
 
     /// <summary>

@@ -112,11 +112,23 @@ public static class WinDivertCleanup
 
         steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
+
+        // Cozumleyici artik yok; DNS'i hala yalnizca 127.0.0.1 olan kart kaldiysa
+        // o kart hicbir adi cozemez. Ilk adimdaki geri alma bunu yedekten yapiyor,
+        // bu adim YEDEGIN YETMEDIGI yeri kapatiyor.
+        steps.Add(await ResetOrphanedDnsAsync(cancellationToken).ConfigureAwait(false));
+        SystemDnsManager.ClearSuspended();
         foreach (var driver in DriverServiceNames)
         {
             steps.Add(await RunScAsync("stop", driver, $"{driver} surucusu durduruldu", cancellationToken).ConfigureAwait(false));
             steps.Add(await RunScAsync("delete", driver, $"{driver} surucusu kaldirildi", cancellationToken).ConfigureAwait(false));
         }
+
+        // "sc stop" yalnizca istegi iletiyor. Surucu gercekten dusmeden
+        // "sifirlandi" demek, hemen ardindan yapilan parametre testinde motorun
+        // takili surucuye carpip "OLCUM YAPILAMADI" demesine yol aciyordu --
+        // ve arayuz buna karsilik "bilgisayari yeniden baslatin" diyordu.
+        steps.Add(await WaitDriversGoneAsync(cancellationToken).ConfigureAwait(false));
 
         if (removeConfig)
         {
@@ -145,6 +157,78 @@ public static class WinDivertCleanup
             // Bu adimin sessizce gecmesi kabul edilemez: basarisiz olursa
             // kullanicinin ad cozumu calismiyor olabilir ve bunu bilmesi gerekir.
             return new CleanupStep("Sistem DNS ayari geri alinamadi", false, ex.Message);
+        }
+    }
+
+    private static async Task<CleanupStep> WaitDriversGoneAsync(CancellationToken cancellationToken)
+    {
+        const string ad = "Surucu cekirdekten dustu";
+        var deadline = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(10);
+        var kalan = new List<string>();
+
+        while (true)
+        {
+            kalan.Clear();
+            foreach (var driver in DriverServiceNames)
+            {
+                var (_, output) = await RunProcessAsync("sc.exe", ["query", driver], cancellationToken)
+                    .ConfigureAwait(false);
+                if (!WinDivertDriver.IsGoneOrStopped(output))
+                {
+                    kalan.Add(driver);
+                }
+            }
+
+            if (kalan.Count == 0)
+            {
+                return new CleanupStep(ad, true);
+            }
+
+            if (DateTimeOffset.UtcNow >= deadline)
+            {
+                return new CleanupStep(ad, false,
+                    string.Join(", ", kalan) + " 10 sn icinde dusmedi; bilgisayari bir kez yeniden baslatmak gerekebilir.");
+            }
+
+            await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Yedegi olmayan ya da yedekten geri alinamamis 127.0.0.1 yonlendirmelerini
+    /// otomatige dondurur.
+    /// </summary>
+    /// <remarks>
+    /// Iki gercek yol: geri alma basarisiz oldu (yedek duruyor ama netsh dustu) ya
+    /// da yedek hic yok (elle silinmis, bozuk, eski bir surumden kalma). Ikisinde de
+    /// sifirlama biterken sistem DNS'i 127.0.0.1'i gosteriyor, dnscrypt az once
+    /// oldurulmus ve makine ad cozemiyordu -- "sifirladim, internetim gitti".
+    ///
+    /// 127.0.0.1:53 hala cevap veriyorsa dokunulmuyor: orada bizim olmayan bir
+    /// cozumleyici var (AdGuard Home, Acrylic...) ve o kullanicinin kendi ayari.
+    /// </remarks>
+    private static async Task<CleanupStep> ResetOrphanedDnsAsync(CancellationToken cancellationToken)
+    {
+        const string ad = "Yetim DNS yonlendirmesi";
+
+        try
+        {
+            if (await DnsCryptRunner.IsLocalResolverRespondingAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false))
+            {
+                return new CleanupStep(ad, true, "127.0.0.1 baska bir cozumleyiciye ait; dokunulmadi");
+            }
+
+            var duzeltilen = await SystemDnsManager.ResetOrphanedRedirectsAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return duzeltilen.Count == 0
+                ? new CleanupStep(ad, true, "yok")
+                : new CleanupStep(ad, true, "otomatige donduruldu: " + string.Join(", ", duzeltilen));
+        }
+        catch (Exception ex)
+        {
+            return new CleanupStep(ad, false, ex.Message);
         }
     }
 

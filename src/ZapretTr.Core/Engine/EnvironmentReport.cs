@@ -207,6 +207,25 @@ public static class EnvironmentReport
                       ? "var, sahibi: " + (SystemDnsManager.BackupOwner ?? "bilinmiyor")
                       : "yok"));
 
+        // Bekcinin kendisi de sessizce eksik olabilir (gorev silinmis, kurulum
+        // paketi degil saha paketi kullaniliyor); o zaman yeni kartlar ve olu
+        // cozumleyici yine kimsenin gozunde degil.
+        lines.Add("  DNS bekcisi gorevi            : "
+                  + (await DnsGuardTask.IsRegisteredAsync(cancellationToken).ConfigureAwait(false)
+                      ? "kurulu"
+                      : "KURULU DEGIL"));
+
+        if (SystemDnsManager.IsSuspended)
+        {
+            lines.Add("  Servis yonlendirmesi ASKIDA: sifreli DNS servisi cevap vermedigi icin");
+            lines.Add("  sistem DNS'i geri alinmis. Servis donunce bekci yeniden yonlendirir.");
+        }
+
+        if (DnsGuard.LastLogLine() is { } sonBekci)
+        {
+            lines.Add("  Bekcinin son kaydi            : " + sonBekci);
+        }
+
         // EN TEHLIKELI BILESIM ve raporda tek satirda gorunmesi gereken sey:
         // sistem DNS'i bize cevrilmis ama dinleyen kimse yok. O makine hicbir adi
         // cozemez ve kullanicinin bildirdigi sey "internetim gitti" olur -- ki

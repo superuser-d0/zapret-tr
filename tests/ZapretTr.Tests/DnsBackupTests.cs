@@ -135,6 +135,78 @@ public sealed class DnsBackupTests
         Assert.Empty(restored.Entries);
     }
 
+    // --- Bizim 127.0.0.1'imiz asla "orijinal" sayilmaz --------------------------
+
+    [Fact]
+    public void YedegeGiren_Yalnizca127_DhcpSayilir()
+    {
+        // Yedek kaybolmusken yeniden yonlendirme yapilirsa kartin DNS'i zaten
+        // 127.0.0.1. Onu "elle girilmis" diye kaydedip geri yazmak, kaldirmadan
+        // sonra o kartta hicbir adin cozulmemesi demekti.
+        var (wasStatic, addresses) = SystemDnsManager.SanitizeCaptured(true, ["127.0.0.1"]);
+
+        Assert.False(wasStatic);
+        Assert.Empty(addresses);
+    }
+
+    [Fact]
+    public void YedegeGiren_127_ve_GercekAdres_GercekAdresKalir()
+    {
+        var (wasStatic, addresses) = SystemDnsManager.SanitizeCaptured(true, ["127.0.0.1", "8.8.8.8"]);
+
+        Assert.True(wasStatic);
+        Assert.Equal(["8.8.8.8"], addresses);
+    }
+
+    [Fact]
+    public void YedegeGiren_KullanicininElleAyari_Degismez()
+    {
+        var (wasStatic, addresses) = SystemDnsManager.SanitizeCaptured(true, ["1.1.1.1", "9.9.9.9"]);
+
+        Assert.True(wasStatic);
+        Assert.Equal(["1.1.1.1", "9.9.9.9"], addresses);
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("127.0.0.1,8.8.8.8", true)]
+    [InlineData(null, true)]        // okunamadi: bizimki duruyor olabilir, geri al
+    [InlineData("", false)]         // otomatige alinmis: geri alinacak bir sey yok
+    [InlineData("1.1.1.1", false)]  // kullanici sonradan elle degistirmis: EZME
+    public void GeriAlma_YalnizcaHalaBizdeyse(string? mevcut, bool beklenen)
+    {
+        // Servis modunda yonlendirme ile geri alma arasinda aylar gecebiliyor.
+        // Eskiden kullanicinin o arada yaptigi DNS ayari yedekle eziliyordu.
+        Assert.Equal(beklenen, SystemDnsManager.ShouldRestore(mevcut));
+    }
+
+    [Theory]
+    [InlineData("127.0.0.1", true)]
+    [InlineData("127.0.0.1,127.0.0.1", true)]
+    [InlineData("127.0.0.1,8.8.8.8", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public void ZatenYonlendirilmis_YalnizcaTek127(string? mevcut, bool beklenen)
+    {
+        // Bekci her ag olayinda yonlendirmeyi yeniden yapiyor; zaten bizde olan
+        // karta tekrar netsh kosmak her seferinde gereksiz bir kesinti olurdu.
+        // Ama 127.0.0.1'in yaninda baska bir adres varsa Windows sorguyu oraya da
+        // yollayabilir: o kart "bizde" sayilmamali.
+        Assert.Equal(beklenen, SystemDnsManager.IsOnlyLocalResolver(mevcut));
+    }
+
+    [Theory]
+    [InlineData(DnsBackupOwner.App, DnsBackupOwner.Service, DnsBackupOwner.Service)]
+    [InlineData(DnsBackupOwner.Service, DnsBackupOwner.App, DnsBackupOwner.Service)]
+    [InlineData(DnsBackupOwner.App, DnsBackupOwner.App, DnsBackupOwner.App)]
+    [InlineData(DnsBackupOwner.Service, DnsBackupOwner.Service, DnsBackupOwner.Service)]
+    public void YedekSahibi_ServisHepKazanir(string mevcut, string istenen, string beklenen)
+    {
+        // Uygulama korumayi calistirirken servis kurulunca sahip "app" kaliyordu;
+        // uygulama kapaninca servisin sifreli DNS'i sessizce geri aliniyordu.
+        Assert.Equal(beklenen, SystemDnsManager.DecideOwner(mevcut, istenen));
+    }
+
     [Fact]
     public void YerelCozumleyici_Adresi_Sabit()
     {

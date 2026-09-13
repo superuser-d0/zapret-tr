@@ -137,7 +137,7 @@ if (options.Apply)
     Console.WriteLine();
     Console.WriteLine("winws başlatılıyor...");
     var applyRunner = new WinwsRunner(applyVendor);
-    applyRunner.Start(runtimeArgs);
+    await applyRunner.StartAsync(runtimeArgs);
     await Task.Delay(2000);
 
     Console.WriteLine();
@@ -592,7 +592,7 @@ if (options.EngageCheckHost is { } engageHost)
     var runner = new WinwsRunner(engageVendor);
     runner.LogLineReceived += line => { lock (log) { log.Add(line.Text); } };
 
-    runner.Start(engageArgs);
+    await runner.StartAsync(engageArgs);
     await Task.Delay(1500);
 
     // Teshis, arama motorunun olctugu seyin AYNISINI olcmeli. Bu yuzden bolume

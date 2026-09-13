@@ -32,6 +32,12 @@ public partial class App : Application
     /// </remarks>
     private const string InstallServicesFlag = "--install-services";
 
+    /// <summary>DNS bekcisinin zamanlanmis gorevini kuran bayrak (kurulum paketi cagiriyor).</summary>
+    private const string RegisterDnsGuardFlag = "--register-dns-guard";
+
+    /// <summary>DNS bekcisinin zamanlanmis gorevini silen bayrak (kaldirici cagiriyor).</summary>
+    private const string UnregisterDnsGuardFlag = "--unregister-dns-guard";
+
     /// <summary>
     /// Ayni anda yalnizca bir arayuz ornegi calissin diye tutulan kilit.
     /// </summary>
@@ -55,6 +61,30 @@ public partial class App : Application
         if (e.Args.Any(a => string.Equals(a, InstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
         {
             Environment.ExitCode = RunServiceInstall();
+            Shutdown();
+            return;
+        }
+
+        // Bekci tek ornek kilidinden ONCE: arayuz acikken de calisabilmeli ve
+        // karari "arayuz acik mi" sorusuna kilidin kendisine bakarak veriyor.
+        // Kilidi burada almak, acik arayuzu kapali gosterirdi.
+        if (e.Args.Any(a => string.Equals(a, DnsGuardTask.GuardFlag, StringComparison.OrdinalIgnoreCase)))
+        {
+            Environment.ExitCode = RunDnsGuard();
+            Shutdown();
+            return;
+        }
+
+        if (e.Args.Any(a => string.Equals(a, RegisterDnsGuardFlag, StringComparison.OrdinalIgnoreCase)))
+        {
+            Environment.ExitCode = RunRegisterDnsGuard();
+            Shutdown();
+            return;
+        }
+
+        if (e.Args.Any(a => string.Equals(a, UnregisterDnsGuardFlag, StringComparison.OrdinalIgnoreCase)))
+        {
+            Environment.ExitCode = RunUnregisterDnsGuard();
             Shutdown();
             return;
         }
@@ -112,7 +142,11 @@ public partial class App : Application
             // Global: uygulama her zaman yukseltilmis calisiyor ve yukseltilmis
             // surec farkli bir oturumda acilabiliyor. Yerel ad alani o durumda
             // iki ornegi birbirinden habersiz birakirdi.
-            _instanceLock = new Mutex(initiallyOwned: true, @"Global\ZapretTR-tek-ornek", out var yeni);
+            //
+            // Ad DnsGuard'dan geliyor: bekci "arayuz acik mi" sorusunu bu kilide
+            // bakarak cevapliyor. Iki yerde ayri yazilip ayrisirsa bekci acik bir
+            // arayuzun DNS yonlendirmesini geri alir.
+            _instanceLock = new Mutex(initiallyOwned: true, DnsGuard.AppInstanceMutexName, out var yeni);
             return yeni;
         }
         catch (Exception)
@@ -195,6 +229,70 @@ public partial class App : Application
                 .GetAwaiter().GetResult();
 
             return steps.All(s => s.Succeeded) ? 0 : 1;
+        }
+        catch (Exception)
+        {
+            return 4;
+        }
+    }
+
+    /// <summary>Bir DNS bekcisi turu kosar. Cikis kodu: 0 normal, 2 yetki yok, 4 hata.</summary>
+    private static int RunDnsGuard()
+    {
+        try
+        {
+            if (!ElevationGuard.IsElevated())
+            {
+                return 2;
+            }
+
+            // Cozumleyiciye taninan sure gorevin 5 dakikalik sinirinin cok altinda:
+            // acilista dnscrypt once agi (en cok 60 sn) sonra listeyi bekliyor.
+            var lines = DnsGuard.RunAsync(TimeSpan.FromSeconds(90)).GetAwaiter().GetResult();
+            DnsGuard.AppendLog(lines);
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            DnsGuard.AppendLog(["Bekci turu hatayla bitti: " + ex.Message]);
+            return 4;
+        }
+    }
+
+    private static int RunRegisterDnsGuard()
+    {
+        try
+        {
+            if (!ElevationGuard.IsElevated())
+            {
+                return 2;
+            }
+
+            var exe = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(exe))
+            {
+                return 4;
+            }
+
+            var (succeeded, _) = DnsGuardTask.RegisterAsync(exe).GetAwaiter().GetResult();
+            return succeeded ? 0 : 1;
+        }
+        catch (Exception)
+        {
+            return 4;
+        }
+    }
+
+    private static int RunUnregisterDnsGuard()
+    {
+        try
+        {
+            if (!ElevationGuard.IsElevated())
+            {
+                return 2;
+            }
+
+            return DnsGuardTask.UnregisterAsync().GetAwaiter().GetResult() ? 0 : 1;
         }
         catch (Exception)
         {
