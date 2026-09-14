@@ -1857,3 +1857,18 @@ güncelliyor (indirme 15:13, `Setup=1`/`SHA256SUMS=1` 15:23'te göründü).
 **Makine durumu (ölçüldü, 17:07):** yerel paket kurulu (`0.1.22+6873ae8`, commit'lenmemiş
 değişikliklerle). ZapretTR açık, koruma kapalı; winws/dnscrypt yok, DNS DHCP. Servis yok.
 `config.json` `theme: dark`.
+
+**0.2.0 yayına hazırlandı (2026-09-14):**
+- `Directory.Build.props` 0.2.0'a çekildi, CHANGELOG `[Yayınlanmamış]` → `[0.2.0]` (başına
+  "yeni özellik eklemesi duruyor" özeti).
+- `.github/release-notes.md` (her yayın notunun sabit gövdesi) iki eski bilgi taşıyordu:
+  "dışarı yapılan tek istek güncelleme kontrolü" ve kurulu uygulamada olmayan `--cleanup`.
+  Düzeltildi. **Tuzak:** gizlilik metni düzeltilirken bu dosya unutulmuştu;
+  `NetworkDisclosureTests` yalnızca README-DETAYLI'ye bakıyor.
+- `tools/release-notes.ps1 -Version 0.2.0` yerelde notu üretti.
+
+Commit, açıklamalı tag ve yayın kullanıcıda. DEVAM'a "yayınlandı" yazmadan önce ölç:
+
+```bash
+gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
+```

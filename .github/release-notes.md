@@ -25,16 +25,18 @@ en güvenli yol — depo bunun için yeterli.
 
 **Yönetici yetkisi neden zorunlu:** WinDivert çekirdek modunda çalışıyor, sürücü
 yüklemek yükseltilmiş yetki gerektiriyor. Şifreli DNS seçeneği ayrıca sistem DNS
-ayarını değiştiriyor; uygulama her çıkış yolunda bunu geri alır ve `--cleanup` ile
-elle de geri alınabilir.
+ayarını değiştiriyor; uygulama her çıkış yolunda bunu geri alır. Elle geri almak için
+arayüzdeki **"Duraklat"** ya da **"Tüm Ayarları Sıfırla"** yeterli.
 
 **Ne yaptığı ve yapmadığı:** ZapretTR paketleri kendisi kurcalamaz; bunu
 [bol-van/zapret](https://github.com/bol-van/zapret) projesinin `winws` motoru yapar.
 ZapretTR o motoru yöneten arayüz ve çalışan parametreyi otomatik bulan test
 katmanıdır. Ölçüm sonuçları ve raporlar yalnızca diske yazılır, hiçbir yere
-gönderilmez. Uygulamanın dışarı yaptığı tek istek güncelleme kontrolü: açılışta
-GitHub'a "en son sürüm ne" diye sorar, başka hiçbir şey göndermez ve ayarlardan
-kapatılabilir.
+gönderilmez. Uygulamanın **kendiliğinden** yaptığı tek istek güncelleme kontrolü:
+açılışta GitHub'a "en son sürüm ne" diye sorar (`config.json` içindeki
+`updateCheckEnabled` ile kapatılabilir). Parametre testi ve şifreli DNS ise
+çalışırken dış sunuculara bağlanır; hangileri olduğu
+[ayrıntılı rehberde](../blob/main/README-DETAYLI.md#sık-sorulanlar) tek tek yazılı.
 
 ## Doğrulama durumu
 

@@ -6,7 +6,21 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.2.0]
+
+Bu sürümle **yeni özellik eklemesi duruyor**: bundan sonraki 0.2.x sürümleri yalnızca hata
+düzeltmesi getirecek, kararlı 1.0.0 onların ardından gelecek. Bu sürümün başlıkları:
+
+- koyu tema,
+- masaüstü kısayoluna ikinci kez tıklayınca açık pencerenin öne gelmesi,
+- "Başlat"ta arayüzü donduran bir kilitlenmenin düzeltilmesi,
+- "Güncellemeleri Denetle"nin başarısızlığı pencereyle ve sebebiyle söylemesi,
+- eski güncelleme paketlerinin silinmesi,
+- gizlilik metninin eksiksiz hâle gelmesi.
+
+Koyu tema, pencerenin öne gelmesi (beş durumda) ve paket temizliği kurulum paketiyle gerçek
+bir makinede denendi. Kilitlenme ayrı bir denemede yeniden üretilip düzeltildi; gerçek
+pencerede tetiklenmedi (ayrıntılar aşağıda).
 
 ### Eklendi
 
@@ -82,7 +96,8 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   şifreli DNS de sunucu listesi indirip sorguları açık DNS sunucularına gönderiyor. Hepsi
   yalnızca kullanıcı bir düğmeye bastığında ya da koruma açıkken oluyor, ama belgede adları
   geçmiyordu. Hangi durumda nereye bağlanıldığı artık tek tek yazılı. Dışarıdan bir kod
-  incelemesinde fark edildi; bağlantı listesi kod okunarak çıkarıldı.
+  incelemesinde fark edildi; bağlantı listesi kod okunarak çıkarıldı. Her sürümün yayın notuna eklenen sabit metinde de aynı "tek istek" cümlesi ve kurulu
+  uygulamada olmayan bir `--cleanup` bayrağı geçiyordu; ikisi de düzeltildi.
 - **Discord ses ölçümü olduğundan fazlasını söylüyordu.** O bölüm STUN ile ölçülüyor ve STUN
   cevabı yalnızca UDP yolunun açık olduğunu gösterir, Discord sesli görüşmenin çalıştığını
   değil. Yine de test günlüğü sonucu "Discord ses" diye yazıyor, kaydedilen sonuç da "parametre
