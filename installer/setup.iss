@@ -35,6 +35,11 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 
+; Kurulum dosyasinin ve sihirbazin simgesi. Onceden Inno Setup'in varsayilan
+; simgesi ve resmi gorunuyordu. Uclu de tools/make-icon.ps1 ile uretiliyor.
+SetupIconFile=..\src\ZapretTr.App\Assets\ZapretTR.ico
+WizardSmallImageFile=wizard-small-55.bmp,wizard-small-110.bmp
+
 ; Kurulum yonetici olarak calismali: servis kurar ve cekirdek surucusu tasiyan
 ; dosyalari Program Files altina yazar.
 PrivilegesRequired=admin

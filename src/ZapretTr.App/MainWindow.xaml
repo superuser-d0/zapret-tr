@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:ZapretTr.App.ViewModels"
         xmlns:local="clr-namespace:ZapretTr.App"
-        Title="{Binding WindowTitle}" Height="720" Width="440"
+        Title="{Binding WindowTitle}" Height="800" Width="440"
         MinHeight="600" MinWidth="420"
         WindowStartupLocation="CenterScreen"
         Background="#F4F6F9"
@@ -17,202 +17,214 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
 
-    <Grid Margin="16,12,16,10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />   <!-- durum bandi -->
-            <RowDefinition Height="Auto" />   <!-- ana dugme + duraklat -->
-            <RowDefinition Height="Auto" />   <!-- secimler -->
-            <RowDefinition Height="Auto" />   <!-- test + ilerleme -->
-            <RowDefinition Height="Auto" />   <!-- diger islemler -->
-            <RowDefinition Height="*" />      <!-- gunluk -->
-            <RowDefinition Height="Auto" />   <!-- alt bilgi -->
-        </Grid.RowDefinitions>
+    <!-- Ust kisim kayabiliyor, gunluk ve alt bilgi her zaman gorunuyor. Duz bir
+         Grid'ken varsayilan boyutta "Çıkış" yarim kaliyor, "Ayrıntılar" ve alt
+         bilgi hic gorunmuyordu (0.1.21, gercek kurulumda olculdu). Gerekcesi
+         SigdirmaPaneli'nde. -->
+    <local:SigdirmaPaneli Margin="16,12,16,10">
 
-        <!-- ================= DURUM BANDI =================
-             Ekrandaki referansta burasi yalnizca "SISTEM HAZIR" yaziyor.
-             Burada ek olarak hangi ISS ve hangi stratejinin secili oldugu ve
-             stratejinin dogrulanip dogrulanmadigi da gosteriliyor: kullanicinin
-             "acik mi, neyle acik, guveneyim mi" sorularinin ucune de tek bakista
-             cevap vermesi icin. -->
-        <Border Grid.Row="0" CornerRadius="6" Padding="14,12" Margin="0,0,0,14"
-                Background="{Binding StatusBrushKey, Converter={x:Static local:ResourceKeyConverter.Instance}}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Focusable="False">
+            <ScrollViewer.Style>
+                <Style TargetType="ScrollViewer">
+                    <!-- Kaydirma cubugu ciktiginda dugmelerin kenarina yapismasin. -->
+                    <Style.Triggers>
+                        <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Visible">
+                            <Setter Property="Padding" Value="0,0,8,0" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ScrollViewer.Style>
             <StackPanel>
-                <TextBlock Text="{Binding StatusHeadline}"
-                           FontSize="19" FontWeight="Bold"
-                           HorizontalAlignment="Center" TextAlignment="Center" />
-                <TextBlock Text="{Binding StatusDetail}"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           HorizontalAlignment="Center" TextAlignment="Center"
-                           TextWrapping="Wrap" Margin="0,4,0,0" />
-            </StackPanel>
-        </Border>
 
-        <!-- ================= ANA EYLEM ================= -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,14">
-            <Button Content="{Binding PrimaryButtonText}"
-                    Command="{Binding StartCommand}"
-                    Style="{StaticResource PrimaryButton}" />
+                <!-- ================= DURUM BANDI =================
+                     Ekrandaki referansta burasi yalnizca "SISTEM HAZIR" yaziyor.
+                     Burada ek olarak hangi ISS ve hangi stratejinin secili oldugu ve
+                     stratejinin dogrulanip dogrulanmadigi da gosteriliyor: kullanicinin
+                     "acik mi, neyle acik, guveneyim mi" sorularinin ucune de tek bakista
+                     cevap vermesi icin. -->
+                <Border CornerRadius="6" Padding="14,12" Margin="0,0,0,14"
+                        Background="{Binding StatusBrushKey, Converter={x:Static local:ResourceKeyConverter.Instance}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding StatusHeadline}"
+                                   FontSize="19" FontWeight="Bold"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
+                        <TextBlock Text="{Binding StatusDetail}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   HorizontalAlignment="Center" TextAlignment="Center"
+                                   TextWrapping="Wrap" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
 
-            <!-- Referans arayuzde durdurma ayri bir durum degil, tek dugme
-                 basla/durdur arasinda gidip geliyor. Burada duraklatma ayri:
-                 yapilandirmayi kaybetmeden gecici olarak kapatmak, "internetim
-                 bozuldu, bir seyi kapatayim" aninda en cok istenen sey. -->
-            <Button Content="Duraklat"
-                    Command="{Binding PauseCommand}"
-                    Style="{StaticResource ActionButton}"
-                    Margin="0,8,0,0" />
-        </StackPanel>
+                <!-- ================= ANA EYLEM ================= -->
+                <StackPanel Margin="0,0,0,14">
+                    <Button Content="{Binding PrimaryButtonText}"
+                            Command="{Binding StartCommand}"
+                            Style="{StaticResource PrimaryButton}" />
 
-        <!-- ================= SECIMLER ================= -->
-        <Grid Grid.Row="2" Margin="0,0,0,14">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+                    <!-- Referans arayuzde durdurma ayri bir durum degil, tek dugme
+                         basla/durdur arasinda gidip geliyor. Burada duraklatma ayri:
+                         yapilandirmayi kaybetmeden gecici olarak kapatmak, "internetim
+                         bozuldu, bir seyi kapatayim" aninda en cok istenen sey. -->
+                    <Button Content="Duraklat"
+                            Command="{Binding PauseCommand}"
+                            Style="{StaticResource ActionButton}"
+                            Margin="0,8,0,0" />
+                </StackPanel>
 
-            <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
-                 saglayicisi burada birinci sinif alan: aramayi hizlandiran
-                 sey tam olarak bu secim. -->
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Sağlayıcı:" Style="{StaticResource LabelText}" />
-            <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
-                      ItemsSource="{Binding IspChoices}"
-                      SelectedItem="{Binding SelectedIsp}"
-                      DisplayMemberPath="Display" />
+                <!-- ================= SECIMLER ================= -->
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Strateji:" Style="{StaticResource LabelText}" />
-            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
-                      ItemsSource="{Binding StrategyChoices}"
-                      SelectedItem="{Binding SelectedStrategy}"
-                      DisplayMemberPath="Display" />
+                    <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
+                         saglayicisi burada birinci sinif alan: aramayi hizlandiran
+                         sey tam olarak bu secim. -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Sağlayıcı:" Style="{StaticResource LabelText}" />
+                    <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
+                              ItemsSource="{Binding IspChoices}"
+                              SelectedItem="{Binding SelectedIsp}"
+                              DisplayMemberPath="Display" />
 
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Açılmayan site:" Style="{StaticResource LabelText}" />
-            <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
-                     VerticalContentAlignment="Center"
-                     Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="Testin gerçekten anlamlı olması için, sizde açılmayan bir adres girin. Boş bırakılırsa varsayılan hedefler kullanılır." />
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Strateji:" Style="{StaticResource LabelText}" />
+                    <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
+                              ItemsSource="{Binding StrategyChoices}"
+                              SelectedItem="{Binding SelectedStrategy}"
+                              DisplayMemberPath="Display" />
 
-            <!-- Sifreli DNS anahtari. Varsayilan ACIK ve bu olculmus bir gerekceye
-                 dayaniyor: bu makinede discord.com, pornhub.com ve xvideos.com'un
-                 ucu de saglayicinin engel sunucusuna cozumleniyordu. O katman
-                 asilmadan winws stratejisi hicbir sey degistirmiyor - trafik
-                 zaten gercek sunucuya gitmiyor. -->
-            <CheckBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,8"
-                      IsChecked="{Binding IsSecureDnsEnabled}"
-                      Content="Şifreli DNS kullan (önerilir)"
-                      ToolTip="Servis sağlayıcınız DNS cevaplarını değiştiriyorsa, tek başına DPI atlatma yetmez. Bu seçenek dnscrypt-proxy'yi çalıştırır ve sistem DNS'ini ona yönlendirir. Uygulamayı kapattığınızda ayarınız eski haline döner." />
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Açılmayan site:" Style="{StaticResource LabelText}" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="Testin gerçekten anlamlı olması için, sizde açılmayan bir adres girin. Boş bırakılırsa varsayılan hedefler kullanılır." />
 
-            <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
-                 etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
-                 "calisiyor" arasindaki farki gizlemek, ise yaramadiginda
-                 guveni tumden yikardi. -->
-            <Border Grid.Row="4" Grid.Column="1"
-                    Visibility="{Binding IsSelectedStrategyUnverified, Converter={StaticResource BoolToVis}}"
-                    Background="{StaticResource WarningBackBrush}"
-                    BorderBrush="#EBD6AE" BorderThickness="1"
-                    CornerRadius="4" Padding="8,5">
-                <TextBlock Text="{Binding VerificationNote}"
-                           Foreground="{StaticResource WarningBrush}"
-                           TextWrapping="Wrap" FontSize="12" />
-            </Border>
-        </Grid>
+                    <!-- Sifreli DNS anahtari. Varsayilan ACIK ve bu olculmus bir gerekceye
+                         dayaniyor: bu makinede discord.com, pornhub.com ve xvideos.com'un
+                         ucu de saglayicinin engel sunucusuna cozumleniyordu. O katman
+                         asilmadan winws stratejisi hicbir sey degistirmiyor - trafik
+                         zaten gercek sunucuya gitmiyor. -->
+                    <CheckBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,8"
+                              IsChecked="{Binding IsSecureDnsEnabled}"
+                              Content="Şifreli DNS kullan (önerilir)"
+                              ToolTip="Servis sağlayıcınız DNS cevaplarını değiştiriyorsa, tek başına DPI atlatma yetmez. Bu seçenek dnscrypt-proxy'yi çalıştırır ve sistem DNS'ini ona yönlendirir. Uygulamayı kapattığınızda ayarınız eski haline döner." />
 
-        <!-- ================= PARAMETRE TESTI ================= -->
-        <StackPanel Grid.Row="3" Margin="0,0,0,12">
-            <Button Content="PARAMETRE TESTİ YAP"
-                    Command="{Binding TestCommand}"
-                    Style="{StaticResource PrimaryButton}"
-                    Height="44" />
+                    <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
+                         etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
+                         "calisiyor" arasindaki farki gizlemek, ise yaramadiginda
+                         guveni tumden yikardi. -->
+                    <Border Grid.Row="4" Grid.Column="1"
+                            Visibility="{Binding IsSelectedStrategyUnverified, Converter={StaticResource BoolToVis}}"
+                            Background="{StaticResource WarningBackBrush}"
+                            BorderBrush="#EBD6AE" BorderThickness="1"
+                            CornerRadius="4" Padding="8,5">
+                        <TextBlock Text="{Binding VerificationNote}"
+                                   Foreground="{StaticResource WarningBrush}"
+                                   TextWrapping="Wrap" FontSize="12" />
+                    </Border>
+                </Grid>
 
-            <Grid Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}"
-                  Margin="0,8,0,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <!-- ================= PARAMETRE TESTI ================= -->
+                <StackPanel Margin="0,0,0,12">
+                    <Button Content="PARAMETRE TESTİ YAP"
+                            Command="{Binding TestCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            Height="44" />
 
-                <ProgressBar Grid.Row="0" Grid.Column="0" Height="6"
-                             Minimum="0" Maximum="1"
-                             Value="{Binding ProgressFraction, Mode=OneWay}" />
+                    <Grid Visibility="{Binding IsProgressVisible, Converter={StaticResource BoolToVis}}"
+                          Margin="0,8,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                <Button Grid.Row="0" Grid.Column="1" Content="İptal"
-                        Command="{Binding CancelTestCommand}"
-                        Style="{StaticResource ActionButton}"
-                        Height="22" Margin="8,0,0,0" Padding="8,0" FontSize="11" />
+                        <ProgressBar Grid.Row="0" Grid.Column="0" Height="6"
+                                     Minimum="0" Maximum="1"
+                                     Value="{Binding ProgressFraction, Mode=OneWay}" />
 
-                <!-- Hangi asamada oldugunu yazmak, belirsiz bir cubuktan cok daha
-                     iyi: kullanici "ISS profilimde mi, genel aramada mi" bilirse
-                     beklemeye deger olup olmadigina kendisi karar verebilir. -->
-                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ProgressText}"
-                           Foreground="{StaticResource TextMutedBrush}"
-                           FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
-            </Grid>
-        </StackPanel>
+                        <Button Grid.Row="0" Grid.Column="1" Content="İptal"
+                                Command="{Binding CancelTestCommand}"
+                                Style="{StaticResource ActionButton}"
+                                Height="22" Margin="8,0,0,0" Padding="8,0" FontSize="11" />
 
-        <!-- ================= DIGER ISLEMLER ================= -->
-        <StackPanel Grid.Row="4">
-            <!-- Yeni surum varsa: gorulur ama rahatsiz etmeyen bir satir. -->
-            <Border Background="#FFF8E1" BorderBrush="#FFE0A3"
-                    BorderThickness="1" CornerRadius="4" Padding="10,7"
-                    Margin="0,0,0,10"
-                    Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVis}}">
+                        <!-- Hangi asamada oldugunu yazmak, belirsiz bir cubuktan cok daha
+                             iyi: kullanici "ISS profilimde mi, genel aramada mi" bilirse
+                             beklemeye deger olup olmadigina kendisi karar verebilir. -->
+                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ProgressText}"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
+                    </Grid>
+                </StackPanel>
+
+                <!-- ================= DIGER ISLEMLER ================= -->
                 <StackPanel>
-                    <TextBlock Text="{Binding UpdateMessage}" FontWeight="SemiBold"
-                               TextWrapping="Wrap" Foreground="#7A5A00" />
-                    <TextBlock Text="github.com/superuser-d0/zapret-tr/releases"
-                               FontSize="11" Foreground="#8A6D3B" TextWrapping="Wrap"
-                               Margin="0,3,0,0" />
-                    <Button Content="İndir ve Kur"
+                    <!-- Yeni surum varsa: gorulur ama rahatsiz etmeyen bir satir. -->
+                    <Border Background="#FFF8E1" BorderBrush="#FFE0A3"
+                            BorderThickness="1" CornerRadius="4" Padding="10,7"
+                            Margin="0,0,0,10"
+                            Visibility="{Binding HasUpdate, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding UpdateMessage}" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" Foreground="#7A5A00" />
+                            <TextBlock Text="github.com/superuser-d0/zapret-tr/releases"
+                                       FontSize="11" Foreground="#8A6D3B" TextWrapping="Wrap"
+                                       Margin="0,3,0,0" />
+                            <Button Content="İndir ve Kur"
+                                    Command="{Binding UpdateCommand}"
+                                    Style="{StaticResource ActionButton}"
+                                    Margin="0,8,0,0" Padding="14,6"
+                                    ToolTip="Paketi indirir, SHA256 özetini doğrular ve kurulumu başlatır." />
+                        </StackPanel>
+                    </Border>
+                    <Button Content="{Binding ServiceButtonText}"
+                            Command="{Binding ServiceCommand}"
+                            Style="{StaticResource ActionButton}"
+                            ToolTip="Bilgisayar açıldığında ZapretTR kendiliğinden çalışsın. Şu anki ayarınız kullanılır; sonradan değiştirirseniz servisi yeniden kurmanız gerekir." />
+                    <!-- Bu dugme once "Ayrintilar" panelinin ICINDE duruyordu; baglami
+                         orasi diye. Yanlisti: WPF kapali bir Expander'in icerigini gorsel
+                         agaca hic eklemiyor, dolayisiyla dugme paneli acmayan kullanici
+                         icin YOKTU. Gercek bir kurulumda da tam olarak bu yasandi.
+                         Bulunamayan bir dugmenin baglami da olmaz. -->
+                    <Button Content="Güncellemeleri Denetle"
                             Command="{Binding UpdateCommand}"
                             Style="{StaticResource ActionButton}"
-                            Margin="0,8,0,0" Padding="14,6"
-                            ToolTip="Paketi indirir, SHA256 özetini doğrular ve kurulumu başlatır." />
+                            ToolTip="Yeni sürüm var mı diye bakar; varsa indirip kurar. GitHub'a yalnızca sürüm sorusu gider." />
+                    <Button Content="Raporu Kaydet"
+                            Command="{Binding SaveReportCommand}"
+                            Style="{StaticResource ActionButton}"
+                            ToolTip="Günlüğü ve ortam özetini bir dosyaya yazar. Hiçbir yere gönderilmez; neyi paylaşacağınıza siz karar verirsiniz." />
+                    <Button Content="Hata Bildir"
+                            Command="{Binding ReportIssueCommand}"
+                            Style="{StaticResource ActionButton}"
+                            ToolTip="GitHub'da hata bildirimi formunu doldurulmuş halde açar. Gönderilmez; okuyup siz gönderirsiniz." />
+                    <Button Content="Tüm Ayarları Sıfırla"
+                            Command="{Binding ResetCommand}"
+                            Style="{StaticResource DangerButton}" />
+                    <Button Content="Çıkış"
+                            Command="{Binding ExitCommand}"
+                            Style="{StaticResource ActionButton}" />
                 </StackPanel>
-            </Border>
-            <Button Content="{Binding ServiceButtonText}"
-                    Command="{Binding ServiceCommand}"
-                    Style="{StaticResource ActionButton}"
-                    ToolTip="Bilgisayar açıldığında ZapretTR kendiliğinden çalışsın. Şu anki ayarınız kullanılır; sonradan değiştirirseniz servisi yeniden kurmanız gerekir." />
-            <!-- Bu dugme once "Ayrintilar" panelinin ICINDE duruyordu; baglami
-                 orasi diye. Yanlisti: WPF kapali bir Expander'in icerigini gorsel
-                 agaca hic eklemiyor, dolayisiyla dugme paneli acmayan kullanici
-                 icin YOKTU. Gercek bir kurulumda da tam olarak bu yasandi.
-                 Bulunamayan bir dugmenin baglami da olmaz. -->
-            <Button Content="Güncellemeleri Denetle"
-                    Command="{Binding UpdateCommand}"
-                    Style="{StaticResource ActionButton}"
-                    ToolTip="Yeni sürüm var mı diye bakar; varsa indirip kurar. GitHub'a yalnızca sürüm sorusu gider." />
-            <Button Content="Raporu Kaydet"
-                    Command="{Binding SaveReportCommand}"
-                    Style="{StaticResource ActionButton}"
-                    ToolTip="Günlüğü ve ortam özetini bir dosyaya yazar. Hiçbir yere gönderilmez; neyi paylaşacağınıza siz karar verirsiniz." />
-            <Button Content="Hata Bildir"
-                    Command="{Binding ReportIssueCommand}"
-                    Style="{StaticResource ActionButton}"
-                    ToolTip="GitHub'da hata bildirimi formunu doldurulmuş halde açar. Gönderilmez; okuyup siz gönderirsiniz." />
-            <Button Content="Tüm Ayarları Sıfırla"
-                    Command="{Binding ResetCommand}"
-                    Style="{StaticResource DangerButton}" />
-            <Button Content="Çıkış"
-                    Command="{Binding ExitCommand}"
-                    Style="{StaticResource ActionButton}" />
-        </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- ================= CANLI GUNLUK =================
              Referans arayuzde yok. Burada var ve varsayilan olarak kapali:
              normalde gurultu, ama bir sey calismadiginda kullanicinin elindeki
              tek kanit bu. Testte kendiliginden aciliyor. -->
-        <Expander Grid.Row="5" Header="Ayrıntılar" Margin="0,12,0,0"
+        <Expander Header="Ayrıntılar" Margin="0,12,0,0"
                   IsExpanded="{Binding IsLogExpanded}">
             <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderBrushSoft}"
                     BorderThickness="1" CornerRadius="4" Margin="0,6,0,0">
@@ -232,8 +244,8 @@
         </Expander>
 
         <!-- ================= ALT BILGI ================= -->
-        <TextBlock Grid.Row="6" Text="{Binding FooterText}"
+        <TextBlock Text="{Binding FooterText}"
                    Foreground="{StaticResource TextMutedBrush}"
                    FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0" />
-    </Grid>
+    </local:SigdirmaPaneli>
 </Window>

@@ -18,7 +18,19 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>ZapretTR</AssemblyName>
+
+    <!-- Exe, gorev cubugu ve pencere basligi bu simgeyi kullaniyor. Onceden
+         yoktu ve her yerde .NET'in varsayilan simgesi gorunuyordu. Dosya
+         tools/make-icon.ps1 ile uretiliyor. -->
+    <ApplicationIcon>Assets\ZapretTR.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Bildirim alani icin ayrica gomulu: exe'den cikarilan simge tek bir
+         32x32 goruntu ve 16x16'ya kucultulunce bulaniklasiyor. Gomulu .ico'dan
+         Windows'un istedigi boyut dogrudan seciliyor. -->
+    <EmbeddedResource Include="Assets\ZapretTR.ico" LogicalName="ZapretTR.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- WinForms YALNIZCA NotifyIcon icin acildi. Ortulu using olarak gelirse

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ZapretTr.Core.Engine;
 
@@ -479,6 +481,74 @@ public sealed class WinwsRunner : IAsyncDisposable
 
         return string.IsNullOrEmpty(surum) ? null : surum;
     }
+
+    /// <summary>
+    /// winws.exe'nin icine gomulu surumu, motoru CALISTIRMADAN okur. Bulunamazsa null.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ReportedVersion"/> ancak motor calisip surum satirini yazdiktan
+    /// sonra dolu. Alt bilgi bu yuzden duruma gore degisiyordu (0.1.21, kullanici
+    /// bildirdi): hic baslatilmamisken ve duraklatilmisken "winws (zapret-win-bundle)",
+    /// DEVAM ET'ten sonra "winws v72.12". Ilk Baslat'ta da cogu zaman eski metin
+    /// kaliyordu: alt bilgi "calisiyor" bildiriminde tazeleniyor, surum satiri ise
+    /// ciktiyi okuyan ayri is parcaciginda ondan SONRA gelebiliyor.
+    ///
+    /// Surum yine ikilinin kendisinden geliyor, sabit bir metinden degil: winws
+    /// "github version %s (%s)" bicim metnini surum ve commit dizgeleriyle
+    /// dolduruyor ve derleyici bu dizgeleri yan yana yaziyor. v72.12'de dosyada
+    /// sira soyle: commit, NUL, "v72.12", NUL, bicim metni.
+    /// </remarks>
+    public static string? ReadEmbeddedVersion(string exePath)
+    {
+        try
+        {
+            return FindEmbeddedVersion(File.ReadAllBytes(exePath));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Ikili icinde, surum bicim metninden hemen onceki dizge surum gibi gorunuyorsa onu dondurur.
+    /// </summary>
+    /// <remarks>
+    /// Kati: yalnizca "v72.12" bicimi kabul ediliyor. Derleyici dizge sirasini
+    /// degistirirse null donuyor ve arayuz eskisi gibi motorun bildirecegini
+    /// bekliyor -- yanlis bir surum yazmaktansa bilmemek.
+    /// </remarks>
+    public static string? FindEmbeddedVersion(ReadOnlySpan<byte> image)
+    {
+        var bicim = image.IndexOf("github version %s (%s)"u8);
+        if (bicim <= 0)
+        {
+            return null;
+        }
+
+        // Hizalama icin birden fazla NUL olabilir.
+        var son = bicim;
+        while (son > 0 && image[son - 1] == 0)
+        {
+            son--;
+        }
+
+        if (son == bicim)
+        {
+            return null;
+        }
+
+        var bas = son;
+        while (bas > 0 && image[bas - 1] != 0 && son - bas <= 32)
+        {
+            bas--;
+        }
+
+        var aday = Encoding.ASCII.GetString(image[bas..son]);
+        return SurumBicimi.IsMatch(aday) ? aday : null;
+    }
+
+    private static readonly Regex SurumBicimi = new(@"^v\d+(\.\d+)+$", RegexOptions.CultureInvariant);
 
     /// <summary>
     /// Baslatmadan sonra erken olumu yakalamak icin beklenen sure.

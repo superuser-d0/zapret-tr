@@ -48,6 +48,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </remarks>
     private ProfileStore? _profiles;
     private readonly WinwsRunner? _runner;
+
+    /// <summary>winws.exe'nin icinden okunan surum; motor hic calismamisken alt bilgi icin.</summary>
+    private readonly string? _embeddedWinwsVersion;
     private readonly DnsCryptRunner? _dnsRunner;
     private CancellationTokenSource? _testCancellation;
 
@@ -106,7 +109,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // acilista "dogrulanmis" olarak hazir gelsin.
             _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
             _runner = new WinwsRunner(_vendor);
-            _runner.LogLineReceived += line => Append(line.Text, line.IsError);
+            _embeddedWinwsVersion = WinwsRunner.ReadEmbeddedVersion(_vendor.WinwsExe);
+            _runner.LogLineReceived += line =>
+            {
+                Append(line.Text, line.IsError);
+
+                // Surum satiri "calisiyor" bildiriminden SONRA okunabiliyor; o durumda
+                // alt bilgi bir sonraki durum degisikligine kadar eski kaliyordu.
+                if (WinwsRunner.ParseVersion(line.Text) is not null)
+                {
+                    Application.Current?.Dispatcher.BeginInvoke(() =>
+                    {
+                        Notify(nameof(EngineVersionText));
+                        Notify(nameof(FooterText));
+                    });
+                }
+            };
             _runner.StateChanged += OnRunnerStateChanged;
 
             _dnsRunner = new DnsCryptRunner(_vendor);
@@ -423,8 +441,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// Artik motor bir kez calistiysa ONUN soyledigi gosteriliyor; hic
     /// calismadiysa uydurmak yerine ikilinin nereden geldigi yaziliyor.
     /// </remarks>
+    /// <remarks>
+    /// Once motorun calisirken kendi bildirdigi surum, yoksa ikilinin icinden
+    /// okunan. Yalnizca ilkine bakmak alt bilginin duruma gore degismesine yol
+    /// aciyordu; gerekcesi <see cref="WinwsRunner.ReadEmbeddedVersion"/>'da.
+    /// </remarks>
     public string EngineVersionText =>
-        (_runner?.ReportedVersion is { } surum ? "winws " + surum : "winws (zapret-win-bundle)")
+        ((_runner?.ReportedVersion ?? _embeddedWinwsVersion) is { } surum
+            ? "winws " + surum
+            : "winws (zapret-win-bundle)")
         + " · dnscrypt-proxy 2.1.18";
 
     /// <summary>Pencere basligi: uygulamanin surumuyle.</summary>

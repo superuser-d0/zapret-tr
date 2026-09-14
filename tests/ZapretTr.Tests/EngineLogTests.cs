@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text;
 using ZapretTr.Core.Engine;
 
 namespace ZapretTr.Tests;
@@ -23,6 +25,43 @@ public sealed class EngineLogTests
         var satir = "github version v72.12 (5cc46a9815b00e97401b1459984dff44abfec411)";
 
         Assert.Equal("v72.12", WinwsRunner.ParseVersion(satir));
+    }
+
+    [Fact]
+    public void Winws_surumu_calistirmadan_ikiliden_okunuyor()
+    {
+        // Dizge sirasi gercek v72.12 ikilisinden birebir: commit, NUL, surum, NUL,
+        // bicim metni. Alt bilgi bu olmadan motor calisana kadar surum gosteremiyordu.
+        var ikili = Encoding.ASCII.GetBytes(
+            "desync\05cc46a9815b00e97401b1459984dff44abfec411\0v72.12\0github version %s (%s)\n\n\0desync");
+
+        Assert.Equal("v72.12", WinwsRunner.FindEmbeddedVersion(ikili));
+    }
+
+    [Theory]
+    // Bicim metni yok.
+    [InlineData("v72.12\0baska bir metin\0")]
+    // Bicim metninden once surum bicimine uymayan bir dizge.
+    [InlineData("abc\05cc46a98\0github version %s (%s)")]
+    // Aradaki NUL yok: bitisik metin surum sayilmamali.
+    [InlineData("xv72.12github version %s (%s)")]
+    public void Ikilide_surum_bulunamazsa_tahmin_edilmiyor(string icerik)
+    {
+        Assert.Null(WinwsRunner.FindEmbeddedVersion(Encoding.ASCII.GetBytes(icerik)));
+    }
+
+    [Fact]
+    public void Depodaki_winws_ikilisinden_surum_okunuyor()
+    {
+        // CI tools/fetch-upstream.ps1 ile vendor/ klasorunu dolduruyor; arayuz duman
+        // testleri de ayni dosyaya dayaniyor. Surum numarasi burada sabitlenmiyor:
+        // zapret-win-bundle commit'i degisince bu test degil, ikili degisir.
+        var exe = Path.Combine(XmlCommentTests.RepoRoot, "vendor", "zapret-winws", "winws.exe");
+
+        var surum = WinwsRunner.ReadEmbeddedVersion(exe);
+
+        Assert.NotNull(surum);
+        Assert.Matches(@"^v\d+(\.\d+)+$", surum);
     }
 
     [Fact]

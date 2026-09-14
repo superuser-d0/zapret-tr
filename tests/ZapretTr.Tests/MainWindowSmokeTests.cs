@@ -36,10 +36,23 @@ public sealed class MainWindowSmokeTests
             window.Arrange(new Rect(0, 0, 440, 720));
             window.UpdateLayout();
 
+            // Ust kisim kayabilen panelde olmali. Duz Grid'e donulurse varsayilan
+            // pencerede "Çıkış", "Ayrıntılar" ve alt bilgi yine ekrandan tasar
+            // (0.1.21'de gercek kurulumda olculdu). Panelin davranisi
+            // SigdirmaPaneliTests'te; burada XAML'in onu kullandigi sabitleniyor.
+            if (window.Content is not SigdirmaPaneli panel
+                || panel.Children.Count != 3
+                || panel.Children[0] is not ScrollViewer
+                || panel.Children[1] is not Expander)
+            {
+                throw new InvalidOperationException(
+                    "Pencerenin kok yerlesimi SigdirmaPaneli [ScrollViewer, Expander, alt bilgi] degil.");
+            }
+
             // Dugmeler AYNI pencerede sinaniyor: bir surecte yalnizca tek bir WPF
             // Application olabildigi icin her kontrole ayri test sinifi acmak
             // kosumu kilitliyordu.
-            foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir" })
+            foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir", "Tüm Ayarları Sıfırla", "Çıkış" })
             {
                 var dugme = DugmeyiBul(window, etiket)
                             ?? throw new InvalidOperationException(

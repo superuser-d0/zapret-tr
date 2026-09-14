@@ -6,6 +6,41 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Eklendi
+
+- **Uygulamanın kendi simgesi.** Exe, görev çubuğu, pencere başlığı ve bildirim alanı artık
+  .NET'in varsayılan simgesini göstermiyor. Kurulum dosyası ve sihirbazın köşesindeki resim de
+  artık Inno Setup'ınki değil. Bildirim alanında ZapretTR başka uygulamalardan ayırt
+  edilemiyordu. Simge `tools/make-icon.ps1` ile her boyut için ayrı çiziliyor. 16 piksellik
+  görüntü büyüğünden küçültülmüyor, bu yüzden bulanıklaşmıyor.
+
+### Düzeltildi
+
+- **Pencere varsayılan boyutunda sığmıyordu.** 0.1.21 kurulu bir makinede ekran görüntüsüyle
+  görüldü: 440×720 pencerede "Çıkış" yarım kalıyor, "Ayrıntılar" ve sürümü yazan alt bilgi hiç
+  görünmüyordu. Kaydırma yoktu. Güncelleme bandı, doğrulanmamış strateji notu ya da test
+  ilerleme çubuğu çıkınca "Tüm Ayarları Sıfırla" da kayboluyordu. Pencereyi büyütmeyi akıl
+  etmeyen kullanıcı bu düğmeleri hiç göremiyordu.
+  - Pencerenin üst kısmı artık kayıyor. "Ayrıntılar" ve alt bilgi her durumda görünüyor.
+  - Varsayılan yükseklik 800 oldu: varsayılan durumda her şey kaydırmadan sığıyor.
+    Ekran bundan kısaysa pencere çalışma alanına sığacak kadar kısalıyor.
+  - Pencere büyütülünce artan yer yine günlüğe gidiyor.
+  - Ölçüm: altı durumda (varsayılan; güncelleme bandı ve doğrulanmamış strateji;
+    bunlara ek olarak test ve açık günlük; yalnızca açık günlük; 600 yükseklik; 1000
+    yükseklik) alt bilgi ve "Ayrıntılar" başlığı pencerenin içinde kaldı. Sığmayan içerik
+    kaydırılabilir oldu.
+- Test sırasındaki küçük "İptal" düğmesinde yazı kenara yapışıyordu: düğme şablonu `Padding`'i
+  yok sayıyordu.
+- **Alt bilgideki winws sürümü korumanın durumuna göre değişiyordu.** Kullanıcı 0.1.21'de
+  bildirdi. Koruma hiç açılmamışken ve duraklatılmışken "winws (zapret-win-bundle)" yazıyordu,
+  DEVAM ET'ten sonra "winws v72.12". İlk Başlat'ta da çoğu zaman eski yazı kalıyordu. Sebep:
+  uygulama sürümü yalnızca motor çalışırken yazdığı satırdan öğreniyordu. Alt bilgi ise o
+  satırdan önce, motor çalışmaya başladığı anda yenileniyordu. Sürüm artık uygulama açılırken
+  `winws.exe` dosyasının içinden okunuyor; kurulu dosyada `v72.12` çıktı. Motorun çalışırken
+  bildirdiği sürüm yine öncelikli. Sürüm satırı geç gelirse alt bilgi o an da yenileniyor.
+
 ## [0.1.21]
 
 Bu sürümün ana konusu **VPN ile yan yana kullanım**. "Duraklat" artık arkada çalışan her şeyi

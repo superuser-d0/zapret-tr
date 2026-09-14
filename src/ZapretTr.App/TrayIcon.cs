@@ -77,6 +77,14 @@ public sealed class TrayIcon : IDisposable
     {
         try
         {
+            // Once gomulu .ico: bildirim alaninin boyutuna (olcege gore 16, 20, 24...)
+            // uyan goruntu kucultme yapilmadan seciliyor.
+            using var akis = typeof(TrayIcon).Assembly.GetManifestResourceStream("ZapretTR.ico");
+            if (akis is not null)
+            {
+                return new Icon(akis, SystemInformation.SmallIconSize);
+            }
+
             var yol = Environment.ProcessPath;
             if (yol is not null)
             {

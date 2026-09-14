@@ -29,6 +29,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // Varsayilan yukseklik, varsayilan durumdaki her seyin (alt bilgi ve
+        // "Ayrıntılar" dahil) kaydirmadan sigdigi olculmus deger. 768 piksellik
+        // bir dizustu ekranda bu pencere ekrandan tasardi; ust kisim zaten
+        // kayabildigi icin calisma alanina kirpmak hicbir seyi gizlemiyor.
+        Height = Math.Max(MinHeight, Math.Min(Height, SystemParameters.WorkArea.Height));
         Closing += OnClosingAsync;
         Loaded += OnLoaded;
     }

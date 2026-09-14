@@ -1176,8 +1176,7 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-> **GÜNCEL DURUM EN ALTTA:** "2026-09-13 oturumu" → "Üçüncü yarı" →
-> "Yayın: v0.1.21". Bu başlığın hemen altındaki ilk bölüm
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 oturumu: görünür eksikler (yayınlanmamış)". Bu başlığın hemen altındaki ilk bölüm
 > 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
 
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
@@ -1660,3 +1659,72 @@ veya 0.1.20 → 0.1.21 tek tıkla güncellemeyi sınamak gerekirse yayından kur
 `[Yayınlanmamış]` → `compare/v0.1.6...HEAD` ve `[0.1.6]`..`[0.1.0]` ile sınırlı.
 Başlıklar köşeli parantezli, ama 0.1.7 ve sonrası için tanım yok. GitHub bunları
 düz metin gösteriyor; işlev kaybı yok.
+
+### 2026-09-14 oturumu: görünür eksikler (yayınlanmamış)
+
+Kullanıcı "görünür bir eksik var mı" diye sordu. Kurulu 0.1.21'in ekran görüntüleri,
+kod ve GitHub sayfası incelendi. Bulunan 8 maddeden kullanıcı 1-3'ü seçti; dördüncüsü
+kullanıcının kendi gözleminden çıktı. Hepsi CHANGELOG `[Yayınlanmamış]` başlığında.
+
+**1. Pencere sığmıyordu.** 440×720 varsayılan pencerede "Çıkış" yarım kalıyor,
+"Ayrıntılar" ve alt bilgi görünmüyordu. Kaydırma yoktu.
+- Çözüm: `SigdirmaPaneli`. Üst kısım ScrollViewer'da; günlük ve alt bilgi her zaman
+  görünür. Varsayılan yükseklik 800, çalışma alanına kırpılıyor.
+- Ölçüm yolu: `scratchpad/layoutprobe`. Gerçek MainWindow.xaml, sahte veriyle
+  `XamlReader` üzerinden yükleniyor; gerçek view model KURULMUYOR (çalışan korumaya
+  dokunmamak için). Altı durumda konumlar ölçüldü ve PNG'ye çizildi.
+- 720'de varsayılan içerik 677 birim, görünen alan 599. 800'de kaydırma yok.
+
+**2. Uygulama simgesi yoktu.** `tools/make-icon.ps1` .ico dosyasını ve sihirbaz BMP'lerini
+üretiyor.
+- `ApplicationIcon` exe'ye, gömülü kaynak bildirim alanına gidiyor. Bildirim alanı
+  `SmallIconSize` ile 16'yı seçiyor; exe'den çıkarılan 32'lik görüntü bulanıktı.
+- `setup.iss`: `SetupIconFile` ve `WizardSmallImageFile`.
+- Doğrulandı: yayın akışıyla aynı `dotnet publish` ve ISCC. Exe ve Setup'tan simge
+  çıkarıldı, gömülü kaynak dll'de.
+
+**3. README ekran görüntüsü** yenilendi. Yerel paket kuruldu (kurulu `ZapretTR.dll`
+yayın çıktısıyla aynı SHA256), elle modda Başlat, varsayılan boyut.
+
+**4. Alt bilgideki winws sürümü duruma göre değişiyordu** (kullanıcı bildirdi).
+- Belirti: kapalıyken ve duraklatılmışken "(zapret-win-bundle)", DEVAM ET'ten sonra
+  "v72.12".
+- Sebep: sürüm yalnızca motorun çıktısından öğreniliyordu. Alt bilgi `Running`
+  bildiriminde yenileniyor, sürüm satırı ise ondan sonra okunabiliyordu.
+- Çözüm: `WinwsRunner.ReadEmbeddedVersion`. `winws.exe` içinde dizge sırası şöyle:
+  commit, NUL, `v72.12`, NUL, `github version %s (%s)`. Bu sıra bozulursa sonuç null.
+- Kullanıcı Başlat'tan önce "winws v72.12" gördüğünü doğruladı.
+
+**Testler:** 275/275, yeni 14 test.
+- Panel testleri, ilk denemedeki hata geri konunca 3'ten 2'si kırılarak hatayı
+  yakaladı.
+- Duman testi pencerenin kökünün `SigdirmaPaneli` olduğunu sabitliyor. Düğme listesine
+  "Tüm Ayarları Sıfırla" ve "Çıkış" eklendi.
+
+**Tuzaklar (bu oturumda ısırdı):**
+
+- **FrameworkElement `DesiredSize`'ı verilen alana kırpıyor.** Paneldeki ilk denemede
+  günlüğün alt sınırı sıfır yükseklikle ölçülüyordu; kapalı Expander'ın başlığı 0 çıktı
+  ve "Ayrıntılar" ekrandan kayboldu. Derleme ve eski testler geçiyordu; ancak çizilen
+  PNG gösterdi.
+- **Deneme programı `ZapretTR.App.App` kurunca uygulamanın çökme işleyicisini de
+  devralıyor.** Deneme programındaki bir hata kullanıcının ekranında "ZapretTR
+  beklenmedik bir hatayla karşılaştı" penceresi açtı ve `C:\ProgramData\ZapretTR\cokme.log`
+  yazdı. Program "takıldı" sanıldı, oysa bu pencereyi bekliyordu. Günlük silindi. Bir
+  daha: her durumu ayrı süreçte koştur ve hatayı App'ten önce yakala.
+- **Yönetici penceresinin ekran görüntüsü:** yönetici olmayan oturumdan `PrintWindow`
+  false dönüyor. `SetForegroundWindow` (öncesinde Alt tuşu) + `CopyFromScreen` çalışıyor.
+  Kenar gölgesi olmadan almak için `DWMWA_EXTENDED_FRAME_BOUNDS` (9) kullan; köşeler
+  8 piksel yarıçapla saydam yapıldı. Kullanıcının kendi ekran görüntüleri duvar kağıdını
+  içeriyordu, README için kullanılmadı.
+- **Git Bash `sed -i` CRLF'yi LF'ye çevirdi** (`WinwsRunner.cs`). Düzenlemeden sonra
+  `file` ile satır sonlarını kontrol et.
+- **PowerShell'de virgül toplamadan önce bağlanıyor:** `@($x1, $y0 + $t)` bir diziye sayı
+  eklemeye çalışıp `op_Addition` hatası verdi. Parantez gerekli.
+- **Kurulum betiğinin nazik kapatması muhtemelen bayat.** `taskkill` (/F'siz) pencereyi
+  kapatınca uygulama artık bildirim alanına iniyor, temizlik yapmıyor. Ayrı görev olarak
+  önerildi, ölçülmedi.
+
+**Makine durumu (oturum sonu, ölçüldü):** yerel paket kurulu (`0.1.21+a7aa585`,
+commit'lenmemiş değişikliklerle, yeni simge ve pencere). Elle modda koruma açık
+(winws ve dnscrypt 14:41'den beri), servis yok.
