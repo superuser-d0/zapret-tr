@@ -47,6 +47,12 @@ public partial class App : Application
     /// </remarks>
     private static Mutex? _instanceLock;
 
+    /// <summary>Kisayola ikinci kez tiklanma isteklerini dinleyen; yalnizca gercek acilista kurulur.</summary>
+    private IDisposable? _activationListener;
+
+    /// <summary>Calisan ornegin penceresi one getirildi; "zaten çalışıyor" uyarisi gereksiz.</summary>
+    private bool _suppressAlreadyRunningMessage;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         if (e.Args.Any(a => string.Equals(a, UninstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
@@ -106,7 +112,7 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
             ReportCrash(args.ExceptionObject as Exception);
 
-        if (!TryClaimSingleInstance())
+        if (!TryClaimSingleInstance() && !HandOverToRunningInstance())
         {
             // IKINCI ORNEK CALISMAMALI.
             //
@@ -118,6 +124,12 @@ public partial class App : Application
             // daha kotusu, ikinci ornek kapanirken sistem DNS yedegini geri alip
             // SILIYOR -- birinci ornegin sifreli DNS'i sessizce devre disi
             // kaliyor, geri donus kaydi da kalmiyor.
+            if (_suppressAlreadyRunningMessage)
+            {
+                Shutdown();
+                return;
+            }
+
             MessageBox.Show(
                 "ZapretTR zaten çalışıyor.\n\n"
                 + "Pencere kapalıysa saatin yanındaki bildirim alanındadır: "
@@ -146,9 +158,92 @@ public partial class App : Application
         // servisleri sildikten sonra bu yoldan config.json'a
         // "servicePaused": false yazdi ve VPN icin duraklatilmis servis
         // yukseltmeden sonra calisir halde geri geldi.
+        //
+        // Tema pencereden ONCE uygulaniyor: sonra uygulanirsa pencere bir an acik
+        // renkte gorunup koyuya donuyor.
+        try
+        {
+            ThemeManager.Apply(ThemeManager.Resolve(ConfigStore.Load().Theme));
+        }
+        catch (Exception)
+        {
+            // Yapilandirma okunamadi; acik temayla devam. Pencere yine acilmali.
+        }
+
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+
+        // Kisayola ikinci kez tiklanirsa uyari yerine bu pencere one gelsin.
+        _activationListener = InstanceActivation.StartListening(Dispatcher, window.BringToFront);
+
+        // Disariya dokunan acilis isleri burada, gorunum modelinin kurucusunda DEGIL:
+        // kurucu testlerde de kosuyor. Oradayken temizlik gercek guncelleme klasorunu
+        // siliyor, guncelleme sorgusu da her test kosumunda GitHub'a gidiyordu.
+        if (window.DataContext is ViewModels.MainViewModel viewModel)
+        {
+            _ = viewModel.CheckForUpdateAsync();
+            _ = viewModel.DeleteOldUpdatePackagesAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _activationListener?.Dispose();
+        base.OnExit(e);
+    }
+
+    /// <summary>
+    /// Baska bir ornek calisiyorken: onun penceresini one getirir ya da kapanmasini bekler.
+    /// </summary>
+    /// <returns>
+    /// true: bu ornek normal acilisa devam etmeli (onceki ornek kapandi ve kilit alindi).
+    /// false: bu ornek cikmali; ya pencere one getirildi ya da eski uyari gosterilecek.
+    /// </returns>
+    /// <remarks>
+    /// Pencere one getirildiyse uyari gostermeden cikiyoruz. Gerekcesi
+    /// InstanceActivation'da. <see cref="_suppressAlreadyRunningMessage"/> uyarinin
+    /// gosterilmemesi gerektigini cagirana bildiriyor.
+    /// </remarks>
+    private bool HandOverToRunningInstance()
+    {
+        switch (InstanceActivation.TryActivateExisting(TimeSpan.FromSeconds(3)))
+        {
+            case ActivationResult.Shown:
+                _suppressAlreadyRunningMessage = true;
+                return false;
+
+            case ActivationResult.Closing:
+                // "Çıkış"a basilmis ve temizlik suruyor (winws durduruluyor, DNS geri
+                // aliniyor). Eskiden burada "zaten çalışıyor" deniyordu -- ki yanlisti.
+                // Onceki ornek cikinca kilit bize geciyor ve normal aciliyoruz.
+                return WaitForInstanceLock(TimeSpan.FromSeconds(20));
+
+            default:
+                // Dinleyen yok (baska oturum) ya da cevap gelmedi (donmus olabilir):
+                // eski uyari.
+                return false;
+        }
+    }
+
+    /// <summary>Onceki ornegin biraktigi tek ornek kilidini bekler.</summary>
+    private static bool WaitForInstanceLock(TimeSpan timeout)
+    {
+        if (_instanceLock is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return _instanceLock.WaitOne(timeout);
+        }
+        catch (AbandonedMutexException)
+        {
+            // Onceki ornek kilidi birakmadan oldu; kilit yine de artik bizde.
+            return true;
+        }
     }
 
     /// <summary>Tek ornek kilidini alir. Baska bir ornek varsa false.</summary>

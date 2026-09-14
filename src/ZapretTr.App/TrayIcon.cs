@@ -68,7 +68,14 @@ public sealed class TrayIcon : IDisposable
     public void Goster()
     {
         _window.Show();
-        _window.WindowState = WindowState.Normal;
+
+        // Yalnizca simge durumundaysa: tam ekrana alinmis bir pencereyi gizleyip
+        // geri getirmek onu kucultuyordu.
+        if (_window.WindowState == WindowState.Minimized)
+        {
+            _window.WindowState = WindowState.Normal;
+        }
+
         _window.Activate();
         _icon.Visible = false;
     }

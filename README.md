@@ -80,8 +80,10 @@ Uygulama bunu fark ederse **"ÇALIŞIYOR — AMA AÇMIYOR"** yazar; parametre te
 kullanır; ölçümlerde gecikmede fark çıkmadı. Tek fark şu: şifreli DNS açıkken bir siteyi
 **ilk kez** açarken kısa bir bekleme olabilir.
 
-**Gizlilik:** Ölçüm sonuçlarınız ve ayarlarınız yalnızca bilgisayarınızda kalır. Uygulamanın
-kendiliğinden yaptığı tek internet isteği "yeni sürüm var mı" sorusudur.
+**Gizlilik:** Ölçüm sonuçlarınız ve ayarlarınız yalnızca bilgisayarınızda kalır; hiçbir yere
+gönderilmez. Uygulama kendiliğinden yalnızca GitHub'a "yeni sürüm var mı" diye sorar. Parametre
+testi ve şifreli DNS ise çalışırken dış sunuculara bağlanır; hangileri olduğu
+[ayrıntılı rehberde](README-DETAYLI.md#sık-sorulanlar) yazılı.
 
 **Antivirüs uyarısı:** Windows Defender paketi işaretlemiyor. Başka antivirüs programları
 ağ sürücüsü yüzünden yanlış alarm verebilir.

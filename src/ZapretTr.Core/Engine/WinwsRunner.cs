@@ -179,14 +179,30 @@ public sealed class WinwsRunner : IAsyncDisposable
                 }
             }
 
+            // Akislarin sonu (e.Data == null). Erken olumde son satirlari beklemek icin.
+            var ciktiBitti = new ManualResetEventSlim();
+            var hataBitti = new ManualResetEventSlim();
+
             process.OutputDataReceived += (_, e) =>
             {
+                if (e.Data is null)
+                {
+                    ciktiBitti.Set();
+                    return;
+                }
+
                 Kaydet(e.Data);
                 PublishLine(e.Data, isError: false);
             };
 
             process.ErrorDataReceived += (_, e) =>
             {
+                if (e.Data is null)
+                {
+                    hataBitti.Set();
+                    return;
+                }
+
                 Kaydet(e.Data);
                 PublishLine(e.Data, isError: true);
             };
@@ -211,13 +227,8 @@ public sealed class WinwsRunner : IAsyncDisposable
             // Erken olum kontrolu: winws gecersiz bir arguman aldiginda ya da
             // surucuyu acamadiginda hemen cikiyor. Bunu burada yakalamazsak
             // arayuz "calisiyor" gosterir ve kullanici korundugunu saniir.
-            if (process.WaitForExit(StartupGraceMilliseconds))
+            if (WaitForEarlyExit(process, StartupGraceMilliseconds, ciktiBitti.WaitHandle, hataBitti.WaitHandle))
             {
-                // Cikis kodundan SONRA kisa bir bekleme: cikti okuma geri
-                // cagrilari ayri bir is parcaciginda geliyor ve surec olduktan
-                // hemen sonra bakarsak son satirlari kacirabiliyoruz.
-                process.WaitForExit();
-
                 var exitCode = process.ExitCode;
                 process.Dispose();
                 throw BuildEarlyExitException(exitCode, ilkSatirlar);
@@ -228,6 +239,48 @@ public sealed class WinwsRunner : IAsyncDisposable
         }
 
         SetState(WinwsState.Running);
+    }
+
+    /// <summary>Son satirlar icin akislarin kapanmasi en fazla bu kadar beklenir.</summary>
+    private static readonly TimeSpan OutputDrainLimit = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Surec baslangic penceresinde oldu mu. Olduyse ciktisinin son satirlarini
+    /// SINIRLI bir sure bekler.
+    /// </summary>
+    /// <remarks>
+    /// KILITLENME. Burada once parametresiz <c>process.WaitForExit()</c> vardi. O
+    /// cagri yonlendirilmis cikti akislarinin sonunu bekliyor; akislari okuyan geri
+    /// cagrilar ise satiri <see cref="LogLineReceived"/> ile arayuze gonderiyor ve
+    /// arayuz satiri <c>Dispatcher.Invoke</c> ile yaziyordu. Start arayuzun
+    /// "Baslat"indan ARAYUZ IS PARCACIGINDA cagriliyor. winws 250 ms icinde olunce
+    /// (ornegin cokmus bir onceki ornekten sahipsiz bir winws kalmissa) iki taraf
+    /// birbirini sonsuza kadar bekliyordu: pencere donuyor, Windows "yanit vermiyor"
+    /// deyip kapatiyordu. Gercek bir kullanicida 2026-09-14'te iki kez olculdu (olay
+    /// gunlugunde AppHang) ve ayri bir denemede yeniden uretildi.
+    ///
+    /// Bekleme artik akislarin kapandigi olaylarla ve bir ust sinirla yapiliyor.
+    /// Arayuz tarafi da satiri beklemeden gonderiyor (MainViewModel.Append); ikisi
+    /// birlikte hem kilitlenmeyi hem de son satirlarin kaybolmasini onluyor.
+    /// </remarks>
+    public static bool WaitForEarlyExit(Process process, int graceMilliseconds, WaitHandle stdoutClosed, WaitHandle stderrClosed)
+    {
+        ArgumentNullException.ThrowIfNull(process);
+
+        if (!process.WaitForExit(graceMilliseconds))
+        {
+            return false;
+        }
+
+        // Sirayla ve ortak bir sureyle. WaitHandle.WaitAll STA is parcaciginda
+        // desteklenmiyor (NotSupportedException) ve Start tam da WPF'in STA arayuz
+        // is parcaciginda cagriliyor: ilk duzeltme denemesi donmayi COKMEYE ceviriyordu,
+        // EarlyExitDeadlockTests yakaladi.
+        var sure = Stopwatch.StartNew();
+        stdoutClosed.WaitOne(OutputDrainLimit);
+        var kalan = OutputDrainLimit - sure.Elapsed;
+        stderrClosed.WaitOne(kalan > TimeSpan.Zero ? kalan : TimeSpan.Zero);
+        return true;
     }
 
     private List<string> _startupLines = [];

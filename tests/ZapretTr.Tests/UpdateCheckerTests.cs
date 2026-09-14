@@ -14,6 +14,41 @@ namespace ZapretTr.Tests;
 /// </remarks>
 public sealed class UpdateCheckerTests
 {
+    [Fact]
+    public void Sorgu_siniri_dolunca_ne_kadar_beklenecegi_soyleniyor()
+    {
+        var simdi = new DateTimeOffset(2026, 9, 14, 16, 0, 0, TimeSpan.FromHours(3));
+        var sifirlanma = simdi.AddMinutes(37).ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        var metin = UpdateChecker.DescribeHttpFailure(403, "0", sifirlanma, simdi);
+
+        Assert.Contains("saatlik sorgu sınırı", metin, StringComparison.Ordinal);
+        Assert.Contains("37 dakika", metin, StringComparison.Ordinal);
+        Assert.Contains("16:37", metin, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    // Sinir dolmadan gelen 403 (ornegin baska bir erisim sorunu) sinir diye anlatilmamali.
+    [InlineData(403, "12")]
+    [InlineData(500, null)]
+    public void Sinir_disindaki_hatalar_sinir_diye_anlatilmiyor(int kod, string? kalan)
+    {
+        var metin = UpdateChecker.DescribeHttpFailure(kod, kalan, null, DateTimeOffset.Now);
+
+        Assert.DoesNotContain("sınır", metin, StringComparison.Ordinal);
+        Assert.Contains(kod.ToString(System.Globalization.CultureInfo.InvariantCulture), metin, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("{\"tag_name\": \"v0.1.22\", \"draft\": false}", "0.1.22")]
+    [InlineData("{\"tag_name\":\"0.1.9\"}", "0.1.9")]
+    [InlineData("{\"message\":\"API rate limit exceeded\"}", null)]
+    [InlineData("", null)]
+    public void Yayin_cevabindan_surum_okunuyor(string json, string? beklenen)
+    {
+        Assert.Equal(beklenen, UpdateChecker.ParseTagName(json));
+    }
+
     [Theory]
     [InlineData("0.1.14", "0.1.9")]    // iki haneli yama, metin sirasiyla TERS
     [InlineData("0.2.0", "0.1.14")]

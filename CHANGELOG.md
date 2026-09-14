@@ -6,6 +6,103 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Eklendi
+
+- **Koyu tema.** "Ayrıntılar" satırının sağındaki **Koyu tema / Açık tema** düğmesi arayüzü
+  anında çeviriyor; pencere yeniden açılmıyor. Seçim `config.json`'daki `theme` alanına
+  kaydediliyor. Hiç seçim yapılmadıysa Windows'un açık/koyu uygulama ayarı izleniyor.
+  Koyu temada Windows başlık çubuğu da koyulaşıyor.
+  - Açık temada görünen hiçbir şey değişmedi: renkler birebir taşındı, Windows'un kendi
+    kontrol görünümü korundu.
+  - Koyu temada açılır liste, onay kutusu, kaydırma çubuğu ve "Ayrıntılar" başlığı yeniden
+    çiziliyor. Windows'un çizimleri bazı renkleri sabit yazıyor: onay işareti koyu zeminde
+    görünmez, açılır listenin düğmesi gri kalıyordu.
+  - Düğme yeni bir satır açmıyor. Pencerenin varsayılan boyutta kaydırmadan sığması iki temada
+    da ölçüldü.
+  - İki temanın aynı renk anahtarlarını tanımladığı ve arayüz dosyalarında sabit renk kalmadığı
+    testle denetleniyor. Koyu temaya geçiş, pencere kurulumu testinde de uygulanıyor.
+
+### Değişti
+
+- **Kısayola ikinci kez tıklayınca uyarı yerine açık pencere öne geliyor.** Pencere X ile
+  bildirim alanına indirildiyse, arkada kaldıysa ya da simge durumuna küçültüldüyse, masaüstü
+  kısayolu artık "ZapretTR zaten çalışıyor" uyarısı göstermiyor; var olan pencereyi getiriyor.
+  Tam ekrana alınmış pencere tam ekran kalıyor. Eskiden bildirim alanından geri getirme bile
+  onu küçültüyordu.
+  - İki kopyanın aynı anda çalışmasını engelleyen kilit değişmedi. Yeni kopya ilkine yalnızca
+    "pencereni göster" diyor ve kapanıyor.
+  - "Çıkış"a basıldıktan hemen sonra, temizlik sürerken kısayola tıklanırsa eskiden yanlış bir
+    "zaten çalışıyor" uyarısı çıkıyordu. Artık yeni kopya öncekinin kapanmasını bekleyip normal
+    açılıyor.
+  - Çalışan kopya 3 saniyede cevap vermezse, örneğin donmuşsa, eski uyarı gösteriliyor.
+    Başka bir Windows kullanıcı oturumunda açık bir kopya varsa da eski uyarı çıkıyor.
+  - Parametreyle çalışan yollar (10 dakikada bir koşan DNS bekçisi, kurulum paketinin servis
+    kurma ve kaldırma çağrıları) tek kopya kontrolünden önce çıktığı için bu değişiklikten
+    etkilenmiyor.
+- **Servis sağlayıcı tespitinde önce şifreli kaynak soruluyor.** "Bilmiyorum" seçiliyken genel
+  IP adresi önce `ip-api.com`'a **şifresiz (HTTP)** gidiyordu; servis sağlayıcı bu sorguyu düz
+  metin olarak görebiliyordu. Artık önce `ipinfo.io` (HTTPS) soruluyor, ip-api yalnızca o
+  cevap vermezse. ip-api'nin ücretsiz planı HTTPS sunmadığı için tamamen HTTPS'e taşınamadı.
+
+### Düzeltildi
+
+- **"Başlat" arayüzü kalıcı olarak dondurabiliyordu.** Kullanıcı 2026-09-14'te "kapatıp yeniden
+  açınca donuyor" diye bildirdi. Windows olay günlüğünde iki "yanıt vermiyor" (AppHang) kaydı
+  vardı; donan kopyadan sahipsiz winws ve dnscrypt kalmıştı. Kod okunarak bir kilitlenme
+  bulundu:
+  - "Başlat" winws'i arayüz iş parçacığında başlatıyor. winws 250 ms içinde kapanırsa kod,
+    motorun çıktısının bitmesini **süre sınırı olmadan** bekliyordu. Bu, örneğin arkada
+    sahipsiz bir winws zaten çalışıyorsa oluyor.
+  - Çıktıyı okuyan taraf ise her satırı günlüğe yazmak için arayüz iş parçacığını bekliyordu.
+    İkisi birbirini sonsuza kadar bekliyordu.
+  - Kilitlenme ayrı bir denemede yeniden üretildi: eski kodla 8 saniyede de bitmedi.
+  - Artık bekleme en fazla 2 saniye sürüyor ve günlüğe yazma arayüzü beklemiyor. Aynı denemede
+    46 ms'de bitti, motorun hata satırları da okundu.
+  - İlk düzeltme denemesi, arayüz iş parçacığında desteklenmeyen bir bekleme kullandığı için
+    donmayı çökmeye çeviriyordu; bunu yeni test yakaladı.
+  - Kullanıcının yaşadığı donmanın tam olarak bu yol olduğu henüz doğrulanmadı.
+- **"Güncellemeleri Denetle" başarısız olunca ekranda hiçbir şey olmuyordu.** Kullanıcı 2026-09-14'te
+  bildirdi. Sürüm bilgisi alınamazsa ya da indirme/doğrulama başarısız olursa sonuç yalnızca
+  "Ayrıntılar" günlüğüne yazılıyordu. Günlük kapalıyken düğme çalışmıyor gibi görünüyordu;
+  "güncelsiniz" sonucu ise zaten pencereyle söyleniyordu. Artık başarısızlık da pencereyle
+  söyleniyor ve sebebi yazıyor:
+  - GitHub'ın saatlik sorgu sınırı dolduysa (bir bağlantıdan saatte 60 sorgu) kaç dakika sonra
+    denenebileceği,
+  - zaman aşımı, ya da GitHub'a ulaşılamadığı.
+
+  Eskiden hepsi aynı cümleye düşüyordu. Ayrıca açılıştaki güncelleme sorgusu, test sırasında da
+  kurulan görünüm modelinden çıkarıldı. Her test çalıştırması GitHub'a gerçek sorgu atıp aynı
+  bağlantıdaki uygulamanın saatlik sınırını tüketiyordu. Kullanıcının gördüğü hatanın sebebinin
+  bu olması muhtemel ama kanıtlanmadı.
+- **Gizlilik metni eksik ve bir yerde yanlıştı.** Ayrıntılı rehber, `updateCheckEnabled`
+  kapatılınca uygulamanın "hiçbir ağ isteği yapmadığını" söylüyordu. Oysa parametre testi
+  IP adresini ISS tespit servislerine gönderiyor ve DNS'i Cloudflare'e ya da Google'a soruyor;
+  şifreli DNS de sunucu listesi indirip sorguları açık DNS sunucularına gönderiyor. Hepsi
+  yalnızca kullanıcı bir düğmeye bastığında ya da koruma açıkken oluyor, ama belgede adları
+  geçmiyordu. Hangi durumda nereye bağlanıldığı artık tek tek yazılı. Dışarıdan bir kod
+  incelemesinde fark edildi; bağlantı listesi kod okunarak çıkarıldı.
+- **Discord ses ölçümü olduğundan fazlasını söylüyordu.** O bölüm STUN ile ölçülüyor ve STUN
+  cevabı yalnızca UDP yolunun açık olduğunu gösterir, Discord sesli görüşmenin çalıştığını
+  değil. Yine de test günlüğü sonucu "Discord ses" diye yazıyor, kaydedilen sonuç da "parametre
+  testiyle doğrulandı" notunu taşıyordu. Artık günlükte "UDP (STUN)" yazıyor ve sesi doğrulamadığı
+  ayrıca belirtiliyor; kayıt notu da aynı şeyi söylüyor. README'de zaten Discord sesin
+  doğrulanmadığı yazıyordu; abartan uygulamanın kendi metniydi.
+- Ayrıntılı rehberde "Discord" başlığının altı boştu. Sesli görüşme sorusunun cevabı bir önceki
+  bölümün, "Pencereyi kapatınca ne oluyor"un altına düşmüştü; yerine taşındı.
+
+- **Uygulama içi güncelleme, indirdiği kurulum paketlerini hiç silmiyordu.** 0.1.21'den 0.1.22'ye
+  uygulama içinden güncellenen bir makinede görüldü: `%TEMP%\ZapretTR-guncelleme` klasöründe
+  0.1.16'dan 0.1.22'ye altı paket (yaklaşık 330 MB) birikmişti. Her güncelleme 55 MB daha
+  ekliyordu. Eski paketler artık iki yerde siliniyor:
+  - uygulama açılırken; kurulum o sırada kendi dosyasını hâlâ kilitliyorsa 30 saniye sonra bir
+    kez daha deneniyor, güncelleme o arada başladıysa hiç dokunulmuyor;
+  - yeni bir güncelleme indirilmeden önce.
+
+  Yalnızca bu klasördeki `ZapretTR-Setup-*.exe` dosyaları siliniyor. Alt klasörlere ve başka
+  adlı dosyalara dokunulmuyor. Silinen paketler günlükte yazıyor.
+
 ## [0.1.22]
 
 Bu sürüm arayüzde **gözle görülen eksikleri** kapatıyor. Pencere varsayılan boyutta artık

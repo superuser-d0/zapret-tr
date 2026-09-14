@@ -28,6 +28,24 @@ public sealed class AppStartupTests
     }
 
     [Fact]
+    public void Eski_paket_temizligi_gorunum_modeli_kurucusundan_cagrilmiyor()
+    {
+        // Kurucudan cagrildiginda duman testleri gelistiricinin gercek
+        // %TEMP%\ZapretTR-guncelleme klasorunu bosaltti (2026-09-14, alti paket).
+        // Gorunum modeli testlerde kuruluyor; silen is yalnizca gercek acilista kosmali.
+        var vm = File.ReadAllText(IoPath.Combine(XmlCommentTests.RepoRoot, "src", "ZapretTr.App", "ViewModels", "MainViewModel.cs"));
+        var app = File.ReadAllText(IoPath.Combine(XmlCommentTests.RepoRoot, "src", "ZapretTr.App", "App.xaml.cs"));
+
+        // Yalnizca tanimi: baska bir cagri yeri yok. Guncelleme sorgusu da ayni sebeple
+        // (testlerde GitHub'a gercek sorgu, saatlik sinirin tukenmesi) acilista.
+        foreach (var ad in new[] { "DeleteOldUpdatePackagesAsync", "CheckForUpdateAsync" })
+        {
+            Assert.Single(System.Text.RegularExpressions.Regex.Matches(vm, @"\b" + ad + @"\("));
+            Assert.Contains(ad + "()", app, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Pencere_OnStartup_icinde_kuruluyor()
     {
         // StartupUri kaldirilip pencere kurulmazsa uygulama hic acilmaz; bu test

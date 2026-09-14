@@ -40,19 +40,42 @@ public sealed class MainWindowSmokeTests
             // pencerede "Çıkış", "Ayrıntılar" ve alt bilgi yine ekrandan tasar
             // (0.1.21'de gercek kurulumda olculdu). Panelin davranisi
             // SigdirmaPaneliTests'te; burada XAML'in onu kullandigi sabitleniyor.
+            // Gunluk, tema dugmesiyle birlikte bir Grid'in icinde.
             if (window.Content is not SigdirmaPaneli panel
                 || panel.Children.Count != 3
                 || panel.Children[0] is not ScrollViewer
-                || panel.Children[1] is not Expander)
+                || panel.Children[1] is not Grid gunlukSatiri
+                || !gunlukSatiri.Children.OfType<Expander>().Any())
             {
                 throw new InvalidOperationException(
-                    "Pencerenin kok yerlesimi SigdirmaPaneli [ScrollViewer, Expander, alt bilgi] degil.");
+                    "Pencerenin kok yerlesimi SigdirmaPaneli [ScrollViewer, Grid(Expander, tema), alt bilgi] degil.");
+            }
+
+            // KOYU TEMA DA KURULABILMELI. Tema sozlugunde eksik bir anahtar ya da
+            // bozuk bir sablon ancak tema uygulanip yerlesim yeniden hesaplanirken
+            // patlar -- derleme de acik temadaki kosum da bunu gormez.
+            ThemeManager.Apply(AppTheme.Dark);
+            window.UpdateLayout();
+            window.Measure(new Size(440, 720));
+            window.Arrange(new Rect(0, 0, 440, 720));
+
+            if (Application.Current.TryFindResource("ThemeName") as string != "Dark")
+            {
+                throw new InvalidOperationException("Koyu tema sozlugu uygulanmadi.");
+            }
+
+            ThemeManager.Apply(AppTheme.Light);
+            window.UpdateLayout();
+
+            if (Application.Current.TryFindResource("ThemeName") as string != "Light")
+            {
+                throw new InvalidOperationException("Acik temaya geri donulmedi.");
             }
 
             // Dugmeler AYNI pencerede sinaniyor: bir surecte yalnizca tek bir WPF
             // Application olabildigi icin her kontrole ayri test sinifi acmak
             // kosumu kilitliyordu.
-            foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir", "Tüm Ayarları Sıfırla", "Çıkış" })
+            foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir", "Tüm Ayarları Sıfırla", "Çıkış", "tema" })
             {
                 var dugme = DugmeyiBul(window, etiket)
                             ?? throw new InvalidOperationException(

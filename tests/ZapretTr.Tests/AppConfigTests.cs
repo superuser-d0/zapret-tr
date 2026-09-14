@@ -65,6 +65,20 @@ public sealed class AppConfigTests
     }
 
     [Fact]
+    public void Tema_tercihi_yaziliyor_ve_eski_dosyada_secilmemis_sayiliyor()
+    {
+        var json = JsonSerializer.Serialize(new AppConfig { Theme = "dark" }, CoreJsonContext.Default.AppConfig);
+
+        using var belge = JsonDocument.Parse(json);
+        Assert.Equal("dark", belge.RootElement.GetProperty("theme").GetString());
+
+        // Alan yoksa null: uygulama Windows'un ayarina uyar. "light" okunsaydi koyu
+        // Windows kullanan herkes guncellemeden sonra acik temaya kilitlenirdi.
+        const string eski = """{"selectedIspId":"turk-telekom","secureDnsEnabled":true}""";
+        Assert.Null(JsonSerializer.Deserialize(eski, CoreJsonContext.Default.AppConfig)!.Theme);
+    }
+
+    [Fact]
     public void Eski_yapilandirmada_alan_yoksa_duraklatilmamis_sayilir()
     {
         // 0.1.20 ve oncesinin yazdigi dosya. Alan yokken "duraklatilmis" saymak,

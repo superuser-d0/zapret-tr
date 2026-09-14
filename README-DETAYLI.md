@@ -166,13 +166,31 @@ kurulumu başlatır. Ayarlarınız ve doğrulanmış stratejileriniz korunur. Ye
 varsa uygulama açılışta zaten haber verir.
 
 **Uygulama internete bir şey gönderiyor mu?** Ölçüm sonuçları, seçtiğiniz strateji ve
-raporlar **yalnızca diske** yazılır. Kendiliğinden yapılan tek istek güncelleme
-kontrolüdür: açılışta GitHub'a "en son sürüm ne" diye sorulur. Gönderilen başka hiçbir
-şey yok — ne hattınız, ne stratejiniz, ne ölçüm sonucunuz. ("Hata Bildir" düğmesi de
-GitHub'a gider ama yalnızca **siz bastığınızda**, ve tarayıcıda yalnızca formu açar:
-göndermeye siz karar verirsiniz.) İstemezseniz
+raporlar **yalnızca diske** yazılır; ne hattınız, ne stratejiniz, ne ölçüm sonucunuz bir yere
+gönderilir. Uygulamanın **kendiliğinden** yaptığı tek istek güncelleme kontrolüdür: açılışta
+GitHub'a "en son sürüm ne" diye sorulur.
+
+Bir düğmeye bastığınızda ya da koruma çalışırken ise şu bağlantılar kurulur:
+
+- **Parametre testi:** test hedeflerine bağlanır (discord.com, example.com,
+  stun.l.google.com gibi; tam liste `profiles/probe-targets.json`). Şifreli DNS açıksa bu
+  adresler Cloudflare'e (`cloudflare-dns.com`) ya da Google'a (`dns.google`) şifreli olarak
+  sorulur.
+- **Servis sağlayıcı "Bilmiyorum" seçiliyse:** hattınızı tanımak için genel IP adresiniz önce
+  `ipinfo.io`'ya (şifreli) sorulur, cevap gelmezse `ip-api.com`'a. **ip-api şifresiz (HTTP)
+  çalışır**: servis sağlayıcınız bu sorguyu görebilir. Servis sağlayıcınızı listeden kendiniz
+  seçerseniz bu sorgu hiç yapılmaz.
+- **Şifreli DNS açıkken:** dnscrypt-proxy imzalı DNS sunucu listesini GitHub'dan ve
+  `download.dnscrypt.info`'dan indirir; bu iki adresi bulmak için ilk sorgu `9.9.9.9` ve
+  `1.1.1.1`'e şifresiz gider. Sonrasında bütün DNS sorgularınız, kayıt tutmadığını ve
+  filtrelemediğini beyan eden açık DNS sunucularına **şifreli** gider. Yani hangi adresleri
+  açtığınızı servis sağlayıcınız değil o DNS sunucusu görür.
+- **"İndir ve Kur"** paketi GitHub'dan indirir. **"Hata Bildir"** tarayıcıda GitHub formunu
+  açar; göndermeye siz karar verirsiniz.
+
 `%ProgramData%\ZapretTR\config.json` içindeki `updateCheckEnabled` değerini `false`
-yapın; uygulama o zaman hiçbir ağ isteği yapmaz.
+yaparsanız uygulama kendiliğinden hiçbir istek yapmaz. Yukarıdakiler yalnızca siz ilgili
+düğmeye bastığınızda ya da korumayı açtığınızda olur.
 
 **Bilgisayarımı yavaşlatır mı, oyunda FPS düşer mi?** Koruma çalışırken `winws` 10 MB bellek
 ve makinenin **%0,2'sinden azını** kullanıyor; çekirdek sürücüsünün DPC/kesme süresinde ölçülebilir
@@ -227,18 +245,6 @@ AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
 
 ### Discord
 
-### Pencereyi kapatınca ne oluyor
-
-**X düğmesi korumayı kapatmaz.** Uygulama saat yanındaki bildirim alanına iner;
-`winws` ve şifreli DNS çalışmaya devam eder. Pencereyi geri getirmek için simgeye
-çift tıklayın.
-
-**Tamamen kapatmak için Çıkış düğmesini** kullanın (ya da simgeye sağ tıklayıp
-Çıkış). O yol koruma açıksa `winws`i durdurur ve sistem DNS ayarını geri alır.
-
-Otomatik başlatma servisi kuruluysa uygulamayı kapatmanız zaten korumayı etkilemez:
-servis bağımsız çalışır.
-
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
 denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
 çünkü sesten çok daha ağır bir medya akışı.
@@ -251,6 +257,18 @@ Sizde ses **çalışmıyorsa** dürüst cevap şu: o durum için doğrulanmış 
 size denenmemiş bir şey uygulamaz. Sebebi teknik — Discord'un ses yolu kendi IP keşif
 protokolünü kullanıyor ve sunucu adresi ancak kimlik doğrulaması yapılmış bir ses oturumundan
 alınabiliyor. Dolayısıyla dışarıdan ölçemiyoruz.
+
+### Pencereyi kapatınca ne oluyor
+
+**X düğmesi korumayı kapatmaz.** Uygulama saat yanındaki bildirim alanına iner;
+`winws` ve şifreli DNS çalışmaya devam eder. Pencereyi geri getirmek için simgeye
+çift tıklayın.
+
+**Tamamen kapatmak için Çıkış düğmesini** kullanın (ya da simgeye sağ tıklayıp
+Çıkış). O yol koruma açıksa `winws`i durdurur ve sistem DNS ayarını geri alır.
+
+Otomatik başlatma servisi kuruluysa uygulamayı kapatmanız zaten korumayı etkilemez:
+servis bağımsız çalışır.
 
 ---
 

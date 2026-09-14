@@ -24,6 +24,12 @@ public static class UpdateDownloader
     private const string DownloadBase =
         "https://github.com/superuser-d0/zapret-tr/releases/download";
 
+    /// <summary>Yalnizca bu adla eslesen dosyalar silinir; klasordeki baska hicbir seye dokunulmaz.</summary>
+    private const string InstallerPattern = "ZapretTR-Setup-*.exe";
+
+    /// <summary>Guncelleme paketlerinin indirildigi klasor.</summary>
+    public static string DefaultDirectory => Path.Combine(Path.GetTempPath(), "ZapretTR-guncelleme");
+
     /// <summary>Kurulum paketini indirir; ozet tutmazsa hata verir.</summary>
     /// <returns>Indirilen dosyanin tam yolu.</returns>
     public static async Task<string> DownloadAsync(
@@ -39,6 +45,10 @@ public static class UpdateDownloader
         var baseUrl = $"{DownloadBase}/v{version}";
 
         Directory.CreateDirectory(targetDirectory);
+
+        // Oncekiler artik gereksiz: ya kuruldular ya da yerlerine bu gelecek.
+        DeleteOldInstallers(targetDirectory);
+
         var target = Path.Combine(targetDirectory, fileName);
 
         using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
@@ -135,6 +145,55 @@ public static class UpdateDownloader
         return Convert.ToHexString(hash).ToLower(CultureInfo.InvariantCulture);
     }
 
+    /// <summary>Klasordeki eski kurulum paketlerini siler.</summary>
+    /// <remarks>
+    /// Guncelleme indirdigi paketi hic silmiyordu. 0.1.22 ile gercek bir makinede
+    /// olculdu: <c>%TEMP%\ZapretTR-guncelleme</c> icinde 0.1.16'dan 0.1.22'ye alti
+    /// paket, yaklasik 330 MB. Her guncelleme 55 MB daha ekliyordu.
+    ///
+    /// Paket kurulum bitene kadar silinemez: calisan kurulum kendi dosyasini
+    /// kilitliyor. Kilitli dosya atlanir ve sayilir; cagiran sonra tekrar deneyebilir.
+    /// Eslesmeyen dosyalara dokunulmaz -- kullanici klasore baska bir sey
+    /// koyduysa o bizim silecegimiz bir sey degil.
+    /// </remarks>
+    public static InstallerCleanupResult DeleteOldInstallers(string directory)
+    {
+        var silinen = 0;
+        var atlanan = 0;
+        var bayt = 0L;
+
+        if (!Directory.Exists(directory))
+        {
+            return new InstallerCleanupResult(0, 0, 0);
+        }
+
+        foreach (var dosya in Directory.EnumerateFiles(directory, InstallerPattern, SearchOption.TopDirectoryOnly))
+        {
+            // Ikinci guvence. .NET 8'in deseni ".exe_" gibi uzantilari eslestirmiyor
+            // (olculdu: bu kontrol kaldirilinca da test geciyor), ama Win32'nin eski
+            // "*.exe" davranisi eslestiriyordu. Silme isleminde desen motoruna
+            // guvenmek yerine uzanti birebir karsilastiriliyor.
+            if (!dosya.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                var boyut = new FileInfo(dosya).Length;
+                File.Delete(dosya);
+                silinen++;
+                bayt += boyut;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                atlanan++;
+            }
+        }
+
+        return new InstallerCleanupResult(silinen, bayt, atlanan);
+    }
+
     private static void TryDelete(string path)
     {
         try
@@ -148,3 +207,9 @@ public static class UpdateDownloader
         }
     }
 }
+
+/// <summary>Eski kurulum paketi temizliginin sonucu.</summary>
+/// <param name="Deleted">Silinen paket sayisi.</param>
+/// <param name="Bytes">Bosaltilan alan.</param>
+/// <param name="Skipped">Kilitli ya da erisilemedigi icin silinemeyen paket sayisi.</param>
+public sealed record InstallerCleanupResult(int Deleted, long Bytes, int Skipped);

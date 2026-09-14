@@ -63,6 +63,15 @@ public sealed class AppConfig
     /// </remarks>
     [JsonPropertyName("servicePaused")]
     public bool ServicePaused { get; set; }
+
+    /// <summary>Arayuz temasi: "dark", "light" ya da null (Windows'un ayarina uy).</summary>
+    /// <remarks>
+    /// Metin, bool degil: null "kullanici hic secmedi" demek ve o durumda uygulama
+    /// Windows'un acik/koyu ayarini izliyor. bool olsaydi eski yapilandirmalar
+    /// "acik temayi secmis" gibi okunurdu.
+    /// </remarks>
+    [JsonPropertyName("theme")]
+    public string? Theme { get; set; }
 }
 
 /// <summary>

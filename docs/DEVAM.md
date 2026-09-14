@@ -1176,7 +1176,7 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 oturumu: görünür eksikler (0.1.22)". Bu başlığın hemen altındaki ilk bölüm
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 ikinci yarı: 0.1.22 yayını ve sonrası (yayınlanmamış)". Bu başlığın hemen altındaki ilk bölüm
 > 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
 
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
@@ -1742,3 +1742,61 @@ Commit, açıklamalı tag ve yayın kullanıcıda. DEVAM'a "yayınlandı" yazmad
 ```bash
 gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
 ```
+
+#### 2026-09-14 ikinci yarı: 0.1.22 yayını ve sonrası (yayınlanmamış)
+
+**Yayın: v0.1.22 (ölçüldü).** `releases/latest` = `v0.1.22`, yayın anı 12:12:46Z, commit
+`6873ae8`. CI'da üç akış yeşil, 275/275. Taslakta paket indirilmedi (sayaç bozulmasın diye);
+iki özet yayın akışının günlüğündeki `SHA256 ozetleri` adımıyla GitHub `digest` alanı
+karşılaştırılarak doğrulandı.
+
+**Tek tıkla güncelleme gerçekten koştu:** 0.1.21 → 0.1.22 uygulama içinden. İndirilen
+paketin SHA256'sı yayındakiyle aynı, kurulu `0.1.22+6873ae8`, DNS DHCP'ye döndü.
+**İndirme sayacı:** uygulama içi indirme sayılıyor, ama GitHub sayacı ~10 dakika geç
+güncelliyor (indirme 15:13, `Setup=1`/`SHA256SUMS=1` 15:23'te göründü).
+
+**Yapılan (CHANGELOG [Yayınlanmamış]):**
+- Eski güncelleme paketleri siliniyor (açılışta ve yeni indirmeden önce). Gerçek pencerede
+  günlükte "Eski güncelleme paketleri silindi: 1 dosya, 0 MB" görüldü.
+- Koyu tema. Kullanıcı gerçek pencerede onayladı, başlık çubuğu dahil. Tercih `config.json`
+  `theme`.
+- Gizlilik: ISS tespitinde önce `ipinfo.io` (HTTPS), rehberde bütün dış bağlantılar.
+  `NetworkDisclosureTests`, koddaki her dış adresin rehberde geçtiğini denetliyor.
+- Discord ses/STUN: günlük "UDP (STUN)" diyor, kayıt notu sesi doğrulamadığını söylüyor.
+- Rehberde boş kalan "### Discord" başlığının cevabı yerine taşındı.
+- **Başlat kilitlenmesi** (kullanıcı "donuyor" dedi; olay günlüğünde iki AppHang, donan
+  kopyadan sahipsiz winws/dnscrypt kalmıştı). Ayrı denemede yeniden üretildi; düzeltme
+  `WinwsRunner.WaitForEarlyExit` ve `Append` → `BeginInvoke`. Kullanıcının yaşadığı donmanın
+  tam bu yol olduğu KANITLANMADI; sahipsiz winws varken Başlat gerçek pencerede denenmedi.
+- "Güncellemeleri Denetle" başarısızlığı pencereyle ve sebebiyle söylüyor (saatlik sınır,
+  zaman aşımı).
+- Kısayola ikinci tıklama açık pencereyi öne getiriyor (`InstanceActivation`). Kullanıcı beş
+  senaryoyu gerçek pencerede denedi, beşi de geçti: X sonrası, arkada kalan, simge durumu,
+  tam ekran, Çıkış sonrası. **Çıkış sonrası senaryoda yönetici izni temizlikten uzun sürdü;
+  "kapanırken tıklama" yolu gerçek pencerede oluşmadı, yalnızca testte sınandı.**
+
+**Testler:** 310/310.
+
+**Tuzaklar (bu yarıda ısırdı):**
+
+- **Görünüm modeli kurucusu testlerde de koşuyor.** Temizlik oraya konunca test paketi
+  geliştiricinin GERÇEK `%TEMP%\ZapretTR-guncelleme` klasörünü boşalttı (altı paket, 15:18).
+  Açılıştaki güncelleme sorgusu da her test kosumunda GitHub'a gidip oturumsuz API sınırını
+  (IP başına saatte 60) tüketiyordu. Dışarıya dokunan açılış işleri artık `App.OnStartup`'ta;
+  `AppStartupTests` bunu sabitliyor.
+- **`WaitHandle.WaitAll` STA iş parçacığında desteklenmiyor.** Kilitlenme düzeltmesinin ilk
+  hâli donmayı çökmeye çeviriyordu; `EarlyExitDeadlockTests` yakaladı.
+- **`dotnet test --no-build` son derlemeyi kullanır.** Mutasyon denemesinden sonra dosya geri
+  yüklenip test projesi derlenmeden koşulunca bozuk sürüm çalıştı. "Açıklanamayan kesinti"
+  sanıldı; `testhost.exe` çökmesi olay günlüğünde mutasyonun izini taşıyordu. Mutasyondan sonra
+  mutlaka derleyerek koş.
+- **Toplam test sayısını kontrol et.** Çöken koşumda `grep "Passed!"` yine "Passed" satırı
+  bastı (291/298). `--logger "console;verbosity=normal"` ile `Total tests:` satırına bak.
+- **Git Bash'te `/tmp` Windows Python'u için yok.** `python -c` içindeki `/tmp/...` yolu
+  `C:\tmp`'ye gidiyor; `$TEMP` kullan.
+- **Dinleyici iş parçacığının tutamaçları kapatılmadan önce iş parçacığı beklenmeli**;
+  yoksa `ObjectDisposedException` süreci düşürüyor (mutasyonla 3/3).
+
+**Makine durumu (ölçüldü, 17:07):** yerel paket kurulu (`0.1.22+6873ae8`, commit'lenmemiş
+değişikliklerle). ZapretTR açık, koruma kapalı; winws/dnscrypt yok, DNS DHCP. Servis yok.
+`config.json` `theme: dark`.

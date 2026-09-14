@@ -41,9 +41,22 @@ public sealed record IspDetectionResult(IspIdentity? Identity, IReadOnlyList<Isp
 ///
 /// Gonderilen tek bilgi baglantinin kendi genel IP adresi, ki zaten baglanilan
 /// her sunucu onu goruyor. Baska hicbir sey gonderilmiyor.
+///
+/// SIRA ONEMLI: once HTTPS olan ipinfo.io. Eskiden once ip-api.com soruluyordu ve
+/// o istek SIFRESIZ gidiyor (ucretsiz planinda HTTPS yok): servis saglayici,
+/// kullanicinin "hangi servis saglayicidayim" sorgusunu duz metin olarak goruyordu.
+/// ip-api yalnizca yedek; README-DETAYLI "Sik sorulanlar"da bu yazili. Kullanici
+/// servis saglayicisini listeden secerse bu sinif hic calismiyor.
 /// </remarks>
 public sealed class IspDetector : IDisposable
 {
+    /// <summary>Sorgu kaynaklari, sorulma sirasiyla. Ilki sifreli olmali.</summary>
+    public static IReadOnlyList<string> QueryOrder { get; } =
+    [
+        "https://ipinfo.io/json",
+        "http://ip-api.com/json/?fields=status,isp,org,as,asname",
+    ];
+
     private readonly HttpClient _client;
 
     public IspDetector(TimeSpan? timeout = null)
@@ -70,13 +83,13 @@ public sealed class IspDetector : IDisposable
     /// <summary>Baglantinin ASN ve kurulus adini bulur; hicbir kaynak cevap vermezse null.</summary>
     public async Task<IspIdentity?> IdentifyAsync(CancellationToken cancellationToken = default)
     {
-        var identity = await TryIpApiAsync(cancellationToken).ConfigureAwait(false);
+        var identity = await TryIpInfoAsync(cancellationToken).ConfigureAwait(false);
         if (identity is { IsKnown: true })
         {
             return identity;
         }
 
-        return await TryIpInfoAsync(cancellationToken).ConfigureAwait(false);
+        return await TryIpApiAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<IspIdentity?> TryIpApiAsync(CancellationToken cancellationToken)
@@ -84,7 +97,7 @@ public sealed class IspDetector : IDisposable
         try
         {
             var response = await _client.GetFromJsonAsync(
-                "http://ip-api.com/json/?fields=status,isp,org,as,asname",
+                QueryOrder[1],
                 ProberJsonContext.Default.IpApiResponse,
                 cancellationToken).ConfigureAwait(false);
 
@@ -114,7 +127,7 @@ public sealed class IspDetector : IDisposable
         try
         {
             var response = await _client.GetFromJsonAsync(
-                "https://ipinfo.io/json", ProberJsonContext.Default.IpInfoResponse, cancellationToken).ConfigureAwait(false);
+                QueryOrder[0], ProberJsonContext.Default.IpInfoResponse, cancellationToken).ConfigureAwait(false);
 
             if (response is null)
             {

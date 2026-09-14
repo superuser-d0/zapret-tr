@@ -99,6 +99,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         SaveReportCommand = new RelayCommand(SaveReportAsync);
         ReportIssueCommand = new RelayCommand(ReportIssueAsync);
         UpdateCommand = new RelayCommand(UpdateAsync, () => !IsBusy);
+        ToggleThemeCommand = new RelayCommand(ToggleThemeAsync);
 
         try
         {
@@ -156,7 +157,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // Beklemiyoruz: ag yavassa uygulamanin acilisini geciktirmesin.
             NotifyIfVersionChanged();
 
-            _ = CheckForUpdateAsync();
 
             var missing = _vendor.FindMissingFiles();
             if (missing.Count > 0)
@@ -188,6 +188,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     // --- Komutlar ---------------------------------------------------------------
 
     public RelayCommand StartCommand { get; }
+
+    /// <summary>Acik ve koyu tema arasinda gecer.</summary>
+    public RelayCommand ToggleThemeCommand { get; }
+
+    /// <summary>Tema dugmesinin yazisi: gecilecek temayi soyler.</summary>
+    public string ThemeButtonText => ThemeManager.Current == AppTheme.Dark ? "Açık tema" : "Koyu tema";
     public RelayCommand PauseCommand { get; }
     public RelayCommand TestCommand { get; }
     public RelayCommand CancelTestCommand { get; }
@@ -811,6 +817,91 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    /// <summary>Temayi degistirir ve tercihi kaydeder.</summary>
+    /// <remarks>
+    /// Kayit, SaveSelection gibi mevcut dosyanin USTUNE yapiliyor: diger alanlar
+    /// korunmali. Kaydedilemezse tema yine degisiyor; yalnizca bir sonraki acilista
+    /// hatirlanmiyor.
+    /// </remarks>
+    private Task ToggleThemeAsync()
+    {
+        var yeni = ThemeManager.Current == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
+        ThemeManager.Apply(yeni);
+
+        // Durum bandinin rengi donusturucuyle bir kez aliniyor; tema degisince
+        // yeniden sorulmazsa band eski temanin renginde kalir.
+        Notify(nameof(StatusBrushKey));
+        Notify(nameof(ThemeButtonText));
+
+        try
+        {
+            var config = ConfigStore.Load();
+            config.Theme = ThemeManager.ToConfigValue(yeni);
+            ConfigStore.Save(config);
+        }
+        catch (Exception ex)
+        {
+            Append("Tema tercihi kaydedilemedi: " + ex.Message, isError: true);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Onceki guncellemelerden kalan kurulum paketlerini siler.</summary>
+    /// <remarks>
+    /// Acilista kosuyor, cunku guncellemeden hemen sonraki acilis tam da paketin
+    /// artik gereksiz oldugu an. Ama o an kurulum hala bitmemis olabiliyor: uygulamayi
+    /// kurulumun son sayfasi baslatiyor ve kurulum kendi dosyasini birkac saniye daha
+    /// kilitli tutuyor. Silinemeyen varsa bir kez daha deneniyor.
+    ///
+    /// Guncelleme o arada basladiysa (IsBusy) dokunulmuyor: indirilmekte ya da
+    /// calistirilmak uzere olan paketi silmek guncellemeyi bozardi.
+    ///
+    /// KURUCUDAN CAGRILMIYOR; App.OnStartup cagiriyor. Kurucudan cagrildiginda test
+    /// paketi (pencere ve gorunum modelini kuran duman testleri) gelistiricinin
+    /// GERCEK %TEMP%\ZapretTR-guncelleme klasorunu bosaltti -- 2026-09-14'te
+    /// bu makinede alti paket boyle silindi. Silen bir islem yalnizca uygulama
+    /// gercekten acildiginda kosmali.
+    /// </remarks>
+    public async Task DeleteOldUpdatePackagesAsync()
+    {
+        try
+        {
+            for (var deneme = 0; deneme < 2; deneme++)
+            {
+                if (deneme > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30)).ConfigureAwait(true);
+                }
+
+                if (IsBusy)
+                {
+                    return;
+                }
+
+                var sonuc = await Task
+                    .Run(() => UpdateDownloader.DeleteOldInstallers(UpdateDownloader.DefaultDirectory))
+                    .ConfigureAwait(true);
+
+                if (sonuc.Deleted > 0)
+                {
+                    Append($"Eski güncelleme paketleri silindi: {sonuc.Deleted} dosya, "
+                           + $"{sonuc.Bytes / (1024 * 1024)} MB.");
+                }
+
+                if (sonuc.Skipped == 0)
+                {
+                    return;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Temizlik; basarisiz olmasi uygulamayi etkilemez. Paketler bir sonraki
+            // acilista ya da guncellemede yine denenir.
+        }
+    }
+
     /// <summary>Yayinlanmis daha yeni bir surum var mi diye bakar.</summary>
     /// <remarks>
     /// Gunde birkac surum cikabiliyor ve her seferinde kullanicilara tek tek
@@ -819,7 +910,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// yalnizca "en son surum ne" sorusu gidiyor, baska hicbir sey degil.
     /// Ayardan kapatilabilir.
     /// </remarks>
-    private async Task CheckForUpdateAsync()
+    /// <remarks>
+    /// KURUCUDAN CAGRILMIYOR; App.OnStartup cagiriyor. Kurucudan cagrildiginda test
+    /// paketindeki her pencere ve gorunum modeli kurulumu GitHub'a gercek bir sorgu
+    /// atiyordu; GitHub oturumsuz sorgulari IP basina saatte 60 ile sinirliyor ve
+    /// test kosumlari ayni makinedeki uygulamanin sinirini da tuketiyordu.
+    /// </remarks>
+    public async Task CheckForUpdateAsync()
     {
         try
         {
@@ -867,14 +964,28 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IsBusy = true;
             Append("Güncellemeler denetleniyor...");
 
-            var latest = await UpdateChecker
-                .GetLatestVersionAsync(TimeSpan.FromSeconds(15))
+            var sorgu = await UpdateChecker
+                .CheckLatestAsync(TimeSpan.FromSeconds(15))
                 .ConfigureAwait(true);
 
-            if (latest is null)
+            if (sorgu.Version is not { } latest)
             {
-                Append("Sürüm bilgisi alınamadı (ağ erişimi yok ya da GitHub cevap vermedi).",
-                    isError: true);
+                var sebep = sorgu.Failure ?? "Sürüm bilgisi alınamadı.";
+                Append("Güncellemeler denetlenemedi: " + sebep, isError: true);
+
+                // PENCEREYLE SOYLE. Eskiden yalnizca gunluge yaziliyordu; Ayrintilar
+                // kapaliyken dugmeye basan kullanici ekranda hicbir degisiklik
+                // gormuyor ve dugmenin bozuk oldugunu dusunuyordu (2026-09-14,
+                // gercek kullanici). "Guncel" sonucu zaten pencereyle soyleniyordu,
+                // basarisizlik soylenmiyordu.
+                MessageBox.Show(
+                    "Güncellemeler denetlenemedi." + Environment.NewLine + Environment.NewLine +
+                    sebep + Environment.NewLine + Environment.NewLine +
+                    "Yeni sürüm olup olmadığına tarayıcıdan da bakabilirsiniz:" + Environment.NewLine +
+                    UpdateChecker.ReleasesPage,
+                    "Güncelleme",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
@@ -918,7 +1029,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             Append($"{latest} indiriliyor...");
 
-            var klasor = Path.Combine(Path.GetTempPath(), "ZapretTR-guncelleme");
+            var klasor = UpdateDownloader.DefaultDirectory;
             var sonOnluk = -1;
             var ilerleme = new Progress<int>(yuzde =>
             {
@@ -949,6 +1060,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             Append("Güncelleme başarısız: " + ex.Message, isError: true);
             Append("Yayın sayfasından elle indirebilirsiniz: " + UpdateChecker.ReleasesPage);
+
+            // Indirme ya da ozet dogrulamasi basarisizsa da kullanici bunu gormeli;
+            // yoksa "İndir ve Kur"a basti ve hicbir sey olmadi.
+            MessageBox.Show(
+                "Güncelleme yapılamadı." + Environment.NewLine + Environment.NewLine +
+                ex.Message + Environment.NewLine + Environment.NewLine +
+                "Paketi yayın sayfasından elle indirebilirsiniz:" + Environment.NewLine +
+                UpdateChecker.ReleasesPage,
+                "Güncelleme",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
@@ -2427,6 +2549,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append($"   [+] {SectionLabel(winner.Section)}: {winner.Args}");
             Append($"       açılan: {string.Join(", ", winner.VerifiedCategories)}");
 
+            if (winner.Section == StrategySection.DiscordVoice)
+            {
+                Append("       not: bu, UDP yolunun açıldığını gösterir; Discord sesli görüşmenin");
+                Append("       çalıştığını doğrulamaz. Sesi ancak Discord'da bir görüşmeyle deneyebilirsiniz.");
+            }
+
             // YALNIZCA tcp443 kazanani secim listesine girer. Bu liste HTTPS
             // strateji listesi; diger bolumlerin kazananlari kullanicinin sectigi
             // sey degil, RuntimeSelection'in profilden otomatik ekledigi sey.
@@ -2740,16 +2868,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         else
         {
-            Application.Current.Dispatcher.Invoke(Add);
+            // BEKLEMEDEN. Invoke idi ve bir kilitlenmenin yarisiydi: arayuz is
+            // parcacigi bir surecin ciktisinin bitmesini beklerken ciktiyi okuyan
+            // is parcacigi da burada arayuzu bekliyordu. Gerekcesi
+            // WinwsRunner.WaitForEarlyExit'te. Sira korunuyor: BeginInvoke ayni
+            // oncelikteki isleri geldigi sirayla calistiriyor.
+            Application.Current.Dispatcher.BeginInvoke(Add);
         }
     }
 
-    private static string SectionLabel(StrategySection section) => section switch
+    /// <summary>Bolumun kullaniciya gosterilen adi.</summary>
+    /// <remarks>
+    /// discord-voice icin "Discord ses" yaziyordu. Olculen sey ise STUN cevabi, yani
+    /// UDP yolu; ad, olcumun kanitlamadigi bir seyi vaat ediyordu. Gerekcesi
+    /// <see cref="IspProfile.LearnedNote"/>'ta.
+    /// </remarks>
+    public static string SectionLabel(StrategySection section) => section switch
     {
         StrategySection.Tcp80 => "HTTP",
         StrategySection.Tcp443 => "HTTPS",
         StrategySection.Quic => "QUIC",
-        StrategySection.DiscordVoice => "Discord ses",
+        StrategySection.DiscordVoice => "UDP (STUN)",
         _ => section.ToString(),
     };
 

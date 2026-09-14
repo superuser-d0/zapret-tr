@@ -131,6 +131,19 @@ public sealed class IspProfile
     /// aday dogrulanmissa yerine gecer, yoksa yeni aday olarak eklenir -- genel
     /// aramada bulunan kazananlar bu ikinci yoldan giriyor.
     /// </remarks>
+    /// <summary>Ogrenilmis adayin notu: olcumun neyi gosterdigini abartmadan soyler.</summary>
+    /// <remarks>
+    /// discord-voice bolumu STUN ile olculuyor. STUN cevabi UDP yolunun acik oldugunu
+    /// gosteriyor, Discord sesli gorusmenin calistigini DEGIL: ses sunucusunun adresi
+    /// ancak kimligi dogrulanmis bir ses oturumundan aliniyor ve disaridan olculemiyor.
+    /// Eskiden bu bolumun kazanani da "parametre testiyle dogrulandi" diye
+    /// kaydediliyordu. Kaynak yine Verified kaliyor, cunku olcumu gecti ve calisma
+    /// zamaninda olcum gecmemis adaylardan once gelmeli; abartan yalnizca metindi.
+    /// </remarks>
+    public static string LearnedNote(StrategySection section) => section == StrategySection.DiscordVoice
+        ? "Bu baglantida STUN ile olculdu: UDP yolu acik. Discord sesli gorusmenin calistigi ayrica dogrulanmadi."
+        : "Bu baglantida parametre testiyle dogrulandi.";
+
     public IspProfile WithLearned(IEnumerable<LearnedCandidate> learned)
     {
         var mine = learned
@@ -161,7 +174,7 @@ public sealed class IspProfile
                 Source = CandidateSource.Verified,
                 VerifiedFor = entry.VerifiedFor,
                 LastVerified = entry.LastVerified,
-                Note = "Bu baglantida parametre testiyle dogrulandi.",
+                Note = LearnedNote(section),
             };
 
             var existingIndex = candidates.FindIndex(c =>

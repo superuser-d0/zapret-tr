@@ -37,6 +37,9 @@ public partial class MainWindow : Window
         Height = Math.Max(MinHeight, Math.Min(Height, SystemParameters.WorkArea.Height));
         Closing += OnClosingAsync;
         Loaded += OnLoaded;
+
+        // Baslik cubugu Windows'un; tutamac ancak burada var.
+        SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -48,6 +51,39 @@ public partial class MainWindow : Window
         {
             viewModel.ExitRequested += (_, _) => Cik();
         }
+    }
+
+    /// <summary>
+    /// Kisayola ikinci kez tiklandiginda pencereyi one getirir (InstanceActivation).
+    /// </summary>
+    /// <remarks>
+    /// Kapanmakta olan pencere GOSTERILMEZ: WPF kapanma sirasinda Show'u istisnayla
+    /// reddediyor ("Cannot set Visibility ... while a Window is closing"). O durumda
+    /// ikinci ornek bu ornegin cikmasini bekleyip kendisi aciliyor.
+    /// </remarks>
+    public ShowOutcome BringToFront()
+    {
+        if (_exitRequested || _cleanupRan)
+        {
+            return ShowOutcome.Closing;
+        }
+
+        if (_tray is not null)
+        {
+            _tray.Goster();
+        }
+        else
+        {
+            Show();
+            if (WindowState == WindowState.Minimized)
+            {
+                WindowState = WindowState.Normal;
+            }
+
+            Activate();
+        }
+
+        return ShowOutcome.Shown;
     }
 
     /// <summary>Gercek cikis: temizlik kossun ve uygulama kapansin.</summary>
