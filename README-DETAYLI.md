@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/ikon.png" alt="ZapretTR simgesi" width="96">
+
 # ZapretTR
 
 **Türkiye'deki DPI engellemelerini aşan parametreyi sizin yerinize bulan Windows uygulaması.**

@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/ikon.png" alt="ZapretTR simgesi" width="96">
+
 # ZapretTR
 
 **Türkiye'deki erişim engellerini aşan ayarı sizin hattınızda ölçerek bulan Windows uygulaması.**
