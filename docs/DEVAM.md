@@ -226,11 +226,60 @@ sürücüsünün DPC/kesme süresi.
 
 ## Yapılacaklar
 
+### 0. Kararlı sürüme (1.0.0) giden yol — ÖZELLİK DONDURULDU (2026-09-14)
+
+**Kullanıcı kararı:** bundan sonra bir problem çıkmadıkça yeni özellik yok. Sürüm planı:
+
+- **0.2.0:** 0.1.22'den sonra biriken işler (CHANGELOG `[Yayınlanmamış]`: koyu tema,
+  kısayolda açık pencere öne gelir, Başlat kilitlenmesi, güncelleme hataları pencereyle,
+  eski paket temizliği, gizlilik metni). İçinde yeni özellik olduğu için 0.1.23 değil,
+  0.2.0. Aynı zamanda özellik dondurmanın başladığı sürüm.
+- **0.2.x:** yalnızca hata düzeltmesi. Yeni özellik isteği gelirse 1.0.0'dan sonraya.
+- **1.0.0:** aşağıdaki liste tamamlanınca. 1.0, "davranış ve `config.json` biçimi artık
+  kolay kolay değişmeyecek" sözü: sonraki sürümler eski yapılandırmayı bozmamalı.
+
+**1.0.0 kontrol listesi.** Hiçbiri takvimle kapanmıyor; her biri ölçülerek kapanıyor.
+
+1. **Sakin dönem: en az 2 hafta.** 0.2.0'dan sonra interneti kesen, donduran, çökerten ya
+   da DNS'i bozuk bırakan bir hata çıkmamalı. Böyle bir hata çıkarsa düzeltmenin yayınından
+   itibaren süre SIFIRLANIR. (Bugünkü kilitlenme tam bu sınıftandı.)
+2. **Açık gerçek makine doğrulamaları** (ayrıntıları aşağıdaki madde 1'de):
+   - yeniden başlatmadan sonra DNS bekçisi (madde 1/6),
+   - servis modunda Duraklat → VPN ve karşı deney (madde 1/8),
+   - arkada sahipsiz winws kalmışken Başlat: donmamalı, birkaç saniyede "BAŞLATILAMADI"
+     demeli (0.2.0 düzeltmesi, gerçek pencerede denenmedi),
+   - uygulama "Çıkış" temizliği sürerken kısayola tıklama: yeni kopya öncekinin kapanmasını
+     bekleyip açılmalı. 2026-09-14 denemesinde yönetici izni ekranı temizlikten uzun
+     sürdüğü için bu yol oluşmadı; oluşturmak için izni hemen ver ya da temizliği uzat
+     (koruma açıkken Çıkış).
+   - Takılı sürücü kurtarması (madde 1/7) listede DEĞİL: gerçek hatayı bu makinede üretmek
+     mümkün olmadı. Sahadan gelirse ele alınır; 1.0'ı bekletmez.
+3. **Kapsam kararı.** İki yoldan biri:
+   - Türk Telekom dışında en az bir sabit hatta (Superonline, TurkNet ya da Vodafone)
+     doğrulanmış aday (madde 2 ve 3). Bu, koda değil o hatlardaki kullanıcılara bağlı.
+   - Ya da 1.0 README'de açıkça "Türk Telekom ve Turkcell Mobil'de doğrulandı, diğer
+     hatlarda denenmeye değer adaylar" diye tanımlanır. README bugün de aşağı yukarı
+     bunu söylüyor; karar yazılı hâle getirilmeli.
+4. **Güncelleme yolu bir kez daha:** 0.2.0 → 0.2.x (ya da 1.0.0) uygulama içinden. 0.1.21
+   → 0.1.22 bir kez gerçekten koştu (bu dosyada "ikinci yarı").
+5. **CI uyarısı:** `actions/checkout@v4` ve `actions/setup-dotnet@v4` Node.js 20 hedefliyor,
+   GitHub zorla Node 24'te çalıştırıyor. Şimdilik bir şey bozmuyor; destek tamamen
+   kalkmadan yükseltilmeli. (Hata düzeltmesi sayılır, dondurmayı bozmaz.)
+
+**1.0'ı bekletmeyenler, kararı kullanıcıda:** kod imzası (güven açısından en büyük eksik,
+ama para ve kimlik doğrulaması istiyor), `MainViewModel`'in bölünmesi (bakım borcu,
+kullanıcıya görünmez).
+
+**Bilerek listeden çıkarılan:** IPv6'lı hatta DNS boşaltma (madde 1/3). Kullanıcı kararı
+(2026-09-14): IPv6 Türkiye'de yaygın değil. Kod yolu duruyor ve ölçülmedi; IPv6'lı bir
+hattan "şifreli DNS açık ama engeller geri geldi" bildirimi gelirse İLK bakılacak yer bu.
+
 ### 1. DNS ve kurulum yolunun kalan elle doğrulamaları (0.1.19 + 0.1.20)
 
 **Durum (0.1.20 yayınından sonra):** en ağır kısım kapandı — madde 1 ve 2 yapıldı,
 0.1.20'nin DNS değişiklikleri gerçek kurulum paketiyle 71/71 ölçüldü. Kalanlar
-aşağıda: 3, 4, 5 ve yeni eklenen 6, 7.
+aşağıda: 4, 5'in bir kısmı, 6, 7, 8'in bir kısmı. Madde 3 (IPv6) 2026-09-14'te kapsam
+dışına alındı. 1.0.0 için hangilerinin şart olduğu madde 0'da.
 
 Neden hâlâ elle: sistem DNS'ine dokunan yol **CI'da bilerek hiç koşmuyor** —
 `installer-test.yml` `secureDnsEnabled=false` ile çalışıyor, çünkü açık olsaydı iş
@@ -251,7 +300,8 @@ Elle koşulması gerekenler — şifreli DNS **açık**:
    (`ipconfig /all`, `127.0.0.1` görünmemeli) ve `dns-backup.json` silindi mi.
    `RestoreAsync` artık netsh çıkış kodlarını okuyor ve **başarısızlıkta yedeği
    SİLMİYOR** — bu yolun yanlış tarafa düşmesi kullanıcıyı ad çözemez bırakır.
-3. **Çift yığınlı (IPv6'lı) bir hatta**: yönlendirme sonrası arayüzün IPv6 DNS
+3. **KAPSAM DIŞI (kullanıcı kararı, 2026-09-14: IPv6 Türkiye'de yaygın değil; gerekçesi
+   madde 0'da). Bilgi olarak duruyor.** **Çift yığınlı (IPv6'lı) bir hatta**: yönlendirme sonrası arayüzün IPv6 DNS
    sunucuları boşaldı mı, geri almada geri geldi mi. IPv6 boşaltma hiçbir
    gerçek hatta ölçülmedi; TTNET ölçümlerinde IPv6 DNS yoktu, yani o
    ölçümlerin sessizliği kapsam kanıtı değil. **2026-09-13'te de ölçülemedi:**
@@ -259,10 +309,15 @@ Elle koşulması gerekenler — şifreli DNS **açık**:
    yedekteki bütün `ipv6Addresses` boş. IPv6 veren bir hat gerekiyor.
 4. Kurulum sonrası ilk açılış: üst bant "KORUMA KAPALI — KURULUM YARIM" diyor
    mu ve altında sıradaki adım yazıyor mu (ekran görüntüsü al).
-5. Uygulama açıkken kısayola ikinci kez tıkla: tek örnek kilidi mesajı çıkmalı,
-   ikinci pencere AÇILMAMALI ve birincinin şifreli DNS'i düşmemeli. Bekçi de bu
-   kilide bakarak "arayüz açık mı" kararı veriyor (`DnsGuard.AppInstanceMutexName`),
-   yani bu madde artık iki şeyi birden sınıyor.
+5. **DAVRANIŞ DEĞİŞTİ (0.2.0) — büyük kısmı YAPILDI (2026-09-14).** Kısayola ikinci
+   tıklama artık uyarı göstermiyor, açık pencereyi öne getiriyor (`InstanceActivation`).
+   Kullanıcı gerçek pencerede beş durumu denedi, beşi de geçti: X ile bildirim alanına
+   indirilmiş, başka pencerenin arkasında, simge durumunda, tam ekran (tam ekran kaldı),
+   Çıkış sonrası. İkinci pencere açılmıyor; tek örnek kilidi değişmedi. Bekçi de bu kilide
+   bakarak "arayüz açık mı" kararı veriyor (`DnsGuard.AppInstanceMutexName`).
+   **Kalan:** koruma AÇIKKEN kısayola tıklayınca birincinin şifreli DNS'inin düşmediği
+   ayrıca ölçülmedi (denemede Başlat, tıklamadan sonra basıldı). Bir de "Çıkış temizliği
+   sürerken tıklama" yolu (madde 0).
 6. **Yeniden başlatma — bekçinin açılış tetikleyicisi (0.1.20).** Servis modunda
    yeniden başlat; açılıştan ~1 dk sonra görev çalışmış olmalı
    (`Get-ScheduledTaskInfo "ZapretTR DNS Bekcisi"`, **yükseltilmiş** kabukta — tuzak:
@@ -1176,7 +1231,9 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 ikinci yarı: 0.1.22 yayını ve sonrası (yayınlanmamış)". Bu başlığın hemen altındaki ilk bölüm
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 ikinci yarı: 0.1.22 yayını ve sonrası (yayınlanmamış)".
+> **ÖZELLİK DONDURULDU (2026-09-14):** sonraki sürüm 0.2.0, ardından yalnızca hata
+> düzeltmesi. 1.0.0 kontrol listesi "Yapılacaklar / 0"da. Bu başlığın hemen altındaki ilk bölüm
 > 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
 
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
