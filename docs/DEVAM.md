@@ -1176,7 +1176,7 @@ powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
 ## Makine durumu (son oturum sonu)
 
-> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 oturumu: görünür eksikler (yayınlanmamış)". Bu başlığın hemen altındaki ilk bölüm
+> **GÜNCEL DURUM EN ALTTA:** "2026-09-14 oturumu: görünür eksikler (0.1.22)". Bu başlığın hemen altındaki ilk bölüm
 > 2026-09-07 oturumuna ait; oturumlar kronolojik olarak alta ekleniyor.
 
 **DİKKAT: bu oturum YENİ bir makinede koşuldu.** Önceki oturumların makinesi
@@ -1660,11 +1660,11 @@ veya 0.1.20 → 0.1.21 tek tıkla güncellemeyi sınamak gerekirse yayından kur
 Başlıklar köşeli parantezli, ama 0.1.7 ve sonrası için tanım yok. GitHub bunları
 düz metin gösteriyor; işlev kaybı yok.
 
-### 2026-09-14 oturumu: görünür eksikler (yayınlanmamış)
+### 2026-09-14 oturumu: görünür eksikler (0.1.22)
 
 Kullanıcı "görünür bir eksik var mı" diye sordu. Kurulu 0.1.21'in ekran görüntüleri,
 kod ve GitHub sayfası incelendi. Bulunan 8 maddeden kullanıcı 1-3'ü seçti; dördüncüsü
-kullanıcının kendi gözleminden çıktı. Hepsi CHANGELOG `[Yayınlanmamış]` başlığında.
+kullanıcının kendi gözleminden çıktı. Hepsi CHANGELOG `[0.1.22]` başlığında.
 
 **1. Pencere sığmıyordu.** 440×720 varsayılan pencerede "Çıkış" yarım kalıyor,
 "Ayrıntılar" ve alt bilgi görünmüyordu. Kaydırma yoktu.
@@ -1728,3 +1728,17 @@ yayın çıktısıyla aynı SHA256), elle modda Başlat, varsayılan boyut.
 **Makine durumu (oturum sonu, ölçüldü):** yerel paket kurulu (`0.1.21+a7aa585`,
 commit'lenmemiş değişikliklerle, yeni simge ve pencere). Elle modda koruma açık
 (winws ve dnscrypt 14:41'den beri), servis yok.
+
+**CI (`5d05203`):** derle ve test 275/275, yeni testler dahil (`Depodaki_winws_ikilisinden_surum_okunuyor`
+CI'ın indirdiği gerçek ikiliyle geçti). Kurulum testi yeşil, ISCC yeni simge ve sihirbaz
+resimleriyle derledi.
+
+**0.1.22 yayına hazırlandı:**
+- `Directory.Build.props` 0.1.22'ye çekildi, CHANGELOG `[Yayınlanmamış]` → `[0.1.22]`.
+- `tools/release-notes.ps1 -Version 0.1.22` yerelde notu üretti.
+
+Commit, açıklamalı tag ve yayın kullanıcıda. DEVAM'a "yayınlandı" yazmadan önce ölç:
+
+```bash
+gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
+```

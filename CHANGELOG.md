@@ -6,7 +6,12 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.1.22]
+
+Bu sürüm arayüzde **gözle görülen eksikleri** kapatıyor. Pencere varsayılan boyutta artık
+sığıyor: "Çıkış", "Ayrıntılar" ve alt bilgi görünüyor. ZapretTR kendi simgesini kullanıyor.
+Alt bilgideki winws sürümü korumanın durumuna göre değişmiyor. Motor ve DNS davranışında
+değişiklik yok. Kurulum paketiyle gerçek bir makinede sınandı (ayrıntılar aşağıda).
 
 ### Eklendi
 
