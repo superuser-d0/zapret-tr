@@ -285,6 +285,31 @@ kontrol adresi, DNS bekçisi, Duraklat, Tüm Ayarları Sıfırla, Raporu Kaydet,
 o soruna özel mesaj/çözüm 0.2.x hata düzeltmesi olarak eklenir; genel bölüm 1.0'dan sonra,
 gerçek bildirimlere göre tasarlanır.
 
+**1.0 SONRASI (kullanıcı kararı, 2026-09-14): zapret2 (`winws2`) değerlendirmesi.**
+Kaynak: github.com/bol-van/zapret2 (ilk sürüm 2025-11, incelenen v1.0.5.1 / 2026-09-07).
+- **Neden önemli:** zapret1'in README'si projeyi EOL ilan ediyor: yeni özellik yok, yalnızca
+  hata düzeltmesi. `winws.exe` çalışmaya devam eder ama gelişmez. DPI bir gün zapret1'in
+  ifade edemediği bir hileye ihtiyaç duyarsa çözüm zapret2'de olacak.
+- **Fark:** C kodu yalnızca yakalama, protokol tanıma, profiller; paketi değiştiren her şey
+  Lua'da (`--lua-desync=fake:...:tcp_md5`, `--lua-desync=multisplit:pos=1`). Yakalama yine
+  WinDivert. `winws2` açıldıktan sonra kendini Low Mandatory Level'a indiriyor.
+  Geliştiricinin ifadesi: "acemiler için hazır çözüm değil".
+- **Neden şimdi değil:** tekniklerin kendisi aynı (fake, split, TTL, md5sig...), TTNET ve
+  Turkcell'de zapret1 adayları çalışıyor. Komut satırı tamamen farklı olduğu için 3/3
+  doğrulanmış adaylar, `learned.json`, profiller, `GenericLadder`, `RuntimeSelection` ve
+  bunların testleri aktarılamaz; her hat YENİDEN ölçülmeli. Daha fazla seçenek arama
+  uzayını büyütür (test uzar). Her pakette Lua + Cygwin: Windows'ta işlemci yükü ölçülmedi.
+  Yeni motor 0.2.x hata düzeltmesi sayılmaz ve sakin dönemi (madde 0/1) sıfırlar.
+- **Geçiş maliyetinin ucuz kısmı:** sabitlenen `zapret-win-bundle` commit'inde
+  (`tools/fetch-upstream.ps1`, `32fbbebf`) `winws2.exe` ve `lua/` zaten var; yeni indirme
+  kaynağı gerekmez.
+- **Yol:** 1.0'dan sonra deneysel ikinci motor olarak ÖLÇ, sessizce değiştirme. Aynı
+  hatta aynı adayların zapret2 karşılıkları: başarı (3/3), işlemci yükü, test süresi.
+- **Öne çekme koşulları** (biri olursa 1.0'ı beklemeden bakılır):
+  1. Bir hatta zapret1'in hiçbir adayı çalışmıyor ama zapret2 ile çalışan strateji var.
+  2. zapret1'de düzeltilmeyen bir güvenlik ya da uyumluluk hatası (ör. Windows güncellemesi).
+  3. Geliştirici zapret1'e hata düzeltmesini de bırakıyor.
+
 **Bilerek listeden çıkarılan:** IPv6'lı hatta DNS boşaltma (madde 1/3). Kullanıcı kararı
 (2026-09-14): IPv6 Türkiye'de yaygın değil. Kod yolu duruyor ve ölçülmedi; IPv6'lı bir
 hattan "şifreli DNS açık ama engeller geri geldi" bildirimi gelirse İLK bakılacak yer bu.
