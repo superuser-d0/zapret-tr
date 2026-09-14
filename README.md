@@ -9,7 +9,9 @@
 
 ### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Sorun giderme](docs/SORUN-GIDERME.md) · [Ayrıntılar](README-DETAYLI.md)
 
-<img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
+<img src="docs/ekran-goruntusu-acik.png" alt="ZapretTR arayüzü, açık tema" width="300">&nbsp;&nbsp;<img src="docs/ekran-goruntusu-koyu.png" alt="ZapretTR arayüzü, koyu tema" width="300">
+
+<sub>Açık ve koyu tema</sub>
 
 </div>
 
@@ -53,6 +55,9 @@ katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız.
 
 **Belirli bir site açılmıyorsa** adresini **"Açılmayan site"** kutusuna yazıp testi öyle
 çalıştırın.
+
+**Koyu ya da açık tema:** pencerenin sağ altındaki **"Koyu tema" / "Açık tema"** düğmesiyle
+değişir ve seçiminiz hatırlanır. İlk açılışta Windows'un uygulama teması kullanılır.
 
 ## Bilmeniz gerekenler
 

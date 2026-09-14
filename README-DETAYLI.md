@@ -14,7 +14,9 @@ Elle parametre denemek yerine, sizin hattınızda gerçekten neyin çalıştığ
 
 ### [⬇ İndir](https://github.com/superuser-d0/zapret-tr/releases/latest) · [Kolay kullanım](#kolay-kullanım) · [Yavaşlatır mı](#bilgisayarı-yavaşlatır-mı) · [Sık sorulanlar](#sık-sorulanlar) · [Sorun giderme](docs/SORUN-GIDERME.md)
 
-<img src="docs/ekran-goruntusu.png" alt="ZapretTR arayüzü" width="380">
+<img src="docs/ekran-goruntusu-acik.png" alt="ZapretTR arayüzü, açık tema" width="300">&nbsp;&nbsp;<img src="docs/ekran-goruntusu-koyu.png" alt="ZapretTR arayüzü, koyu tema" width="300">
+
+<sub>Açık ve koyu tema</sub>
 
 </div>
 
@@ -116,6 +118,10 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 
 Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
 katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
+
+**Tema.** Pencerenin sağ altındaki **"Koyu tema" / "Açık tema"** düğmesi görünümü değiştirir;
+seçim `config.json`'a yazılır. Hiç seçilmediyse Windows'un uygulama teması (Ayarlar →
+Kişiselleştirme → Renkler) kullanılır. "Tüm Ayarları Sıfırla" bu seçimi de siler.
 
 **Ekranda bir hata görüyorsanız** ne anlama geldiği ve ne yapmanız gerektiği
 [sorun giderme rehberinde](docs/SORUN-GIDERME.md): parametre bulunamazsa, koruma

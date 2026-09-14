@@ -270,6 +270,21 @@ sürücüsünün DPC/kesme süresi.
 ama para ve kimlik doğrulaması istiyor), `MainViewModel`'in bölünmesi (bakım borcu,
 kullanıcıya görünmez).
 
+**1.0 SONRASI (kullanıcı kararı, 2026-09-14): "Sorun Gider" bölümü.** Tespit edip gideren
+ayrı bir bölüm önerildi; dondurmayla çeliştiği için ertelendi. Gerekçe:
+- Yeni özellik; 0.2.x yalnızca hata düzeltmesi.
+- "Giderici" DNS ayarına, WinDivert sürücüsüne ve ağ bağdaştırıcılarına dokunmak zorunda --
+  interneti kesen/DNS'i bozuk bırakan hataların hepsi bu bölgeden çıktı. Böyle bir hata
+  sakin dönemi (madde 0/1) sıfırlar.
+- Sahadan tekrarlayan bir bildirim yok; neyi gidereceği bilinmiyor.
+
+Büyük kısmı zaten dağınık hâlde var: motoru engelleyen bir şey olduğunda "bu bir strateji
+sorunu değil" mesajı, durdurulamayan parça/takılı sürücü bildirimi, engellenmemesi beklenen
+kontrol adresi, DNS bekçisi, Duraklat, Tüm Ayarları Sıfırla, Raporu Kaydet, Hata Bildir,
+`ZapretTr.Prober.Cli` teşhis modu. **Yol:** aynı sorun "Hata Bildir" ile birden fazla gelirse
+o soruna özel mesaj/çözüm 0.2.x hata düzeltmesi olarak eklenir; genel bölüm 1.0'dan sonra,
+gerçek bildirimlere göre tasarlanır.
+
 **Bilerek listeden çıkarılan:** IPv6'lı hatta DNS boşaltma (madde 1/3). Kullanıcı kararı
 (2026-09-14): IPv6 Türkiye'de yaygın değil. Kod yolu duruyor ve ölçülmedi; IPv6'lı bir
 hattan "şifreli DNS açık ama engeller geri geldi" bildirimi gelirse İLK bakılacak yer bu.
@@ -1872,3 +1887,33 @@ Commit, açıklamalı tag ve yayın kullanıcıda. DEVAM'a "yayınlandı" yazmad
 ```bash
 gh api repos/superuser-d0/zapret-tr/releases/latest --jq .tag_name
 ```
+
+### Yayın: v0.2.0 (2026-09-14)
+
+**Ölçüldü (17:55):** `releases/latest` = `v0.2.0`, taslak değil, `published_at`
+14:50:41Z (17:50 yerel). Dosyalar: `ZapretTR-Setup-0.2.0.exe` 55 659 557 bayt
+(`sha256:3b28429d…`), `zapret-tr-saha-testi.zip` 13 135 665 bayt (`sha256:2a5d1d86…`),
+`SHA256SUMS.txt` 184 bayt. Yayın akışının günlüğündeki SHA256 satırları GitHub'ın
+dosya özetleriyle aynı (paket indirilmeden karşılaştırıldı; sayaçlar şişmesin diye).
+
+**Yayın akışı iki kez düştü:** `tools/fetch-upstream.ps1` dnscrypt-proxy'yi indirirken
+GitHub 504 döndü (geçici; kodla ilgisi yok). Üçüncü "Re-run" geçti: 310/310, Inno derlemesi,
+taslak. Tek taslak oluştu; düşen denemeler yarım taslak bırakmadı. **Ders:** indirme
+adımında 504 görülürse önce yeniden koş. Tekrarlarsa `fetch-upstream.ps1`'e yeniden deneme
+eklemek hata düzeltmesi sayılır (dondurmayı bozmaz).
+
+**Bu makine (ölçüldü, 17:55):** kurulu `0.2.0+5fdd6d3`; kurulum dosyaları 17:51'de yazıldı,
+`%TEMP%\ZapretTR-guncelleme` 17:51:24 -- yani büyük olasılıkla uygulama içinden
+0.1.22 → 0.2.0 güncellemesi. `C:\ProgramData\ZapretTR` 17:52:37'de YENİDEN oluşmuş,
+`learned.json` yok, `config.json` boş seçimli (`theme: dark`). Klasörü silen tek yol
+"Tüm Ayarları Sıfırla" (`WinDivertCleanup.RunAsync()` varsayılanı; açılış ve CLI
+`removeConfig: false` geçiyor, kurulum betiği ProgramData'ya dokunmuyor). Güncellemenin
+ayarları sildiğine dair kanıt yok, ama "güncelleme sonrası ayarlar korunuyor mu" bu
+denemede ölçülmüş SAYILMAZ.
+
+**Aynı oturumda:** README ekran görüntüsü açık ve koyu tema olarak ikiye ayrıldı
+(`docs/ekran-goruntusu-acik.png`, `docs/ekran-goruntusu-koyu.png`, 426x834, eski
+`ekran-goruntusu.png` silindi). İkisi de 0.2.0 penceresinden, kullanıcının isteğiyle
+"SIFIRLANDI" durumunda. Yöntem: `SetForegroundWindow` + `CopyFromScreen` +
+`DWMWA_EXTENDED_FRAME_BOUNDS` (yönetici penceresine `PrintWindow` çalışmıyor), köşeler saydam.
+Tema düğmesine dışarıdan basılamıyor (UIPI); temayı kullanıcı değiştirdi.
