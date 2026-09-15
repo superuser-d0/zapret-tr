@@ -2310,3 +2310,41 @@ sırasında da dört aileyi kapsadığı varsayılıyor; kapsamazsa vazgeçme da
 (zarar yok, yalnızca kazanç azalır). Ters yön — çalışan bir adayın 12. sıradan sonra
 gelmesi ve kaçırılması — yalnızca o adaydan önceki 12 denemenin TAMAMEN sessiz olduğu
 durumda mümkün; o hatta paketler hiç ulaşmıyor demektir.
+
+### 2026-09-15: CI asılı kaldı — teşhis edilemeyen 6 saat
+
+**Olay:** kurulum testi koşumu `35023485144` (commit `2709b7f`), "üzerine yükseltme kur"
+adımında 21:08:09Z'de takıldı ve 32 dakikadan uzun süre asılı kaldı. Aynı iş normalde
+**3 dk 16 sn** sürüyor (koşumlar `35020435160`, `34950902280`, `34948697458`).
+
+**Asıl bulgu, asılmanın kendisi değil görünmezliği:**
+- Hiçbir iş akışında `timeout-minutes` yoktu → GitHub'ın varsayılanı **360 dakika**.
+- GitHub **çalışan** bir işin günlüğünü vermiyor (`/logs` → `BlobNotFound`). Yani asılı
+  kalan iş, 6 saat boyunca *hiçbir kayıt bırakmadan* asılı kalacaktı. Hangi alt çağrının
+  takıldığını sonradan öğrenmenin yolu yoktu.
+
+**Yapılan:** üç iş akışına da zaman aşımı (20/25/30 dk, ölçülen sürelerin 4-9 katı) ve
+yükseltme adımına elle bekleme + asılma anında `Get-Process`/`sc query` dökümü.
+
+**Sebebi BİLİNMİYOR — gerileme değil.** `2709b7f` yalnızca `docs/DEVAM.md` ve
+`EarlyExitDeadlockTests.cs`'e dokunuyor; `installer/`, `.github/` ve `src/` bir önceki
+commit `b1671ed` ile birebir aynı ve o koşum geçmişti. Yani aralıklı bir asılma.
+
+**Kod okunarak çıkarılan şüpheliler** (hiçbiri kanıtlanmadı, günlük yok):
+- `setup.iss` içinde kendi exe'mizi `ewWaitUntilTerminated` ile bekleyen üç yer var ve
+  üçünün de zaman sınırı yok: `PrepareToInstall`'daki `--uninstall-services`, `[Run]`
+  içindeki `--register-dns-guard`, `CurStepChanged`'deki `--install-services`. Inno
+  bunlardan birinde asılırsa kurulum sonsuza kadar bekler.
+- Adımın 12'deki `sc.exe stop ZapretTR`'ı servisin gerçekten durduğunu **doğrulamıyor**,
+  yalnızca 3 sn uyuyor. Durmadıysa yükseltmenin ilk işi olan `--uninstall-services`
+  ona takılabilir.
+- PowerShell'de `Start-Process -Wait`'in süreç ağacını beklediği bildirilmiş; kurulum
+  `[Run]` içinde DNS bekçisini `nowait` ile başlatıyor, yani kurulum bitse bile adım o
+  çocuğu bekliyor olabilirdi. Bu yüzden `-Wait` bırakıldı.
+
+C# tarafındaki bekleme döngüleri (`ServiceManager.StopWinwsServiceAsync`,
+`WinDivertCleanup.WaitDriversGoneAsync`, `WinDivertDriver`) **kontrol edildi, hepsinin
+`deadline`'ı var** — asılma oralardan gelmiyor.
+
+**Bir daha olursa:** adım artık 10 dakikada düşecek ve düşerken ne beklediğini yazacak.
+O dökümü buraya işleyip gerçek sebebi kapatmak lazım.

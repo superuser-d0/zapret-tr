@@ -25,6 +25,24 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   - Bölüm sessizce bırakılmıyor: kaç aday ve kaç yöntem denendiği, neden vazgeçildiğiyle
     birlikte günlüğe yazılıyor ve bütün denemeler raporda duruyor.
 
+- **Asılı kalan bir CI işi artık teşhis edilebilir.** Ölçüldü (2026-09-15, koşum
+  `35023485144`): kurulum testinin "üzerine yükseltme kur" adımı asılı kaldı — normalde
+  birkaç saniye süren bir adım, 32 dakikadan fazla. Hiçbir iş akışında `timeout-minutes`
+  yoktu, yani GitHub'ın varsayılanı olan 360 dakika geçerliydi; dahası GitHub **çalışan**
+  bir işin günlüğünü yayınlamıyor, dolayısıyla asılmanın nerede olduğunu gösteren kayıt
+  hiç oluşmuyordu. Asılı bir iş, teşhis edilemeyen ve 6 saat süren bir hata demekti.
+  - Üç iş akışının üçüne de zaman aşımı kondu (derle/test 20 dk, kurulum 25 dk, yayın
+    30 dk). Değerler ölçülen sürelerin 4–9 katı: yavaş bir runner'ı düşürmeyecek kadar
+    bol, asılmayı saatlerce beklemeyecek kadar kısa.
+  - Yükseltme adımı artık `Start-Process -Wait` kullanmıyor; `-Wait`'in bekleme sınırı
+    yok. Kurulum 10 dakikada bitmezse çalışan süreçler ve servis durumları günlüğe
+    dökülüp iş düşürülüyor, yani **bir dahaki sefere neyin beklendiği kayda geçiyor.**
+  - **Sebebi henüz bilinmiyor.** Asılan koşumun test ettiği commit yalnızca belgelere ve
+    bir test dosyasına dokunuyordu; `installer/`, `.github/` ve `src/` bir önceki
+    commit'le birebir aynıydı ve o koşum 3 dakika 16 saniyede geçmişti. Yani bu bir
+    gerileme değil, aralıklı bir asılma — ve düzeltilen şey henüz asılmanın kendisi
+    değil, görünmezliği.
+
 ## [0.2.2]
 
 Hata düzeltme sürümü. Başlığı: **koruma açıkken engellenmemiş sitelerin bozulması.**

@@ -15,6 +15,11 @@ jobs:
   build:
     runs-on: windows-latest
 
+    # Zaman asimi yoksa GitHub'in varsayilani 360 dk ve asili kalan bir is
+    # gunlugunu HIC yayinlamiyor: tanisi konamayan, 6 saat suren bir hata.
+    # 20 dk, olculen sureden (~2 dk 10 sn) yaklasik 9 kat buyuk.
+    timeout-minutes: 20
+
     steps:
       - uses: actions/checkout@v4
 

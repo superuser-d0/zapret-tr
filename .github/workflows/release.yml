@@ -19,6 +19,11 @@ jobs:
   release:
     runs-on: windows-latest
 
+    # Gerekcesi installer-test.yml'de. Yayin akisinda asili kalmak ayrica kotu:
+    # etiket atilmis, taslak yok ve sebebi gorunmuyor.
+    # 30 dk, olculen sureden (~7 dk 30 sn) yaklasik 4 kat buyuk.
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v4
 

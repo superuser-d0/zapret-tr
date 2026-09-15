@@ -27,6 +27,18 @@ jobs:
   kurulum:
     runs-on: windows-latest
 
+    # OLCULDU (2026-09-15, kosum 35023485144): "uzerine yukseltme kur" adimi
+    # asili kaldi. Is akisinda hicbir zaman asimi olmadigi icin GitHub'in
+    # varsayilani (360 dk) gecerliydi: kosum 6 saat boyunca asili kalacakti ve
+    # daha kotusu, GitHub CALISAN bir isin gunlugunu vermiyor -- yani asilmanin
+    # NEREDE oldugunu gosteren kayit hic olusmuyordu. Asili kalan bir is sessizce
+    # tesihs edilemez olur. Zaman asimi olunca is duser ve gunlugu yayinlanir.
+    #
+    # 25 dk, olculen gercek suredan (3 dk 16 sn; kosumlar 35020435160,
+    # 34950902280, 34948697458) yaklasik 8 kat buyuk: yavas bir runner'i
+    # dusurmeyecek kadar bol, asilmayi saatlerce beklemeyecek kadar kisa.
+    timeout-minutes: 25
+
     steps:
       - uses: actions/checkout@v4
 
@@ -195,7 +207,32 @@ jobs:
             Set-Content (Join-Path $kok $f) 'eski surum kalintisi'
           }
 
-          $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          # -Wait YOK, bilerek. Iki sebep:
+          #
+          # 1) KESIN: -Wait'in bekleme siniri yok. 2026-09-15'te bu adim (kosum
+          #    35023485144) asili kaldi ve is akisinda zaman asimi olmadigi icin
+          #    GitHub gunlugu HIC yayinlamadi -- yani asilmanin nerede oldugunu
+          #    gosteren kayit da olusmadi. Elle beklemek, asilmayi kayda dusuren
+          #    ve tanisi konabilen bir hataya cevirir.
+          #
+          # 2) BILDIRILMIS ama burada KANITLANMADI: -Wait surec agacini bekliyor.
+          #    Kurulum [Run] icinde DNS bekcisini "nowait" ile baslatiyor; oyleyse
+          #    kurulum bitse bile adim o cocugu beklemis olurdu. O kosumun asilma
+          #    sebebi bu muydu bilmiyorum; elle beklemek ihtimali kaldiriyor.
+          $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
+          if (-not $p.WaitForExit(600000)) {
+            # Asili kaldiysa NE bekledigini yaz; bir dahaki sefere tahmin etmeyelim.
+            Write-Host '--- calisan surecler ---'
+            Get-Process | Where-Object { $_.Name -match 'setup|ZapretTR|winws|dnscrypt|sc$' } |
+              Format-Table Id,Name,StartTime -AutoSize | Out-String | Write-Host
+            Write-Host '--- servisler ---'
+            foreach ($ad in 'ZapretTR','ZapretTR-DNS','windivert','WinDivert14') {
+              sc.exe query $ad 2>&1 | Out-String | Write-Host
+            }
+            $global:LASTEXITCODE = 0
+            try { $p.Kill($true) } catch { }
+            throw "Yukseltme 10 dakikada bitmedi (olculen normal sure: birkac saniye)."
+          }
           if ($p.ExitCode -ne 0) { throw "Yukseltme $($p.ExitCode) koduyla dondu." }
 
       - name: servis yukseltmeden sag cikti mi
