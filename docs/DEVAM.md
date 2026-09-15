@@ -2246,3 +2246,31 @@ Koruma açıkken GitHub bozuksa düzeltmeyi kullanıcıya ulaştıran yol da kap
    engelli olduğu bilinemiyor.
 5. `--hostlist-auto=<filename>` winws'te var (engelleri kendi tespit edip listeye ekliyor).
    1.0 sonrası için değerlendirilebilir; şimdilik deterministik liste tercih edildi.
+
+### 2026-09-15: kırılgan test bir yayını düşürdü (EarlyExitDeadlockTests)
+
+**Olan:** `v0.2.2` etiketi itildikten sonra yayın iş akışı (koşum 35020852773) `test`
+adımında düştü. Düşen tek test `EarlyExitDeadlockTests.Erken_olen_surec_arayuz_is_
+parcacigini_kilitlemiyor`, mesaj: "where.exe baslangic penceresinde olmeliydi."
+
+**Teşhis:** ürün hatası DEĞİL.
+- Aynı commit (`b1671ed`) dakikalar önce "derle ve test"te (35020435215) bu testi geçti.
+- Yerelde 382/382 geçiyor.
+- Commit'in diff'i `WinwsRunner`'a ya da süreç bekleme yoluna hiç dokunmuyor.
+- Düşen iddia, testin ASIL iddiası değil: "arayüz kilitlenmedi" (10 sn) geçti; düşen,
+  kurulumun geçerliliğini sınayan "where.exe 2 saniyede öldü" varsayımıydı. Yüklü bir
+  runner'da `where.exe` 2 sn'de başlayıp bitemedi ve `WaitForEarlyExit` false döndü —
+  ki süreç hâlâ yaşıyorsa bu DOĞRU davranış.
+
+**Yapılan:** bekleme penceresi 2000 → 15000 ms, kilitlenme üst sınırı 10 → 60 sn.
+- **Mutlu yolda maliyeti yok:** `WaitForEarlyExit` süreç ölür ölmez dönüyor (içerideki
+  `WaitForExit` bir üst sınır, bekleme süresi değil). Ölçüldü: testin süresi 2 sn'de kaldı,
+  arka arkaya 5 koşumda da.
+- **Testin gücü azalmadı:** kilitlenme sonsuz sürüyor, 60 sn onu yine kesin yakalar.
+- Üst sınır bekleme penceresinden büyük olmak zorunda; yoksa yavaş ama kilitlenmemiş bir
+  makinede önce "kilitlenme" iddiası düşer ve yanlış teşhis verirdi.
+- Üretimdeki değer (`StartupGraceMilliseconds = 250`) DEĞİŞMEDİ; test kendi süresini veriyor.
+
+**Ders:** yayın iş akışı testleri kapı olarak kullanıyor, dolayısıyla zamanlamaya duyarlı
+her test bir yayını düşürebilir. Yeni test yazarken "bu iddia makine yüküne mi bağlı?"
+sorusu sorulmalı; bağlıysa ya üst sınır cömert olmalı ya da iddia kurulmamalı.

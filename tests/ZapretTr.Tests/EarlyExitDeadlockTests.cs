@@ -86,13 +86,26 @@ public sealed class EarlyExitDeadlockTests
             surec.BeginOutputReadLine();
             surec.BeginErrorReadLine();
 
-            olduMu = WinwsRunner.WaitForEarlyExit(surec, 2000, ciktiBitti.WaitHandle, hataBitti.WaitHandle);
+            // Sureler BOL tutuluyor ve bu, mutlu yolda hicbir sey yavaslatmiyor:
+            // WaitForEarlyExit surec olur olmaz donuyor (icerideki WaitForExit bir
+            // ust sinir, bekleme suresi degil). Yani buyuk deger yalnizca surec
+            // GERCEKTEN olmediginde bekleniyor -- ki zaten gormek istedigimiz hata o.
+            //
+            // KIRILGANLIK, olculdu: 2026-09-15'te bu test 2000 ms ile bir YAYINI
+            // dusurdu (yayin is akisi, kosum 35020852773). Ayni commit dakikalar once
+            // "derle ve test"te gecmisti; yuklu bir runner'da where.exe 2 saniyede
+            // baslayip bitemedi. Dusen sey urun degil, testin zamanlama varsayimiydi:
+            // surec hala yasiyorsa WaitForEarlyExit'in false donmesi DOGRU davranis.
+            olduMu = WinwsRunner.WaitForEarlyExit(surec, 15000, ciktiBitti.WaitHandle, hataBitti.WaitHandle);
             bitti.Set();
         });
 
-        // Eski kodla (parametresiz WaitForExit) bu bekleme hic bitmiyordu.
-        Assert.True(bitti.Wait(TimeSpan.FromSeconds(10)), "Arayuz is parcacigi 10 saniyede donmedi: kilitlenme.");
-        Assert.True(olduMu, "where.exe baslangic penceresinde olmeliydi.");
+        // Eski kodla (parametresiz WaitForExit) bu bekleme HIC bitmiyordu; kilitlenme
+        // sonsuz surdugu icin ust sinirin buyuk olmasi testin gucunu azaltmiyor.
+        // Ust sinir, yukaridaki bekleme penceresinden buyuk olmak ZORUNDA: yavas ama
+        // kilitlenmemis bir makinede once bu iddia dusup yanlis teshis verirdi.
+        Assert.True(bitti.Wait(TimeSpan.FromSeconds(60)), "Arayuz is parcacigi 60 saniyede donmedi: kilitlenme.");
+        Assert.True(olduMu, "where.exe 15 saniyede olmeliydi; bu sure asilmissa makine asiri yuklu ya da surec gercekten asili kalmis.");
 
         arayuz.InvokeShutdown();
     }
