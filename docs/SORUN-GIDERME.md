@@ -26,8 +26,10 @@ durumda ayrıntıyı ve çoğu zaman sebebini yazar; "Ayrıntılar" ile açabili
 | [TAM DURAKLATILAMADI](#duraklatildi) | Duraklat bir parçayı durduramadı | Günlükteki `hâlâ duranlar` satırına bakın, tekrar Duraklat |
 | [SERVİS İŞLEMİ BAŞARISIZ](#servis-islemi-basarisiz) | Servis kurulamadı ya da kaldırılamadı | Günlükteki `[!]` satırına bakın |
 | [KURULUM DOSYALARI EKSİK](#kurulum-dosyalari-eksik) | Antivirüs büyük ihtimalle dosya sildi | Karantinadan geri alın, yeniden kurun |
+| [... antivirüs tarafından engellendi / Akıllı Uygulama Denetimi](#windows-engelliyor) | Windows koruması bir dosyayı çalıştırmadı | Hangi korumanın engellediğine göre aşağıya bakın |
 
 Ekranda yazmayan ama sık yaşanan durumlar:
+[Kurulum paketi açılmıyor ya da siliniyor](#windows-engelliyor) ·
 [VPN bağlanmıyor](#vpn-baglanmiyor) ·
 [İnternet tamamen gitti](#internet-gitti) ·
 [Yeniden başlatınca koruma kapalı geliyor](#yeniden-baslatinca) ·
@@ -295,6 +297,66 @@ başlayan satır hangisi olduğunu söyler.
 - Diğer durumlarda bilgisayarı yeniden başlatıp tekrar deneyin, yine olmazsa raporu kaydedip
   bildirin.
 
+<a id="windows-engelliyor"></a>
+
+### Windows engelliyor (Defender, Akıllı Uygulama Denetimi, SmartScreen)
+
+Kurulum paketi indirilir indirilmez siliniyor, çift tıklayınca hiç açılmıyor ya da uygulama
+"antivirüs tarafından engellendi" / "Akıllı Uygulama Denetimi tarafından engellendi"
+diyorsa sebep Windows'un korumalarından biri. **ZapretTR'in kod imzalama sertifikası yok**
+ve içinde çekirdek modunda çalışan bir ağ sürücüsü (WinDivert) var; bu ikisi bir arada
+Windows'un makine öğrenmesine dayalı korumalarında yanlış alarm üretebiliyor.
+
+Önce **dosyanın gerçekten bizden geldiğini doğrulayın**: yayın sayfasındaki
+`SHA256SUMS.txt` ile karşılaştırın ([nasıl](../README-DETAYLI.md#kolay-kullanım)). Özet
+tutmuyorsa dosyayı çalıştırmayın ve silin.
+
+Sonra ekranda gördüğünüz pencereye göre:
+
+**0. İndirme bitmiyor, dosya "Unconfirmed ….crdownload" olarak kalıyor (tarayıcı).** Edge
+*"ZapretTR-Setup-…exe yaygın olarak indirilmiyor"* (*isn't commonly downloaded*) der ve dosyayı
+bekletir. Bu da bir virüs tespiti değil, itibar uyarısı: dosya yeni ve imzasız.
+İndirilenler panelinde (Ctrl+J) dosyanın üzerine gelin → **"…" → Sakla (Keep) → Daha fazla
+göster (Show more) → Yine de sakla (Keep anyway)**. Chrome'da da benzer bir uyarı çıkabilir.
+
+**1. "Windows bilgisayarınızı korudu" (SmartScreen).** Bu bir engel değil, uyarı:
+**"Ek bilgi" → "Yine de çalıştır"**. Dosyanın imzasız olmasından kaynaklanır.
+
+**2. "Tehdit bulundu" / dosya indirilir indirilmez kayboldu (Microsoft Defender).**
+Bildirimdeki ad çoğu zaman sonu `!cl` ile biten bir addır (ör. `Trojan:Win32/Tecabans.STV!cl`);
+`!cl`, kararın Microsoft'un **bulut tabanlı tahmininden** geldiğini gösterir; imzasız ve az
+indirilmiş dosyalarda yanlış alarm olarak sık görülüyor.
+
+1. **Windows Güvenliği → Virüs ve tehdit koruması → Koruma geçmişi**'ni açın.
+2. ZapretTR dosyasının kaydını açın, ayrıntıda dosya yolunun `ZapretTR-Setup-...exe` ya da
+   `C:\Program Files\ZapretTR\...` olduğunu kontrol edin.
+3. **Eylemler → İzin ver** (ya da "Cihazda izin ver") deyin. Dosya karantinadaysa
+   **Geri yükle**.
+4. Kurulum paketini yeniden indirip çalıştırın.
+
+**3. "Akıllı Uygulama Denetimi bu uygulamayı engelledi" (Smart App Control).** Bu özellik
+imzası olmayan ya da Microsoft'un tanımadığı uygulamaları **hiç çalıştırmaz** ve "yine de
+çalıştır" seçeneği sunmaz; tek bir uygulama için istisna da tanımlanamaz.
+
+- Tek yol özelliği kapatmak: **Windows Güvenliği → Uygulama ve tarayıcı denetimi →
+  Akıllı Uygulama Denetimi ayarları → Kapalı**. Bu, bütün imzasız uygulamalara izin verir;
+  kararı siz verin.
+- 2026 başındaki Windows güncellemelerinden önce bu özellik bir kez kapatılınca Windows
+  yeniden kurulmadan geri açılamıyordu. Güncel bir Windows 11'de aynı ekrandan yeniden
+  açılabiliyor; sizinkinde bu seçenek gri görünüyorsa kapatmadan önce düşünün.
+- Özellik "Değerlendirme" modundaysa Windows onu **kendiliğinden açabilir**; bu yüzden
+  dün çalışan ZapretTR bugün engellenebilir.
+- Kurumsal bir bilgisayarda aynı engel BT yöneticisinin uygulama denetimi ilkesinden
+  gelebilir; o durumda yöneticinize danışın.
+
+**4. Başka bir antivirüs** (Kaspersky, ESET, Avast...). Karantinasından ZapretTR
+dosyalarını geri yükleyin ve `C:\Program Files\ZapretTR` klasörünü istisna listesine
+ekleyin. Kaspersky, WinDivert sürücüsünü "RiskTool" (risk taşıyan araç) olarak işaretliyor.
+
+Hangi pencereyi gördüğünüzü bilmiyorsanız ekran görüntüsüyle birlikte
+[bildirin](#hicbiri-ise-yaramadiysa); hangi korumanın engellediğini bilmeden doğru yolu
+söyleyemeyiz.
+
 <a id="kurulum-dosyalari-eksik"></a>
 
 ### KURULUM DOSYALARI EKSİK
@@ -307,9 +369,10 @@ sürücüsü taşıyor ve bu sürücü sık sık yanlış alarm veriyor.
 2. `C:\Program Files\ZapretTR` klasörünü **istisna listesine** ekleyin.
 3. Kurulum paketini (`ZapretTR-Setup-<sürüm>.exe`) **yeniden çalıştırın**.
 
-Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler için garanti veremiyoruz.
-Dosyanın gerçekten bizden geldiğinden emin olmak isterseniz ayrıntılı belgedeki
-[SHA256 doğrulamasını](../README-DETAYLI.md#kolay-kullanım) yapabilirsiniz.
+Microsoft Defender dahil hiçbir antivirüs için "işaretlemez" garantisi veremiyoruz: bulut
+tabanlı kararlar gün gün değişiyor. Adım adım yol: [Windows engelliyor](#windows-engelliyor).
+Dosyanın gerçekten bizden geldiğinden emin olmak için ayrıntılı belgedeki
+[SHA256 doğrulamasını](../README-DETAYLI.md#kolay-kullanım) yapın.
 
 <a id="uygulama-acilmiyor"></a>
 

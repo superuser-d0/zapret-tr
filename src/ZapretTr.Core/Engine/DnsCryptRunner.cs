@@ -127,7 +127,19 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             // burada, en erken noktada tetikleniyor.
             process.Exited += (_, _) => OnUnexpectedExit();
 
-            process.Start();
+            try
+            {
+                process.Start();
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+                when (SecurityBlockAdvice.Describe(ex, "dnscrypt-proxy.exe") is { } engel)
+            {
+                // dnscrypt-proxy.exe imzasiz; Defender ya da Akilli Uygulama Denetimi
+                // onu da engelleyebiliyor. Gerekcesi SecurityBlockAdvice'ta.
+                process.Dispose();
+                throw new InvalidOperationException(engel, ex);
+            }
+
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             _process = process;

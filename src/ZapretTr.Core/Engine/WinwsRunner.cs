@@ -220,7 +220,20 @@ public sealed class WinwsRunner : IAsyncDisposable
                 }
             };
 
-            process.Start();
+            try
+            {
+                process.Start();
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+                when (SecurityBlockAdvice.Describe(ex, "winws.exe") is { } engel)
+            {
+                // Defender ya da Akilli Uygulama Denetimi winws.exe'yi calistirmadi.
+                // Windows'un tek basina cumlesi ("Bir Uygulama Denetimi ilkesi bu
+                // dosyayi engelledi") kimin engelledigini ve ne yapilacagini soylemiyor.
+                process.Dispose();
+                throw new InvalidOperationException(engel, ex);
+            }
+
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 

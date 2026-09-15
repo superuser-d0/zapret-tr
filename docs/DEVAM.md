@@ -1942,3 +1942,87 @@ denemede ölçülmüş SAYILMAZ.
 "SIFIRLANDI" durumunda. Yöntem: `SetForegroundWindow` + `CopyFromScreen` +
 `DWMWA_EXTENDED_FRAME_BOUNDS` (yönetici penceresine `PrintWindow` çalışmıyor), köşeler saydam.
 Tema düğmesine dışarıdan basılamıyor (UIPI); temayı kullanıcı değiştirdi.
+
+### 2026-09-15: "Windows güncellemesinden sonra Defender ZapretTR'i siliyor" (0.2.1 adayı)
+
+**Duyum (kullanıcıdan, doğrudan bildirim YOK):** bazı kullanıcılarda 0.2.0 çalışmıyor;
+"Windows güncellemesinden sonra Defender direkt siliyor, kurulum exe'si bile açılmıyor".
+GitHub'da issue yok, 0.2.0 kurulum paketi 6 kez indirilmiş (2026-09-15).
+
+**Ölçülen (geliştirici makinesi, Windows 11 25H2 26200.9445, Defender platform 4.18.26080.3,
+tanımlar 1.459.211.0):**
+- Defender 2026-09-14 23:48'de indirilen `zapret2-v1.0.5.1.zip`'i indirme anında sildi:
+  `Trojan:Win32/Tecabans.STV!cl`, Detection Type FastPath, Source "Downloads and
+  attachments" (olay 1116/1117). `!cl` = bulut makine öğrenmesi. Aynı ad başka meşru
+  projelerde de yanlış alarm (PingCastle, OpenMontage, twinBASIC issue'ları).
+- `MpCmdRun -Scan -ScanType 3 -DisableRemediation` ile yerel `ZapretTR-Setup-0.1.22.exe`
+  temiz; `Zone.Identifier` (ZoneId=3, HostUrl github) eklenmiş kopyası da temiz. Yani
+  yerel tanımlarla tespit YOK; bulut kararı yeniden üretilemedi. 0.2.0 paketinin kendisi
+  taranmadı (indirmek sayaç artırıyor ve izin gerektiriyor).
+- VirusTotal: `winws.exe` (2da71e80...) 0/69. `WinDivert64.sys` (8da08533...) 3/71:
+  Kaspersky `not-a-virus:HEUR:RiskTool.Multi.WinDivert`, Elastic `Windows.Rootkit.WinDivert`,
+  Arctic Wolf. 0.2.0 kurulum paketi VirusTotal'da hiç yok.
+- Akıllı Uygulama Denetimi bu makinede **Değerlendirme** (`CI\Policy
+  VerifiedAndReputablePolicyState = 2`). Değerlendirme modunda Windows özelliği kendiliğinden
+  AÇABİLİYOR; açılınca imzasız ZapretTR.exe, winws.exe, cygwin1.dll, dnscrypt-proxy.exe ve
+  kurulum paketi atlama seçeneği olmadan engelleniyor. "exe'yi bile kurmuyor" tarifine en çok
+  uyan bu. Sürücü engelleme listesi açık (`VulnerableDriverBlocklistEnable = 1`), ama
+  WinDivert'in listede olduğuna dair kanıt bulunmadı.
+- KB5129195 (2026-09-14 OOB, 26200.9457): sürüm notlarında Defender, SmartScreen, SAC, WDAC
+  ya da sürücü engeli YOK (RDS, Hyper-V, USB ses, CVE-2026-62721). "Windows güncellemesi"
+  büyük olasılıkla aynı günlere denk gelen Defender tanım güncellemeleri ya da SAC'in
+  kendiliğinden açılması.
+- 0.1.22 → 0.2.0 kod farkında motoru etkileyen değişiklik yok (upstream dosyaları aynı,
+  kurulu 16 dosya manifestle birebir). Bu makinede TTNET'te koruma çalışıyor (Discord,
+  YouTube, X, Roblox, Wattpad, Pastebin, Imgur 2026-09-15).
+
+**0.2.0 paketiyle ölçüm (2026-09-15 10:28-10:45, kullanıcı izniyle 1 indirme):**
+- Edge (varsayılan tarayıcı) ile `releases/download/v0.2.0/ZapretTR-Setup-0.2.0.exe`
+  indirildi. Dosya TAMAMEN indi (55 659 557 bayt, SHA256 yayınla aynı) ama Edge onu
+  `Unconfirmed 367645.crdownload` adıyla BEKLETİYOR: *"ZapretTR-Setup-0.2.0.exe isn't commonly
+  downloaded. Make sure you trust ZapretTR-Setup-0.2.0.exe before you open it."* Bu SmartScreen
+  itibar uyarısı; Defender olay günlüğüne HİÇBİR kayıt düşmedi. Kullanıcı "…" → Keep →
+  Show more → Keep anyway demezse kurulum dosyası hiç oluşmuyor -- "exe'yi bile kurmuyor"
+  tarifinin en olası karşılığı bu.
+- Aynı dosyanın `Zone.Identifier` (ZoneId=3) eklenmiş kopyası: gerçek zamanlı koruma
+  dokunmadı, `MpCmdRun -Scan -ScanType 3 -DisableRemediation` temiz. Tanımlar 1.459.211.0
+  ve güncellemeden sonra 1.459.216.0 (2026-09-15 03:02) ile ikisinde de temiz. Kurulu
+  ZapretTR.exe, winws.exe, WinDivert64.sys, cygwin1.dll, dnscrypt-proxy.exe de 1.459.216.0
+  ile temiz.
+- ÖLÇÜLMEDİ: Edge'de "Keep anyway" sonrası Defender'ın ek taraması (zapret2 zip'i tam o
+  noktada, "Downloads and attachments" kaynağıyla silinmişti) ve kurulumun çalıştırılması.
+  Edge'i sentetik klavye/fare ile sürmek güvenilmez çıktı (odak kayıyor, `edge://` komut
+  satırından açılmıyor); denemeden vazgeçildi. İndirilen `Unconfirmed 367645.crdownload`
+  kullanıcının İndirilenler klasöründe duruyor.
+
+**Hangi mekanizma olduğu KESİN DEĞİL.** Etkilenen kullanıcıdan ekran görüntüsü (SmartScreen
+mi, "Tehdit bulundu" mu, "Akıllı Uygulama Denetimi" mi) ve Koruma geçmişindeki tehdit adı
+gerekiyor.
+
+**Yapılan (0.2.1 adayı, commit'lenmedi):**
+- `SecurityBlockAdvice` (Core): Windows hata kodundan engeli tanıyor (225/226 antivirüs,
+  4551/4556/4580-4582 uygulama denetimi, 1260 grup ilkesi) ve çözüm metni üretiyor.
+  `WinwsRunner.Start` ve `DnsCryptRunner` `Process.Start` hatasını, `ServiceManager`
+  `sc start` çıktısını bununla sarıyor. Sürücü düzeyi (577/1275) zaten `WinDivertDriver`'da.
+  **Gerçek bir 4551/225 ile denenmedi** (SAC'i açmak ya da Defender'a dosya sildirmek
+  gerekiyor); testler hata kodundan gidiyor.
+- `docs/SORUN-GIDERME.md` "Windows engelliyor" bölümü; README, README-DETAYLI, sorun giderme
+  ve yayın notu gövdesindeki "Defender bu paketi işaretlemiyor (ölçtük)" sözü kaldırıldı
+  (`SecurityBlockAdviceTests` geri gelmesini engelliyor). Testler 334/334.
+
+**Kodla ÇÖZÜLEMEYEN kısım -- kullanıcı kararı:**
+1. **Kod imzalama** (SAC'i ve SmartScreen'i gerçekten çözen tek şey). Paketteki TÜM imzasız
+   ikililer imzalanmalı: kurulum paketi, ZapretTR.exe ve DLL'lerimiz, winws.exe, cygwin1.dll,
+   dnscrypt-proxy.exe (WinDivert64.sys zaten imzalı). Yalnızca kurulum paketini imzalamak SAC
+   açık makinede winws.exe'nin engellenmesini çözmez. Seçenekler (2026-09-15 araştırması):
+   - Certum Open Source Code Signing: yalnızca gerçek kişi, açık kaynak geliştiricisi olduğunu
+     kanıtlamak gerekiyor; bulut sürümü ~49 € + KDV, kart okuyuculu ilk yıl ~69 €.
+     Sertifika en fazla 459 gün (2026-02-27 kuralı).
+   - SignPath Foundation: ücretsiz, OSI lisansı ve kamuya açık depo şartı; yayımcı adı
+     "SignPath Foundation" görünür; imzalama onların CI akışından geçer. DPI atlatma aracını
+     kabul edip etmeyecekleri belirsiz.
+   - Azure Artifact Signing: bireysel geliştirici yalnızca ABD/Kanada; Türkiye'den olmaz.
+2. **Microsoft'a yanlış alarm bildirimi** (etkilenen tehdit adı doğrulanınca): her yayından
+   sonra kurulum paketi ve gerekirse winws.exe https://www.microsoft.com/en-us/wdsi/filesubmission
+   adresine "Software developer" olarak gönderilir. Microsoft hesabı gerekiyor; kullanıcı yapar.
+

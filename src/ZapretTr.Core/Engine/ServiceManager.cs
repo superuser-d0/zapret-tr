@@ -540,7 +540,7 @@ public static class ServiceManager
 
         return exitCode == 0
             ? new CleanupStep($"{WinwsServiceName} servisi yeniden baslatildi", true)
-            : new CleanupStep($"{WinwsServiceName} servisi yeniden baslatilamadi", false, output.Trim());
+            : new CleanupStep($"{WinwsServiceName} servisi yeniden baslatilamadi", false, StartFailureDetail(WinwsServiceName, output));
     }
 
     /// <summary>
@@ -753,7 +753,27 @@ public static class ServiceManager
 
         return exitCode == 0 || output.Contains("1056", StringComparison.Ordinal)
             ? new CleanupStep($"{name} servisi baslatildi", true)
-            : new CleanupStep($"{name} servisi baslatilamadi", false, output.Trim());
+            : new CleanupStep($"{name} servisi baslatilamadi", false, StartFailureDetail(name, output));
+    }
+
+    /// <summary>
+    /// <c>sc start</c> hatasinin ayrintisi; engel Defender ya da Akilli Uygulama
+    /// Denetimi'yse ne yapilacagini da ekler.
+    /// </summary>
+    /// <remarks>
+    /// Servis ikiliyi LocalSystem olarak baslatiyor ama engel ayni: imzasiz winws.exe
+    /// ve dnscrypt-proxy.exe. Gerekcesi <see cref="SecurityBlockAdvice"/>'ta.
+    /// </remarks>
+    public static string StartFailureDetail(string serviceName, string scOutput)
+    {
+        var dosya = string.Equals(serviceName, DnsServiceName, StringComparison.OrdinalIgnoreCase)
+            ? "dnscrypt-proxy.exe"
+            : "winws.exe";
+
+        var ayrinti = (scOutput ?? string.Empty).Trim();
+        return SecurityBlockAdvice.DescribeScOutput(scOutput, dosya) is { } engel
+            ? ayrinti + " " + engel
+            : ayrinti;
     }
 
     /// <summary><c>sc query</c> ciktisi servisin durmus oldugunu mu soyluyor.</summary>
@@ -847,7 +867,7 @@ public static class ServiceManager
 
         return startCode == 0
             ? new CleanupStep($"{name} servisi kuruldu ve baslatildi", true)
-            : new CleanupStep($"{name} servisi kuruldu ama baslatilamadi", false, startOutput.Trim());
+            : new CleanupStep($"{name} servisi kuruldu ama baslatilamadi", false, StartFailureDetail(name, startOutput));
     }
 
     /// <summary>Servis su anda CALISIYOR mu.</summary>

@@ -89,7 +89,10 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 ## Kolay kullanım
 
 **1. İndirin.** [Releases](https://github.com/superuser-d0/zapret-tr/releases) sayfasından
-`ZapretTR-Setup-<sürüm>.exe` dosyasını alın.
+`ZapretTR-Setup-<sürüm>.exe` dosyasını alın. Edge dosyayı *"yaygın olarak indirilmiyor"*
+(*isn't commonly downloaded*) diyerek bekletebilir: İndirilenler panelinde **"…" → Sakla →
+Daha fazla göster → Yine de sakla**. Bu bir virüs tespiti değil, yeni ve imzasız dosyaya
+verilen itibar uyarısı ([ayrıntı](docs/SORUN-GIDERME.md#windows-engelliyor)).
 
 **2. Kurun.** Dosyaya çift tıklayın.
 
@@ -157,9 +160,11 @@ Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez.
 **"ENGEL BULUNAMADI" yazarsa ne olur?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde
 açılmayan adresi "Açılmayan site" kutusuna girip yeniden deneyin.
 
-**Antivirüs uyarı verirse?** Paket yakalama sürücüsü ile imzasız derlemenin birleşimi
-false-positive üretebiliyor. Windows Defender bu paketi işaretlemiyor (ölçtük); diğer ürünler
-için garanti veremeyiz.
+**Antivirüs ya da Windows engellerse?** Paket yakalama sürücüsü ile imzasız derlemenin
+birleşimi yanlış alarm üretebiliyor. Microsoft Defender'ın bulut tabanlı kararları gün gün
+değiştiği için hiçbir ürün için "işaretlemez" diyemiyoruz; Akıllı Uygulama Denetimi açık bir
+Windows 11 ise imzasız uygulamaları hiç çalıştırmıyor. Adım adım yol:
+[Windows engelliyor](docs/SORUN-GIDERME.md#windows-engelliyor).
 
 **İnternetim gitti, adresler çözülmüyor.** Uygulama şifreli DNS için sistem DNS'ini kendine
 yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa şu komut geri alır:
@@ -610,9 +615,10 @@ Kalanlar:
       bulunan Ethernet ve WiFi kartlarına uygulanıyor. Sonradan takılan bir adaptör (örneğin USB
       WiFi) kapsam dışında kalıyor; onun için uygulamayı açıp servisi bir kez yeniden kurmak
       gerekiyor.
-- [ ] **Kod imzalama sertifikası yok.** Defender bu paketi işaretlemiyor (ölçtük), ama
-      SmartScreen "bilinmeyen yayımcı" uyarısı verecek. Sertifika alınana kadar kullanıcının
-      elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
+- [ ] **Kod imzalama sertifikası yok.** SmartScreen "bilinmeyen yayımcı" uyarısı veriyor,
+      Akıllı Uygulama Denetimi açık makinelerde uygulama hiç çalışmıyor ve Defender'ın bulut
+      tabanlı kararı (`!cl`) imzasız dosyaları zaman zaman siliyor. Sertifika alınana kadar
+      kullanıcının elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
 - [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir makinede
       hem sıcak hem soğuk başlangıçta sorunsuz geçti. Güvenli tarafa düşüyor (sistem DNS'ine
       dokunmuyor, temiz geri alıyor); tekrar görülürse sebebini söylemesi için hata mesajı artık

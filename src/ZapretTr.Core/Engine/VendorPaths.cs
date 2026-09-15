@@ -119,7 +119,9 @@ public sealed class VendorPaths
         "En sik sebep virus programinin dosyalari karantinaya almasi -- ZapretTR " +
         "cekirdek modunda calisan bir ag surucusu (WinDivert) tasiyor ve bu " +
         "surucu sik sik yanlis alarm veriyor. Cozum: virus programinin " +
-        "karantinasina bakip ZapretTR klasorunu istisna listesine ekleyin, sonra " +
+        "karantinasina bakip (Microsoft Defender icin: Windows Guvenligi > Virus ve " +
+        "tehdit korumasi > Koruma gecmisi > Izin ver / Geri yukle) ZapretTR " +
+        "klasorunu istisna listesine ekleyin, sonra " +
         "kurulum paketini yeniden calistirin. " +
         "(Depodan calistiriyorsaniz: 'powershell -ExecutionPolicy Bypass -File " +
         "tools\\fetch-upstream.ps1'.)";

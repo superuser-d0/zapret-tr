@@ -8,7 +8,9 @@ gerekçesi aşağıda.
 ## Önce bilmeniz gerekenler
 
 **Bu paket imzalı değil.** Kod imzalama sertifikamız yok. Windows SmartScreen
-"bilinmeyen yayımcı" uyarısı verecek ve bazı antivirüsler paketi işaretleyebilir.
+"bilinmeyen yayımcı" uyarısı verecek; Microsoft Defender ya da başka antivirüsler paketi
+silebilir, Akıllı Uygulama Denetimi açık bir Windows 11 ise hiç çalıştırmayabilir. Ne
+yapacağınız [sorun giderme rehberinde](../blob/main/docs/SORUN-GIDERME.md#windows-engelliyor).
 Bunun teknik sebebi var: uygulama, çekirdek modunda çalışan bir paket yakalama
 sürücüsü (WinDivert) yükleyen `winws.exe`'yi çalıştırıyor. İmzasız derleme + paket
 sürücüsü birleşimi neredeyse her zaman false-positive üretir.

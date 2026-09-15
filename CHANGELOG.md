@@ -6,6 +6,32 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Düzeltildi
+
+- **Windows'un güvenlik engeli artık adıyla söyleniyor.** Microsoft Defender ya da Akıllı
+  Uygulama Denetimi (Smart App Control) `winws.exe`'yi ya da `dnscrypt-proxy.exe`'yi
+  çalıştırmadığında günlükte yalnızca Windows'un kendi cümlesi kalıyordu ("Bir Uygulama
+  Denetimi ilkesi bu dosyayı engelledi"); hangi korumanın engellediği ve ne yapılacağı
+  yazmıyordu, kullanıcıya görünen "Başlat çalışmıyor"du. Başlat, parametre testi ve servis
+  başlatma artık Windows hata kodundan (225/226 antivirüs, 4551/4556/4580-4582 uygulama
+  denetimi, 1260 grup ilkesi) engeli tanıyıp çözüm yolunu yazıyor.
+- **"Windows Defender bu paketi işaretlemiyor (ölçtük)" cümlesi kaldırıldı.** README, ayrıntılı
+  belge ve sorun giderme rehberinde duruyordu; Defender'ın bulut tabanlı kararları (`!cl`)
+  gün gün değiştiği için artık doğru bir söz değil. 2026-09-14'te Defender aynı ailedeki
+  zapret2 arşivini indirme anında `Trojan:Win32/Tecabans.STV!cl` diye sildi.
+
+### Eklendi
+
+- **README'de tarayıcı uyarısı.** Edge, 0.2.0 kurulum paketini indirir ama *"yaygın olarak
+  indirilmiyor"* diyerek `Unconfirmed ….crdownload` adıyla bekletiyor (2026-09-15'te ölçüldü).
+  Kullanıcının "Defender siliyor, kurulum açılmıyor" diye algılayabileceği ilk engel bu;
+  kısa rehberin "İndirin" adımına ve sorun giderme rehberine nasıl geçileceği yazıldı.
+- **Sorun giderme rehberine "Windows engelliyor" bölümü:** SmartScreen, Microsoft Defender,
+  Akıllı Uygulama Denetimi ve diğer antivirüsler için ayrı ayrı, önce SHA256 doğrulamasıyla
+  başlayan adımlar. Yayın notunun sabit gövdesi de bu bölüme bağlanıyor.
+
 ## [0.2.0]
 
 Bu sürümle **yeni özellik eklemesi duruyor**: bundan sonraki 0.2.x sürümleri yalnızca hata

@@ -29,6 +29,12 @@ sonuçları ve geliştirme bilgileri [ayrıntılı belgede](README-DETAYLI.md).
 [Son sürüm sayfasından](https://github.com/superuser-d0/zapret-tr/releases/latest)
 **`ZapretTR-Setup-<sürüm>.exe`** dosyasını indirin.
 
+> **Tarayıcı indirmeyi bekletebilir.** Microsoft Edge dosyayı indirir ama *"ZapretTR-Setup-…exe
+> yaygın olarak indirilmiyor"* (*isn't commonly downloaded*) diyerek bekletir. Bu bir virüs
+> uyarısı değil, dosya yeni ve imzasız olduğu için verilen bir itibar uyarısı. İndirilenler
+> panelinde dosyanın üzerine gelin → **"…" → Sakla (Keep) → Daha fazla göster (Show more) →
+> Yine de sakla (Keep anyway)**. Chrome'da da benzer bir uyarı çıkabilir.
+
 > Aynı sayfadaki `zapret-tr-saha-testi.zip` **size gerekmez**: yalnızca ölçüm yapan bir test
 > aracıdır, internetinizi açmaz.
 
@@ -92,8 +98,10 @@ gönderilmez. Uygulama kendiliğinden yalnızca GitHub'a "yeni sürüm var mı" 
 testi ve şifreli DNS ise çalışırken dış sunuculara bağlanır; hangileri olduğu
 [ayrıntılı rehberde](README-DETAYLI.md#sık-sorulanlar) yazılı.
 
-**Antivirüs uyarısı:** Windows Defender paketi işaretlemiyor. Başka antivirüs programları
-ağ sürücüsü yüzünden yanlış alarm verebilir.
+**Antivirüs ve Windows uyarıları:** paketin kod imzası yok ve bir ağ sürücüsü taşıyor.
+Microsoft Defender, Akıllı Uygulama Denetimi ya da başka bir antivirüs kurulum paketini
+silebilir veya engelleyebilir. Ne yapacağınız
+[sorun giderme rehberinde](docs/SORUN-GIDERME.md#windows-engelliyor).
 
 ## Bir sorun olursa
 
