@@ -2,13 +2,15 @@
   "$schema": "../profile.schema.json",
   "id": "vodafone-mobil",
   "displayName": "Vodafone Mobil",
-  "asns": [],
+  "asns": [
+    15897
+  ],
   "orgKeywords": [
     "vodafone"
   ],
   "engine": "winws",
   "priority": 9,
-  "notes": "Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
+  "notes": "AS15897 (Vodafone Telekomunikasyon). KARISIK: 2026-09-15 orneginde oneklerin cogu mobil (\"Vodafone Turkey\", \"3G Pools\") ama yaklasik %8'i \"Vodafone Net DSL / FTTH\" sabit hat. Bu yuzden ASN eslesmesi Mobil'i onerir ama \"vodafone\" anahtar kelimesi Vodafone Net'i de ekler ve kullaniciya sorulur. Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
   "candidates": [
     {
       "id": "vfm-443-multisplit-pos2",

@@ -10,6 +10,20 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ### Düzeltildi
 
+- **Servis sağlayıcı tespiti Türk Telekom'da gereksiz soru sormuyor, Vodafone Mobil'e doğru
+  profili öneriyor.** 0.2.0'dan beri tespit önce ipinfo.io'ya soruyor ve o, Türk Telekom sabit
+  hattın adını "Turk Telekomunikasyon" diye veriyor; Türk Telekom Mobil profilindeki "turk
+  telekom" anahtar kelimesi bu adla da eşleştiği için her TTNET kullanıcısı test sırasında
+  "birden fazla profille eşleşti" penceresini görüyordu. Vodafone Mobil'in ASN'si profilde
+  yoktu ve sıralama yüzünden mobil kullanıcıya **Vodafone Net** öneriliyordu. Profillere
+  RIPE kayıtlarıyla doğrulanmış ASN'ler eklendi: Türk Telekom Mobil 20978, Vodafone Mobil
+  15897, Vodafone Net 15924 ve 8386, TurkNet 12735, Türksat 47524. Vodafone'da soru bilerek
+  duruyor: AS15897'de mobilin yanında bir miktar sabit hat (FTTH) da var; ama önerilen profil
+  artık bağlantının ASN'sine ait olan.
+- **Profil üretme betiği doğrulanmış profilin üzerine yazmıyor.** `tools/gen-seed-profiles.py`
+  Turkcell Mobil'i hâlâ tablosunda tutuyordu; betik çalıştırılınca o profilin gerçek hatta
+  ölçülmüş doğrulamaları siliniyordu (bu düzeltme yazılırken oldu, git'ten geri alındı).
+  Artık dosyasında doğrulanmış aday olan profil atlanıyor.
 - **Windows'un güvenlik engeli artık adıyla söyleniyor.** Microsoft Defender ya da Akıllı
   Uygulama Denetimi (Smart App Control) `winws.exe`'yi ya da `dnscrypt-proxy.exe`'yi
   çalıştırmadığında günlükte yalnızca Windows'un kendi cümlesi kalıyordu ("Bir Uygulama

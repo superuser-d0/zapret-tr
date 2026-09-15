@@ -2,13 +2,15 @@
   "$schema": "../profile.schema.json",
   "id": "turknet",
   "displayName": "TurkNet",
-  "asns": [],
+  "asns": [
+    12735
+  ],
   "orgKeywords": [
     "turknet"
   ],
   "engine": "winws",
   "priority": 4,
-  "notes": "ASN sorgusu sonuc vermedi; turknet org adinda benzersiz oldugu icin anahtar kelime eslesmesi guvenli. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir.",
+  "notes": "AS12735. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir.",
   "candidates": [
     {
       "id": "tn-443-fake-multidisorder",

@@ -2,14 +2,16 @@
   "$schema": "../profile.schema.json",
   "id": "turksat",
   "displayName": "Turksat Kablonet",
-  "asns": [],
+  "asns": [
+    47524
+  ],
   "orgKeywords": [
     "turksat",
     "kablonet"
   ],
   "engine": "winws",
   "priority": 6,
-  "notes": "ASN dogrulanamadi; org adi anahtar kelimesiyle eslesir.",
+  "notes": "AS47524.",
   "candidates": [
     {
       "id": "ts-443-fake-multidisorder",

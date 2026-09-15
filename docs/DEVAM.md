@@ -2026,3 +2026,38 @@ gerekiyor.
    sonra kurulum paketi ve gerekirse winws.exe https://www.microsoft.com/en-us/wdsi/filesubmission
    adresine "Software developer" olarak gönderilir. Microsoft hesabı gerekiyor; kullanıcı yapar.
 
+### 2026-09-15: servis sağlayıcı tespiti düzeltmesi (0.2.1 adayı)
+
+**Sorun (kod incelemesi ve gerçek cevaplarla ölçüldü, kullanıcı bildirimi yok):**
+- 0.2.0 tespitte önce ipinfo.io'ya soruyor; o TTNET'in adını her zaman "AS9121 Turk
+  Telekomunikasyon Anonim Sirketi" veriyor. TT Mobil'in `orgKeywords`'ündeki "turk telekom"
+  bu adla eşleşiyordu -> her TTNET kullanıcısına "birden fazla profil" MessageBox'ı (öneri
+  yine doğruydu). 0.1.22'de ip-api'nin "TurkTelekom" yazımında bu çıkmıyordu.
+- Vodafone Mobil (AS15897) ASN'siz; "vodafone" iki profille eşleşiyor, `priority` sırası
+  (Net 3, Mobil 9) yüzünden mobil kullanıcıya Vodafone Net öneriliyordu. 0.1.22'de de böyleydi.
+
+**Veri (2026-09-15):** RIPEstat as-overview ile ASN sahipleri; her ASN'nin
+announced-prefixes listesinden örnek adresler ip-api batch ile (hangi ASN'de mobil/sabit var):
+- AS15897 VodafoneTurkey: 100 önekten çoğu "Vodafone Turkey"/"3G Pools", ~8'i
+  "Vodafone Net DSL ... FTTH". KARIŞIK.
+- AS15924 BORUSANTELEKOM-AS, AS8386 KOCNET: ikisi de "Vodafone Net DSL/ADSL", sabit.
+- AS20978 TT_Mobil: tamamı "Avea"/"TT Mobil".
+- AS12735 TurkNet, AS47524 Türksat: temiz.
+
+**Yapılan:** yalnızca VERİ, `ProfileStore.Match` değişmedi (ASN eşleşmesi zaten listenin
+başına konuyordu). `tools/gen-seed-profiles.py` tablosunda ASN'ler eklendi, TT Mobil'den
+"turk telekom" çıkarıldı, notlar güncellendi, betik yeniden çalıştırıldı (5 JSON değişti:
+asns, orgKeywords, notes). Vodafone'daki soru bilerek kaldı. `IspMatchRealWorldTests`
+(16 test, gerçek cevap dizgileriyle); profillerin eski hâliyle 5'i düşüyor (ölçüldü).
+
+**Tuzak (bu düzeltmede ısırdı):** `gen-seed-profiles.py` Turkcell Mobil'i hâlâ tablosunda
+tutuyordu (başlıktaki "elle bakım görenler" listesinde yoktu). Betik çalışınca
+turkcell-mobil.json'daki 2026-09-07 saha doğrulamaları (2 verified aday, notlar, ağırlıklar)
+silindi; `git checkout` ile geri alındı. Betik artık dosyasında `"source": "verified"` aday
+bulunan profili ATLIYOR. Bir profili doğrulamaya başlarken tablodan çıkarmayı unutsan bile
+üzerine yazılmaz.
+
+**Kalan:** ip-api YEDEK yolunda Superonline'ın bazı önekleri isp="Turkcell Internet"
+dönüyor; "turkcell" anahtar kelimesiyle Turkcell Mobil de eşleşip soru çıkıyor (öneri doğru:
+Superonline, ASN'den). ipinfo ilk sırada olduğu için nadir; dokunulmadı.
+

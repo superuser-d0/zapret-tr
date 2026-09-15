@@ -9,8 +9,14 @@ Tablo burada tek yerde duruyor, ciktilar profiles/isp/ altina yaziliyor ve commi
 
 Bir profil gercek saha dogrulamasi tasimaya basladigi anda buradan CIKARILIR ve
 elle bakima gecer; yeniden uretim o veriyi silerdi. Su an elle bakim gorenler:
-  - superonline  (oncelikli profil, derinlestirilmis)
-  - turk-telekom (tt-443-fake-ttl4 gercek bir hatta dogrulandi)
+  - superonline    (oncelikli profil, derinlestirilmis)
+  - turk-telekom   (tt-443-fake-ttl4 gercek bir hatta dogrulandi)
+  - turkcell-mobil (2026-09-07'de gercek AS16135 hattinda dogrulandi)
+
+turkcell-mobil asagidaki tabloda HALA duruyor ama script onun dosyasina yazmiyor:
+dosyada "source": "verified" bir aday varsa uzerine yazilmaz (bkz. main). 2026-09-15'te
+bu koruma yokken script calistirildi ve turkcell-mobil'in saha dogrulamasi silindi
+(git'ten geri alindi).
 
 Kullanim (depo kokunden):  python tools/gen-seed-profiles.py
 """
@@ -62,12 +68,20 @@ def http_base(prefix):
 
 # (id, gorunen ad, asns, orgKeywords, priority, notlar, 443 adaylari)
 #
-# asns bos olan ISP'lerde ASN sorgusu sonuc vermedi. Numara uydurmak yerine
-# orgKeywords eslesmesine birakildi: "turknet" gibi adlar org kaydinda benzersiz.
+# ASN'ler 2026-09-15'te RIPEstat as-overview ile dogrulandi ve her ASN'nin duyurdugu
+# oneklerden ornek adresler ip-api ile sorgulandi (hangi ASN'de mobil, hangisinde sabit hat
+# var). ASN eslesmesi Match'te listenin BASINA konuyor: tespitin onerdigi profil o.
+#
+# orgKeywords ASN listesi eskidiginde yedek yol; birden fazla profille eslesirse kullaniciya
+# soruluyor. Bu yuzden bir anahtar kelime BASKA bir saglayicinin resmi adinin parcasi
+# OLMAMALI: TT Mobil'deki "turk telekom", sabit hattin "Turk Telekomunikasyon" adiyla da
+# eslesiyor ve her TTNET kullanicisina gereksiz soru cikariyordu.
 ISPS = [
-    ("vodafone-net", "Vodafone Net", [], ["vodafone"], 3,
-     "ASN dogrulanamadi; org adi anahtar kelimesiyle eslesir. Bildirilen strateji sahte paket ve "
-     "bolmeyi birlikte kullaniyor.",
+    ("vodafone-net", "Vodafone Net", [15924, 8386], ["vodafone"], 3,
+     "AS15924 (eski Borusan Telekom) ve AS8386 (eski Koc.net): ikisi de sabit hat. "
+     "\"vodafone\" anahtar kelimesi Vodafone Mobil'le de eslesir; tespit ASN'ye gore "
+     "birini onerip kullaniciya sorar. Bildirilen strateji sahte paket ve bolmeyi birlikte "
+     "kullaniyor.",
      [("vf-443-fake-multisplit-badseq",
        "--dpi-desync=fake,multisplit --dpi-desync-fooling=badseq --dpi-desync-split-pos=1,midsld",
        100, "community-unverified", "Vodafone Net icin bildirilen strateji."),
@@ -76,9 +90,8 @@ ISPS = [
        "hypothesis", "Saf bolme ailesi."),
       ]),
 
-    ("turknet", "TurkNet", [], ["turknet"], 4,
-     "ASN sorgusu sonuc vermedi; turknet org adinda benzersiz oldugu icin anahtar kelime eslesmesi "
-     "guvenli. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir.",
+    ("turknet", "TurkNet", [12735], ["turknet"], 4,
+     "AS12735. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir.",
      [("tn-443-fake-multidisorder", UPSTREAM_443, 100, "upstream-preset",
        "Upstream genel 443 kurali; ISP'ye ozel veri olmadigi icin baslangic noktasi."),
       ("tn-443-multisplit-midsld", "--dpi-desync=multisplit --dpi-desync-split-pos=midsld", 85,
@@ -94,8 +107,8 @@ ISPS = [
        "hypothesis", "Saf bolme ailesi."),
       ]),
 
-    ("turksat", "Turksat Kablonet", [], ["turksat", "kablonet"], 6,
-     "ASN dogrulanamadi; org adi anahtar kelimesiyle eslesir.",
+    ("turksat", "Turksat Kablonet", [47524], ["turksat", "kablonet"], 6,
+     "AS47524.",
      [("ts-443-fake-multidisorder", UPSTREAM_443, 100, "upstream-preset", "Upstream genel 443 kurali."),
       ("ts-443-multisplit-midsld", "--dpi-desync=multisplit --dpi-desync-split-pos=midsld", 85,
        "hypothesis", "Saf bolme ailesi."),
@@ -115,8 +128,11 @@ ISPS = [
       ("tcm-443-fake-multidisorder", UPSTREAM_443, 85, "upstream-preset", "Upstream genel 443 kurali."),
       ]),
 
-    ("vodafone-mobil", "Vodafone Mobil", [], ["vodafone"], 9,
-     "Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
+    ("vodafone-mobil", "Vodafone Mobil", [15897], ["vodafone"], 9,
+     "AS15897 (Vodafone Telekomunikasyon). KARISIK: 2026-09-15 orneginde oneklerin cogu mobil "
+     "(\"Vodafone Turkey\", \"3G Pools\") ama yaklasik %8'i \"Vodafone Net DSL / FTTH\" sabit "
+     "hat. Bu yuzden ASN eslesmesi Mobil'i onerir ama \"vodafone\" anahtar kelimesi Vodafone "
+     "Net'i de ekler ve kullaniciya sorulur. Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
      [("vfm-443-multisplit-pos2", "--dpi-desync=multisplit --dpi-desync-split-pos=2", 100,
        "community-unverified",
        "Vodafone mobil icin bildirilen strateji. Sahte paket yok -- mobil sebekede sahte paketler "
@@ -125,8 +141,10 @@ ISPS = [
        "hypothesis", "Ayni ailenin SLD ortasindan bolen hali."),
       ]),
 
-    ("turk-telekom-mobil", "Turk Telekom Mobil", [], ["turk telekom", "avea", "tt mobil"], 10,
-     "Sabit hat TTNET profilinden ayri: bildirilen TTL degeri farkli.",
+    ("turk-telekom-mobil", "Turk Telekom Mobil", [20978], ["avea", "tt mobil"], 10,
+     "AS20978 (TT Mobil, eski Avea). Sabit hat TTNET profilinden ayri: bildirilen TTL degeri "
+     "farkli. \"turk telekom\" anahtar kelimesi bilerek YOK: sabit hattin resmi adi \"Turk "
+     "Telekomunikasyon\" onu iceriyor ve her TTNET kullanicisina iki profilli soru cikariyordu.",
      [("ttm-443-fake-ttl5", "--dpi-desync=fake --dpi-desync-ttl=5", 100, "community-unverified",
        "TT mobil icin bildirilen strateji."),
       ("ttm-443-fake-autottl", "--dpi-desync=fake --dpi-desync-autottl=-1:3-20", 85, "hypothesis",
@@ -170,7 +188,16 @@ def main():
         if len(ids) != len(set(ids)):
             raise SystemExit(pid + ": tekrar eden aday id")
 
-        (OUT / (pid + ".json")).write_text(
+        # SAHA DOGRULAMASI TASIYAN DOSYAYA YAZMA. Uretilen dosyada verified aday
+        # olamaz; mevcut dosyada varsa o profil elle bakima gecmis demektir.
+        hedef = OUT / (pid + ".json")
+        if hedef.exists():
+            mevcut = json.loads(hedef.read_text(encoding="utf-8"))
+            if any(c.get("source") == "verified" for c in mevcut.get("candidates", [])):
+                print("%-22s ATLANDI: dosyada dogrulanmis aday var, elle bakim goruyor" % pid)
+                continue
+
+        hedef.write_text(
             json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         print("%-22s %2d aday  asn=%s" % (pid, len(cands), asns or "-"))
 

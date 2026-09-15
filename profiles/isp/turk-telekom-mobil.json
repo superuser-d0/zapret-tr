@@ -2,15 +2,16 @@
   "$schema": "../profile.schema.json",
   "id": "turk-telekom-mobil",
   "displayName": "Turk Telekom Mobil",
-  "asns": [],
+  "asns": [
+    20978
+  ],
   "orgKeywords": [
-    "turk telekom",
     "avea",
     "tt mobil"
   ],
   "engine": "winws",
   "priority": 10,
-  "notes": "Sabit hat TTNET profilinden ayri: bildirilen TTL degeri farkli.",
+  "notes": "AS20978 (TT Mobil, eski Avea). Sabit hat TTNET profilinden ayri: bildirilen TTL degeri farkli. \"turk telekom\" anahtar kelimesi bilerek YOK: sabit hattin resmi adi \"Turk Telekomunikasyon\" onu iceriyor ve her TTNET kullanicisina iki profilli soru cikariyordu.",
   "candidates": [
     {
       "id": "ttm-443-fake-ttl5",
