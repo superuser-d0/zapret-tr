@@ -8,6 +8,18 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.2.3]
+
+Hata düzeltme sürümü. Başlığı: **kullanıcıya bir şeyin olmadığını söylemek.** Üç
+düzeltmenin üçü de aynı sınıftan — bir şey sessizce olmuyordu ve bunu gören kimse yoktu:
+bir bölüm için dakikalarca sonuç vermeyecek aday deneniyordu, "Açılmayan site" kutusuna
+yazılan adres hiçbir uyarı olmadan yok sayılıyordu, asılı kalan bir CI işi hiç günlük
+bırakmadan altı saat bekleyecekti.
+
+Üçünden ikisi aynı saha raporundan geldi
+([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)), KeremKuyucu'nun
+bildirimleri sayesinde; üçüncüsünü kendi CI'ımız gösterdi.
+
 ### Düzeltildi
 
 - **Hiç cevap gelmeyen bir bölüm için dakikalarca aday denenmiyor.** İlk saha raporunda
