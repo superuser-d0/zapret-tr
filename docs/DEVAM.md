@@ -2146,13 +2146,37 @@ Superonline, ASN'den). ipinfo ilk sırada olduğu için nadir; dokunulmadı.
 - `releases/latest` API'si `v0.2.1` döndürüyor; `github.com/.../releases/latest` 302 ile
   `v0.2.1`'e gidiyor. README ve README-DETAYLI'deki indirme bağlantıları `releases/latest`
   olduğu için değişiklik gerekmedi. Uygulama içi güncelleyicinin beklediği dosya adları yerinde.
-- Kurulum paketi yayından sonra İNDİRİLMEDİ (sayaç için); yayındaki paketin kendisi
-  gerçek bir makineye kurulmadı. SAC açık makinede denenen şey, aynı kodla yerelde üretilen
-  kurulumsuz zip'ti.
+- Yayın anında kurulum paketi indirilmedi (sayaç için). Paket sonradan iki gerçek makinede
+  0.2.0 üzerine kuruldu (aşağıda).
+
+**Yükseltme, geliştirici makinesi (ölçüldü, 2026-09-15 11:45 yerel):** kullanıcı 0.2.0'dan
+0.2.1'e geçti, "sorunsuz". Kurulum sonrası ölçülen:
+- `ZapretTR.exe` sürümü `0.2.1+c393295` (yayındaki paket).
+- `[InstallDelete]` gerçek bir 0.2.0 kurulumunda çalıştı: `ZapretTR.dll`, `ZapretTr.Core.dll`,
+  `ZapretTr.Prober.dll`, ~230 .NET DLL'i, deps/runtimeconfig json, `createdump.exe` ve 13
+  yerelleştirme klasörü yok. Kökte yalnızca `ZapretTR.exe`, `msquic.dll`, 5 WPF `*_cor3`
+  DLL'i, `unins000.*` ve belgeler; alt klasörler `dnscrypt-proxy`, `profiles`, `zapret-winws`.
+- İmzasız PE dosyaları: `ZapretTR.exe`, `unins000.exe`, `winws.exe`, `cygwin1.dll`,
+  `WinDivert.dll`, `dnscrypt-proxy.exe`. Uygulamanın kendi DLL'i yok.
+- `ZapretTR`, `winws`, `dnscrypt-proxy` çalışıyor; bütün kartların DNS'i `127.0.0.1`, ad
+  çözümlemesi çalışıyor (`github.com`).
+- DNS bekçisi görevi: `schtasks /Query` yetkisiz oturumda "Access is denied" döndü (görev
+  yoksa "cannot find" döner), yani kayıtlı; içeriği okunamadı.
+- Bu makinede SAC Değerlendirme modunda: yükseltme SAC engelini SINAMADI.
+
+**Yükseltme, uyarıyı alan kullanıcının makinesi (kullanıcı bildirimi, 2026-09-15):** 0.2.1
+"sorunsuz çalıştı". 0.2.0'da "Bu uygulamanın bir kısmı engellendi … ZapretTR.dll" uyarısını
+veren makine bu; önceki denemede kurulumsuz zip de orada çalışmıştı. BİLİNMEYEN: yükseltmenin
+kurulum paketiyle mi "Güncellemeleri Denetle" ile mi yapıldığı, o anki SAC modu, "+2
+bildirim"in içeriği. Koruma çalıştığına göre winws ve DLL'leri o makinede engellenmiyor.
+
+**Sonuç:** 0.2.1 SAC'in `ZapretTR.dll` engelini sorunu yaşayan makinede giderdi (kullanıcı
+bildirimi). Çözümün mekanizması ölçüldü (imzasız DLL'lerin kalkması, yükseltme temizliği);
+SAC'in exe'yi neden geçirip DLL'i engellediği hâlâ bilinmiyor.
 
 **Açık kalanlar:**
-1. Uyarıyı alan kullanıcıdan "+2 bildirim"in içeriği gelmedi. `cygwin1.dll`, `WinDivert.dll`
-   ya da `winws.exe` yazıyorsa koruma yine başlamaz; 0.2.1 bunu yalnızca adıyla söyler.
-2. SAC açık bir makinede **kurulum paketiyle** 0.2.0 → 0.2.1 yükseltmesi ve "Güncellemeleri
-   Denetle" yolu denenmedi.
+1. Başka bir SAC açık makinede winws, cygwin1.dll, WinDivert.dll ya da dnscrypt-proxy.exe
+   engellenebilir; 0.2.1 winws için bunu adıyla söyler (0xC0000428). Böyle bir bildirim
+   gelirse tek dosya bu kısmı çözmez.
+2. `0xC0000428` → "Akıllı Uygulama Denetimi" metni gerçek bir DLL engeliyle hiç görülmedi.
 3. Kalıcı çözüm hâlâ kod imzalama (bkz. "Kodla ÇÖZÜLEMEYEN kısım": Certum, SignPath Foundation).
