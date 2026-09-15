@@ -1709,6 +1709,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return [];
         }
 
+        // Test yapmadan dogrudan Baslat'a basan kullanici da uyarilmali: kutudaki
+        // adres anlasilmiyorsa koruma onu KAPSAMIYOR. Test yolundaki uyari burada
+        // gorunmez, cunku test hic kosmamis olabilir.
+        if (HostlistStore.DescribeUnusableTarget(CustomTarget) is { } sorun)
+        {
+            Append(sorun, isError: true);
+        }
+
         var kategoriler = RuntimeSelection.VerifiedCategories(SelectedIsp?.Profile, winners);
 
         return HostlistStore.Load(_profiles.Root).DomainsFor(kategoriler, CustomTarget);
@@ -2006,6 +2014,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 targets.Insert(0, custom);
                 Append("Kendi hedefiniz eklendi: " + custom.Host);
+            }
+            else if (HostlistStore.DescribeUnusableTarget(CustomTarget) is { } sorun)
+            {
+                // Eskiden burada HICBIR SEY yoktu: anlasilmayan girdi sessizce
+                // dusuyordu ve kullanici testin kendi sitesini denedigini saniyordu
+                // (issue #1, KeremKuyucu). Sessiz reddetmek, calismayan bir ozellikten
+                // daha kotu -- kullanici yanlis bir sey yaptigini bile bilmiyor.
+                Append(sorun, isError: true);
             }
 
             // Sifreli DNS secimi OLCUME de gecmeli. Gecmedigi surece hedefler sistem

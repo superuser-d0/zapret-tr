@@ -2348,3 +2348,51 @@ C# tarafındaki bekleme döngüleri (`ServiceManager.StopWinwsServiceAsync`,
 
 **Bir daha olursa:** adım artık 10 dakikada düşecek ve düşerken ne beklediğini yazacak.
 O dökümü buraya işleyip gerçek sebebi kapatmak lazım.
+
+### 2026-09-15: "Açılmayan site" sessizce düşüyordu (issue #1, ikinci rapor)
+
+**Kullanıcının sözleri:** "Robloxu manuel olarak ekleyemedim entere bastım ' , ' koyup
+başlattım yinede saymadı... Ya çalışmıyor yada birşeyi yanlış yapıyorum."
+
+**Gerçek:** ikisi de değildi. Girdi reddediliyordu ve **bunu söyleyen hiçbir şey yoktu.**
+
+**Ölçüldü (.NET `Uri` davranışı, PowerShell'de çalıştırıldı):**
+
+| Girdi | `Uri.TryCreate` | sonuç |
+|---|---|---|
+| `roblox.com` | true | `roblox.com` |
+| `roblox.com, discord.com` | **false** | sessizce düşüyordu |
+| `roblox.com,discord.com` | **false** | sessizce düşüyordu |
+| `https://www.roblox.com/home` | true | `www.roblox.com` |
+
+Yani virgül .NET'in kendi ayrıştırıcısı tarafından reddediliyor; `HostlistStore`'daki
+virgül denetimi ikinci bir emniyet. Eksik olan şey **sebebi söylemekti**.
+
+**Elenen hipotez:** ilk şüphem WPF'in varsayılan `LostFocus` binding'iydi (Enter'a basınca
+değer ViewModel'e geçmez). `MainWindow.xaml`'e bakınca binding'in zaten
+`UpdateSourceTrigger=PropertyChanged` olduğu görüldü — hipotez yanlıştı, girdi ViewModel'e
+ulaşıyordu.
+
+**Yapılan:** `HostlistStore.DescribeUnusableTarget` (saf fonksiyon, test edilen o) ve üç
+çağrı yeri: parametre testi, Başlat yolu (`BuildHostlistDomains`), CLI. Etiket/ipucu
+kutunun korumaya da site eklediğini artık söylüyor.
+
+**Neden iki çağrı yeri:** test yapmadan doğrudan Başlat'a basan kullanıcı test yolundaki
+uyarıyı hiç görmez. Tek yere koymak, kullanıcıların yarısını sessizlikte bırakırdı.
+
+**Bilerek YAPILMAYAN:** birden fazla site. Özellik dondurma yürürlükte ve bu bir özellik;
+1.0 sonrasına. Şimdilik kutu "TEK adres" diyor, yani kullanıcı ne olduğunu biliyor.
+
+**ÖLÇÜLMEDİ:** uyarının gerçek pencerede göründüğü. Saf fonksiyon 24 testle sabit ama
+ViewModel'in `Append` çağrıları birim testiyle kapsanmıyor.
+
+**AÇIK:** kullanıcı "hâlâ 4 sitede çalışıyor" dedi. Profil verisinden hesaplandı:
+vodafone-net'in doğrulanmış adayları `verifiedFor: [discord, discord-guncelleme]` → **6**
+alan adı. Hiçbir kategori birleşimi 4 vermiyor (discord=6, discord-güncelleme=1,
+youtube=6, kontrol=0). Günlükteki "Strateji yalnızca şu adreslere uygulanacak (N): ..."
+satırı istenmeli; o sayı nereden geliyor bilinmiyor ve uydurulmadı.
+
+**AÇIK:** DNS bekçisi görevi DNS seçilmese de kuruluyor. Bu TASARIM (gerekçe
+`DnsGuard.cs`: görev, çökme sonrası kurtarma için çökmeden önce var olmak zorunda;
+yönlendirme yokken tur hiçbir şey yapmadan 0 ile çıkıyor, CI her koşumda doğruluyor).
+Ama kullanıcıya bunu söyleyen hiçbir yer yok — ne kurulumda, ne README'de.

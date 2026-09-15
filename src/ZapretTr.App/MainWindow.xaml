@@ -103,11 +103,15 @@
                               SelectedItem="{Binding SelectedStrategy}"
                               DisplayMemberPath="Display" />
 
+                    <!-- Etiket ve ipucu eskiden yalnizca TESTTEN bahsediyordu; kutunun
+                         adresi KORUMAYA da ekledigini soylemiyordu. Gercek kullanici
+                         (issue #1, KeremKuyucu) "ekstra site eklemeyi bulamadim" dedi ve
+                         hakliydi: ozellik vardi, ama boyle sunulmuyordu. -->
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Açılmayan site:" Style="{StaticResource LabelText}" />
                     <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
                              VerticalContentAlignment="Center"
                              Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="Testin gerçekten anlamlı olması için, sizde açılmayan bir adres girin. Boş bırakılırsa varsayılan hedefler kullanılır." />
+                             ToolTip="Sizde açılmayan bir adres yazın (örnek: roblox.com).&#10;Bu adres hem testte denenir HEM DE koruma açıkken stratejinin uygulandığı adresler listesine eklenir.&#10;TEK adres yazın; şimdilik birden fazla adres desteklenmiyor.&#10;Boş bırakılırsa varsayılan hedefler kullanılır." />
 
                     <!-- Sifreli DNS anahtari. Varsayilan ACIK ve bu olculmus bir gerekceye
                          dayaniyor: bu makinede discord.com, pornhub.com ve xvideos.com'un

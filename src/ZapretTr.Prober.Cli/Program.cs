@@ -106,6 +106,13 @@ if (options.Apply)
         {
             applyTargets.Insert(0, parsedExtra);
         }
+        else
+        {
+            // Sessizce dusurmek burada daha da kotu: olcumu BIZ yapiyoruz ve
+            // eksik hedefle cikan bir rapor "o site sorunsuz" gibi okunuyor.
+            Console.Error.WriteLine(
+                HostlistStore.DescribeUnusableTarget(extraHost) ?? $"Hedef anlasilamadi: {extraHost}");
+        }
     }
 
     // Sifreli DNS istege bagli ama Turkiye'de cogu zaman SART: DNS kacirilmisken
@@ -799,7 +806,11 @@ foreach (var extra in options.ExtraTargets)
     var parsed = ProbeTargetStore.TryParseUserTarget(extra, extraSection);
     if (parsed is null)
     {
-        Console.Error.WriteLine($"Hedef çözümlenemedi, atlanıyor: {extra}");
+        // Sebebi de soyleniyor: "cozumlenemedi" tek basina kullaniciya ne
+        // yapacagini soylemiyor, virgul kullandiysa hic soylemiyor.
+        Console.Error.WriteLine(
+            HostlistStore.DescribeUnusableTarget(extra) ?? $"Hedef çözümlenemedi: {extra}");
+        Console.Error.WriteLine($"Atlanıyor: {extra}");
         continue;
     }
 

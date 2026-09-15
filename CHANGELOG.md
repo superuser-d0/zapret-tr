@@ -25,6 +25,26 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
   - Bölüm sessizce bırakılmıyor: kaç aday ve kaç yöntem denendiği, neden vazgeçildiğiyle
     birlikte günlüğe yazılıyor ve bütün denemeler raporda duruyor.
 
+- **"Açılmayan site" kutusuna yazılan adres artık sessizce düşmüyor.** İkinci saha
+  raporunda ölçüldü ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)):
+  kullanıcı Roblox'u eklemeye çalıştı, olmayınca virgülle iki adres yazdı, yine olmadı ve
+  "ya çalışmıyor ya da bir şeyi yanlış yapıyorum" dedi. **İkisi de değildi:** girdisi
+  reddediliyordu ve bunu ona söyleyen hiçbir şey yoktu. Başarı yolunda "Kendi hedefiniz
+  eklendi: ..." satırı vardı, başarısızlık yolunda hiçbir şey. Artık reddedilen girdi
+  **sebebiyle birlikte** günlüğe yazılıyor: `"roblox.com, discord.com" anlaşılamadı: bu
+  kutuya TEK bir adres yazın (örnek: roblox.com).`
+  - Uyarı iki yerde de çıkıyor: parametre testinde **ve** doğrudan Başlat'a basıldığında.
+    İkincisi olmasa, test yapmadan başlatan kullanıcı hiçbir şey görmezdi.
+  - Saha testi aracı (`ZapretTr.Prober.Cli`) da aynı şekilde sessizce düşürüyordu. Ölçümü
+    biz yaptığımız için orada daha kötüydü: eksik hedefle çıkan rapor "o site sorunsuz"
+    gibi okunur.
+  - Ölçüm ve çalışma zamanı ayrı ayrıştırıcılar kullanıyor; artık aynı kararı verdikleri
+    testle sabit. Ayrılsalardı hedef testte doğrulanıp çalışma zamanında kapsanmayabilirdi.
+
+- **Kutunun ne işe yaradığı yazıyor.** Etiket ve ipucu yalnızca *testten* bahsediyordu;
+  aynı adresin **korumaya da eklendiğini** söylemiyordu. Kullanıcı "ekstra site eklemeyi
+  bulamadım" derken haklıydı — özellik vardı, ama öyle sunulmuyordu.
+
 - **Asılı kalan bir CI işi artık teşhis edilebilir.** Ölçüldü (2026-09-15, koşum
   `35023485144`): kurulum testinin "üzerine yükseltme kur" adımı asılı kaldı — normalde
   birkaç saniye süren bir adım, 32 dakikadan fazla. Hiçbir iş akışında `timeout-minutes`

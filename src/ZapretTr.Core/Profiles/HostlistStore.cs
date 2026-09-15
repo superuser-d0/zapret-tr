@@ -157,6 +157,48 @@ public sealed class HostlistStore
 
         return host.Contains(',', StringComparison.Ordinal) ? null : host;
     }
+
+    /// <summary>
+    /// Kullanicinin girdisi kullanilamiyorsa SEBEBINI Turkce anlatir; kullanilabiliyorsa null.
+    /// </summary>
+    /// <remarks>
+    /// OLCULDU (issue #1, KeremKuyucu, 2026-09-15): kullanici "Acilmayan site" kutusuna
+    /// Roblox'u eklemeye calisti, olmayinca virgulle iki adres yazdi, yine olmadi ve
+    /// "ya calismiyor ya da bir seyi yanlis yapiyorum" dedi. Ikisi de dogru degildi:
+    /// girdisi <see cref="TryParseDomain"/> tarafindan REDDEDILIYORDU ve bunu ona
+    /// soyleyen hicbir sey yoktu. Basari yolunda "Kendi hedefiniz eklendi: ..." satiri
+    /// var, basarisizlik yolunda hicbir sey yoktu -- yani kullanici kendi girdisinin
+    /// yok sayildigini gorebilecek durumda degildi.
+    ///
+    /// Virgul .NET'in <see cref="Uri"/> ayristiricisi tarafindan zaten reddediliyor
+    /// (olculdu: "a.com,b.com" ve "a.com, b.com" icin TryCreate false donuyor), yani
+    /// burada yapilan is yalnizca SEBEBI soylemek.
+    /// </remarks>
+    public static string? DescribeUnusableTarget(string? input)
+    {
+        // Bos birakmak gecerli bir secim: varsayilan hedefler kullanilir.
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return null;
+        }
+
+        if (TryParseDomain(input) is not null)
+        {
+            return null;
+        }
+
+        var text = input.Trim();
+
+        // Kullanicinin kendi bulacagi ilk care virgul; sebebi ayrica soylenmezse
+        // "yazdim, olmadi" dongusune giriyor.
+        if (text.Contains(',', StringComparison.Ordinal) || text.Contains(' ', StringComparison.Ordinal))
+        {
+            return $"\"{text}\" anlaşılamadı: bu kutuya TEK bir adres yazın (örnek: roblox.com). "
+                   + "Şimdilik birden fazla adres desteklenmiyor.";
+        }
+
+        return $"\"{text}\" bir adres olarak anlaşılamadı. Örnek: roblox.com";
+    }
 }
 
 /// <summary>hostlist-domains.json'un govdesi.</summary>
