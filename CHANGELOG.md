@@ -6,6 +6,25 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [Yayınlanmamış]
+
+### Düzeltildi
+
+- **Hiç cevap gelmeyen bir bölüm için dakikalarca aday denenmiyor.** İlk saha raporunda
+  ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)) ölçüldü: QUIC bölümünde
+  denenen **29 adayın hepsi** zaman aşımına uğradı, her biri ~11,7 saniye — yani sonucu
+  baştan belli bir arama için **yaklaşık 5,5 dakika**. Aynı koşumda HTTPS kazananı 1,5
+  saniyede bulunmuştu. Artık bir bölümde art arda 12 aday hiç cevap alamazsa **ve** bunlar
+  en az 4 farklı desync yöntemini kapsıyorsa o bölüm bırakılıyor; o raporun verisinde bu,
+  12. adaya denk geliyor ve testten ~3,3 dakika kazandırıyor.
+  - Sayı tek başına yetmiyor, **yöntem çeşitliliği** de aranıyor: aynı yöntemin 12 parametre
+    varyasyonu "her şeyi denedik" demek değil.
+  - Yalnızca **tam sessizlik** sayılıyor. RST ya da engel sayfası bir *cevaptır* — paketler
+    karşı tarafa ulaşıyor demektir ve başka bir aday işe yarayabilir; sayaç o durumda
+    sıfırlanıyor.
+  - Bölüm sessizce bırakılmıyor: kaç aday ve kaç yöntem denendiği, neden vazgeçildiğiyle
+    birlikte günlüğe yazılıyor ve bütün denemeler raporda duruyor.
+
 ## [0.2.2]
 
 Hata düzeltme sürümü. Başlığı: **koruma açıkken engellenmemiş sitelerin bozulması.**

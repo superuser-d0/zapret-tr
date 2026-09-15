@@ -2274,3 +2274,39 @@ parcacigini_kilitlemiyor`, mesaj: "where.exe baslangic penceresinde olmeliydi."
 **Ders:** yayın iş akışı testleri kapı olarak kullanıyor, dolayısıyla zamanlamaya duyarlı
 her test bir yayını düşürebilir. Yeni test yazarken "bu iddia makine yüküne mi bağlı?"
 sorusu sorulmalı; bağlıysa ya üst sınır cömert olmalı ya da iddia kurulmamalı.
+
+### 2026-09-15: cevapsız bölümde erken vazgeçme (issue #1'in ikinci yarısı)
+
+**Sorun (issue #1 raporunda ölçüldü):** QUIC bölümünde 29 adayın hepsi zaman aşımı,
+aday başına ~11,7 sn, toplam ~340 sn. Aynı koşumda tcp443 kazananı 1,47 sn'de,
+tcp80 kazananı 1,41 sn'de bulundu. Yani testin süresinin yarıdan fazlası, sonucu
+baştan belli bir aramaya gidiyordu.
+
+**Değerlendirilen iki yol:**
+1. **QUIC zaman aşımını kısmak** (8 sn → 3-4 sn). YAPILMADI: bu, "engelli mi" kararının
+   doğruluğunu etkiler. Yavaş bir hatta meşru bir el sıkışma 8 sn'ye yaklaşabilir ve
+   kısaltmak sessizce yanlış ölçüm üretir — bu projede en pahalı hata sınıfı o.
+2. **Tam sessizlikte erken vazgeçmek.** YAPILDI: ölçüm doğruluğuna hiç dokunmuyor,
+   yalnızca sonuç vermeyeceği belli olan aramayı kesiyor.
+
+**Kural:** art arda `SessizlikEsigi` (12) aday hiç cevap alamazsa **ve** aralarında en az
+`SessizlikYontemEsigi` (4) farklı `--dpi-desync=` yöntemi varsa bölüm bırakılır.
+- **Neden iki koşul:** aynı yöntemin 12 varyasyonu "her şeyi denedik" değil. Çeşitlilik
+  koşulu, sayaç dolduğu için değil **yöntem havuzu tükendiği için** vazgeçilmesini sağlıyor.
+- **Neden yalnızca zaman aşımı:** RST ve engel sayfası birer CEVAP — paketler karşıya
+  ulaşıyor demektir, başka bir aday işe yarayabilir. Herhangi bir cevapta sayaç sıfırlanıyor.
+- **Sessiz değil:** ilerleme mesajı kaç aday/kaç yöntem denendiğini ve sebebi yazıyor;
+  denemelerin hepsi raporda kalıyor.
+
+**Eşikler nereden:** issue #1'deki QUIC sırasının GERÇEK hâline bakıldı. 12. adayda dört
+aile (fake, udplen, fake+udplen, ipfrag2) denenmiş oluyor; 13-29 arası bu ailelerin
+parametre varyasyonları. `SessizBolumTests.Issue1_Kosumunda_12nci_Adayda_Vazgecilirdi`
+bunu veriyle sabitliyor — eşikler değişirse test düşer.
+
+**Kazanç (o veriyle):** 29 → 12 aday, ~200 sn ≈ 3,3 dakika.
+
+**ÖLÇÜLMEDİ:** gerçek bir hatta yeni davranışın koşumu. Eşiklerin başka bir hattın aday
+sırasında da dört aileyi kapsadığı varsayılıyor; kapsamazsa vazgeçme daha geç olur
+(zarar yok, yalnızca kazanç azalır). Ters yön — çalışan bir adayın 12. sıradan sonra
+gelmesi ve kaçırılması — yalnızca o adaydan önceki 12 denemenin TAMAMEN sessiz olduğu
+durumda mümkün; o hatta paketler hiç ulaşmıyor demektir.

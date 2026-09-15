@@ -319,6 +319,11 @@ public sealed class StrategyProber(
         // 8 gercek aday.
         var triedArgs = new HashSet<string>(StringComparer.Ordinal);
 
+        // Tamamen cevapsiz bolumu birakmak icin: art arda kac aday hic cevap almadi
+        // ve aralarinda kac FARKLI desync yontemi var. Gerekcesi BolumCevapsiz'da.
+        var ardisikSessiz = 0;
+        var sessizYontemler = new HashSet<string>(StringComparer.Ordinal);
+
         // Anahtar NORMALLESTIRILMIS: bayrak sirasi disinda ayni olan iki aday ayni
         // adaydir. Olculdu: "tt-80-fake-fakedsplit" ile merdivenin urettigi
         // "fake-fakedsplit#1" ayni uc bayragi farkli sirada tasiyor ve uc bagimsiz
@@ -363,11 +368,44 @@ public sealed class StrategyProber(
                 progress?.Report(new ProbeProgress(
                     tier, label, i, candidateList.Count, $"{section.ToJsonName()} · {candidate.Id}"));
 
+                // Bu adayin kendi denemelerini ayirt edebilmek icin: liste bolum
+                // boyunca birikiyor, aday basina da hedef sayisi kadar satir ekleniyor.
+                var oncekiDenemeSayisi = attempts.Count;
+
                 var verified = await TryCandidateAsync(
                     section, candidate, blockedTargets, attempts, abandoned, cancellationToken).ConfigureAwait(false);
 
+                var buAdayinDenemeleri = attempts.Skip(oncekiDenemeSayisi).ToList();
+                var tamamenCevapsiz = buAdayinDenemeleri.Count > 0
+                    && buAdayinDenemeleri.All(a => !a.Succeeded
+                        && string.Equals(a.Detail, CevapsizlikDetayi, StringComparison.Ordinal));
+
+                if (tamamenCevapsiz)
+                {
+                    ardisikSessiz++;
+                    sessizYontemler.Add(DesyncYontemi(candidate.Args));
+                }
+                else
+                {
+                    // Herhangi bir CEVAP geldiyse (RST, engel sayfasi, basari) sayac
+                    // sifirlanir: paketlerimiz karsi tarafa ulasiyor demektir.
+                    ardisikSessiz = 0;
+                    sessizYontemler.Clear();
+                }
+
                 if (verified.Count == 0)
                 {
+                    if (BolumCevapsiz(ardisikSessiz, sessizYontemler.Count))
+                    {
+                        progress?.Report(new ProbeProgress(
+                            tier, label, i + 1, candidateList.Count,
+                            $"{section.ToJsonName()}: {ardisikSessiz} aday üst üste hiç cevap alamadı "
+                            + $"({sessizYontemler.Count} farklı yöntem denendi). Bu bölüm bırakılıyor; "
+                            + "cevap gelmeyen bir yolu desync hilesiyle açmak mümkün değil."));
+
+                        return best;
+                    }
+
                     continue;
                 }
 
@@ -401,6 +439,81 @@ public sealed class StrategyProber(
     public const string EngineFailurePrefix = "calistirilamadi: ";
 
     public const int MotorHataEsigi = 25;
+
+    /// <summary>Hicbir cevap gelmedigini anlatan detay.</summary>
+    public const string CevapsizlikDetayi = "zaman asimi";
+
+    /// <summary>
+    /// Bir bolumde art arda bu kadar aday HICBIR cevap alamazsa bolum birakilir.
+    /// </summary>
+    public const int SessizlikEsigi = 12;
+
+    /// <summary>
+    /// ...ve sessiz kalan adaylar arasinda en az bu kadar FARKLI desync yontemi
+    /// bulunmali. Sayi tek basina yetmiyor: ayni yontemin 12 parametre varyasyonu
+    /// "her seyi denedik" demek degil.
+    /// </summary>
+    public const int SessizlikYontemEsigi = 4;
+
+    /// <summary>
+    /// Bolum tamamen cevapsiz mi: art arda <see cref="SessizlikEsigi"/> aday, hepsi
+    /// zaman asimi, ve aralarinda en az <see cref="SessizlikYontemEsigi"/> farkli
+    /// desync yontemi.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// OLCULDU (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 29 adayin HEPSI
+    /// zaman asimina ugradi, her biri ~11.7 sn, toplam ~340 sn. Yani 5-6 dakika,
+    /// sonucu bastan belli bir arama icin harcandi. Ayni raporda tcp443 ve tcp80
+    /// kazananlari 1.4-1.9 sn'de bulunmustu.
+    /// </para>
+    /// <para>
+    /// Esikler o rapordaki gercek siraya bakilarak secildi: 12. adaya gelindiginde
+    /// dort farkli yontem (fake, udplen, fake+udplen, ipfrag2) denenmis ve dordu de
+    /// tam sessizlikle donmus oluyor; kalan 17 deneme ayni ailelerin parametre
+    /// varyasyonlari. Yani yontem cesitliligi tukendikten SONRA vazgeciliyor,
+    /// sayaç dolduğu icin degil.
+    /// </para>
+    /// <para>
+    /// Neden yalnizca ZAMAN ASIMI sayiliyor: RST ya da engel sayfasi bir CEVAPTIR,
+    /// yani paketlerimiz karsi tarafa ulasiyor ve baska bir aday ise yarayabilir.
+    /// Tam sessizlik ise istegin hic gitmedigini gosterir; bunu bir desync hilesiyle
+    /// cozemiyorsak baska bir hile de cozmuyor.
+    /// </para>
+    /// <para>
+    /// Bolum SESSIZCE birakilmiyor: cagiran taraf ilerleme mesajiyla sebebi yaziyor
+    /// ve denemelerin hepsi raporda duruyor.
+    /// </para>
+    /// </remarks>
+    public static bool BolumCevapsiz(int ardisikSessiz, int farkliYontem)
+        => ardisikSessiz >= SessizlikEsigi && farkliYontem >= SessizlikYontemEsigi;
+
+    /// <summary>
+    /// Arguman dizgisindeki <c>--dpi-desync=</c> degeri; yoksa <c>(yok)</c>.
+    /// </summary>
+    /// <remarks>
+    /// Yontem cesitliligini saymak icin. "fake" ile "fake,udplen" AYRI sayiliyor:
+    /// ikincisi paketi baska turlu bicimlendiriyor, yani gercekten baska bir hile.
+    /// </remarks>
+    public static string DesyncYontemi(string? args)
+    {
+        if (string.IsNullOrWhiteSpace(args))
+        {
+            return "(yok)";
+        }
+
+        const string onek = "--dpi-desync=";
+
+        foreach (var parca in args.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (parca.StartsWith(onek, StringComparison.Ordinal))
+            {
+                return parca[onek.Length..];
+            }
+        }
+
+        return "(yok)";
+    }
 
     public static bool MotorSurekliDusuyor(
         IReadOnlyList<CandidateResult> attempts, out string sebep)
