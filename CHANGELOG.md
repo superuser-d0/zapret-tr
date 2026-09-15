@@ -6,10 +6,33 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
-## [Yayınlanmamış]
+## [0.2.1]
+
+Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açık bilgisayarlarda ZapretTR'in
+açılmaması.** Uygulama tek dosya olarak yayınlanıyor, böylece Windows'un tek tek engellediği
+imzasız DLL'ler ortadan kalkıyor. Uyarıyı alan bir kullanıcının bilgisayarında bu sürümün
+kurulumsuz bir denemesi çalıştı; kurulum paketiyle yükseltme otomatik kurulum testinde
+sınandı. Ayrıca servis sağlayıcı tespiti ve Windows güvenlik engellerinin anlatımı düzeltildi.
 
 ### Düzeltildi
 
+- **Akıllı Uygulama Denetimi'nin "Bu uygulamanın bir kısmı engellendi … ZapretTR.dll"
+  engeli.** Bu bir virüs tespiti değil: Akıllı Uygulama Denetimi (Smart App Control) açık bir
+  bilgisayarda Windows, imzasız her DLL'i yüklenirken ayrı ayrı itibara soruyor. Her sürümde
+  değişen ve az indirilmiş `ZapretTR.dll`'in itibarı yok, dolayısıyla uygulamanın bütün kodu
+  yüklenmiyordu. Kurulan 244 dosyadan yalnızca dördü imzasızdı (`ZapretTR.exe`,
+  `ZapretTR.dll`, `ZapretTr.Core.dll`, `ZapretTr.Prober.dll`); uygulama artık **tek dosya**
+  olarak yayınlanıyor ve üç DLL exe'nin içinde. Diskte imzasız olarak yalnızca `ZapretTR.exe`
+  kalıyor, kurulum da eski sürümlerden kalan DLL'leri siliyor. **Sınır:** bu, imzalamanın
+  yerini tutmuyor. Akıllı Uygulama Denetimi exe'nin kendisini de engelleyebilir; o durumda
+  sorun giderme rehberinin "Windows engelliyor" bölümündeki yol geçerli.
+- **winws'in yüklediği bir DLL engellendiğinde bu adıyla söyleniyor.** `winws.exe`'nin
+  yanındaki `cygwin1.dll` ve `WinDivert.dll` de imzasız. Windows exe'ye izin verip bu
+  DLL'lerden birini engellerse winws hiçbir şey yazmadan `-1073740760` koduyla kapanıyordu:
+  Başlat yalnızca bu sayıyı gösteriyor, parametre testi ise **her adayı "geçersiz parametre"
+  sayıp** "hiçbir strateji çalışmadı" diyordu. Artık iki yol da yükleyicinin engel kodlarını
+  (0xC0000428 imza doğrulanamadı, 0xC0000906/0xC0000907 antivirüs, 0xC0000361-0xC0000364
+  grup ilkesi) tanıyıp engeli ve çözümü yazıyor.
 - **Servis sağlayıcı tespiti Türk Telekom'da gereksiz soru sormuyor, Vodafone Mobil'e doğru
   profili öneriyor.** 0.2.0'dan beri tespit önce ipinfo.io'ya soruyor ve o, Türk Telekom sabit
   hattın adını "Turk Telekomunikasyon" diye veriyor; Türk Telekom Mobil profilindeki "turk
