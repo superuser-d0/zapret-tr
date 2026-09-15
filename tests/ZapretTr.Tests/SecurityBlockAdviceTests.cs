@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
 using ZapretTr.Core.Engine;
 using IoPath = System.IO.Path;
 
@@ -115,6 +116,59 @@ public sealed class SecurityBlockAdviceTests
             File.ReadAllText(IoPath.Combine(motor, "WinwsRunner.cs")));
         Assert.Contains("SecurityBlockAdvice.Describe(ex, \"dnscrypt-proxy.exe\")",
             File.ReadAllText(IoPath.Combine(motor, "DnsCryptRunner.cs")));
+    }
+
+    [DllImport("ntdll.dll")]
+    private static extern int RtlNtStatusToDosError(int status);
+
+    [Theory]
+    [InlineData(unchecked((int)0xC0000428), 577, SecurityBlockKind.ApplicationControl)]
+    [InlineData(unchecked((int)0xC0000906), 225, SecurityBlockKind.Antivirus)]
+    [InlineData(unchecked((int)0xC0000907), 226, SecurityBlockKind.Antivirus)]
+    [InlineData(unchecked((int)0xC0000361), 1260, SecurityBlockKind.GroupPolicy)]
+    [InlineData(unchecked((int)0xC0000364), 1260, SecurityBlockKind.GroupPolicy)]
+    public void Yukleyici_cikis_kodu_engeli_adiyla_soyluyor(int cikisKodu, int win32, SecurityBlockKind tur)
+    {
+        // Eslemeyi Windows'un kendisine soruyoruz: bir kod yanlis ezberlenmisse test duser.
+        Assert.Equal(win32, RtlNtStatusToDosError(cikisKodu));
+
+        var metin = SecurityBlockAdvice.DescribeExitCode(cikisKodu, "winws.exe");
+
+        Assert.NotNull(metin);
+        Assert.Contains("winws.exe", metin);
+        Assert.Contains($"0x{unchecked((uint)cikisKodu):X8}", metin);
+        if (tur != SecurityBlockKind.GroupPolicy)
+        {
+            // Grup ilkesi rehbere yollamiyor: cozum BT yoneticisinde.
+            Assert.Contains("Windows engelliyor", metin);
+        }
+
+        if (tur == SecurityBlockKind.ApplicationControl)
+        {
+            Assert.Contains("Akıllı Uygulama Denetimi", metin);
+            Assert.Contains("Bu uygulamanın bir kısmı engellendi", metin);
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]                               // winws zaten calisiyor
+    [InlineData(unchecked((int)0xC0000135))]      // DLL bulunamadi: dosya eksik, engel degil
+    [InlineData(unchecked((int)0xC0000005))]      // erisim ihlali: cokme
+    [InlineData(unchecked((int)0xC000013A))]      // Ctrl+C ile durduruldu
+    public void Baska_cikis_kodlari_guvenlik_engeli_sayilmiyor(int cikisKodu)
+        => Assert.Null(SecurityBlockAdvice.DescribeExitCode(cikisKodu, "winws.exe"));
+
+    [Fact]
+    public void Winws_erken_olumu_ve_dogrulama_engeli_taniyor()
+    {
+        // Dogrulama yolu engeli metin olarak donerse test motoru her adayi "gecersiz
+        // parametre" diye eler. Iki cagri da kaynakta sabitleniyor.
+        var kaynak = File.ReadAllText(IoPath.Combine(
+            XmlCommentTests.RepoRoot, "src", "ZapretTr.Core", "Engine", "WinwsRunner.cs"));
+
+        Assert.Contains("SecurityBlockAdvice.DescribeExitCode(exitCode, \"winws.exe\")", kaynak);
+        Assert.Contains("SecurityBlockAdvice.DescribeExitCode(process.ExitCode, \"winws.exe\")", kaynak);
     }
 
     [Fact]

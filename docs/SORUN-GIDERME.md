@@ -338,6 +338,14 @@ indirilmiş dosyalarda yanlış alarm olarak sık görülüyor.
 imzası olmayan ya da Microsoft'un tanımadığı uygulamaları **hiç çalıştırmaz** ve "yine de
 çalıştır" seçeneği sunmaz; tek bir uygulama için istisna da tanımlanamaz.
 
+Aynı özellik bazen *"Bu uygulamanın bir kısmı engellendi … ZapretTR.dll"* bildirimiyle
+görünür. 0.2.0 ve öncesinde uygulamanın kodu imzasız DLL'lerdeydi ve bu engel uygulamayı
+açılmaz hâle getiriyordu. 0.2.1'den itibaren o DLL'ler yok; bildirimi hâlâ görüyorsanız önce
+son sürümü kurun. Bildirimin altında **"+2 bildirim"** gibi bir düğme varsa açın: her biri
+engellenen başka bir dosyayı adlandırır. `cygwin1.dll` ya da `WinDivert.dll` yazıyorsa
+uygulama açılır ama koruma (winws) başlamaz; ZapretTR günlüğe "winws.exe açılır açılmaz
+kapandı (çıkış kodu 0xC0000428)" yazar. Çözüm yine yukarıdaki yol.
+
 - Tek yol özelliği kapatmak: **Windows Güvenliği → Uygulama ve tarayıcı denetimi →
   Akıllı Uygulama Denetimi ayarları → Kapalı**. Bu, bütün imzasız uygulamalara izin verir;
   kararı siz verin.

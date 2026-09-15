@@ -73,6 +73,16 @@ jobs:
             throw "msquic.dll yayin ciktisinda yok. QUIC olcumu sessizce calismaz."
           }
 
+      # Akilli Uygulama Denetimi imzasiz DLL'i ayri ayri engelliyor (0.2.0:
+      # "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll"). Yayin tek dosya;
+      # imzasiz tek PE dosyasi exe olmali. Gerekcesi ZapretTr.App.csproj'da.
+      - name: yayinda imzasiz DLL yok
+        shell: pwsh
+        run: |
+          $imzasiz = Get-ChildItem publish/app -Recurse -File -Include *.dll,*.exe |
+            Where-Object { $_.Name -ne 'ZapretTR.exe' -and (Get-AuthenticodeSignature $_.FullName).Status -ne 'Valid' }
+          if ($imzasiz) { throw "Yayinda imzasiz dosya var: $($imzasiz.Name -join ', ')" }
+
       - name: Inno Setup kur
         run: choco install innosetup --no-progress -y
 

@@ -74,7 +74,7 @@ if (-not (Test-Path $exePath)) { throw "Yayin ciktisi bulunamadi: $exePath" }
 # olculemiyor. Bu paket bir kez bu sekilde dagitildi ve QUIC verisi hic gelmedi.
 $msQuicPath = Join-Path $PublishDir 'msquic.dll'
 if (-not (Test-Path $msQuicPath)) {
-    throw "msquic.dll yayin ciktisinda yok: $msQuicPath`nBu dosya olmadan paket QUIC bolumunu olcemez. Cli projesindeki MsQuicTekDosyaDisindaKalsin hedefi calismamis olabilir."
+    throw "msquic.dll yayin ciktisinda yok: $msQuicPath`nBu dosya olmadan paket QUIC bolumunu olcemez. Directory.Build.targets icindeki MsQuicTekDosyaDisindaKalsin hedefi calismamis olabilir."
 }
 
 # --- Paketi kur ---------------------------------------------------------------

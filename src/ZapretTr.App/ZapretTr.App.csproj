@@ -25,6 +25,34 @@
     <ApplicationIcon>Assets\ZapretTR.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <!--
+    Yayin TEK DOSYA: ZapretTR.dll, ZapretTr.Core.dll ve ZapretTr.Prober.dll exe'nin
+    icine giriyor. Sebep kod imzasi yoklugu, boyut degil.
+
+    Akilli Uygulama Denetimi (Smart App Control) acik bir makinede 0.2.0 su
+    bildirimle calismadi (2026-09-15, kullanicidan ekran goruntusu):
+      "Bu uygulamanin bir kismi engellendi ... uygulamayi kimin yayimladigini
+       dogrulayamadigimizdan ZapretTR.dll"
+    Bu bir antivirus tespiti degil: SAC her imzasiz PE dosyasini yuklenirken ayri
+    ayri itibara soruyor ve her surumde ozeti degisen, az indirilmis bir dosyanin
+    itibari yok. Yayindaki 244 dosyadan yalnizca dordu imzasizdi (exe + bu uc DLL);
+    geri kalani Microsoft imzali .NET/WPF dosyalari.
+
+    Tek dosyada yonetilen derlemeler paketin icinden bellege eslendigi icin diskte
+    imzasiz DLL kalmiyor; itibar sorulan tek dosya exe. IncludeNativeLibrariesForSelfExtract
+    KAPALI: yerel kutuphaneler (hepsi Microsoft imzali) exe'nin yaninda gercek dosya
+    olarak kaliyor, %TEMP%'e cikarma yok. Sikistirma KAPALI: sikistirilmis paket
+    antivirus makine ogrenmesine "paketleyici" gibi gorunuyor, kazanci da birkac MB.
+
+    Kosul: RuntimeIdentifier yalnizca yayinda veriliyor. Testler bu projeyi RID'siz
+    derliyor; kosulsuz PublishSingleFile orada NETSDK1097 hatasi veriyor.
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Bildirim alani icin ayrica gomulu: exe'den cikarilan simge tek bir
          32x32 goruntu ve 16x16'ya kucultulunce bulaniklasiyor. Gomulu .ico'dan

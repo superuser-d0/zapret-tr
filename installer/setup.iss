@@ -55,6 +55,36 @@ UninstallDisplayIcon={app}\{#AppExe}
 Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[InstallDelete]
+; 0.2.1'den once yayin cok dosyaliydi: ZapretTR.dll, ZapretTr.Core.dll ve
+; ZapretTr.Prober.dll exe'nin yaninda IMZASIZ duruyordu ve Akilli Uygulama
+; Denetimi "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll" diyerek
+; uygulamayi calistirmadi. Artik tek dosya (gerekcesi ZapretTr.App.csproj'da).
+; Inno yukseltmede eski dosyalari kendiliginden silmiyor; silinmezse o imzasiz
+; DLL'ler ve ~150 MB .NET kalintisi Program Files'ta kalir. [InstallDelete]
+; dosya kopyalamadan ONCE calisiyor: guncel yerel DLL'ler (msquic, WPF'in
+; *_cor3 dosyalari) [Files] ile hemen geri yaziliyor. Yalnizca kok dizin; alt
+; klasorler (zapret-winws, dnscrypt-proxy, profiles) bu desenlere girmiyor.
+; Kullanici ayarlari ProgramData'da, burada degil.
+Type: files; Name: "{app}\*.dll"
+Type: files; Name: "{app}\ZapretTR.deps.json"
+Type: files; Name: "{app}\ZapretTR.runtimeconfig.json"
+Type: files; Name: "{app}\createdump.exe"
+; WPF/WinForms yerellestirme derlemeleri; tek dosyada exe'nin icindeler.
+Type: filesandordirs; Name: "{app}\cs"
+Type: filesandordirs; Name: "{app}\de"
+Type: filesandordirs; Name: "{app}\es"
+Type: filesandordirs; Name: "{app}\fr"
+Type: filesandordirs; Name: "{app}\it"
+Type: filesandordirs; Name: "{app}\ja"
+Type: filesandordirs; Name: "{app}\ko"
+Type: filesandordirs; Name: "{app}\pl"
+Type: filesandordirs; Name: "{app}\pt-BR"
+Type: filesandordirs; Name: "{app}\ru"
+Type: filesandordirs; Name: "{app}\tr"
+Type: filesandordirs; Name: "{app}\zh-Hans"
+Type: filesandordirs; Name: "{app}\zh-Hant"
+
 [Files]
 ; Uygulama ve kutuphaneleri
 ; Hata ayiklama sembolleri (.pdb) disarida. Yayin zaten DebugType=none ile

@@ -95,6 +95,62 @@ public static class SecurityBlockAdvice
             : null;
     }
 
+    /// <summary>STATUS_INVALID_IMAGE_HASH: yüklenen bir dosyanın imzası kod bütünlüğünden geçmedi.</summary>
+    public const int InvalidImageHashStatus = unchecked((int)0xC0000428);
+
+    /// <summary>
+    /// Süreç açılır açılmaz bir güvenlik engeliyle kapandıysa kullanıcıya gösterilecek
+    /// metni döndürür, değilse null.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="Describe(Win32Exception, string)"/> yalnızca exe'nin KENDİSİNİN
+    /// engellendiği durumu görüyor. Akıllı Uygulama Denetimi exe'ye izin verip onun
+    /// yüklediği imzasız bir DLL'i engellerse <c>Process.Start</c> başarılı dönüyor ve
+    /// süreç yükleyicinin NTSTATUS koduyla kapanıyor. 2026-09-15'te bir kullanıcı
+    /// ZapretTR.dll için tam bu engeli gördü ("Bu uygulamanın bir kısmı engellendi").
+    /// winws.exe'nin yüklediği cygwin1.dll ve WinDivert.dll de imzasız.
+    /// </para>
+    /// <para>
+    /// NTSTATUS → Win32 eşlemeleri geliştirici makinesinde <c>RtlNtStatusToDosError</c>
+    /// ile bütün 0xC00xxxxx aralığı taranarak ölçüldü: 0xC0000428 → 577,
+    /// 0xC0000906/0xC0000907 → 225/226, 0xC0000361-0xC0000364 → 1260. 4551 ailesine
+    /// eşlenen yerel bir NTSTATUS YOK; kod bütünlüğünün DLL reddi yükleyicide
+    /// 0xC0000428 olarak görünüyor. Gerçek bir engelle denenmedi (SAC'i açmak gerekiyor).
+    /// </para>
+    /// </remarks>
+    /// <param name="exitCode"><see cref="System.Diagnostics.Process.ExitCode"/>.</param>
+    /// <param name="fileName">Kapanan dosyanın adı (ör. winws.exe).</param>
+    public static string? DescribeExitCode(int exitCode, string fileName)
+    {
+        var tur = unchecked((uint)exitCode) switch
+        {
+            0xC0000428 => SecurityBlockKind.ApplicationControl,
+            0xC0000906 or 0xC0000907 => SecurityBlockKind.Antivirus,
+            >= 0xC0000361 and <= 0xC0000364 => SecurityBlockKind.GroupPolicy,
+            _ => (SecurityBlockKind?)null,
+        };
+
+        if (tur is null)
+        {
+            return null;
+        }
+
+        var kod = $"(çıkış kodu 0x{unchecked((uint)exitCode):X8})";
+        var bas = tur switch
+        {
+            SecurityBlockKind.ApplicationControl =>
+                $"{fileName} açılır açılmaz kapandı {kod}: yüklediği imzasız bir DLL'in yayımcısı " +
+                "doğrulanamadığı için Windows onu engelledi. Bildirimde \"Bu uygulamanın bir kısmı " +
+                "engellendi\" yazar; bu Windows'un Akıllı Uygulama Denetimi (Smart App Control). ",
+            SecurityBlockKind.Antivirus =>
+                $"{fileName} açılır açılmaz kapandı {kod}: yüklediği bir dosya antivirüs tarafından engellendi. ",
+            _ => $"{fileName} açılır açılmaz kapandı {kod}: yüklediği bir dosya grup ilkesiyle engellendi. ",
+        };
+
+        return bas + Solution(tur.Value);
+    }
+
     private static string? Describe(int code, string fileName, string? windowsMessage)
     {
         var tur = Classify(code);
@@ -107,10 +163,22 @@ public static class SecurityBlockAdvice
             ? $"(Windows hata kodu {code})"
             : $"(Windows: \"{windowsMessage.Trim()}\", kod {code})";
 
-        return tur switch
+        var bas = tur switch
+        {
+            SecurityBlockKind.Antivirus => $"{fileName} antivirüs tarafından engellendi {windows}. ",
+            SecurityBlockKind.ApplicationControl =>
+                $"{fileName} Windows'un Akıllı Uygulama Denetimi (Smart App Control) tarafından engellendi {windows}. ",
+            _ => $"{fileName} bir grup ilkesi tarafından engellendi {windows}. ",
+        };
+
+        return bas + Solution(tur.Value);
+    }
+
+    private static string Solution(SecurityBlockKind kind)
+    {
+        return kind switch
         {
             SecurityBlockKind.Antivirus =>
-                $"{fileName} antivirüs tarafından engellendi {windows}. " +
                 "Microsoft Defender ve bazı antivirüsler, imzasız olan ve ağ sürücüsü kullanan " +
                 "bu dosyayı yanlışlıkla zararlı sayabiliyor. Çözüm: Windows Güvenliği → Virüs ve " +
                 "tehdit koruması → Koruma geçmişi'nde ZapretTR kaydını açıp \"İzin ver\" deyin, " +
@@ -118,15 +186,14 @@ public static class SecurityBlockAdvice
                 "onun karantinasına bakın. Adımlar: docs/SORUN-GIDERME.md, \"Windows engelliyor\".",
 
             SecurityBlockKind.ApplicationControl =>
-                $"{fileName} Windows'un Akıllı Uygulama Denetimi (Smart App Control) tarafından " +
-                $"engellendi {windows}. Bu özellik imzasız uygulamaları çalıştırmıyor ve tek tek " +
+                "Bu özellik imzasız uygulamaları çalıştırmıyor ve tek tek " +
                 "istisna tanımlanamıyor; ZapretTR'in kod imzalama sertifikası yok. Tek yol Windows " +
                 "Güvenliği → Uygulama ve tarayıcı denetimi → Akıllı Uygulama Denetimi ayarları'ndan " +
                 "özelliği kapatmak. Kurumsal bilgisayarda bu bir BT ilkesi olabilir; o durumda " +
                 "yöneticinize danışın. Adımlar: docs/SORUN-GIDERME.md, \"Windows engelliyor\".",
 
             _ =>
-                $"{fileName} bir grup ilkesi tarafından engellendi {windows}. Bu genellikle " +
+                "Bu genellikle " +
                 "kurumsal bilgisayarlarda BT yöneticisinin koyduğu bir kısıtlamadır; ZapretTR " +
                 "tarafından aşılamaz. Yöneticinize danışın.",
         };

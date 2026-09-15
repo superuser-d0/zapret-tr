@@ -2026,6 +2026,77 @@ gerekiyor.
    sonra kurulum paketi ve gerekirse winws.exe https://www.microsoft.com/en-us/wdsi/filesubmission
    adresine "Software developer" olarak gönderilir. Microsoft hesabı gerekiyor; kullanıcı yapar.
 
+### 2026-09-15: "Defender ZapretTR.dll'i engelledi" = Akıllı Uygulama Denetimi (0.2.1 adayı)
+
+**Kanıt (kullanıcıdan gelen ekran görüntüsü, 09:43 bildirimi):** "Windows Güvenliği — Bu
+uygulamanın bir kısmı engellendi. Uygulamanın ZapretTR bazı özellikleri, uygulamayı kimin
+yayımladığından ZapretTR.dll başarısız olabilir." Bu SAC'in DLL engeli bildirimi; Defender
+antivirüs tespiti DEĞİL (tehdit adı yok, karantina yok).
+
+Bildirim Türkçe ("Windows Güvenliği"); geliştirici makinesinin arayüzü İngilizce ve
+`wpndatabase.db`'deki güvenlik bildirimleri yalnızca "Threats found" (14 Eylül 23:48) ve
+"Turn on virus protection". Metin Microsoft Q&A'daki SAC DLL engeliyle aynı ("We can't
+confirm who published sppc.dll"). Bildirimde **"+2 bildirim"** var: engellenen başka iki
+dosya olabilir. En olası adaylar ZapretTr.Core.dll ve ZapretTr.Prober.dll, ama winws'in
+imzasız cygwin1.dll / WinDivert.dll'i de olabilir. **Kullanıcıdan "+2 bildirim"in açılmış
+ekran görüntüsü istenmeli.**
+
+**Ölçülen (geliştirici makinesi):** bu makinede aynı olay YOK. Defender olay günlüğünde tek
+tespit hâlâ zapret2 zip'i (2026-09-14 23:48); CodeIntegrity günlüğünün son kaydı
+2026-09-14 23:27 ve ZapretTR'e ait değil; SAC burada Değerlendirme modunda. Yani bildirim
+başka (SAC'i açık) bir makineden. Tanımlar 1.459.216.0 ile `C:\Program Files\ZapretTR`,
+`publish\app`, `vendor` taraması temiz.
+
+**Sebep:** SAC imzasız her PE dosyasını yüklenirken ayrı ayrı itibara soruyor. 0.2.0 yayını
+244 dosya; `Get-AuthenticodeSignature` ile imzasız olanlar yalnızca `ZapretTR.exe`,
+`ZapretTR.dll`, `ZapretTr.Core.dll`, `ZapretTr.Prober.dll` (gerisi Microsoft imzalı).
+Uygulamanın bütün kodu `ZapretTR.dll`'de; o engellenince uygulama çalışmaz. Neden exe'nin
+geçip DLL'in takıldığı BİLİNMİYOR.
+
+**Yapılan:**
+- `ZapretTr.App.csproj`: `PublishSingleFile` (yalnızca RID verildiğinde; testler RID'siz
+  derliyor), yerel kütüphaneler dışarıda, sıkıştırma kapalı. Çıktı 7 dosya: `ZapretTR.exe`
+  (~154 MB) + msquic + 5 WPF `*_cor3` DLL'i; imzasız olan yalnızca exe (yerelde ölçüldü).
+- `msquic.dll` tek dosyada yine düştü (Cli'deki ölçümün aynısı). `MsQuicTekDosyaDisindaKalsin`
+  hedefi Cli csproj'dan `Directory.Build.targets`'a taşındı (koşul: `PublishSingleFile`);
+  iki yayında da msquic yanda (ölçüldü).
+- `setup.iss` `[InstallDelete]`: kökteki `*.dll`, deps/runtimeconfig json, createdump.exe ve
+  13 yerelleştirme klasörü kopyalamadan önce siliniyor; yoksa yükseltmede eski imzasız DLL'ler
+  Program Files'ta kalırdı.
+- `installer-test.yml`: yayında imzasız DLL yok kontrolü; yükseltmeden önce eski sürüm
+  kalıntısı yerleştirilip silindiği ve msquic/wpfgfx'in geri yazıldığı doğrulanıyor.
+  `release.yml`: aynı imzasız DLL kontrolü.
+- Motor tarafı: `winws.exe`, `cygwin1.dll`, `WinDivert.dll`, `dnscrypt-proxy.exe` imzasız
+  (yalnızca `WinDivert64.sys` imzalı). SAC exe'ye izin verip DLL'i reddederse `Process.Start`
+  başarılı, süreç yükleyici koduyla ölüyor. `SecurityBlockAdvice.DescribeExitCode`:
+  bütün 0xC00xxxxx aralığı `RtlNtStatusToDosError` ile tarandı; yerel eşlemeler 0xC0000428
+  → 577, 0xC0000906/907 → 225/226, 0xC0000361-364 → 1260. 4551 ailesinin yerel NTSTATUS'u
+  yok. `WinwsRunner.BuildEarlyExitException` ve `ValidateAsync` bunu kullanıyor;
+  `ValidateAsync` engelde metin döndürmek yerine istisna atıyor, çünkü metin "geçersiz
+  parametre" sayılıp her aday sessizce eleniyordu. Testler eşlemeyi ntdll'e soruyor.
+  **Gerçek bir SAC DLL engeliyle 0xC0000428'in geldiği ÖLÇÜLMEDİ**; kod bütünlüğünün
+  bölüm oluşturma reddinin bu kod olduğu bilinen davranış. dnscrypt-proxy (Go, yalnızca
+  sistem DLL'leri) için gerekmiyor.
+
+**Sorunu yaşayan kullanıcıda deneme (2026-09-15, kullanıcı bildirimi):** tek dosya yayını
++ WinwsRunner değişikliğiyle üretilen kurulumsuz `ZapretTR-0.2.1-deneme.zip` (SHA256
+`ade5c469...`), uyarıyı alan arkadaşın bilgisayarında "oldukça iyi çalıştı". Yani SAC'in
+engellediği makinede exe açıldı, arayüz çalıştı. Gelmeyen: "+2 bildirim"in içeriği, SAC'in
+o anki modu (Açık/Değerlendirme), kurulum paketiyle yükseltme. Kurulum paketi yolu
+(`[InstallDelete]`) yalnızca CI kurulum testinde sınandı.
+
+**Aşağıdaki ilk iki madde yazıldığında ölçülmemişti; kullanıcı denemesi ikisini de karşıladı:**
+- WPF arayüzünün tek dosya exe'den açılması. Exe `requireAdministrator`; oturum yükseltilmiş
+  değil, UAC istemeden çalıştırılamadı. CI kurulum testi exe'yi komut satırı bayraklarıyla
+  (`--register-dns-guard`, `--install-services`, `--uninstall-services`) çalıştırıyor ama
+  pencere açmıyor. **Yayından önce elle: kur, aç, tema değiştir, Başlat, tepsi simgesi.**
+- SAC AÇIK bir makinede sonucun ne olduğu. Olası iki sonuç: uygulama açılır (exe'nin itibarı
+  yetiyorsa) ya da SAC bu kez exe'yi engeller ("Akıllı Uygulama Denetimi bu uygulamayı
+  engelledi"). İkincisi bugünkünden kötü değil: bugün de uygulama açılmıyor, ama mesaj en
+  azından engelin adını söylüyor. Kalıcı çözüm hâlâ imzalama (yukarıdaki "Kodla ÇÖZÜLEMEYEN
+  kısım"); winws.exe, cygwin1.dll ve dnscrypt-proxy.exe de imzasız ve SAC onları da ayrı
+  ayrı engelleyebilir.
+
 ### 2026-09-15: servis sağlayıcı tespiti düzeltmesi (0.2.1 adayı)
 
 **Sorun (kod incelemesi ve gerçek cevaplarla ölçüldü, kullanıcı bildirimi yok):**

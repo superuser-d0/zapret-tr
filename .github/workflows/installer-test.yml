@@ -43,6 +43,18 @@ jobs:
           -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:DebugType=none
           -p:Version=0.0.1-ci --nologo
 
+      # Akilli Uygulama Denetimi imzasiz her DLL'i ayri ayri itibara soruyor ve
+      # 0.2.0'da "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll" diyerek
+      # uygulamayi calistirmadi. Yayin tek dosya; imzasiz tek PE dosyasi exe olmali.
+      # Tek dosya ayari kaybolursa (kosul, SDK degisikligi) bunu yalnizca bu gorur.
+      - name: yayinda imzasiz DLL yok
+        shell: pwsh
+        run: |
+          $imzasiz = Get-ChildItem publish/app -Recurse -File -Include *.dll,*.exe |
+            Where-Object { $_.Name -ne 'ZapretTR.exe' -and (Get-AuthenticodeSignature $_.FullName).Status -ne 'Valid' }
+          if ($imzasiz) { throw "Yayinda imzasiz dosya var: $($imzasiz.Name -join ', ')" }
+          if (-not (Test-Path publish/app/msquic.dll)) { throw "msquic.dll yayin ciktisinda yok." }
+
       - name: Inno Setup kur
         run: choco install innosetup --no-progress -y
 
@@ -175,6 +187,14 @@ jobs:
       - name: uzerine yukseltme kur
         shell: pwsh
         run: |
+          # 0.2.0 ve oncesi cok dosyaliydi. O surumlerin kalintisini taklit et:
+          # yukseltme bunlari silmezse imzasiz ZapretTR.dll Program Files'ta kalir.
+          $kok = Join-Path $env:ProgramFiles 'ZapretTR'
+          New-Item -ItemType Directory -Force (Join-Path $kok 'tr') | Out-Null
+          foreach ($f in 'ZapretTR.dll','ZapretTr.Core.dll','ZapretTR.deps.json','tr\PresentationCore.resources.dll') {
+            Set-Content (Join-Path $kok $f) 'eski surum kalintisi'
+          }
+
           $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "Yukseltme $($p.ExitCode) koduyla dondu." }
 
@@ -198,6 +218,15 @@ jobs:
 
           if (-not (ServisVar ZapretTR)) {
             throw "REGRESYON: otomatik baslatma servisi yukseltmede kayboldu."
+          }
+
+          $kok = Join-Path $env:ProgramFiles 'ZapretTR'
+          foreach ($f in 'ZapretTR.dll','ZapretTr.Core.dll','ZapretTR.deps.json','tr') {
+            if (Test-Path (Join-Path $kok $f)) { throw "Yukseltme eski surum kalintisini silmedi: $f" }
+          }
+          # [InstallDelete] kokteki *.dll'i siliyor; guncel yerel DLL'ler geri yazilmali.
+          foreach ($f in 'msquic.dll','wpfgfx_cor3.dll') {
+            if (-not (Test-Path (Join-Path $kok $f))) { throw "Yukseltmeden sonra eksik: $f" }
           }
 
           $baslangic = sc.exe qc ZapretTR | Select-String 'START_TYPE'

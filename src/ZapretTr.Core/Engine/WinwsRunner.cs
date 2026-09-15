@@ -434,6 +434,14 @@ public sealed class WinwsRunner : IAsyncDisposable
             ? " winws: " + string.Join(" | ", kopya)
             : " (winws hicbir sey yazmadan cikti)";
 
+        // winws.exe'ye izin verilip yukledigi imzasiz cygwin1.dll ya da WinDivert.dll
+        // engellenirse surec yukleyicinin NTSTATUS koduyla oluyor. Ciplak
+        // "-1073740760 koduyla kapandi" kullaniciya hicbir sey soylemiyordu.
+        if (SecurityBlockAdvice.DescribeExitCode(exitCode, "winws.exe") is { } engel)
+        {
+            return new InvalidOperationException(engel + soyledigi);
+        }
+
         if (WinDivertDriver.IsOpenFailure(kopya))
         {
             var kod = WinDivertDriver.ParseWin32Error(kopya);
@@ -506,6 +514,14 @@ public sealed class WinwsRunner : IAsyncDisposable
         if (process.ExitCode == 0)
         {
             return null;
+        }
+
+        // Guvenlik engeli bir parametre hatasi DEGIL. Metin olarak donseydi test motoru
+        // her adayi "gecersiz parametre" diye eler, kullanici da yalnizca "hicbir
+        // strateji calismadi" gorurdu. Istisna, adayin sonucuna engelin adiyla yaziliyor.
+        if (SecurityBlockAdvice.DescribeExitCode(process.ExitCode, "winws.exe") is { } engel)
+        {
+            throw new InvalidOperationException(engel);
         }
 
         // Hem \r hem \n ayraci: winws ciktisi CRLF kullaniyor ve yalnizca \n ile

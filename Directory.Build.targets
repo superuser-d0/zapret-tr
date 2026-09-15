@@ -1,0 +1,44 @@
+<Project>
+
+  <!--
+    msquic.dll tek dosya paketine GIRMEMELI; exe'nin yaninda gercek dosya olarak
+    durmali. Yoksa QuicConnection.IsSupported false doner ve QUIC olcumu sessizce
+    olmaz: belirti "QUIC bu makinede desteklenmiyor (msquic yok)".
+
+    OLCULDU, uc yayin bicimi karsilastirildi:
+      tek dosya, kirpilmamis  33.6 MB, 1 dosya   QUIC BOZUK
+      tek dosya, kirpilmis    11.3 MB, 1 dosya   QUIC BOZUK
+      cok dosya, kirpilmis    21.0 MB, 58 dosya  QUIC calisiyor
+      tek dosya + yanda msquic 11.8 MB, 2 dosya  QUIC calisiyor  (secilen)
+
+    Yani sorunun kaynagi KIRPMA DEGIL, PublishSingleFile. Bu, kirpma calismasindan
+    once de vardi: dagitilan 33.6 MB'lik saha paketi QUIC bolumunu hic olcemiyordu
+    ve kimse fark etmemisti, cunku kontrol hedefi korumasi o bolumu sessizce
+    atliyordu.
+
+    Dogrulamasi: yayin ciktisinda msquic.dll GORUNMELI (exe ile yan yana), ve
+    zapret-tr-test.exe cloudflare-quic.com teshisinde Http3 satiri BASARILI demeli.
+
+    Olcum saha araci (ZapretTr.Prober.Cli) icin yapildi. Hedef burada, cunku
+    uygulama da tek dosyaya gecti (ZapretTr.App.csproj) ve ayni dosya orada da
+    dustu; iki projede ayri kopya tutmak birinin unutulmasi demek.
+  -->
+  <Target Name="MsQuicTekDosyaDisindaKalsin" AfterTargets="Publish"
+          Condition="'$(PublishSingleFile)' == 'true'">
+    <ItemGroup>
+      <_MsQuicKaynak Include="@(RuntimePackAsset)"
+                     Condition="'%(Filename)%(Extension)' == 'msquic.dll'" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_MsQuicKaynak)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+
+    <!--
+      Kopyalama sessizce basarisiz olursa QUIC olcumu de sessizce olmaz. Bu
+      projede sessiz olcum hatasi en pahali hata sinifi, o yuzden burada
+      acikca patliyoruz.
+    -->
+    <Error Condition="!Exists('$(PublishDir)msquic.dll')"
+           Text="msquic.dll yayin ciktisina kopyalanamadi. Bu dosya olmadan QuicConnection.IsSupported false doner ve QUIC bolumu sessizce olculemez." />
+  </Target>
+
+</Project>
