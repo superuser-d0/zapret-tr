@@ -2132,3 +2132,27 @@ bulunan profili ATLIYOR. Bir profili doğrulamaya başlarken tablodan çıkarmay
 dönüyor; "turkcell" anahtar kelimesiyle Turkcell Mobil de eşleşip soru çıkıyor (öneri doğru:
 Superonline, ASN'den). ipinfo ilk sırada olduğu için nadir; dokunulmadı.
 
+
+### 2026-09-15: v0.2.1 yayını
+
+**Yayınlandı (ölçüldü, 08:43 UTC):** https://github.com/superuser-d0/zapret-tr/releases/tag/v0.2.1
+- Commit'ler: `93f19d0` (SAC: tek dosya yayın, `[InstallDelete]`, winws yükleyici engel
+  kodları), `c393295` (sürüm numarası, CHANGELOG `[0.2.1]`). Açıklamalı tag `v0.2.1`.
+- CI `c393295` üzerinde yeşil: derle ve test, kurulum testi (yeni "yayında imzasız DLL yok"
+  ve yükseltme kalıntısı adımları dahil), yayın iş akışı.
+- Dosyalar ve SHA256 (`SHA256SUMS.txt` ile GitHub'ın dosya özetleri birebir aynı):
+  - `ZapretTR-Setup-0.2.1.exe` 54 040 460 bayt, `9ee0eadac6152e31bcadd28ad2503e9d2a7bcb58fd0acad0869c3545acde3513`
+  - `zapret-tr-saha-testi.zip` 13 138 369 bayt, `c6782e5d55a78627d8032ed5165d1aed06e4e9e04bc2f1ea52c93b5fe615ded1`
+- `releases/latest` API'si `v0.2.1` döndürüyor; `github.com/.../releases/latest` 302 ile
+  `v0.2.1`'e gidiyor. README ve README-DETAYLI'deki indirme bağlantıları `releases/latest`
+  olduğu için değişiklik gerekmedi. Uygulama içi güncelleyicinin beklediği dosya adları yerinde.
+- Kurulum paketi yayından sonra İNDİRİLMEDİ (sayaç için); yayındaki paketin kendisi
+  gerçek bir makineye kurulmadı. SAC açık makinede denenen şey, aynı kodla yerelde üretilen
+  kurulumsuz zip'ti.
+
+**Açık kalanlar:**
+1. Uyarıyı alan kullanıcıdan "+2 bildirim"in içeriği gelmedi. `cygwin1.dll`, `WinDivert.dll`
+   ya da `winws.exe` yazıyorsa koruma yine başlamaz; 0.2.1 bunu yalnızca adıyla söyler.
+2. SAC açık bir makinede **kurulum paketiyle** 0.2.0 → 0.2.1 yükseltmesi ve "Güncellemeleri
+   Denetle" yolu denenmedi.
+3. Kalıcı çözüm hâlâ kod imzalama (bkz. "Kodla ÇÖZÜLEMEYEN kısım": Certum, SignPath Foundation).
