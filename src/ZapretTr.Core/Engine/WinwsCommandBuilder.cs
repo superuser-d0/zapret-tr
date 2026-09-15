@@ -27,7 +27,13 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
     /// komuta hic girmez; gereksiz trafik yakalamak yalnizca CPU harcar ve
     /// baglantiyi yavaslatir.
     /// </param>
-    public IReadOnlyList<string> BuildRuntimeCommand(IReadOnlyDictionary<StrategySection, string> winners)
+    /// <param name="hostlistDomains">
+    /// Stratejinin UYGULANACAGI alan adlari. Bos ya da null verilirse bayrak hic
+    /// eklenmez ve strateji butun trafige uygulanir (0.2.1 ve oncesinin davranisi).
+    /// </param>
+    public IReadOnlyList<string> BuildRuntimeCommand(
+        IReadOnlyDictionary<StrategySection, string> winners,
+        IReadOnlyCollection<string>? hostlistDomains = null)
     {
         ArgumentNullException.ThrowIfNull(winners);
 
@@ -43,6 +49,10 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
 
         AddGlobalFilters(args, sections);
 
+        var domains = hostlistDomains is { Count: > 0 }
+            ? string.Join(',', hostlistDomains)
+            : null;
+
         var first = true;
         foreach (var section in sections)
         {
@@ -53,11 +63,35 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
 
             first = false;
             args.Add(section.ToWinwsFilter());
+
+            // Bolum bazinda: winws hostlist'i profil basina denetliyor ("hostlist
+            // check for profile %d"), dolayisiyla bayrak her --new bolumune ayri
+            // ayri girmek zorunda. Bir kez, en basta yazmak yalnizca ilk bolumu
+            // daraltirdi ve kalan bolumler yine butun trafige dokunurdu.
+            if (domains is not null && SupportsHostlist(section))
+            {
+                args.Add($"--hostlist-domains={domains}");
+            }
+
             args.AddRange(SplitAndResolve(winners[section]));
         }
 
         return args;
     }
+
+    /// <summary>
+    /// Bolumde ana bilgisayar adi GORUNUYOR mu; yani hostlist ile daraltilabilir mi.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="StrategySection.DiscordVoice"/> HARIC tutuluyor ve bu, dogru olmasi
+    /// zorunlu bir ayrinti. O bolum STUN/UDP medya trafigi (<c>--filter-l7=discord,stun</c>)
+    /// ve iceriginde alan adi YOK. Hostlist eklenirse winws o profil icin ad esleismesi
+    /// arar, hicbir pakette bulamaz ve bolum hic devreye girmez -- yani Discord sesi
+    /// sessizce korumasiz kalirdi. Digerlerinde ad var: tcp80 Host basligi, tcp443 TLS
+    /// SNI, quic ise QUIC ClientHello SNI.
+    /// </remarks>
+    private static bool SupportsHostlist(StrategySection section)
+        => section != StrategySection.DiscordVoice;
 
     /// <summary>
     /// Test komutu: tek bir bolum, tek bir strateji, tek bir hedef IP.

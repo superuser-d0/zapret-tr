@@ -6,6 +6,51 @@ sürümleme [Semantic Versioning](https://semver.org/lang/tr/).
 Bu dosyada "doğrulandı" kelimesi dar bir anlam taşır: **gerçek bir hatta, ölçümle**.
 Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış sayılmaz.
 
+## [0.2.2]
+
+Hata düzeltme sürümü. Başlığı: **koruma açıkken engellenmemiş sitelerin bozulması.**
+İlk saha raporu ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1), Vodafone Net)
+bunu gösterdi: strateji bütün 80/443 trafiğine uygulanıyordu ve GitHub çalışmıyordu. Artık
+yalnızca engelli ölçülmüş adreslere uygulanıyor. Aynı rapor Vodafone Net profilinin iki
+bölümünü de gerçek hatta doğruladı.
+
+### Düzeltildi
+
+- **Strateji artık yalnızca engelli adreslere uygulanıyor; GitHub ve diğer siteler
+  bozulmuyor.** 0.2.1'e kadar kazanan strateji, `--wf-tcp=80,443` ile yakalanan **bütün**
+  trafiğe uygulanıyordu. Gerçek bir hatta ölçülen bedeli şu: Vodafone Net'te kazanan HTTPS
+  stratejisi `--dpi-desync-fooling=badseq` kullanıyor, yani sahte paket TTL ile yolda ölmüyor,
+  gerçek sunucuya bozuk sequence numarasıyla ulaşıyor. Bazı sunucular bunu bağlantıyı
+  sıfırlayarak karşılıyor ve kullanıcının GitHub'ı açılmıyordu. winws'in
+  `--hostlist-domains=` seçeneği artık her bölüme ayrı ayrı ekleniyor: strateji Discord
+  (ve ölçümde engelli çıkan diğer kategorilerin) adreslerine uygulanıyor, geri kalan trafik
+  **dokunulmadan** geçiyor. Hangi adreslerin kapsandığı `profiles/hostlist-domains.json`
+  dosyasında ve uygulama başlatırken günlüğe tek tek yazıyor.
+  - **Bu, güncelleme yolunu da onarıyor:** "Güncellemeleri Denetle" `api.github.com`'a,
+    paket indirme `github.com`'a gidiyor. Koruma açıkken GitHub bozulduğunda düzeltmeyi
+    kullanıcıya ulaştıran yol da kapanıyordu.
+  - **Discord sesi bilerek kapsam dışı:** o bölüm STUN/UDP trafiği ve içinde alan adı yok;
+    adres listesi eklenseydi bölüm hiç devreye girmez, ses sessizce korumasız kalırdı.
+  - Adres listesi boş kalırsa (veri dosyası eksik ya da bozuk) bayrak hiç eklenmiyor ve
+    davranış eskisi gibi genel oluyor — bozuk bir veri dosyasının bedeli korumasız kalmak
+    olmamalı.
+- **"Açılmayan site" girdisi artık çalışma zamanında da korunuyor.** Kullanıcının eklediği
+  adres test edilip doğrulanıyordu ama günlük kullanımda stratejinin uygulandığı adresler
+  arasında değildi.
+
+### Eklendi
+
+- **Vodafone Net profili gerçek hatta doğrulandı** (issue #1, AS8386): HTTPS bölümünde
+  `vf-443-fake-multisplit-badseq` (discord, discord-güncelleme), düz HTTP bölümünde
+  `vf-80-fake-fakedsplit` (discord). Tek koşum, kullanıcı bildirimi — geliştirici
+  ölçümlerindeki 3/3 kontrollü tekrar değil; profil notlarında böyle yazıyor. Aynı koşumda
+  QUIC bölümünde denenen **29 adayın hepsi** zaman aşımına uğradı: o hatta çalışan bir QUIC
+  adayı bilinmiyor ve o bölüm komuta hiç girmiyor.
+- **CI, winws'in `--hostlist-domains=` bayrağını kabul ettiğini her push'ta doğruluyor.**
+  Birim testleri yalnızca ürettiğimiz dizgiyi ölçebiliyor; bayrağın sabitlenmiş upstream
+  ikilisinde geçerli olup olmadığını göremezler. Geliştirici makinesinde de ölçülemiyor,
+  çünkü `winws --dry-run` bile yönetici yetkisi istiyor.
+
 ## [0.2.1]
 
 Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açık bilgisayarlarda ZapretTR'in

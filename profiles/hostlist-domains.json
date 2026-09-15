@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "notes": "Calisma zamaninda winws'e --hostlist-domains= ile verilen alan adlari: strateji YALNIZCA bu adlara uygulanir, geri kalan trafik dokunulmadan gecer. Bu dosya 0.2.2'de eklendi ve sebebi olculmus bir hatadir (issue #1, Vodafone Net): kazanan 443 stratejisi (--dpi-desync-fooling=badseq) butun 443 trafigine uygulaniyordu ve GitHub'i bozuyordu. badseq'te sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir; bazi sunucular bunu RST ile karsilar. Yani engellenmemis bir siteye dokunmanin bedeli o siteyi bozmak. Kural: sorunu olmayan yere dokunma. 'kontrol' kategorisi BILEREK bos ve bos kalmali -- example.com, cloudflare-quic.com ve stun.cloudflare.com engellenmemesi BEKLENEN olcum hedefleri; onlara strateji uygulamak olcumun kendisini bozar. Alt alan adlari winws tarafindan kendiliginden kapsanir (ikilinin yardim metni: 'subdomains auto apply'), bu yuzden updates.discord.com ya da media.discordapp.net ayri ayri yazilmiyor: discord.com ve discordapp.net yeter. Kullanicinin arayuzden girdigi 'Acilmayan site' bu listeye calisma zamaninda EKLENIR (HostlistStore.DomainsFor); listede olmayan bir siteye erisemeyen kullanicinin yolu budur. discord.gg ayri yazilmak ZORUNDA: gateway.discord.gg bir discord.com alt alani degil, bagimsiz bir alan adi -- olcumde de ayri hedef olarak duruyor.",
+  "categories": {
+    "kontrol": [],
+    "discord": [
+      "discord.com",
+      "discord.gg",
+      "discordapp.com",
+      "discordapp.net",
+      "discordcdn.com",
+      "discord.media"
+    ],
+    "discord-guncelleme": [
+      "discord.com"
+    ],
+    "youtube": [
+      "youtube.com",
+      "youtu.be",
+      "ytimg.com",
+      "googlevideo.com",
+      "ggpht.com",
+      "youtube-nocookie.com"
+    ]
+  }
+}

@@ -71,6 +71,56 @@ public static class RuntimeSelection
     }
 
     /// <summary>
+    /// Secilen stratejilerin O BAGLANTIDA hangi hedef siniflarini actigi.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Hostlist'i daraltmak icin. Kaynak, adaylarin <c>verifiedFor</c> alani: yani
+    /// "bu hatta olculdu ve su kategoriyi acti" bilgisi. Tahmin degil, olcum.
+    /// </para>
+    /// <para>
+    /// Kullanicinin elle sectigi strateji dogrulanmamis olabilir; o zaman hicbir
+    /// kategori bilinmez ve liste bos doner. Cagiran taraf bunu "daraltma yapma ya da
+    /// bilinen butun hedeflere in" diye yorumluyor (<see cref="HostlistStore.DomainsFor"/>);
+    /// burada uydurma bir kategori dondurmek, olculmemis bir seyi olculmus gibi
+    /// gostermek olurdu.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<string> VerifiedCategories(
+        IspProfile? profile, IReadOnlyDictionary<StrategySection, string> selection)
+    {
+        ArgumentNullException.ThrowIfNull(selection);
+
+        if (profile is null)
+        {
+            return [];
+        }
+
+        var kategoriler = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (section, args) in selection)
+        {
+            foreach (var candidate in profile.CandidatesFor(section))
+            {
+                if (!string.Equals(candidate.Args, args, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                foreach (var category in candidate.VerifiedFor)
+                {
+                    if (!string.IsNullOrWhiteSpace(category))
+                    {
+                        kategoriler.Add(category);
+                    }
+                }
+            }
+        }
+
+        return [.. kategoriler];
+    }
+
+    /// <summary>
     /// Profilde dogrulanmis adayi olmadigi icin komuta girmeyen bolumler.
     /// Arayuzde "bu bolumler icin once parametre testi calistirin" demek icin.
     /// </summary>

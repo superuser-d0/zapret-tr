@@ -2180,3 +2180,69 @@ SAC'in exe'yi neden geçirip DLL'i engellediği hâlâ bilinmiyor.
    gelirse tek dosya bu kısmı çözmez.
 2. `0xC0000428` → "Akıllı Uygulama Denetimi" metni gerçek bir DLL engeliyle hiç görülmedi.
 3. Kalıcı çözüm hâlâ kod imzalama (bkz. "Kodla ÇÖZÜLEMEYEN kısım": Certum, SignPath Foundation).
+
+### 2026-09-15: issue #1 (ilk saha raporu) ve hostlist düzeltmesi — 0.2.2
+
+**Kaynak:** [issue #1](https://github.com/superuser-d0/zapret-tr/issues/1), KeremKuyucu,
+Vodafone Net + Vodafone Mobil. İki dosya ekli: `zapret-tr-rapor.json` ve kaydedilmiş rapor.
+İlk gerçek kullanıcı raporu; o güne kadar "GitHub'da issue yok" yazıyordu.
+
+**Rapordan ÖLÇÜLENLER (AS8386, 851 sn, tam koşum):**
+- Baseline 5/11 engelli: discord.com (tcp80/tcp443/quic), gateway.discord.gg,
+  updates.discord.com. YouTube (tcp443 + QUIC) ve kontrol hedefleri açık.
+- Kazananlar: tcp443 `vf-443-fake-multisplit-badseq` (discord + discord-güncelleme),
+  tcp80 `vf-80-fake-fakedsplit` (discord). İkisi de profile `verified` olarak işlendi.
+- **QUIC: 29 adayın hepsi zaman aşımı** (~340 sn). Bu hatta çalışan QUIC adayı YOK.
+- Çakışma taramasında iki bulgu: sahipsiz `windivert` sürücü kaydı ve `127.0.0.1:53`'ü
+  tutan `svchost.exe` (büyük olasılıkla ICS). Yani o makinede şifreli DNS açılamaz.
+
+**Kullanıcının bildirdiği hata:** koruma açıkken GitHub çalışmıyor.
+
+**Kök neden (kodda kesin):** `WinwsCommandBuilder.BuildRuntimeCommand` hiçbir hostlist
+kullanmıyordu; `--wf-tcp=80,443` ile yakalanan BÜTÜN trafiğe strateji uygulanıyordu.
+`--ipset-ip` yalnızca `BuildProbeCommand`'da, yani test anında vardı. Kazanan 443 stratejisi
+`--dpi-desync-fooling=badseq`: sahte paket TTL ile ölmüyor, gerçek sunucuya bozuk sequence
+ile ulaşıyor; bazı sunucular RST ile karşılıyor. **badseq'in GitHub'ı bozduğu ÖLÇÜLMEDİ**
+(o hatta erişimimiz yok) — kesin olan, engellenmemiş siteye dokunulduğu.
+
+**Bunun ikinci sonucu:** `UpdateChecker` → api.github.com, `UpdateDownloader` → github.com.
+Koruma açıkken GitHub bozuksa düzeltmeyi kullanıcıya ulaştıran yol da kapanıyor.
+
+**Yapılan:**
+- `profiles/hostlist-domains.json` (yeni): kategori → alan adı. `kontrol` BİLEREK boş.
+- `HostlistStore` (yeni): dosyayı okur, kategorilerden alan adı üretir, kullanıcının
+  "Açılmayan site" girdisini ekler. Dosya yok/bozuksa boş döner.
+- `RuntimeSelection.VerifiedCategories`: hangi kategorilerin engelli ÖLÇÜLDÜĞÜ, adayların
+  `verifiedFor` alanından. Profil yoksa boş — uydurma kategori üretilmiyor.
+- `BuildRuntimeCommand(winners, hostlistDomains)`: her `--new` bölümüne ayrı
+  `--hostlist-domains=` ekliyor. winws hostlist'i profil başına denetliyor ("hostlist check
+  for profile %d"), tek yere yazmak yalnızca ilk bölümü daraltırdı.
+- **DiscordVoice HARİÇ** (`SupportsHostlist`): STUN/UDP'de alan adı yok, eklenirse bölüm hiç
+  devreye girmez ve ses sessizce korumasız kalır.
+- Çağrı yerlerinin hepsi bağlandı: uygulama Başlat, servis kurulumu, `--install-services`
+  (App.xaml.cs) ve saha aracının apply/install yolları. Ayrışırlarsa kullanıcının denediği
+  komutla açılışta çalışan komut farklı olurdu.
+- Boş liste = bayrak yok = 0.2.1 davranışı. Bayrağı boş değerle eklemek korumayı SESSİZCE
+  kapatırdı; bozuk veri dosyasının bedeli bu olmamalı.
+- 20 yeni test (`HostlistTests`), toplam 381.
+
+**winws seçeneği ikiliden doğrulandı** (v72.13, `strings` benzeri tarama):
+`--hostlist-domains=<domain_list>` ; "comma separated fixed domain list",
+`--hostlist=<filename>` ; "subdomains auto apply". Yani `discord.com` yazmak
+`updates.discord.com`'u da kapsıyor; `discord.gg` AYRI yazılmak zorunda.
+
+**ÖLÇÜLMEDİ / açık kalanlar:**
+1. **Gerçek trafikte GitHub'ın düzeldiği.** Geliştirici makinesi TTNET; issue'daki hat
+   Vodafone Net. Doğrulaması kullanıcıda.
+2. **winws komutu kabul ediyor mu** — yerelde çalıştırılamadı, `winws --dry-run` bile
+   elevation istiyor. CI'a adım eklendi (runner yönetici): `ci.yml` → "winws hostlist
+   bayragini kabul ediyor mu". İlk yeşil koşum bunu kanıtlar.
+3. **QUIC**: bu hatta çalışan aday yok. Seçenek olarak "QUIC'i düşürüp TCP'ye zorlama"
+   konuşuldu ama YAPILMADI: YouTube QUIC o hatta ÇALIŞIYOR, onu düşürmek tam da bu sürümde
+   düzelttiğimiz hatanın aynısı olurdu (sorunu olmayan yere dokunmak).
+4. **Kategori bilinmiyorsa** (kullanıcı elle doğrulanmamış strateji seçtiyse) bilinen bütün
+   hedeflere iniliyor. GitHub yine dışarıda kalıyor ama o hatta engelli OLMAYAN bir hedefe
+   (ör. YouTube) dokunulabilir. Bedeli olmayan seçenek yok; ölçüm olmadan hangi kategorinin
+   engelli olduğu bilinemiyor.
+5. `--hostlist-auto=<filename>` winws'te var (engelleri kendi tespit edip listeye ekliyor).
+   1.0 sonrası için değerlendirilebilir; şimdilik deterministik liste tercih edildi.

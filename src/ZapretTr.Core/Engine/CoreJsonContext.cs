@@ -33,6 +33,7 @@ namespace ZapretTr.Core.Engine;
 [JsonSerializable(typeof(LearnedCandidate))]
 [JsonSerializable(typeof(IspProfile))]
 [JsonSerializable(typeof(GenericLadder))]
+[JsonSerializable(typeof(HostlistDocument))]
 public partial class CoreJsonContext : JsonSerializerContext
 {
 }

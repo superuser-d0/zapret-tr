@@ -74,7 +74,14 @@ if (options.Apply)
     }
 
     var applyBuilder = new WinwsCommandBuilder(applyVendor);
-    var runtimeArgs = applyBuilder.BuildRuntimeCommand(winners);
+
+    // Arayuzle AYNI daraltma. Saha araci kullanicinin calistiracagindan farkli bir
+    // komut olcerse, olctugu sey kullanicinin yasadigi sey olmaz (issue #1).
+    var applyDomains = HostlistStore
+        .Load(applyProfiles.Root)
+        .DomainsFor(RuntimeSelection.VerifiedCategories(applyProfile, winners));
+
+    var runtimeArgs = applyBuilder.BuildRuntimeCommand(winners, applyDomains);
 
     Console.WriteLine("Servis sağlayıcı : " + applyProfile.DisplayName);
     Console.WriteLine($"Bölüm sayısı     : {winners.Count}");
@@ -222,7 +229,11 @@ if (options.ServiceCommand is { } serviceCommand)
             }
 
             var svcWinners = RuntimeSelection.Build(svcProfile, primaryCandidate.Args);
-            var svcArgs = new WinwsCommandBuilder(svcVendor).BuildRuntimeCommand(svcWinners);
+            var svcDomains = HostlistStore
+                .Load(svcProfiles.Root)
+                .DomainsFor(RuntimeSelection.VerifiedCategories(svcProfile, svcWinners));
+
+            var svcArgs = new WinwsCommandBuilder(svcVendor).BuildRuntimeCommand(svcWinners, svcDomains);
 
             Console.WriteLine("Kurulacak komut:");
             Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(svcArgs));

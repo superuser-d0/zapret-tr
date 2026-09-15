@@ -11,7 +11,7 @@
   ],
   "engine": "winws",
   "priority": 3,
-  "notes": "AS15924 (eski Borusan Telekom) ve AS8386 (eski Koc.net): ikisi de sabit hat. \"vodafone\" anahtar kelimesi Vodafone Mobil'le de eslesir; tespit ASN'ye gore birini onerip kullaniciya sorar. Bildirilen strateji sahte paket ve bolmeyi birlikte kullaniyor.",
+  "notes": "AS15924 (eski Borusan Telekom) ve AS8386 (eski Koc.net): ikisi de sabit hat. \"vodafone\" anahtar kelimesi Vodafone Mobil'le de eslesir; tespit ASN'ye gore birini onerip kullaniciya sorar. Bildirilen strateji sahte paket ve bolmeyi birlikte kullaniyor. 2026-09-15 (issue #1, kullanici raporu): tcp443 ve tcp80 adaylari gercek AS8386 hattinda dogrulandi; QUIC bolumunde 29 adayin HEPSI zaman asimina ugradi, yani bu hatta calisan bir QUIC adayi bilinmiyor ve o bolum komuta hic girmiyor.",
   "candidates": [
     {
       "id": "vf-443-fake-multisplit-badseq",
@@ -22,10 +22,13 @@
         "tls13"
       ],
       "weight": 100,
-      "source": "community-unverified",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Vodafone Net icin bildirilen strateji."
+      "source": "verified",
+      "verifiedFor": [
+        "discord",
+        "discord-guncelleme"
+      ],
+      "lastVerified": "2026-09-15",
+      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda discord.com, gateway.discord.gg ve updates.discord.com baglantilarini acti. Baseline'da ucu de RST veriyordu. TEK KOSUM, kullanici bildirimi (rapor dosyasi issue #1'e ekli) -- gelistirici olcumlerindeki 3/3 kontrollu tekrar DEGIL. DIKKAT: bu aday --dpi-desync-fooling=badseq kullaniyor, yani sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir. Ayni kullanici koruma acikken GitHub'in calismadigini bildirdi; 0.2.2'den itibaren strateji yalnizca hostlist'teki adreslere uygulandigi icin bu yan hasar Discord alan adlariyla sinirli."
     },
     {
       "id": "vf-443-fake-multidisorder",
@@ -63,10 +66,12 @@
         "http"
       ],
       "weight": 100,
-      "source": "upstream-preset",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Upstream'in duz HTTP kurali."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-15",
+      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda duz HTTP'de discord.com'u acti (baseline'da RST). TEK KOSUM, kullanici bildirimi (rapor dosyasi issue #1'e ekli)."
     },
     {
       "id": "vf-80-multisplit-method",

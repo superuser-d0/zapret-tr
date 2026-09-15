@@ -29,6 +29,39 @@ jobs:
       - name: upstream ikililerini indir
         run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
 
+      # winws'in --hostlist-domains= bayragini GERCEKTEN kabul ettigi burada
+      # dogrulaniyor. Birim testleri yalnizca bizim urettigimiz dizgiyi olcuyor;
+      # bayragin sabitlenmis upstream ikilisinde gecerli olup olmadigini onlar
+      # goremez. Gelistirici makinesinde de kosturulamiyor: winws --dry-run bile
+      # yonetici yetkisi istiyor, runner ise zaten yonetici.
+      #
+      # Bu, issue #1'in duzeltmesinin can damari: bayrak sessizce gecersiz olsaydi
+      # winws acilmaz ve koruma hic baslamazdi.
+      - name: winws hostlist bayragini kabul ediyor mu
+        shell: pwsh
+        run: |
+          $winws = "vendor/zapret-winws/winws.exe"
+          if (-not (Test-Path $winws)) { throw "winws.exe yok: $winws" }
+
+          # Uygulamanin urettigi bicimin aynisi: bolum basina --hostlist-domains,
+          # bolumler --new ile ayrilmis.
+          $argv = @(
+            '--dry-run',
+            '--wf-tcp=80,443',
+            '--filter-tcp=80', '--hostlist-domains=discord.com,discord.gg',
+            '--dpi-desync=fake,fakedsplit', '--dpi-desync-autottl=2', '--dpi-desync-fooling=md5sig',
+            '--new',
+            '--filter-tcp=443', '--hostlist-domains=discord.com,discord.gg',
+            '--dpi-desync=fake,multisplit', '--dpi-desync-fooling=badseq', '--dpi-desync-split-pos=1,midsld'
+          )
+
+          $cikti = & $winws @argv 2>&1 | Out-String
+          $kod = $LASTEXITCODE
+          Write-Host $cikti
+
+          if ($kod -ne 0) { throw "winws komutu reddetti (kod $kod). Cikti yukarida." }
+          Write-Host "winws --hostlist-domains= bayragini kabul etti."
+
       - name: derle
         run: dotnet build ZapretTr.sln -c Release --nologo
 

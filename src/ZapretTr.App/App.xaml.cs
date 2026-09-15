@@ -334,7 +334,14 @@ public partial class App : Application
             var profile = config.SelectedIspId is null ? null : profiles.FindById(config.SelectedIspId);
 
             var winners = RuntimeSelection.Build(profile, config.SelectedStrategyArgs);
-            var arguments = new WinwsCommandBuilder(vendor).BuildRuntimeCommand(winners);
+
+            // Arayuzun kurdugu komutla BIREBIR ayni daraltma: servis, kullanicinin
+            // denedigi seyden farkli davranmamali (issue #1).
+            var alanlar = HostlistStore
+                .Load(profiles.Root)
+                .DomainsFor(RuntimeSelection.VerifiedCategories(profile, winners), config.CustomTarget);
+
+            var arguments = new WinwsCommandBuilder(vendor).BuildRuntimeCommand(winners, alanlar);
 
             // Duraklatilmis servis duraklatilmis olarak geri kurulur: guncelleme,
             // kullanicinin VPN icin kapattigi korumayi habersizce acmamali.

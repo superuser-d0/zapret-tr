@@ -590,7 +590,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var winners = BuildRuntimeSelection();
             var builder = new WinwsCommandBuilder(_vendor);
-            var arguments = builder.BuildRuntimeCommand(winners);
+            var alanlar = BuildHostlistDomains(winners);
+            var arguments = builder.BuildRuntimeCommand(winners, alanlar);
+
+            Append(alanlar.Count > 0
+                ? $"Strateji yalnızca şu adreslere uygulanacak ({alanlar.Count}): {string.Join(", ", alanlar)}"
+                : "UYARI: adres listesi boş; strateji BÜTÜN 80/443 trafiğine uygulanacak.");
 
             Append("Başlatılıyor (" + winners.Count + " bölüm): " + WinwsCommandBuilder.ToDisplayString(arguments));
             await _runner.StartAsync(arguments).ConfigureAwait(true);
@@ -1538,7 +1543,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 // farkli olur.
                 var winners = BuildRuntimeSelection();
                 var builder = new WinwsCommandBuilder(_vendor);
-                var arguments = builder.BuildRuntimeCommand(winners);
+                var arguments = builder.BuildRuntimeCommand(winners, BuildHostlistDomains(winners));
 
                 var installed = await ServiceManager
                     .InstallAsync(_vendor, arguments, IsSecureDnsEnabled).ConfigureAwait(true);
@@ -1687,6 +1692,27 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// </remarks>
     private Dictionary<StrategySection, string> BuildRuntimeSelection()
         => RuntimeSelection.Build(SelectedIsp?.Profile, SelectedStrategy!.Args);
+
+    /// <summary>
+    /// Stratejinin uygulanacagi alan adlari. Bos donerse strateji butun trafige uygulanir.
+    /// </summary>
+    /// <remarks>
+    /// Issue #1 (Vodafone Net, 2026-09-15): kazanan 443 stratejisi butun 443 trafigine
+    /// uygulaniyordu ve GitHub calismiyordu. Artik yalnizca engelli olculmus
+    /// kategorilerin adreslerine ve kullanicinin kendi hedefine dokunuluyor.
+    /// </remarks>
+    private IReadOnlyList<string> BuildHostlistDomains(
+        IReadOnlyDictionary<StrategySection, string> winners)
+    {
+        if (_profiles is null)
+        {
+            return [];
+        }
+
+        var kategoriler = RuntimeSelection.VerifiedCategories(SelectedIsp?.Profile, winners);
+
+        return HostlistStore.Load(_profiles.Root).DomainsFor(kategoriler, CustomTarget);
+    }
 
     /// <summary>
     /// Baslatmadan sonra kayitli stratejinin GERCEKTEN ise yaradigini olcer.
