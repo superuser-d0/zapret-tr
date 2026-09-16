@@ -2396,3 +2396,67 @@ satırı istenmeli; o sayı nereden geliyor bilinmiyor ve uydurulmadı.
 `DnsGuard.cs`: görev, çökme sonrası kurtarma için çökmeden önce var olmak zorunda;
 yönlendirme yokken tur hiçbir şey yapmadan 0 ile çıkıyor, CI her koşumda doğruluyor).
 Ama kullanıcıya bunu söyleyen hiçbir yer yok — ne kurulumda, ne README'de.
+
+### 2026-09-16: iki yanlış teşhis — nasıl kurulduklarını yazıyorum
+
+Bu bölüm bir düzeltme kaydı değil, **tuzak kaydı**. İkisi de aynı oturumda kuruldu ve
+ikisi de "ölçtüm" sanılarak raporlandı.
+
+**1. "DNS bekçisi görevi kurulmamış" — YANLIŞ.**
+`Get-ScheduledTask -TaskName '...' -ErrorAction SilentlyContinue` boş döndü ve bunu
+"görev yok" diye okudum. Gerçekte dönen şey **"Access is denied"**di: görev SYSTEM olarak
+koşuyor ve yetkisiz kabuk onu okuyamıyor. `-ErrorAction SilentlyContinue` hatayı yuttu.
+Daha kötüsü, teşhisi sınamak için görevi elle oluşturup **kanıtın üstüne yazdım**.
+Yetkili kabuk gerçeği gösterdi: görev vardı, `LastRunTime` elle oluşturduğum andan
+önceydi, yani kurulum onu düzgün kurmuştu.
+- **Ders:** yetki gerektiren bir şeye bakarken `-ErrorAction SilentlyContinue`
+  kullanma; "yok" ile "göremiyorum" ayrı şeyler.
+
+**2. "Komut satırı çıkış kodları hep 0" — YANLIŞ.**
+`--register-dns-guard`'ı yetkisiz çalıştırıp 2 bekledim, 0 aldım ve WPF'in
+`Shutdown()`'ının çıkış kodunu ezdiği sonucuna vardım. Ölçüm **geçersizdi**:
+`app.manifest` `requireAdministrator`, dolayısıyla ShellExecute süreci UAC ile
+yükseltiyor. "Yetkisiz" sandığım çalıştırma aslında yetkiliydi ve 0 doğru cevaptı.
+**Bu uygulama yetkisiz hiç çalışamaz; öyle bir test kurulamaz.**
+- Daha kötüsü: sınamak için çalıştırdığım `--install-services` gerçekten servisleri
+  kurdu ve sistem DNS'ini 127.0.0.1'e çevirdi. Test niyetli bir komut, kalıcı durum
+  değişikliği yaptı.
+- **Ders:** `Start-Process` ShellExecute kullanıyor ve `requireAdministrator` manifesti
+  olan bir exe'yi sessizce yükseltiyor. Yetki davranışını ölçmek istiyorsan önce
+  kabuğun kendi yetkisini ölç, sonra manifeste bak.
+
+**Sonra gerçekten ölçülen (tek kullanımlık WPF uygulaması, `scratchpad`):**
+ZapretTR.App ile aynı yapıda (StartupUri yok, pencere yok, karar `OnStartup`'ta,
+üretilen `Main` void) **iki yol da çalışıyor**:
+
+| Yöntem | Beklenen | Gerçek |
+|---|---|---|
+| `Shutdown(42)` | 42 | 42 |
+| `Environment.ExitCode = 43; Shutdown();` | 43 | 43 |
+
+Yani ortada düzeltilecek bir hata yoktu. Değişiklikten geriye kalan tek gerçek kazanç
+`RunServiceCleanup`'ın `void` yerine `int` dönmesi — o yol **hiç** kod döndürmüyordu ve
+bedeli en yüksek olan yol oydu.
+
+### 2026-09-16: QUIC erken vazgeçme gerçek hatta doğrulandı
+
+Kullanıcının 0.2.3 koşum raporu (issue #1 eki, `zapret-tr-rapor.json`):
+
+- QUIC bölümünde **12 deneme**, hepsi `zaman asimi`
+- 12.'si `--dpi-desync=ipfrag2` → dördüncü farklı yöntem, yani kural tam yerinde durdu
+- Aday sırası `SessizBolumTests.gercekSira` ile **birebir** aynı
+- Toplam koşum **186,7 sn**; önceki raporda tek başına QUIC ~340 sn
+
+Ayrıca aynı rapor "4 site" muammasını kapattı: günlükte **7** (roblox eklenmişken) ve
+**6** (çıkarılmışken) yazıyor. "Açılmayan site" kutusu doğru çalışıyor; 4 sayısı
+kullanıcının okuma hatasıydı.
+
+**Ölçülen ama işlenmemiş:** o hatta `roblox.com` RST alıyor (engelli) ve ZapretTR onu
+açıyor. Profilde/hostlist'te Roblox yok; kullanıcı elle eklemek zorunda kaldı.
+
+**Ölçülen ama karar verilmemiş:** kullanıcının elle yaptığı temel testte `discordapp.com`,
+`discordcdn.com` ve `discord.media` o hatta **engelli değil**; `discordapp.net` apex'inin
+zaten A kaydı yok (NXDOMAIN normal, alt alan `media.discordapp.net` çözülüyor). Yani
+6 alandan 2'si gerçekten engelli. Daraltmak issue #1'in kendi dersine uyar ama engelleme
+ISS'e ve zamana göre değişiyor; karar için "koruma açıkken bu üç site çalışıyor mu"
+sorusunun cevabı gerekiyor.

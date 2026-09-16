@@ -8,6 +8,18 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+
+- **`--uninstall-services` artık sonucunu bildiriyor.** Yol `void` olduğu için çağıran
+  taraf **her zaman 0** görüyordu; başarısızlık hiçbir yerde görünmüyordu. Bunun bedeli
+  en yüksek olan yol burası: kaldırma sırasında başarısız olursa kullanıcının sistem DNS'i
+  `127.0.0.1`'de, çözümleyicisiz kalabilir. Artık 0/2/4 dönüyor. Kaldırmayı hâlâ
+  durdurmuyor (Inno dönüş kodunu zaten kullanmıyor); kazanılan şey, CI'daki
+  `if ($p.ExitCode -ne 0) { throw }` denetiminin gerçekten bir şey ölçmesi.
+  - Çıkış kodunun bu yapıda doğru döndüğü ayrıca ölçüldü (tek kullanımlık bir WPF
+    uygulamasıyla): `Shutdown(42)` → 42, `Environment.ExitCode = 43; Shutdown();` → 43.
+    **İkisi de çalışıyor**; aralarındaki seçim biçim tercihi.
+
 ## [0.2.4]
 
 Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açıkken kurulum.** Üçü de aynı
@@ -72,6 +84,12 @@ bildirimleri sayesinde; üçüncüsünü kendi CI'ımız gösterdi.
     sıfırlanıyor.
   - Bölüm sessizce bırakılmıyor: kaç aday ve kaç yöntem denendiği, neden vazgeçildiğiyle
     birlikte günlüğe yazılıyor ve bütün denemeler raporda duruyor.
+  - **Gerçek hatta doğrulandı** (2026-09-16, aynı kullanıcı, 0.2.3 koşumu): QUIC bölümünde
+    **12 deneme** yapıldı, hepsi zaman aşımı, sonuncusu `--dpi-desync=ipfrag2` — yani
+    dördüncü farklı yöntem. Tam kuralın öngördüğü yerde durdu. Aday sırası da
+    `SessizBolumTests` içindeki diziyle birebir aynı çıktı. Testin tamamı **186,7
+    saniye** sürdü; önceki koşumda tek başına QUIC ~340 saniyeydi. Yani madde artık
+    hesap değil, ölçüm.
 
 - **"Açılmayan site" kutusuna yazılan adres artık sessizce düşmüyor.** İkinci saha
   raporunda ölçüldü ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)):

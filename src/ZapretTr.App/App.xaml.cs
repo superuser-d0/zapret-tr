@@ -53,21 +53,35 @@ public partial class App : Application
     /// <summary>Calisan ornegin penceresi one getirildi; "zaten çalışıyor" uyarisi gereksiz.</summary>
     private bool _suppressAlreadyRunningMessage;
 
+    /// <remarks>
+    /// Her komut satiri yolu sonucunu <c>Shutdown(kod)</c> ile veriyor. Bicim tercihi;
+    /// <c>Environment.ExitCode</c> atamak da CALISIR.
+    ///
+    /// OLCULDU (2026-09-16, tek kullanimlik bir WPF uygulamasiyla): bu yapida --
+    /// StartupUri yok, pencere yok, karar OnStartup'ta, uretilen <c>Main</c> void --
+    /// iki yol da cikis kodunu dogru dupruz donduruyor: <c>Shutdown(42)</c> 42,
+    /// <c>Environment.ExitCode = 43; Shutdown();</c> 43.
+    ///
+    /// Bu not, yanlis bir teshisin tekrarlanmamasi icin duruyor. Ayni gun
+    /// <c>--register-dns-guard</c> yetkisiz calistirilip 2 yerine 0 donduruldugu
+    /// sanildi ve "cikis kodlari hep 0" diye bir hata uyduruldu. Olcum GECERSIZDI:
+    /// app.manifest <c>requireAdministrator</c> oldugu icin ShellExecute sureci UAC
+    /// ile YUKSELTIYOR, yani "yetkisiz" sanilan calistirma aslinda yetkiliydi ve 0
+    /// dogru cevapti. Bu uygulama yetkisiz HIC calisamaz; oyle bir test kurulamaz.
+    /// </remarks>
     protected override void OnStartup(StartupEventArgs e)
     {
         if (e.Args.Any(a => string.Equals(a, UninstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
         {
             // Arayuz hic acilmadan is yapilip cikiliyor: kaldirici bunu sessiz
             // calistiriyor ve pencere acilmasi kullaniciyi saskina cevirirdi.
-            RunServiceCleanup();
-            Shutdown();
+            Shutdown(RunServiceCleanup());
             return;
         }
 
         if (e.Args.Any(a => string.Equals(a, InstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
         {
-            Environment.ExitCode = RunServiceInstall();
-            Shutdown();
+            Shutdown(RunServiceInstall());
             return;
         }
 
@@ -76,22 +90,19 @@ public partial class App : Application
         // Kilidi burada almak, acik arayuzu kapali gosterirdi.
         if (e.Args.Any(a => string.Equals(a, DnsGuardTask.GuardFlag, StringComparison.OrdinalIgnoreCase)))
         {
-            Environment.ExitCode = RunDnsGuard();
-            Shutdown();
+            Shutdown(RunDnsGuard());
             return;
         }
 
         if (e.Args.Any(a => string.Equals(a, RegisterDnsGuardFlag, StringComparison.OrdinalIgnoreCase)))
         {
-            Environment.ExitCode = RunRegisterDnsGuard();
-            Shutdown();
+            Shutdown(RunRegisterDnsGuard());
             return;
         }
 
         if (e.Args.Any(a => string.Equals(a, UnregisterDnsGuardFlag, StringComparison.OrdinalIgnoreCase)))
         {
-            Environment.ExitCode = RunUnregisterDnsGuard();
-            Shutdown();
+            Shutdown(RunUnregisterDnsGuard());
             return;
         }
 
@@ -421,7 +432,23 @@ public partial class App : Application
         }
     }
 
-    private static void RunServiceCleanup()
+    /// <summary>
+    /// Servisleri ve suruculeri soker. Kaldirmayi ASLA durdurmaz; yalnizca sonucu
+    /// cikis koduyla BILDIRIR (0 basarili, 2 yetki yok, 4 istisna).
+    /// </summary>
+    /// <remarks>
+    /// Eskiden <c>void</c>'di: cagiran taraf HER ZAMAN 0 goruyordu, cunku donecek bir
+    /// sey yoktu. Kaldirmayi bir hata yuzunden durdurmamak dogru bir karar (gerekcesi
+    /// asagida) ama SESSIZ KALMAK ayri bir sey -- bu yol basarisiz olursa kullanicinin
+    /// sistem DNS'i 127.0.0.1'de, cozumleyicisiz kalabilir; projenin en kotu senaryosu
+    /// tam olarak bu.
+    ///
+    /// Kod dondurmek kaldirmayi hala durdurmuyor (Inno <c>[UninstallRun]</c> donus
+    /// kodunu zaten kullanmiyor); kazanilan sey, CI'daki
+    /// <c>if ($p.ExitCode -ne 0) { throw }</c> denetiminin artik GERCEKTEN bir sey
+    /// olcmesi. Cikis kodunun bu yapida dogru dondugu olculdu (bkz. OnStartup).
+    /// </remarks>
+    private static int RunServiceCleanup()
     {
         try
         {
@@ -430,7 +457,7 @@ public partial class App : Application
             // temizlik, hic yapilmamis olandan daha kotu durumlar birakabilir.
             if (!ElevationGuard.IsElevated())
             {
-                return;
+                return 2;
             }
 
             ServiceManager.UninstallAsync().GetAwaiter().GetResult();
@@ -450,12 +477,14 @@ public partial class App : Application
             // kullanicinin profil secimini, ogrenilmis dogrulamalarini silmek
             // yanlis olurdu. Kaldirma zaten [UninstallDelete] ile klasoru temizliyor.
             WinDivertCleanup.RunAsync(removeConfig: false).GetAwaiter().GetResult();
+            return 0;
         }
         catch (Exception)
         {
             // Kaldirmayi bir istisna yuzunden durdurmuyoruz. Servis zaten yoksa
             // ya da baska bir sey ters gittiyse kullanicinin kaldirma islemi
-            // yine de tamamlanmali.
+            // yine de tamamlanmali. Kod donuyor ki sessiz kalmasin.
+            return 4;
         }
     }
 }
