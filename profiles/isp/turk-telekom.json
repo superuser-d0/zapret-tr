@@ -26,10 +26,11 @@
       "weight": 100,
       "source": "verified",
       "verifiedFor": [
-        "discord"
+        "discord",
+        "roblox"
       ],
-      "lastVerified": "2026-09-06",
-      "note": "TTNET icin en sik bildirilen deger. DOGRULANDI: gercek bir TTNET hattinda, baseline'da RST ile sifirlanan discord.com baglantisini acti ve dogrulama tekrarini gecti. Profilin ilk adayi oldugu icin arama saniyeler icinde sonuclandi."
+      "lastVerified": "2026-09-16",
+      "note": "TTNET icin en sik bildirilen deger. DOGRULANDI: gercek bir TTNET hattinda, baseline'da RST ile sifirlanan discord.com baglantisini acti ve dogrulama tekrarini gecti. Profilin ilk adayi oldugu icin arama saniyeler icinde sonuclandi. 2026-09-16: ROBLOX DA DOGRULANDI (gercek TTNET hatti, 0.2.5, kullanici hedefi roblox.com): baseline RST, bu aday ilk denemede acti; kullanici koruma acikken Roblox'un acildigini bildirdi. Ayni gun koruma kapaliyken rbxcdn.com ve roblox-api.arkoselabs.com engelsiz olculdu."
     },
     {
       "id": "tt-443-fake-ttl3",

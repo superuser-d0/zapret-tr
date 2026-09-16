@@ -29,9 +29,14 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
     `apis.roblox.com` TLS el sıkışmasında kesiliyor; `css.rbxcdn.com`, `js.rbxcdn.com`,
     `tr.rbxcdn.com` ve Roblox'un doğrulama sunucusu (`roblox-api.arkoselabs.com`) açık.
     Bu yüzden yalnızca `roblox.com` listede; `rbxcdn.com` engelli ölçülmediği için yok.
-  - **Parametre testini yeniden çalıştırmak gerekiyor:** önceki testlerin kaydında Roblox
-    doğrulanmış kategori olarak yok. **Doğrulanmadı:** Türk Telekom'da kazanan stratejinin
-    Roblox'u açtığı ve Roblox girişinin bu adreslerle tamamlandığı henüz ölçülmedi.
+  - **Türk Telekom'da doğrulandı** (gerçek hat, 0.2.5, "Açılmayan site" = `roblox.com`):
+    koruma kapalıyken `roblox.com` RST ile kesildi, `tt-443-fake-ttl4` ilk denemede açtı ve
+    kullanıcı koruma açıkken Roblox'un açıldığını bildirdi. Profildeki aday artık
+    `discord` ile birlikte `roblox` için de doğrulanmış.
+  - Aynı günlük, düzeltilen kalıntı sorusunu da gösteriyor: 20:40 ve 20:46'daki iki testte
+    de `windivert` kaydı "sahipsiz" diye silindi.
+  - Daha önce test yapmış kullanıcıların kaydı Roblox'u içermiyor; parametre testini bir
+    kez yeniden çalıştırmaları gerekiyor. Diğer hatlarda Roblox ölçülmedi.
 
 ## [0.2.5]
 
