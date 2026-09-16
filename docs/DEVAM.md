@@ -2192,7 +2192,8 @@ Vodafone Net + Vodafone Mobil. İki dosya ekli: `zapret-tr-rapor.json` ve kayded
   updates.discord.com. YouTube (tcp443 + QUIC) ve kontrol hedefleri açık.
 - Kazananlar: tcp443 `vf-443-fake-multisplit-badseq` (discord + discord-güncelleme),
   tcp80 `vf-80-fake-fakedsplit` (discord). İkisi de profile `verified` olarak işlendi.
-- **QUIC: 29 adayın hepsi zaman aşımı** (~340 sn). Bu hatta çalışan QUIC adayı YOK.
+- **QUIC: 25 adayın hepsi zaman aşımı** (293 sn). Bu hatta çalışan QUIC adayı YOK.
+  (Önceden "29 aday, ~340 sn" yazıyordu — 29 toplam denemeydi; bkz. aşağıdaki düzeltme notu.)
 - Çakışma taramasında iki bulgu: sahipsiz `windivert` sürücü kaydı ve `127.0.0.1:53`'ü
   tutan `svchost.exe` (büyük olasılıkla ICS). Yani o makinede şifreli DNS açılamaz.
 
@@ -2277,8 +2278,8 @@ sorusu sorulmalı; bağlıysa ya üst sınır cömert olmalı ya da iddia kurulm
 
 ### 2026-09-15: cevapsız bölümde erken vazgeçme (issue #1'in ikinci yarısı)
 
-**Sorun (issue #1 raporunda ölçüldü):** QUIC bölümünde 29 adayın hepsi zaman aşımı,
-aday başına ~11,7 sn, toplam ~340 sn. Aynı koşumda tcp443 kazananı 1,47 sn'de,
+**Sorun (issue #1 raporunda ölçüldü):** QUIC bölümünde 25 adayın hepsi zaman aşımı,
+aday başına ~11,7 sn, toplam 293 sn. Aynı koşumda tcp443 kazananı 1,47 sn'de,
 tcp80 kazananı 1,41 sn'de bulundu. Yani testin süresinin yarıdan fazlası, sonucu
 baştan belli bir aramaya gidiyordu.
 
@@ -2299,11 +2300,11 @@ baştan belli bir aramaya gidiyordu.
   denemelerin hepsi raporda kalıyor.
 
 **Eşikler nereden:** issue #1'deki QUIC sırasının GERÇEK hâline bakıldı. 12. adayda dört
-aile (fake, udplen, fake+udplen, ipfrag2) denenmiş oluyor; 13-29 arası bu ailelerin
+aile (fake, udplen, fake+udplen, ipfrag2) denenmiş oluyor; 13-25 arası bu ailelerin
 parametre varyasyonları. `SessizBolumTests.Issue1_Kosumunda_12nci_Adayda_Vazgecilirdi`
 bunu veriyle sabitliyor — eşikler değişirse test düşer.
 
-**Kazanç (o veriyle):** 29 → 12 aday, ~200 sn ≈ 3,3 dakika.
+**Kazanç (o veriyle):** 25 → 12 aday, ~152 sn ≈ 2,5 dakika. (Önceden "29 → 12, ~3,3 dk" yazıyordu; yanlış.)
 
 **ÖLÇÜLMEDİ:** gerçek bir hatta yeni davranışın koşumu. Eşiklerin başka bir hattın aday
 sırasında da dört aileyi kapsadığı varsayılıyor; kapsamazsa vazgeçme daha geç olur
@@ -2445,7 +2446,7 @@ Kullanıcının 0.2.3 koşum raporu (issue #1 eki, `zapret-tr-rapor.json`):
 - QUIC bölümünde **12 deneme**, hepsi `zaman asimi`
 - 12.'si `--dpi-desync=ipfrag2` → dördüncü farklı yöntem, yani kural tam yerinde durdu
 - Aday sırası `SessizBolumTests.gercekSira` ile **birebir** aynı
-- Toplam koşum **186,7 sn**; önceki raporda tek başına QUIC ~340 sn
+- Toplam koşum **186,7 sn** (QUIC 141 sn); önceki raporda toplam 378,2 sn, QUIC 293,1 sn
 
 Ayrıca aynı rapor "4 site" muammasını kapattı: günlükte **7** (roblox eklenmişken) ve
 **6** (çıkarılmışken) yazıyor. "Açılmayan site" kutusu doğru çalışıyor; 4 sayısı

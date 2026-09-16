@@ -462,8 +462,8 @@ public sealed class StrategyProber(
     /// </summary>
     /// <remarks>
     /// <para>
-    /// OLCULDU (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 29 adayin HEPSI
-    /// zaman asimina ugradi, her biri ~11.7 sn, toplam ~340 sn. Yani 5-6 dakika,
+    /// OLCULDU (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 25 adayin HEPSI
+    /// zaman asimina ugradi, her biri ~11.7 sn, toplam 293 sn. Yani ~5 dakika,
     /// sonucu bastan belli bir arama icin harcandi. Ayni raporda tcp443 ve tcp80
     /// kazananlari 1.4-1.9 sn'de bulunmustu.
     /// </para>

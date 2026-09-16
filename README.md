@@ -59,10 +59,14 @@ Dosyaya çift tıklayın.
 > başlattığınızda koruma kapalı gelir. 4. adımdan sonra yeniden başlatmaya gerek yok.
 
 **"Şifreli DNS kullan (önerilir)" kutusu işaretli kalsın.** Engelleme çoğu zaman iki
-katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız.
+katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız. Bilgisayarınızda **AdGuard** gibi
+DNS'i kendi üzerinden geçiren bir program varsa şifreli DNS açılamaz; o durumda kutuyu
+kapatın. Vodafone Net'te engel DNS değil bağlantı sıfırlama olduğu için Discord kutu
+kapalıyken de açıldı (kullanıcı raporu).
 
 **Belirli bir site açılmıyorsa** adresini **"Açılmayan site"** kutusuna yazıp testi öyle
-çalıştırın.
+çalıştırın. Bu adres korumanın uygulandığı listeye de eklenir. Kutuya **tek adres** yazın
+(örnek: `roblox.com`); virgülle birden fazla adres şimdilik desteklenmiyor.
 
 **Koyu ya da açık tema:** pencerenin sağ altındaki **"Koyu tema" / "Açık tema"** düğmesiyle
 değişir ve seçiminiz hatırlanır. İlk açılışta Windows'un uygulama teması kullanılır.
@@ -73,6 +77,10 @@ değişir ve seçiminiz hatırlanır. İlk açılışta Windows'un uygulama tema
 Duraklat arkada çalışan her şeyi kapatır: korumayı, şifreli DNS'i, ağ sürücüsünü ve kuruluysa
 otomatik başlatma servisini. DNS ayarınız eski hâline döner, ayarınız silinmez. VPN'le işiniz
 bitince **"DEVAM ET"** deyin.
+
+**Koruma yalnızca engelli adreslere uygulanır.** Diğer siteler (örneğin GitHub) hiç
+dokunulmadan geçer. Önceki sürümlerde strateji bütün trafiğe uygulanıyordu ve Vodafone
+Net'te koruma açıkken GitHub açılmıyordu; bunu bir kullanıcı bildirdi, 0.2.2'de düzeldi.
 
 **Pencereyi kapatmak (X) korumayı kapatmaz.** Uygulama saatin yanındaki simgeye iner.
 Tamamen kapatmak için **Çıkış** düğmesini kullanın. Servis kuruluysa uygulamayı kapatmanız
@@ -143,8 +151,10 @@ döner.
 |---|---|
 | Türk Telekom | ✅ ölçülerek doğrulandı |
 | Turkcell Mobil | ✅ ölçülerek doğrulandı |
+| Vodafone Net | 🟢 kullanıcının saha raporlarıyla ölçüldü (iki koşum); Discord açılıyor, QUIC için çalışan ayar yok |
+| Vodafone Mobil | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
 | Türksat Kablonet | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
-| Superonline, TurkNet, Vodafone ve diğerleri | ⬜ henüz test edilmedi |
+| Superonline, TurkNet ve diğerleri | ⬜ henüz test edilmedi |
 
 Listede olmayan bir hattaysanız da uygulama çalışır, çünkü ayarı sizin hattınızda ölçerek
 bulur. Testi çalıştırıp **"Raporu Kaydet"** dosyasını

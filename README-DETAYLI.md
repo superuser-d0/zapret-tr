@@ -44,8 +44,8 @@ kanıtlamak.** Uygulama, hattınız için bilinen adayları sırayla deniyor, he
 bağlantı kurarak sınıyor ve hangisinin işe yaradığını kanıtıyla birlikte söylüyor. Bir aday
 ancak ölçümü geçtiyse "doğrulandı" etiketi alıyor.
 
-Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet, Vodafone ve
-diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
+Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet, Vodafone Mobil
+ve diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
 hatlara erişimimiz yok. [Aşağıdaki tabloda](#hangi-hatlarda-doğrulandı) hangi hattın eksik
 olduğunu görebilirsiniz.
 
@@ -68,7 +68,7 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 | **Ölçerek bulur** | Her aday gerçekten bağlantı kurularak sınanır, tahmin edilmez |
 | **Bölüm bölüm arar** | `tcp80`, `tcp443`, `quic` ve `discord-voice` bağımsız aranıp birleştirilir |
 | **Şifreli DNS** | Engelleme çoğu zaman iki katmanlı olduğu için DNS katmanı da aşılır |
-| **Dokunmadığı yeri bozmaz** | Sorunu olmayan bölüme denenmemiş strateji uygulanmaz |
+| **Dokunmadığı yeri bozmaz** | Strateji yalnızca engelli olduğu ölçülen adreslere uygulanır; GitHub gibi siteler dokunulmadan geçer. Sorunu olmayan bölüme de denenmemiş strateji uygulanmaz |
 | **Ne bildiğini söyler** | Her aday "doğrulandı" ya da "doğrulanmadı" etiketiyle gelir |
 | **Kendini günceller** | "Güncellemeleri Denetle" paketi indirir, SHA256 özetini doğrular, kurar |
 | **Arka planda çalışır** | Pencereyi kapatmak korumayı kapatmaz; uygulama bildirim alanına iner |
@@ -78,10 +78,11 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
 > kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
 > sonra engelli adresler açıldı. Doğrulama bağımsız bir istemciyle (`curl`) yapıldı — ölçüm
-> motorunun kendi raporuyla değil. Şu an **25 aday** doğrulanmış durumda: 23'ü Türk Telekom
-> (AS9121), 2'si Turkcell Mobil (AS16135) hattında.
+> motorunun kendi raporuyla değil. Şu an **27 aday** doğrulanmış durumda: 23'ü Türk Telekom
+> (AS9121), 2'si Turkcell Mobil (AS16135) hattında kendi ölçümümüzle; 2'si Vodafone Net
+> (AS8386) hattında bir kullanıcının gönderdiği saha raporlarıyla.
 >
-> Eksik olan kod değil, **kapsam**. On profilin sekizinde henüz hiç saha verisi yok, çünkü o
+> Eksik olan kod değil, **kapsam**. On profilin yedisinde henüz hiç saha verisi yok, çünkü o
 > hatlara erişemiyoruz. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
 
 ---
@@ -124,6 +125,11 @@ verilen itibar uyarısı ([ayrıntı](docs/SORUN-GIDERME.md#windows-engelliyor))
 Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
 katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 
+İstisna: bilgisayarınızda **AdGuard** gibi DNS'i kendi üzerinden geçiren bir program varsa
+`127.0.0.1:53` portu doludur ve şifreli DNS başlayamaz. Uygulama bunu çakışma taramasında
+söyler; o durumda kutuyu kapatın. Her hatta DNS katmanı da engelli değil: Vodafone Net'te
+Discord'un engeli bağlantı sıfırlamaydı ve bir kullanıcıda kutu kapalıyken de açıldı.
+
 **Tema.** Pencerenin sağ altındaki **"Koyu tema" / "Açık tema"** düğmesi görünümü değiştirir;
 seçim `config.json`'a yazılır. Hiç seçilmediyse Windows'un uygulama teması (Ayarlar →
 Kişiselleştirme → Renkler) kullanılır. "Tüm Ayarları Sıfırla" bu seçimi de siler.
@@ -139,7 +145,11 @@ dnscrypt çalışıyor mu, servisler kurulu ve ayakta mı, sistem DNS'i kimde, G
 ediliyor. Hiçbir yere gönderilmez, sadece diske yazılır.
 
 **Sizde açılmayan belirli bir adres varsa** "Açılmayan site" kutusuna yazın ve testi öyle
-çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor.
+çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor. Yazdığınız
+adres yalnızca testte denenmez, **koruma açıkken stratejinin uygulandığı listeye de girer**.
+Kutuya tek adres yazın; virgülle birden fazla adres şimdilik desteklenmiyor ve anlaşılmayan
+girdi günlükte sebebiyle bildirilir. Örnek: Vodafone Net'te `roblox.com` bağlantı sıfırlamayla
+engelliydi; kutuya yazılınca listeye girdi (`uygulanacak (7): ... roblox.com`) ve açıldı.
 
 **"Servis Olarak Yükle"** bir Windows servisi kurar: uygulamayı açmanız gerekmez ve
 **yeniden başlatmaya da gerek yok** — servis hemen çalışmaya başlar, sonraki açılışlarda
@@ -155,10 +165,23 @@ bütün adayların aynı şekilde başarısız olmasına yol açabiliyor.
 ### Sık sorulanlar
 
 **Test neden birkaç dakika sürüyor?** Her aday için gerçekten bağlantı kurulup ölçüldüğü için.
-Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez.
+Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez. Hiç cevap alınamayan bir
+bölümde (art arda 12 aday ve en az 4 farklı yöntem) arama bırakılıyor. Vodafone Net'te QUIC
+bölümü önceden 25 adayın hepsini deneyip tek başına yaklaşık 5 dakika (293 saniye) sürüyordu ve
+testin tamamı 378 saniyeydi; 0.2.3'te 12. adayda bırakıldı ve test 187 saniyede bitti
+(kullanıcının iki saha raporu).
 
 **"ENGEL BULUNAMADI" yazarsa ne olur?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde
 açılmayan adresi "Açılmayan site" kutusuna girip yeniden deneyin.
+
+**Koruma açıkken başka siteler bozulur mu?** 0.2.2'den beri hayır: strateji yalnızca engelli
+olduğu ölçülen kategorilerin adreslerine ve sizin yazdığınız adrese uygulanır. Bunun sebebi
+gerçek bir bildirim: Vodafone Net'te kazanan strateji sahte paketi gerçek sunucuya
+ulaştırıyor ve önceden bütün 80/443 trafiğine uygulandığı için koruma açıkken GitHub
+açılmıyordu. Hangi adreslere uygulandığı başlatınca günlüğe tek tek yazılır:
+`Strateji yalnızca şu adreslere uygulanacak (6): discord.com, discord.gg, ...`. Listede
+ayrı siteler değil Discord'un alan adları var; alt alan adları (`media.discordapp.net`
+gibi) kendiliğinden kapsanır.
 
 **Antivirüs ya da Windows engellerse?** Paket yakalama sürücüsü ile imzasız derlemenin
 birleşimi yanlış alarm üretebiliyor. Microsoft Defender'ın bulut tabanlı kararları gün gün
@@ -270,7 +293,8 @@ AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
 ### Discord
 
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
-denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
+denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Vodafone Net'te de bir kullanıcı
+sesli sohbete girebildiğini bildirdi (kullanıcı bildirimi; ses dışarıdan ölçülemiyor). Ekran paylaşımının ayrıca anlamı var,
 çünkü sesten çok daha ağır bir medya akışı.
 
 Mekanizması şöyle: o hatta ses zaten engelli değil; metin ve bağlantı engeli aşılınca ses
@@ -473,17 +497,44 @@ farkı korumak için var.
 
 "Doğrulandı" burada dar bir anlam taşıyor: **gerçek bir hatta, ölçümle** — aynı komut üç bağımsız
 koşumda 3/3 geçtiyse. Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler sayılmıyor.
-Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil.
+Kullanıcıdan gelen olumlu geri bildirim de ayrı tutuluyor: değerli, ama ölçüm değil. Arada bir
+basamak daha var: 🟢 **saha raporuyla ölçüldü** — ölçümü uygulamanın kendisi gerçek bir hatta
+yaptı ve rapor dosyası elimizde, ama 3/3 kontrollü tekrar değil.
 
 | Servis sağlayıcı | tcp80 | tcp443 | QUIC | Durum |
 |---|:---:|:---:|:---:|---|
 | Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
 | Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
+| Vodafone Net (AS8386) | 1 | 1 | ✗ | 🟢 **saha raporuyla ölçüldü** — iki ayrı günde, iki koşumda aynı adaylar kazandı |
+| Vodafone Mobil | — | — | — | 🟡 **kullanıcı bildirimi** — "çalıştı" denildi, rapor yok |
 | Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
 | Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
-| Vodafone (sabit / mobil) | — | — | — | ⬜ **testçi aranıyor** |
 | Millenicom · NetSpeed · TT Mobil | — | — | — | ⬜ **testçi aranıyor** |
+
+🟢 **Vodafone Net** ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)): bir kullanıcı
+2026-09-15 ve 2026-09-16'da iki ayrı koşumun rapor dosyalarını gönderdi. İkisinde de aynı iki aday
+kazandı:
+
+- **tcp443:** `--dpi-desync=fake,multisplit --dpi-desync-fooling=badseq --dpi-desync-split-pos=1,midsld`
+  → `discord.com`, `gateway.discord.gg`, `updates.discord.com`
+- **tcp80:** `--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig`
+  → `discord.com`
+
+O hatta ölçülenler:
+
+- Discord'un engeli **bağlantı sıfırlama** (RST); DNS yönlendirmesi değil. Kullanıcıda şifreli
+  DNS kapalıyken de açıldı.
+- **QUIC için çalışan ayar yok.** İlk koşumda 25 adayın, ikincisinde denenen 12 adayın hepsi zaman
+  aşımına uğradı. Bu bölüm komuta hiç girmiyor; Discord'u etkilemiyor.
+- YouTube ve genel STUN o hatta engelli değil.
+- Kullanıcının kendi elle yaptığı denemede `roblox.com` da bağlantı sıfırlamayla engelliydi;
+  "Açılmayan site" kutusuna yazılınca açıldı. Aynı denemede `discordapp.com`, `discordcdn.com` ve
+  `discord.media` engelli değildi.
+- Sesli sohbete girilebildi (kullanıcı bildirimi).
+
+✅ yerine 🟢 olmasının sebebi: iki koşum var ama bizim koyduğumuz 3/3 kontrollü tekrar kuralı
+değil. Aynı hattan bir koşum daha gelirse doğrulanmışa geçer.
 
 ⚠️ **Sonuç alınamayan bir koşum — ama hangi hatta olduğunu bilmiyoruz.** Bir kullanıcıda
 49 aday denendi ve hiçbiri `tcp80` ile QUIC bölümünü açamadı. Motor düzgün çalışıyordu;
@@ -610,12 +661,18 @@ Tamamlananlar:
       bırakması — hata durumunda ve engel bulunamadığında da.
 - [x] **Tek tıkla güncelleme.** Paketi indirir, SHA256 özetini doğrular, kurulumu başlatır.
 - [x] **Bildirim alanı simgesi.** Pencereyi kapatmak korumayı kapatmıyor.
+- [x] **Strateji yalnızca engelli adreslere (0.2.2).** Önceden bütün 80/443 trafiğine
+      uygulanıyordu; Vodafone Net'te koruma açıkken GitHub açılmıyordu. Artık yalnızca engelli
+      olduğu ölçülen kategorilerin adreslerine ve kullanıcının yazdığı adrese uygulanıyor.
+- [x] **Cevapsız bölümde erken vazgeçme (0.2.3).** Hiç cevap gelmeyen bir bölüm için dakikalarca
+      aday denenmiyor. Vodafone Net'te gerçek koşumda doğrulandı: QUIC 25 → 12 aday, testin
+      tamamı 378 → 187 saniye.
 - [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak üretimine
       taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
 
 Kalanlar:
 
-- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin sekizinde
+- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin yedisinde
       sıfır saha verisi var. Kod eksiği değil, o hatlara erişim eksiği.
 - [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.** Discord'un
       ses yolu kendi IP keşif protokolünü kullanıyor; sunucu adresi ancak kimlik doğrulaması
@@ -672,7 +729,10 @@ false-positive üretiyor. Kod imzalama sertifikamız yok.
   [dnscrypt-resolvers](https://github.com/DNSCrypt/dnscrypt-resolvers) için DNSCrypt ekibine,
 - Stratejilerini paylaşan, WinDivert kalıntı temizliği ve GoodbyeDPI çakışması fikirleri için
   [zapret-win-turkey](https://github.com/alimali54/zapret-win-turkey) geliştiricisi
-  [@alimali54](https://github.com/alimali54)'e teşekkürler.
+  [@alimali54](https://github.com/alimali54)'e,
+- Vodafone Net hattında sürüm sürüm saha testi yapıp rapor dosyalarını gönderen, GitHub
+  sorununu, QUIC'te boşa giden dakikaları ve "Açılmayan site" kutusundaki sessiz hatayı
+  bulan [@KeremKuyucu](https://github.com/KeremKuyucu)'ya teşekkürler.
 
 Lisanslar ve ayrıntılar: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

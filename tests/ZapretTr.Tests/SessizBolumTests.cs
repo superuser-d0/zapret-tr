@@ -6,9 +6,10 @@ namespace ZapretTr.Tests;
 /// Tamamen cevapsiz bir bolumun birakilmasi.
 /// </summary>
 /// <remarks>
-/// Olculdu (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 29 adayin HEPSI
-/// zaman asimina ugradi, her biri ~11.7 sn -- toplam ~340 sn. Sonucu bastan belli
-/// bir arama icin 5-6 dakika. Ayni kosumda tcp443 kazanani 1.5 sn'de bulunmustu.
+/// Olculdu (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 25 adayin HEPSI
+/// zaman asimina ugradi, her biri ~11.7 sn -- toplam 293 sn. Sonucu bastan belli
+/// bir arama icin ~5 dakika. (Once "29 aday" yazilmisti: 29, o kosumdaki TOPLAM
+/// deneme sayisiydi.) Ayni kosumda tcp443 kazanani 1.5 sn'de bulunmustu.
 ///
 /// Bu testler esiklerin KEYFI olmadigini sabitliyor: yontem cesitliligi tukenmeden
 /// vazgecilmiyor.
@@ -90,11 +91,17 @@ public sealed class SessizBolumTests
     [Fact]
     public void Kazanilan_Sure_Kayda_Deger()
     {
-        // 29 aday yerine 12: aday basina ~11.7 sn (issue #1'de olculdu).
-        const double adayBasinaSaniye = 11.7;
-        var kazanc = (29 - 12) * adayBasinaSaniye;
+        // Ayni hatta iki GERCEK kosumun rapor dosyalarindan (issue #1): QUIC bolumu
+        // 0.2.2'de 25 aday / 293.1 sn, 0.2.3'te 12 aday / 141.0 sn.
+        //
+        // Bu test once hesapla yaziliydi: "(29 - 12) * 11.7 > 180". 29 yanlisti -- o
+        // kosumdaki TOPLAM deneme sayisiydi, QUIC 25'ti -- ve test yanlis veriyle
+        // geciyordu. Olculen degerlerle kazanc 3 dakika degil, ~2.5 dakika.
+        const double onceki = 293.1;
+        const double sonraki = 141.0;
+        var kazanc = onceki - sonraki;
 
-        Assert.True(kazanc > 180, $"Beklenen kazanc en az 3 dakika, hesaplanan {kazanc:F0} sn.");
+        Assert.True(kazanc > 120, $"Beklenen kazanc en az 2 dakika, olculen {kazanc:F0} sn.");
     }
 
     // --- Yontem ayristirma ------------------------------------------------------

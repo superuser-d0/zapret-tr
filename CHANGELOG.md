@@ -82,11 +82,11 @@ bildirimleri sayesinde; üçüncüsünü kendi CI'ımız gösterdi.
 
 - **Hiç cevap gelmeyen bir bölüm için dakikalarca aday denenmiyor.** İlk saha raporunda
   ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)) ölçüldü: QUIC bölümünde
-  denenen **29 adayın hepsi** zaman aşımına uğradı, her biri ~11,7 saniye — yani sonucu
-  baştan belli bir arama için **yaklaşık 5,5 dakika**. Aynı koşumda HTTPS kazananı 1,5
-  saniyede bulunmuştu. Artık bir bölümde art arda 12 aday hiç cevap alamazsa **ve** bunlar
-  en az 4 farklı desync yöntemini kapsıyorsa o bölüm bırakılıyor; o raporun verisinde bu,
-  12. adaya denk geliyor ve testten ~3,3 dakika kazandırıyor.
+  denenen **25 adayın hepsi** zaman aşımına uğradı, her biri ~11,7 saniye — yani sonucu
+  baştan belli bir arama için **yaklaşık 5 dakika** (293 saniye). Aynı koşumda HTTPS
+  kazananı 1,5 saniyede bulunmuştu. Artık bir bölümde art arda 12 aday hiç cevap alamazsa
+  **ve** bunlar en az 4 farklı desync yöntemini kapsıyorsa o bölüm bırakılıyor; o raporun
+  verisinde bu, 12. adaya denk geliyor ve QUIC bölümünden ~2,5 dakika kazandırıyor.
   - Sayı tek başına yetmiyor, **yöntem çeşitliliği** de aranıyor: aynı yöntemin 12 parametre
     varyasyonu "her şeyi denedik" demek değil.
   - Yalnızca **tam sessizlik** sayılıyor. RST ya da engel sayfası bir *cevaptır* — paketler
@@ -98,8 +98,11 @@ bildirimleri sayesinde; üçüncüsünü kendi CI'ımız gösterdi.
     **12 deneme** yapıldı, hepsi zaman aşımı, sonuncusu `--dpi-desync=ipfrag2` — yani
     dördüncü farklı yöntem. Tam kuralın öngördüğü yerde durdu. Aday sırası da
     `SessizBolumTests` içindeki diziyle birebir aynı çıktı. Testin tamamı **186,7
-    saniye** sürdü; önceki koşumda tek başına QUIC ~340 saniyeydi. Yani madde artık
-    hesap değil, ölçüm.
+    saniye** sürdü (QUIC bölümü 141 sn); önceki koşumda testin tamamı 378, tek başına
+    QUIC 293 saniyeydi. Yani madde artık hesap değil, ölçüm.
+  - *Düzeltme (2026-09-16):* bu madde önceden "29 aday", "5,5 dakika" ve "~3,3 dakika
+    kazanç" diyordu. 29, ilk koşumdaki **toplam** deneme sayısıydı (1 tcp80 + 3 tcp443 +
+    25 QUIC); rapor dosyası yeniden okunarak düzeltildi.
 
 - **"Açılmayan site" kutusuna yazılan adres artık sessizce düşmüyor.** İkinci saha
   raporunda ölçüldü ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)):
@@ -177,8 +180,9 @@ bölümünü de gerçek hatta doğruladı.
   `vf-443-fake-multisplit-badseq` (discord, discord-güncelleme), düz HTTP bölümünde
   `vf-80-fake-fakedsplit` (discord). Tek koşum, kullanıcı bildirimi — geliştirici
   ölçümlerindeki 3/3 kontrollü tekrar değil; profil notlarında böyle yazıyor. Aynı koşumda
-  QUIC bölümünde denenen **29 adayın hepsi** zaman aşımına uğradı: o hatta çalışan bir QUIC
-  adayı bilinmiyor ve o bölüm komuta hiç girmiyor.
+  QUIC bölümünde denenen **25 adayın hepsi** zaman aşımına uğradı: o hatta çalışan bir QUIC
+  adayı bilinmiyor ve o bölüm komuta hiç girmiyor. (Önceden "29" yazıyordu; 29 o koşumdaki
+  toplam deneme sayısıydı.)
 - **CI, winws'in `--hostlist-domains=` bayrağını kabul ettiğini her push'ta doğruluyor.**
   Birim testleri yalnızca ürettiğimiz dizgiyi ölçebiliyor; bayrağın sabitlenmiş upstream
   ikilisinde geçerli olup olmadığını göremezler. Geliştirici makinesinde de ölçülemiyor,

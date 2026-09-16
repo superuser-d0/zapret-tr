@@ -231,7 +231,7 @@ public sealed class HostlistTests
         Assert.Contains("discord.com", komut, StringComparison.Ordinal);
         Assert.DoesNotContain("github", komut, StringComparison.OrdinalIgnoreCase);
 
-        // QUIC bolumu komuta GIRMEMELI: o hatta calisan aday yok (29/29 zaman asimi).
+        // QUIC bolumu komuta GIRMEMELI: o hatta calisan aday yok (25/25 zaman asimi).
         Assert.DoesNotContain("--filter-l7=quic", args);
 
         // Hostlist, strateji argumanlarindan ONCE ve her bolumde.
