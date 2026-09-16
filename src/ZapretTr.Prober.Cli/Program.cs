@@ -845,7 +845,14 @@ if (options.OutputPath is not null)
 
     if (!options.AssumeYes)
     {
-        Console.Write("Devam edilsin mi? (E/h): ");
+        // "(e/H)": buyuk harf VARSAYILANI gosterir ve varsayilan "hayir".
+        //
+        // Eskiden "(E/h)" yaziyordu -- yani Enter "evet" gibi okunuyordu, kod ise
+        // tam tersini yapiyordu. Gercek kullanici (issue #1, 2026-09-16) Enter'a
+        // basti, test hic baslamadi ve TESTI-BASLAT.bat yine "Test bitti. Sonuc
+        // dosyasi: zapret-tr-rapor.json" dedi; dosya yoktu.
+        Console.WriteLine("Devam etmek için E yazıp Enter'a basın. Boş bırakmak testi iptal eder.");
+        Console.Write("Devam edilsin mi? (e/H): ");
         var answer = Console.ReadLine()?.Trim();
 
         // Bos cevap (dogrudan Enter) onay SAYILMAZ. Baskasinin makinesinde
@@ -860,8 +867,13 @@ if (options.OutputPath is not null)
         if (!accepted)
         {
             Console.WriteLine();
-            Console.WriteLine("İptal edildi. Hiçbir değişiklik yapılmadı.");
-            return 0;
+            Console.WriteLine("İptal edildi. Hiçbir değişiklik yapılmadı, rapor yazılmadı.");
+
+            // 0 DEGIL. 0 "test bitti, rapor yazildi" demek; saha paketinin
+            // baslatma betigi cikis koduna bakarak kullaniciya "dosyayi gonderin"
+            // ya da "rapor olusmadi" diyor. Iptal, Ctrl+C yoluyla ayni kodu
+            // (130) donduruyor.
+            return 130;
         }
     }
 

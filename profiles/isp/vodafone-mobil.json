@@ -10,7 +10,7 @@
   ],
   "engine": "winws",
   "priority": 9,
-  "notes": "AS15897 (Vodafone Telekomunikasyon). KARISIK: 2026-09-15 orneginde oneklerin cogu mobil (\"Vodafone Turkey\", \"3G Pools\") ama yaklasik %8'i \"Vodafone Net DSL / FTTH\" sabit hat. Bu yuzden ASN eslesmesi Mobil'i onerir ama \"vodafone\" anahtar kelimesi Vodafone Net'i de ekler ve kullaniciya sorulur. Bildirilen strateji sahte paket kullanmiyor, saf bolme.",
+  "notes": "AS15897 (Vodafone Telekomunikasyon). KARISIK: 2026-09-15 orneginde oneklerin cogu mobil (\"Vodafone Turkey\", \"3G Pools\") ama yaklasik %8'i \"Vodafone Net DSL / FTTH\" sabit hat. Bu yuzden ASN eslesmesi Mobil'i onerir ama \"vodafone\" anahtar kelimesi Vodafone Net'i de ekler ve kullaniciya sorulur. Bildirilen strateji sahte paket kullanmiyor, saf bolme. 2026-09-16 (issue #1, kullanici saha raporu, saha testi paketi): paket hatti Vodafone Mobil olarak tespit etti, kullanici da telefondan paylasimla test ettigini soyledi (raporda ASN numarasi yazmiyor). tcp443 ve tcp80 adaylari dogrulandi, test 9.6 sn. Baseline: discord.com tcp80/tcp443, gateway.discord.gg, updates.discord.com RST ile engelli; Discord QUIC, YouTube ve STUN ENGELLI DEGIL -- yani bu hatta QUIC bolumu gerekmiyor (Vodafone Net ev hattinda Discord QUIC engelliydi). Kullanicinin telefonunda ayri bir sifreli DNS acik; engel RST oldugu icin olcumu etkilemiyor, ama bu hatta DNS engeli olup olmadigini bu rapor SOYLEMIYOR.",
   "candidates": [
     {
       "id": "vfm-443-multisplit-pos2",
@@ -21,10 +21,13 @@
         "tls13"
       ],
       "weight": 100,
-      "source": "community-unverified",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Vodafone mobil icin bildirilen strateji. Sahte paket yok -- mobil sebekede sahte paketler suzuluyor olabilir."
+      "source": "verified",
+      "verifiedFor": [
+        "discord",
+        "discord-guncelleme"
+      ],
+      "lastVerified": "2026-09-16",
+      "note": "DOGRULANDI (saha, issue #1): Vodafone Mobil hattinda (telefon paylasimi) discord.com, gateway.discord.gg ve updates.discord.com baglantilarini acti; baseline'da ucu de RST veriyordu. Profilde ilk denenen aday, hemen tuttu. TEK KOSUM, kullanici bildirimi (rapor dosyasi issue #1'e ekli) -- 3/3 kontrollu tekrar DEGIL. Sahte paket yok: Vodafone Net'teki badseq adayinin aksine sunucuya bozuk paket gitmiyor. Onceki not 'mobil sebekede sahte paketler suzuluyor olabilir' diyordu; ayni kosumda tcp80'de sahte paketli aday kazandigi icin bu tahmin en azindan tcp80 icin tutmadi."
     },
     {
       "id": "vfm-443-multisplit-midsld",
@@ -48,10 +51,12 @@
         "http"
       ],
       "weight": 100,
-      "source": "upstream-preset",
-      "verifiedFor": [],
-      "lastVerified": null,
-      "note": "Upstream'in duz HTTP kurali."
+      "source": "verified",
+      "verifiedFor": [
+        "discord"
+      ],
+      "lastVerified": "2026-09-16",
+      "note": "DOGRULANDI (saha, issue #1): Vodafone Mobil hattinda (telefon paylasimi) duz HTTP'de discord.com'u acti (baseline'da RST). Vodafone Net'te kazanan adayla ayni arguman. TEK KOSUM, kullanici bildirimi (rapor dosyasi issue #1'e ekli) -- 3/3 kontrollu tekrar DEGIL. Kaynagi upstream-preset'ti."
     },
     {
       "id": "vfm-80-multisplit-method",

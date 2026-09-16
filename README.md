@@ -151,8 +151,8 @@ döner.
 |---|---|
 | Türk Telekom | ✅ ölçülerek doğrulandı |
 | Turkcell Mobil | ✅ ölçülerek doğrulandı |
-| Vodafone Net | 🟢 kullanıcının saha raporuyla ölçüldü; Discord açılıyor, QUIC için çalışan ayar yok |
-| Vodafone Mobil | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
+| Vodafone Net | 🟢 kullanıcının saha raporlarıyla ölçüldü (iki koşum); Discord açılıyor, QUIC için çalışan ayar yok |
+| Vodafone Mobil | 🟢 kullanıcının saha raporuyla ölçüldü (bir koşum); Discord açılıyor |
 | Türksat Kablonet | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
 | Superonline, TurkNet ve diğerleri | ⬜ henüz test edilmedi |
 

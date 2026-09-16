@@ -8,6 +8,46 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.2.5]
+
+Hata düzeltme sürümü. Başlığı: **saha testi paketi olmayan bir raporu gönderin diyordu.**
+Sahadan gelen iki yeni ölçüm de bu sürümde profillere işlendi.
+
+### Düzeltildi
+
+- **Saha testi paketi rapor oluşmadığı hâlde "dosyayı gönderin" diyordu.** Gerçek bir
+  kullanıcıda görüldü ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1),
+  2026-09-16): test aracının başındaki onay sorusunu boş geçti. Araç bunu (bilerek) "hayır"
+  saydı ve rapor yazmadan çıktı, ama `TESTI-BASLAT.bat` sonuca hiç bakmadan her durumda
+  *"Test bitti. Sonuc dosyasi: zapret-tr-rapor.json — bu dosyayi geri gonderin"* yazıyordu.
+  Dosya yoktu. Ctrl+C ile iptalde de aynısıydı.
+  - Betik artık test aracının çıkış koduna **ve** dosyanın varlığına bakıyor. Rapor
+    oluşmadıysa bunu söylüyor, sebebini (iptal, yetki, eksik paket) yazıyor ve klasörde
+    önceki bir testten kalan rapor varsa onun **bu teste ait olmadığını** belirtiyor.
+  - Reddedilen onay artık `0` değil `130` (iptal) ile çıkıyor. `0` "rapor yazıldı" demekti.
+  - Soru `(E/h)` yerine `(e/H)` soruyor ve "Devam etmek için E yazıp Enter'a basın; boş
+    bırakmak iptal eder" diyor. Büyük harf varsayılanı gösterir: eski yazım Enter'ı "evet"
+    gibi gösteriyordu, kod ise tam tersini yapıyordu. Kullanıcının yanılmasının asıl sebebi
+    buydu.
+  - Betik davranışı testte **gerçekten koşuluyor**: dağıtılan betik `cmd.exe` ile, test
+    aracının yerine istenen kodla çıkan bir taklitle çalıştırılıyor. Eski betik aynı
+    düzenekte hatayı birebir tekrarladı (iptal, dosya yok → "Test bitti").
+  - Paket betikleri artık satır sonlarını CRLF'ye çevirerek yazıyor. `.ps1` dosyası LF
+    olabiliyor ve `cmd`, LF satır sonlu betiklerde `goto` ile etiket bulmayı güvenilir
+    yapmıyor; yeni betik sonucu `goto` ile seçiyor.
+
+- **Vodafone Mobil profili saha raporuyla ölçüldü** (aynı kullanıcı, telefon paylaşımı;
+  saha paketi hattı Vodafone Mobil olarak tespit etti). HTTPS'te
+  `vfm-443-multisplit-pos2` (discord, discord-güncelleme), düz HTTP'de
+  `vfm-80-fake-fakedsplit` (discord). Tek koşum, kullanıcı bildirimi — 3/3 kontrollü tekrar
+  değil. Testin tamamı 9,6 saniye sürdü. Bu hatta Discord'un QUIC trafiği **engelli değil**;
+  Vodafone Net ev hattında engelliydi ve çalışan ayar bulunamamıştı. HTTPS adayı sahte paket
+  kullanmıyor, yani sunucuya bozuk paket gitmiyor.
+
+- **Vodafone Net ikinci koşumu teyit edildi.** 2026-09-16 raporunda hat numarası
+  yazmıyordu; kullanıcı o koşumun da Vodafone Net ev internetinde yapıldığını söyledi. Profil
+  artık iki koşumlu olarak işaretli.
+
 ## [0.2.4]
 
 Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açıkken kurulum.** Üçü de aynı

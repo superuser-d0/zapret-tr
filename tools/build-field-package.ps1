@@ -96,6 +96,13 @@ Copy-Item $DnsCryptDir (Join-Path $PackageDir 'dnscrypt-proxy') -Recurse
 # --- Calistirma kisayollari ---------------------------------------------------
 # Exe'nin manifesti requireAdministrator; cmd bunu dogrudan calistiramadigi icin
 # .bat kendini once yukseltiyor. Aksi halde kullanici "erisim engellendi" gorur.
+#
+# SONUC MESAJI CIKIS KODUNA BAKIYOR. Eskiden betik testten sonra HER DURUMDA
+# "Test bitti. Sonuc dosyasi: zapret-tr-rapor.json" yaziyordu. Gercek kullanici
+# (issue #1, 2026-09-16) onay sorusunu bos gecti, test hic baslamadi, betik yine
+# "dosyayi gonderin" dedi ve dosya yoktu. Ctrl+C ile iptalde de aynisiydi.
+# zapret-tr-test.exe'nin kodlari: 0 ve 1 rapor yazildi, 5 hata raporu yazildi;
+# 2 (yetki), 3 (paket eksik), 4 (arguman), 130 (iptal) rapor YOK.
 $startBat = @'
 @echo off
 chcp 65001 >nul
@@ -110,18 +117,46 @@ if %errorlevel% neq 0 (
 
 cd /d "%~dp0"
 zapret-tr-test.exe --isp auto --doh --max-candidates 25 --out "zapret-tr-rapor.json"
+set "KOD=%errorlevel%"
 
 echo.
 echo ============================================================
+if "%KOD%"=="0" goto yazildi
+if "%KOD%"=="1" goto yazildi
+if "%KOD%"=="5" goto hata_raporu
+goto yazilmadi
+
+:yazildi
+if not exist "zapret-tr-rapor.json" goto yazilmadi
 echo  Test bitti. Sonuc dosyasi: zapret-tr-rapor.json
 echo  Bu klasorde olusan bu dosyayi geri gonderin.
+goto son
+
+:hata_raporu
+if not exist "zapret-tr-rapor.json" goto yazilmadi
+echo  Test bir hatayla yarida kesildi, ama hata raporu yazildi:
+echo  zapret-tr-rapor.json
+echo  Bu dosyayi geri gonderin; neyin bozuldugunu gosteriyor.
+goto son
+
+:yazilmadi
+echo  Test TAMAMLANMADI ve rapor OLUSMADI (kod %KOD%).
+if "%KOD%"=="130" echo  Test iptal edildi. Tekrar calistirip soruya E yazin ve Enter'a basin.
+if "%KOD%"=="2" echo  Yonetici yetkisi alinamadi.
+if "%KOD%"=="3" echo  Paket eksik. Klasoru zip dosyasindan yeniden cikarin.
+if exist "zapret-tr-rapor.json" echo  DIKKAT: klasordeki zapret-tr-rapor.json ONCEKI bir teste ait.
+
+:son
 echo.
 echo  Suruculeri kaldirmak icin TEMIZLIK.bat dosyasini calistirin.
 echo ============================================================
 echo.
 pause
 '@
-Set-Content (Join-Path $PackageDir 'TESTI-BASLAT.bat') $startBat -Encoding ascii
+# CRLF ZORUNLU. Here-string'in satir sonlari bu .ps1 dosyasininkinden geliyor ve
+# depoda LF (yerel calisma kopyasi da LF olabiliyor). cmd, LF satir sonlu betiklerde
+# goto/etiket aramasini guvenilir yapmiyor; bu betik ise sonuc mesajini goto ile seciyor.
+Set-Content (Join-Path $PackageDir 'TESTI-BASLAT.bat') ($startBat -replace "`r?`n", "`r`n") -Encoding ascii
 
 $cleanBat = @'
 @echo off
@@ -141,7 +176,7 @@ zapret-tr-test.exe --cleanup
 echo.
 pause
 '@
-Set-Content (Join-Path $PackageDir 'TEMIZLIK.bat') $cleanBat -Encoding ascii
+Set-Content (Join-Path $PackageDir 'TEMIZLIK.bat') ($cleanBat -replace "`r?`n", "`r`n") -Encoding ascii
 
 # --- Okuma dosyasi ------------------------------------------------------------
 $readmeSource = Join-Path $PSScriptRoot 'field-package-readme.txt'

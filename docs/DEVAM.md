@@ -2540,3 +2540,36 @@ Aynı bakışta: README "AdGuard 127.0.0.1:53'ü tutuyor" diyordu. Raporlarda po
 çalıştıysa söylüyor. Profil elle ya da kayıttan seçiliyse rapor hat hakkında hiçbir şey
 söylemiyor. Saha verisinin değeri "hangi hatta" sorusuna bağlı olduğu için rapor her zaman
 ASN yazmalı (özellik değil teşhis düzeltmesi sayılır). Yapılmadı.
+
+### 2026-09-16: Kerem'in cevabı — ev interneti, Vodafone Mobil raporu, saha paketi hatası (0.2.5)
+
+**Hat sorusu kapandı:** 16 Eylül koşumlarının hepsi Vodafone Net ev internetinde. README,
+profil ve `lastVerified` (2026-09-16) iki koşuma göre güncellendi. Düzeltme: "profil önceden
+seçili olduğu için ASN sorgulanmadı" cümlesi yalnızca uygulamanın metin raporları için
+doğruydu. JSON raporları saha paketinden geliyor (`--isp auto`), yani o koşumlarda ASN
+tespiti YAPILDI; JSON ASN numarasını yazmadığı için görünmüyordu. Teşhis açığı aynen duruyor:
+rapor hattın ASN'sini her zaman yazmalı.
+
+**Vodafone Mobil (ilk ölçüm, JSON, saha paketi):** `isp` = `vodafone-mobil` (paketin ASN
+tespiti) + kullanıcı "telefon paylaşımı" dedi. AS15897 karışık bir ASN (öneklerin ~%8'i
+sabit hat) ama iki işaret aynı yönde. 9,6 sn, 4 deneme, ikisi de profildeki ilk aday:
+tcp443 `--dpi-desync=multisplit --dpi-desync-split-pos=2` (sahte paket yok), tcp80
+`fake,fakedsplit` (Net ile aynı). Baseline: Discord tcp80/tcp443 RST; **Discord QUIC açık**
+(Net'te engelliydi), YouTube ve STUN açık. Telefonda ayrı şifreli DNS var; engel RST olduğu
+için ölçümü etkilemiyor ama bu hattın DNS katmanı hakkında bir şey söylemiyor. Profil notu
+"mobilde sahte paketler süzülüyor olabilir" diyordu; aynı koşumda tcp80'de sahte paketli
+aday kazandı. Sayım: 29 doğrulanmış aday, saha verisi olmayan profil 6.
+
+**Saha paketi hatası (kullanıcı: "boş metin gönderince test bitti, dosya oluşturuldu
+diyor ama oluşmuyor"):** kök sebep kodda net. `TESTI-BASLAT.bat` exe'den sonra koşulsuz
+"Test bitti. Sonuc dosyasi..." yazıyordu; exe onay reddinde (boş cevap) rapor yazmadan
+`return 0` ile çıkıyordu; soru `(E/h)` yazıyordu (Enter = evet gibi okunuyor, kod tersini
+yapıyor). Düzeltme: soru `(e/H)` + açık talimat, red → 130, betik çıkış koduna (0/1 rapor,
+5 hata raporu, diğerleri rapor yok) ve dosya varlığına bakıyor, eski raporu bu teste ait
+göstermiyor. `SahaPaketiTests` betiği ps1'den çıkarıp taklit exe ile `cmd.exe`'de KOŞUYOR;
+eski betik aynı düzenekte hatayı birebir tekrarladı (130, dosya yok → "Test bitti").
+
+**Yol boyunca bulunan tuzak:** betik here-string'i `.ps1`'in satır sonlarını taşıyor;
+çalışma kopyasında LF. `cmd` LF'li betikte `goto` etiketlerini güvenilir bulmuyor. Paket
+betiği artık CRLF'ye çevirerek yazıyor. Ayrıca bu makinenin kabuğunda `cmd /c betik.bat`
+mevcut dizinde aramadı (muhtemelen `NoDefaultCurrentDirectoryInExePath`); testte tam yol.

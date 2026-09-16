@@ -11,7 +11,7 @@
   ],
   "engine": "winws",
   "priority": 3,
-  "notes": "AS15924 (eski Borusan Telekom) ve AS8386 (eski Koc.net): ikisi de sabit hat. \"vodafone\" anahtar kelimesi Vodafone Mobil'le de eslesir; tespit ASN'ye gore birini onerip kullaniciya sorar. Bildirilen strateji sahte paket ve bolmeyi birlikte kullaniyor. 2026-09-15 (issue #1, kullanici raporu): tcp443 ve tcp80 adaylari gercek AS8386 hattinda dogrulandi; QUIC bolumunde 25 adayin HEPSI zaman asimina ugradi, yani bu hatta calisan bir QUIC adayi bilinmiyor ve o bolum komuta hic girmiyor. 2026-09-16 (issue #1, ikinci rapor, 0.2.3): ayni iki aday yine kazandi; QUIC'te 12 aday denenip cevapsiz bolum kuraliyla birakildi. Bu raporda ASN yok (profil onceden seciliydi, baglanti Wi-Fi): ev hatti mi telefon paylasimi mi oldugu bilinmiyor, kullaniciya soruldu.",
+  "notes": "AS15924 (eski Borusan Telekom) ve AS8386 (eski Koc.net): ikisi de sabit hat. \"vodafone\" anahtar kelimesi Vodafone Mobil'le de eslesir; tespit ASN'ye gore birini onerip kullaniciya sorar. Bildirilen strateji sahte paket ve bolmeyi birlikte kullaniyor. 2026-09-15 (issue #1, kullanici raporu): tcp443 ve tcp80 adaylari gercek AS8386 hattinda dogrulandi; QUIC bolumunde 25 adayin HEPSI zaman asimina ugradi, yani bu hatta calisan bir QUIC adayi bilinmiyor ve o bolum komuta hic girmiyor. 2026-09-16 (issue #1, ikinci rapor, 0.2.3): ayni iki aday yine kazandi; QUIC'te 12 aday denenip cevapsiz bolum kuraliyla birakildi. Rapor ASN numarasi yazmiyor ve baglanti Wi-Fi; kullanici bu kosumun da Vodafone Net ev internetinde yapildigini teyit etti.",
   "candidates": [
     {
       "id": "vf-443-fake-multisplit-badseq",
@@ -27,8 +27,8 @@
         "discord",
         "discord-guncelleme"
       ],
-      "lastVerified": "2026-09-15",
-      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda discord.com, gateway.discord.gg ve updates.discord.com baglantilarini acti. Baseline'da ucu de RST veriyordu. AS8386'DA TEK KOSUM (2026-09-15); 2026-09-16 kosumunda ayni sonuc ama raporda hat bilgisi yok, kullanici bildirimi (rapor dosyalari issue #1'e ekli) -- gelistirici olcumlerindeki 3/3 kontrollu tekrar DEGIL. DIKKAT: bu aday --dpi-desync-fooling=badseq kullaniyor, yani sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir. Ayni kullanici koruma acikken GitHub'in calismadigini bildirdi; 0.2.2'den itibaren strateji yalnizca hostlist'teki adreslere uygulandigi icin bu yan hasar Discord alan adlariyla sinirli."
+      "lastVerified": "2026-09-16",
+      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda discord.com, gateway.discord.gg ve updates.discord.com baglantilarini acti. Baseline'da ucu de RST veriyordu. IKI KOSUM: 2026-09-15 (hat AS8386 olarak tespit edildi) ve 2026-09-16 (kullanici ev internetinde yaptigini teyit etti), kullanici bildirimi (rapor dosyalari issue #1'e ekli) -- gelistirici olcumlerindeki 3/3 kontrollu tekrar DEGIL. DIKKAT: bu aday --dpi-desync-fooling=badseq kullaniyor, yani sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir. Ayni kullanici koruma acikken GitHub'in calismadigini bildirdi; 0.2.2'den itibaren strateji yalnizca hostlist'teki adreslere uygulandigi icin bu yan hasar Discord alan adlariyla sinirli."
     },
     {
       "id": "vf-443-fake-multidisorder",
@@ -70,8 +70,8 @@
       "verifiedFor": [
         "discord"
       ],
-      "lastVerified": "2026-09-15",
-      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda duz HTTP'de discord.com'u acti (baseline'da RST). AS8386'DA TEK KOSUM (2026-09-15); 2026-09-16 kosumunda ayni sonuc ama raporda hat bilgisi yok, kullanici bildirimi (rapor dosyalari issue #1'e ekli) -- 3/3 kontrollu tekrar DEGIL."
+      "lastVerified": "2026-09-16",
+      "note": "DOGRULANDI (saha, issue #1): gercek AS8386 Vodafone Net hattinda duz HTTP'de discord.com'u acti (baseline'da RST). IKI KOSUM: 2026-09-15 (hat AS8386 olarak tespit edildi) ve 2026-09-16 (kullanici ev internetinde yaptigini teyit etti), kullanici bildirimi (rapor dosyalari issue #1'e ekli) -- 3/3 kontrollu tekrar DEGIL."
     },
     {
       "id": "vf-80-multisplit-method",

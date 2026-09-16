@@ -44,8 +44,8 @@ kanıtlamak.** Uygulama, hattınız için bilinen adayları sırayla deniyor, he
 bağlantı kurarak sınıyor ve hangisinin işe yaradığını kanıtıyla birlikte söylüyor. Bir aday
 ancak ölçümü geçtiyse "doğrulandı" etiketi alıyor.
 
-Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet, Vodafone Mobil
-ve diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
+Önceliğimiz, **henüz ölçemediğimiz hatlar**: Turkcell Superonline, TurkNet ve
+diğerleri. Bu profillerde aday listemiz var ama tek bir doğrulanmış ölçümümüz yok, çünkü o
 hatlara erişimimiz yok. [Aşağıdaki tabloda](#hangi-hatlarda-doğrulandı) hangi hattın eksik
 olduğunu görebilirsiniz.
 
@@ -78,11 +78,11 @@ bunu **iki düğmeye** indiriyor — hattınızı tespit ediyor, o hat için bil
 > **Durum: çalışıyor.** Kurulum paketi indirilip gerçek bir makineye kuruldu ve normal bir
 > kullanıcı gibi kullanıldı: parametre testi hattı tespit etti, çalışan stratejiyi buldu, Başlat'tan
 > sonra engelli adresler açıldı. Doğrulama bağımsız bir istemciyle (`curl`) yapıldı — ölçüm
-> motorunun kendi raporuyla değil. Şu an **27 aday** doğrulanmış durumda: 23'ü Türk Telekom
+> motorunun kendi raporuyla değil. Şu an **29 aday** doğrulanmış durumda: 23'ü Türk Telekom
 > (AS9121), 2'si Turkcell Mobil (AS16135) hattında kendi ölçümümüzle; 2'si Vodafone Net
-> (AS8386) hattında bir kullanıcının gönderdiği saha raporlarıyla.
+> (AS8386), 2'si Vodafone Mobil hattında bir kullanıcının gönderdiği saha raporlarıyla.
 >
-> Eksik olan kod değil, **kapsam**. On profilin yedisinde henüz hiç saha verisi yok, çünkü o
+> Eksik olan kod değil, **kapsam**. On profilin altısında henüz hiç saha verisi yok, çünkü o
 > hatlara erişemiyoruz. **Testçi arıyoruz** — [hangi hatların eksik olduğu](#hangi-hatlarda-doğrulandı).
 
 ---
@@ -149,7 +149,7 @@ ediliyor. Hiçbir yere gönderilmez, sadece diske yazılır.
 çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor. Yazdığınız
 adres yalnızca testte denenmez, **koruma açıkken stratejinin uygulandığı listeye de girer**.
 Kutuya tek adres yazın; virgülle birden fazla adres şimdilik desteklenmiyor ve anlaşılmayan
-girdi günlükte sebebiyle bildirilir. Örnek: Vodafone kullanan bir kullanıcıda `roblox.com`
+girdi günlükte sebebiyle bildirilir. Örnek: Vodafone Net'te bir kullanıcıda `roblox.com`
 bağlantı sıfırlamayla engelliydi; kutuya yazılınca listeye girdi
 (`uygulanacak (7): ... roblox.com`) ve açıldı.
 
@@ -508,8 +508,8 @@ yaptı ve rapor dosyası elimizde, ama 3/3 kontrollü tekrar değil.
 |---|:---:|:---:|:---:|---|
 | Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
 | Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
-| Vodafone Net (AS8386) | 1 | 1 | ✗ | 🟢 **saha raporuyla ölçüldü** — AS8386'da bir koşum; sonraki koşumda aynı sonuç, ama hat bilgisi yok |
-| Vodafone Mobil | — | — | — | 🟡 **kullanıcı bildirimi** — "çalıştı" denildi, rapor yok |
+| Vodafone Net (AS8386) | 1 | 1 | ✗ | 🟢 **saha raporuyla ölçüldü** — iki ayrı günde iki koşumda aynı adaylar kazandı |
+| Vodafone Mobil (AS15897) | 1 | 1 | engelli değil | 🟢 **saha raporuyla ölçüldü** — bir koşum |
 | Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
 | Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
 | TurkNet | — | — | — | ⬜ **testçi aranıyor** |
@@ -525,12 +525,10 @@ kazandı:
   → `discord.com`
 
 **Hangi hatta ölçüldüğü:** ilk raporda uygulama bağlantıyı **AS8386** (Vodafone Net, sabit hat)
-olarak tespit etmiş. İkinci raporda hat bilgisi **yok**: profil önceden seçili olduğu için
-ASN sorgulanmamış ve bağlantı Wi-Fi üzerinden. Wi-Fi ev modemi de olabilir telefondan
-paylaşım da; rapordan ayırt edemiyoruz. Temel ölçüm ve kazananlar birebir aynı çıktığı için
-aynı hat olması güçlü ihtimal, ama kanıt değil — kullanıcıya sorduk.
+olarak tespit etmiş. İkinci raporda hat numarası yazmıyor ve bağlantı Wi-Fi; kullanıcıya sorduk,
+o koşumun da Vodafone Net ev internetinde yapıldığını söyledi.
 
-AS8386 koşumunda ölçülenler:
+Ölçülenler:
 
 - Discord'un engeli **bağlantı sıfırlama** (RST); DNS yönlendirmesi değil. Şifreli DNS o
   makinede başlayamıyordu (port doluydu), yani Discord şifreli DNS olmadan açıldı.
@@ -538,15 +536,37 @@ AS8386 koşumunda ölçülenler:
   denenen 12 adayın hepsi). Bu bölüm komuta hiç girmiyor; Discord'u etkilemiyor.
 - YouTube ve genel STUN engelli değil.
 
-Kullanıcının bildirdikleri (rapor dosyası dışında, hat bilgisi olmadan):
+Kullanıcının bildirdikleri (rapor dosyası dışında, ev internetinde):
 
 - Elle yaptığı denemede `roblox.com` bağlantı sıfırlamayla engelliydi ve "Açılmayan site"
   kutusuna yazılınca açıldı; `discordapp.com`, `discordcdn.com` ve `discord.media` engelli
   değildi.
 - Sesli sohbete girilebildi.
 
-✅ yerine 🟢 olmasının sebebi: hattı kanıtlı tek koşum var; bizim koyduğumuz 3/3 kontrollü
-tekrar kuralı değil. Aynı hattan tekrar koşumlar gelirse doğrulanmışa geçer.
+✅ yerine 🟢 olmasının sebebi: iki koşum var, ama bizim koyduğumuz 3/3 kontrollü tekrar kuralı
+değil. Aynı hattan bir koşum daha gelirse doğrulanmışa geçer.
+
+🟢 **Vodafone Mobil** (aynı kullanıcı, 2026-09-16): saha testi paketi hattı Vodafone Mobil
+olarak tespit etti; kullanıcı da telefondan paylaşımla test ettiğini söyledi. Rapor ASN
+numarasını yazmıyor, ama bu iki işaret aynı şeyi söylüyor. Profildeki ilk adaylar hemen
+tuttu ve testin tamamı **9,6 saniye** sürdü:
+
+- **tcp443:** `--dpi-desync=multisplit --dpi-desync-split-pos=2`
+  → `discord.com`, `gateway.discord.gg`, `updates.discord.com`. Vodafone Net'tekinden
+  farklı aday ve **sahte paket kullanmıyor**; sunucuya bozuk paket gitmiyor.
+- **tcp80:** Vodafone Net'teki adayın aynısı → `discord.com`
+
+Ölçülenler:
+
+- Discord'un engeli burada da **bağlantı sıfırlama** (RST).
+- **Discord'un QUIC trafiği bu hatta engelli değil.** Ev hattında çalışan ayar bulunamayan
+  bölüm, mobilde hiç gerekmiyor. Aynı şirketin iki hattının farklı davrandığının örneği.
+- YouTube ve genel STUN engelli değil.
+- Kullanıcının telefonunda ayrı bir şifreli DNS açık. Engel DNS'te değil bağlantı
+  seviyesinde olduğu için ölçümü etkilemiyor; ama bu rapor Vodafone Mobil'de DNS engeli
+  olup olmadığını **söylemiyor**.
+
+Tek koşum olduğu için 🟢; tekrar koşumlar gelirse doğrulanmışa geçer.
 
 ⚠️ **Sonuç alınamayan bir koşum — ama hangi hatta olduğunu bilmiyoruz.** Bir kullanıcıda
 49 aday denendi ve hiçbiri `tcp80` ile QUIC bölümünü açamadı. Motor düzgün çalışıyordu;
@@ -684,7 +704,7 @@ Tamamlananlar:
 
 Kalanlar:
 
-- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin yedisinde
+- [ ] **Doğrulama kapsamı — asıl eksik bu.** Yukarıdaki tabloya bakın: on profilin altısında
       sıfır saha verisi var. Kod eksiği değil, o hatlara erişim eksiği.
 - [ ] **`discord-voice` hiçbir profilde doğrulanmadı ve dışarıdan doğrulanamıyor.** Discord'un
       ses yolu kendi IP keşif protokolünü kullanıyor; sunucu adresi ancak kimlik doğrulaması
@@ -742,7 +762,7 @@ false-positive üretiyor. Kod imzalama sertifikamız yok.
 - Stratejilerini paylaşan, WinDivert kalıntı temizliği ve GoodbyeDPI çakışması fikirleri için
   [zapret-win-turkey](https://github.com/alimali54/zapret-win-turkey) geliştiricisi
   [@alimali54](https://github.com/alimali54)'e,
-- Vodafone Net hattında sürüm sürüm saha testi yapıp rapor dosyalarını gönderen, GitHub
+- Vodafone Net ve Vodafone Mobil hatlarında sürüm sürüm saha testi yapıp rapor dosyalarını gönderen, GitHub
   sorununu, QUIC'te boşa giden dakikaları ve "Açılmayan site" kutusundaki sessiz hatayı
   bulan [@KeremKuyucu](https://github.com/KeremKuyucu)'ya teşekkürler.
 
