@@ -10,7 +10,7 @@
   ],
   "engine": "winws",
   "priority": 4,
-  "notes": "AS12735. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir.",
+  "notes": "AS12735. ISP'ye ozel bildirilmis strateji bulunamadi, genel merdivenle baslanir. KULLANICI BILDIRIMI, OLCULMEDI (issue #1, KeremKuyucu, 2026-09-16): TurkNet'i 1,5 yil, Temmuz 2026'ya kadar kullanmis; engel yalnizca DNS'teymis, DNS sunucusunu degistirmek (sifreli olmasi bile gerekmeden) yetiyormus. Dogruysa bu hatta DPI adayi gerekmez ve sifreli DNS acikken test hedefleri acik bulur (ENGEL BULUNAMADI). Ilk TurkNet saha raporunda bakilacaklar: sistem DNS'iyle baseline DNS YONLEND. mi, --doh ile hedefler aciliyor mu, DPI ENGELI var mi.",
   "candidates": [
     {
       "id": "tn-443-fake-multidisorder",

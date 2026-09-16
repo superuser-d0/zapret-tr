@@ -2707,3 +2707,10 @@ göre olası sorun: şifreli DNS açıkken test hedefleri açık bulur → "ENGE
 hedefinizi girin" (doğru cevap "şifreli DNS yetiyor"); strateji doğrulanmadığı için Başlat
 tahmini adayı kategori süzgeci olmadan BÜTÜN hedef adreslere uygular. TürkNet hattında saha
 paketi raporu istendi.
+
+**TürkNet güncellemesi (Kerem, 21:28Z):** artık TürkNet kullanmıyor, çevresinde de yok;
+test edemeyecek. TürkNet'i Temmuz 2026'ya kadar 1,5 yıl kullanmış; DNS'i değiştirmek
+(şifresiz bile) yetiyormuş, testlerin hepsinin açık çıkacağını tahmin ediyor. Karar: kod
+değişmiyor — "yalnızca şifreli DNS" modu hiçbir elimizdeki hatta doğrulanamaz (TTNET'te DNS
++ DPI birlikte). Bilgi TürkNet profil notuna "kullanıcı bildirimi, ölçülmedi" olarak yazıldı.
+Soru ilk TürkNet saha raporuna kadar açık.
