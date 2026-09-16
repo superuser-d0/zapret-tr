@@ -133,7 +133,12 @@ Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription
 ;   "CreateProcess tamamlanamadi; kod 740. The requested operation requires elevation."
 ; Kullanici icin belirtisi kotu: kurulum bitiyor ama uygulama acilmiyor; yalnizca
 ; masaustu kisayolundan aciliyor. Gercek makinede goruldu.
-Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent shellexec
+; Check: ExeCalisabildi ZORUNLU. Olculdu (2026-09-16, SAC acik makine, 0.2.5 taslagi):
+; kurulum sonunda aciklama kutumuz dogru cikti, ama kullanici "simdi baslat" isaretliyken
+; Son dugmesine basinca Inno ham hatayi yine gosterdi:
+;   "Unable to execute file: ...ZapretTR.exe / ShellExecuteEx failed; code 4551."
+; Exe az once calisamadiysa bu kutu hem gereksiz hem de aciklamamizi bozuyor.
+Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent shellexec; Check: ExeCalisabildi
 
 [UninstallRun]
 ; Bekci ONCE siliniyor: servisler sokulurken bir bekci turu araya girerse
@@ -162,6 +167,16 @@ Type: filesandordirs; Name: "{app}\zapret-winws"
 // dogru davraniyor, kaybolan sey kullanicinin bir daha basmadigi bir dugmenin sonucu.
 var
   ServisGeriKurulacak: Boolean;
+
+// Kurulum sonunda ZapretTR.exe calistirilamadi mi (SAC, hata 4551). [Run]'daki
+// "simdi baslat" girdisi buna bakiyor; bkz. ExeCalisabildi.
+var
+  Engellendi: Boolean;
+
+function ExeCalisabildi(): Boolean;
+begin
+  Result := not Engellendi;
+end;
 
 // sc query cikis kodu: 0 = servis var, 1060 = yok.
 function ServisKurulu(const Ad: String): Boolean;
@@ -390,7 +405,6 @@ var
   ResultCode: Integer;
   Exe: String;
   Mesaj: String;
-  Engellendi: Boolean;
 begin
   // ServisGeriKurulacak kosulu ARTIK BURADA DEGIL: DNS bekcisi, servis kurulu
   // olmasa da her kurulumda yazilmali (gerekcesi DnsGuard.cs). Eskiden bu satir

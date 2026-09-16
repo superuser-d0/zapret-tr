@@ -59,6 +59,9 @@ Sahadan gelen iki yeni ölçüm de bu sürümde profillere işlendi.
     açık bir makinede okunarak ölçülmedi.
   - Kurulum sonundaki açıklama "ZapretTR kurulu" yerine artık uygulamanın bu ayar açıkken
     **açılmayacağını** söylüyor.
+  - Açıklama kutusundan sonra "ZapretTR uygulamasını şimdi başlat" işaretliyse Inno yine ham
+    *"ShellExecuteEx failed; code 4551"* hatasını gösteriyordu (aynı makinede görüldü). Exe az
+    önce çalışamadıysa bu seçenek artık hiç sunulmuyor.
   - Kod imzası olmadan SAC açıkken ZapretTR'yi çalıştırmanın yolu yok; bu değişiklik engeli
     kaldırmıyor, kullanıcıyı kurmadan önce bilgilendiriyor.
 

@@ -39,7 +39,8 @@ public sealed class KurulumSacTests
         get
         {
             var src = Iss;
-            var govde = src[src.IndexOf("[Code]", StringComparison.Ordinal)..];
+            // Satir basindaki bolum basligi; yorumlarda gecen "[Code]" degil.
+            var govde = src[src.IndexOf("\n[Code]", StringComparison.Ordinal)..];
             return string.Join('\n', govde.Split('\n')
                 .Select(l => Regex.Replace(l, @"//.*$", string.Empty)));
         }
@@ -168,6 +169,20 @@ public sealed class KurulumSacTests
         // "ZapretTR kurulu" yazmak dogruydu ama kullanici uygulamayi acabilecegini sandi.
         Assert.DoesNotContain("'ZapretTR kurulu, ama", Iss, StringComparison.Ordinal);
         Assert.Contains("ZapretTR acilmaz", Iss, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Exe_Engellendiyse_Simdi_Baslat_Denenmiyor()
+    {
+        // OLCULDU (2026-09-16): aciklama kutusundan sonra "simdi baslat" girdisi ham
+        // "ShellExecuteEx failed; code 4551" kutusunu yine gosterdi.
+        var src = Iss;
+        var run = src[src.IndexOf("[Run]", StringComparison.Ordinal)..
+                      src.IndexOf("[UninstallRun]", StringComparison.Ordinal)];
+        var girdi = run.Split('\n').Single(l => l.StartsWith("Filename:", StringComparison.Ordinal) && l.Contains("postinstall", StringComparison.Ordinal));
+
+        Assert.Contains("Check: ExeCalisabildi", girdi, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"function ExeCalisabildi\(\): Boolean;\s*begin\s*Result := not Engellendi;"), Kod);
     }
 
     // --- Yapisal saglik ----------------------------------------------------------
