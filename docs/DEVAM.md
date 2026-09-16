@@ -2669,3 +2669,14 @@ roblox.com listeye girdi, Roblox açıldı. Düzeltmenin kendisi (yeniden açmad
 uygulamada henüz denenmedi — 0.2.7 kurulunca test → Başlat ile doğrudan görülmeli.
 
 Kerem'e "Roblox varsayılan oldu" denmişti; 0.2.7 çıkınca kısa düzeltme notu gerekiyor.
+
+**0.2.7 yayını:** ilk kez ön sürüm olarak yayınlandı (güncelleme denetleyicisi
+`releases/latest`'e bakıyor; ön sürüm yayındayken API `v0.2.6` döndürdü — ölçüldü).
+Kullanıcı kurup kutu boşken test → yeniden açmadan Başlat yaptı, Roblox açıldı; ardından
+kararlı sürüme çevrildi (`releases/latest` → `v0.2.7`). İlk CI koşumu
+`YeniDogrulamaTests`'teki LF'ye bağlı regex yüzünden düştü (CI kopyası CRLF); `?
+`
+ile düzeltildi, etiket taşındı. Kerem'e kısa düzeltme notu gönderildi (issue #1 kapalı).
+
+**Karar:** bundan sonra sürümler önce ön sürüm olarak yayınlanıp gerçek makinede
+denenecek, sonra kararlı sürüme çevrilecek; küçük düzeltmeler birleştirilecek.

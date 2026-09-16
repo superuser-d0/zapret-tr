@@ -28,6 +28,8 @@ Hata düzeltme sürümü. Başlığı: **Roblox, 0.2.6'da testten hemen sonra a�
   - Teşhis gerçek makinede doğrulandı: aynı 0.2.6 kurulumunda kutu boşken uygulamadan
     **Çıkış** yapılıp yeniden açılınca Başlat `roblox.com`'u listeye aldı ve Roblox açıldı.
     0.2.6'da kalan kullanıcılar için geçici çözüm bu.
+  - Düzeltme de gerçek makinede doğrulandı (0.2.7 ön sürümü, Türk Telekom, kutu boş):
+    test → yeniden açmadan Başlat → Roblox açıldı.
 
 ## [0.2.6]
 
