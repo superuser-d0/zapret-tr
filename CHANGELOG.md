@@ -8,6 +8,19 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+
+- **Yayın sayfalarındaki "CHANGELOG.md" bağlantısı 404 veriyordu.** Kullanıcı bildirdi
+  (2026-09-16): *"Cannot find a valid ref in blob/main/CHANGELOG.md"*. Not
+  `…/releases/tag/vX` adresinde gösteriliyor ve GitHub göreli bağlantıyı oraya göre
+  çözüyor; `../blob/main/…` geçersiz bir adrese gidiyordu. Sorun giderme ve sık sorulanlar
+  bağlantıları da aynıydı; 0.2.4 notundaki `docs/SORUN-GIDERME.md#…` bağlantısı da.
+  - Yayın notu üretici (`tools/release-notes.ps1`) göreli bağlantıları artık depo içi
+    mutlak adrese çeviriyor; şablon da mutlak adres kullanıyor. Test üreticiyi gerçekten
+    çalıştırıyor ve eski betikle düştüğü görüldü.
+  - Yayınlanmış 29 sürüm notunda yalnızca bu bağlantılar düzeltildi. Yeni adresler 200
+    döndü; 0.2.7 sayfasındaki bağlantı CHANGELOG'u açtı.
+
 ## [0.2.7]
 
 Hata düzeltme sürümü. Başlığı: **Roblox, 0.2.6'da testten hemen sonra açılmıyordu.**

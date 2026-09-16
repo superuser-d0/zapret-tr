@@ -63,6 +63,20 @@ $body
 $preamble
 "@
 
+# GORELI BAGLANTILAR MUTLAK ADRESE CEVRILIYOR.
+#
+# Yayin sayfasi .../releases/tag/vX adresinde duruyor ve GitHub notlardaki goreli
+# baglantilari o adrese gore cozuyor. "../blob/main/CHANGELOG.md" boylece gecersiz bir
+# adrese gidiyordu; kullanici tikladiginda "404 - Cannot find a valid ref in
+# blob/main/CHANGELOG.md" gordu (2026-09-16). CHANGELOG'daki depo ici goreli
+# baglantilar (ornegin docs/SORUN-GIDERME.md#...) depoda dogru, notta ise ayni sekilde
+# bozuluyordu. Sayfa ici (#...) ve mutlak baglantilara dokunulmuyor.
+$repoBlob = 'https://github.com/superuser-d0/zapret-tr/blob/main/'
+$note = [regex]::Replace(
+    $note,
+    '\]\((?!https?://|#|mailto:)(?:\.\./blob/main/|\./)?([^)\s]+)\)',
+    { param($m) '](' + $repoBlob + $m.Groups[1].Value + ')' })
+
 # Out-File, Windows PowerShell 5.1'de BOM ekliyor ve BOM yayin notunun ilk
 # basligina gorunmez bir karakter olarak sizabiliyor.
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false

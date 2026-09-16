@@ -1,4 +1,4 @@
-Önceki sürümlerin tamamı için [CHANGELOG.md](../blob/main/CHANGELOG.md).
+Önceki sürümlerin tamamı için [CHANGELOG.md](https://github.com/superuser-d0/zapret-tr/blob/main/CHANGELOG.md).
 
 ## Kurulum
 
@@ -10,7 +10,7 @@ gerekçesi aşağıda.
 **Bu paket imzalı değil.** Kod imzalama sertifikamız yok. Windows SmartScreen
 "bilinmeyen yayımcı" uyarısı verecek; Microsoft Defender ya da başka antivirüsler paketi
 silebilir, Akıllı Uygulama Denetimi açık bir Windows 11 ise hiç çalıştırmayabilir. Ne
-yapacağınız [sorun giderme rehberinde](../blob/main/docs/SORUN-GIDERME.md#windows-engelliyor).
+yapacağınız [sorun giderme rehberinde](https://github.com/superuser-d0/zapret-tr/blob/main/docs/SORUN-GIDERME.md#windows-engelliyor).
 Bunun teknik sebebi var: uygulama, çekirdek modunda çalışan bir paket yakalama
 sürücüsü (WinDivert) yükleyen `winws.exe`'yi çalıştırıyor. İmzasız derleme + paket
 sürücüsü birleşimi neredeyse her zaman false-positive üretir.
@@ -38,7 +38,7 @@ gönderilmez. Uygulamanın **kendiliğinden** yaptığı tek istek güncelleme k
 açılışta GitHub'a "en son sürüm ne" diye sorar (`config.json` içindeki
 `updateCheckEnabled` ile kapatılabilir). Parametre testi ve şifreli DNS ise
 çalışırken dış sunuculara bağlanır; hangileri olduğu
-[ayrıntılı rehberde](../blob/main/README-DETAYLI.md#sık-sorulanlar) tek tek yazılı.
+[ayrıntılı rehberde](https://github.com/superuser-d0/zapret-tr/blob/main/README-DETAYLI.md#sık-sorulanlar) tek tek yazılı.
 
 ## Doğrulama durumu
 
