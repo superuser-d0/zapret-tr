@@ -2680,3 +2680,30 @@ ile düzeltildi, etiket taşındı. Kerem'e kısa düzeltme notu gönderildi (is
 
 **Karar:** bundan sonra sürümler önce ön sürüm olarak yayınlanıp gerçek makinede
 denenecek, sonra kararlı sürüme çevrilecek; küçük düzeltmeler birleştirilecek.
+
+### 2026-09-17: Kerem — sessiz güncelleme önerisi (ERTELENDİ) ve TürkNet
+
+**Sessiz kurulum ertelendi.** Kerem kendi projesindeki `lib/Updater.ahk`'yi paylaştı
+(yalnızca o dosya okundu): sormadan indiriyor, özet doğrulamıyor, `/VERYSILENT
+/SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS` ile kurup çıkıyor. Bizde şu an: onay →
+indir → SHA256 → sihirbaz normal açılıyor. Karar: stabilite hedefi nedeniyle şimdi
+değiştirilmiyor. Sebepler: güncelleme yolu bozulursa düzeltme kullanıcıya ulaşamaz; mevcut
+yol gerçek makinede doğrulandı (0.2.1 → 0.2.4); sessiz modda `WizardSilent()` bizim SAC /
+4551 / "servis geri kurulamadı" mesajlarımızı gizliyor; `[Run]` "şimdi başlat" satırında
+`skipifsilent` var, yani sessiz güncellemeden sonra uygulama kendiliğinden AÇILMAZ.
+
+Almadan önce gerçek makinede geçmesi gerekenler (`/SILENT` ile elle; güncelleme
+denetleyicisi ön sürümü görmüyor):
+- servis kuruluyken güncelleme: servisler durup geri kuruluyor mu;
+- koruma açıkken (winws + dnscrypt): DNS geri alınıyor mu;
+- SAC değerlendirme modu ve SAC kapalı;
+- güncelleme sonrası uygulama kendiliğinden açılıyor mu;
+- kurulum yarıda kalırsa kullanıcı bunu görüyor mu.
+Onay ve SHA256 doğrulaması her durumda kalacak.
+
+**TürkNet (DOĞRULANMADI):** Kerem geçmiş deneyimine göre TürkNet'te DPI olmadığını,
+yalnızca DNS engeli olduğunu söyledi. Profilde ölçülmüş aday yok. Doğruysa kod okumasına
+göre olası sorun: şifreli DNS açıkken test hedefleri açık bulur → "ENGEL BULUNAMADI, kendi
+hedefinizi girin" (doğru cevap "şifreli DNS yetiyor"); strateji doğrulanmadığı için Başlat
+tahmini adayı kategori süzgeci olmadan BÜTÜN hedef adreslere uygular. TürkNet hattında saha
+paketi raporu istendi.
