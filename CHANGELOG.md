@@ -8,18 +8,6 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
-### Düzeltildi
-
-- **`--uninstall-services` artık sonucunu bildiriyor.** Yol `void` olduğu için çağıran
-  taraf **her zaman 0** görüyordu; başarısızlık hiçbir yerde görünmüyordu. Bunun bedeli
-  en yüksek olan yol burası: kaldırma sırasında başarısız olursa kullanıcının sistem DNS'i
-  `127.0.0.1`'de, çözümleyicisiz kalabilir. Artık 0/2/4 dönüyor. Kaldırmayı hâlâ
-  durdurmuyor (Inno dönüş kodunu zaten kullanmıyor); kazanılan şey, CI'daki
-  `if ($p.ExitCode -ne 0) { throw }` denetiminin gerçekten bir şey ölçmesi.
-  - Çıkış kodunun bu yapıda doğru döndüğü ayrıca ölçüldü (tek kullanımlık bir WPF
-    uygulamasıyla): `Shutdown(42)` → 42, `Environment.ExitCode = 43; Shutdown();` → 43.
-    **İkisi de çalışıyor**; aralarındaki seçim biçim tercihi.
-
 ## [0.2.4]
 
 Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açıkken kurulum.** Üçü de aynı
@@ -55,6 +43,28 @@ Hepsi gerçek bir makinede ölçüldü (2026-09-16, 0.2.3 kurulumu): Windows hem
   engellendi; indirdiği dosyanın **"Engellemeyi Kaldır"** işaretini de temizleyince geçti.
   Bu adım artık uygulamanın mesajında, kurulum hatasında, README'de ve sorun giderme
   rehberinde — hepsinde ve doğru sırayla.
+
+- **`--uninstall-services` artık sonucunu bildiriyor.** Yol `void` olduğu için çağıran
+  taraf **her zaman 0** görüyordu; başarısızlık hiçbir yerde görünmüyordu. Bunun bedeli
+  en yüksek olan yol burası: kaldırma sırasında başarısız olursa kullanıcının sistem DNS'i
+  `127.0.0.1`'de, çözümleyicisiz kalabilir. Artık 0/2/4 dönüyor. Kaldırmayı hâlâ
+  durdurmuyor (Inno dönüş kodunu zaten kullanmıyor); kazanılan şey, CI'daki
+  `if ($p.ExitCode -ne 0) { throw }` denetiminin gerçekten bir şey ölçmesi.
+  - Çıkış kodunun bu yapıda doğru döndüğü ayrıca ölçüldü (tek kullanımlık bir WPF
+    uygulamasıyla): `Shutdown(42)` → 42, `Environment.ExitCode = 43; Shutdown();` → 43.
+    **İkisi de çalışıyor**; aralarındaki seçim biçim tercihi.
+
+### Belgelendi
+
+- **"Görev Zamanlayıcı'da neden bir ZapretTR görevi var?"** Bir kullanıcı şifreli DNS
+  seçmediği hâlde 10 dakikada bir çalışan `--dns-guard` görevini fark etti ve sordu
+  ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)). Görev kasıtlı — sistem
+  DNS'i `127.0.0.1`'e yönlendirilmişken çözümleyici ölürse yönlendirmeyi geri alıyor, yani
+  internetin kesilmesini önlüyor; en kritik durum uygulamanın çökmesi olduğu için görevin
+  **çökmeden önce** var olması gerekiyor. Ama bunu kullanıcıya anlatan **hiçbir yer yoktu**.
+  Artık [sorun giderme rehberinde](docs/SORUN-GIDERME.md#dns-bekcisi-gorevi) ve sık
+  sorulanlarda: ne yaptığı, şifreli DNS kapalıyken hiçbir şey yapmadığı, ve yalnızca görevi
+  kaldırmak isteyene komutu.
 
 ## [0.2.3]
 

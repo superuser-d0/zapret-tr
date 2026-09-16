@@ -34,7 +34,8 @@ Ekranda yazmayan ama sık yaşanan durumlar:
 [İnternet tamamen gitti](#internet-gitti) ·
 [Yeniden başlatınca koruma kapalı geliyor](#yeniden-baslatinca) ·
 [Kalıntı temizliği penceresi](#kalinti-temizligi) ·
-[Uygulama açılmıyor / çöktü](#uygulama-acilmiyor)
+[Uygulama açılmıyor / çöktü](#uygulama-acilmiyor) ·
+[Görev Zamanlayıcı'daki "ZapretTR DNS Bekçisi"](#dns-bekcisi-gorevi)
 
 ---
 
@@ -418,6 +419,34 @@ Dosyanın gerçekten bizden geldiğinden emin olmak için ayrıntılı belgedeki
 ---
 
 ## İnternet ve DNS
+
+<a id="dns-bekcisi-gorevi"></a>
+
+### Görev Zamanlayıcı'da "ZapretTR DNS Bekçisi" görüyorum
+
+Bu görev **kasıtlı** ve şifreli DNS kullanmasanız bile kuruluyor. Açılışta, ağ değiştiğinde
+ve 10 dakikada bir çalışıyor.
+
+**Ne yapıyor:** sistem DNS'i `127.0.0.1`'e yönlendirilmişken şifreli DNS çözümleyicisinin
+ayakta olduğunu denetliyor. Çözümleyici ölmüşse yönlendirmeyi geri alıyor — yoksa makine
+**hiçbir adresi çözemez** hâle gelir, yani internetiniz gider.
+
+**Neden hep kurulu:** en kritik durum uygulamanın çökmesi. O anda temizliği yapacak başka
+bir şey kalmıyor, dolayısıyla görevin **çökmeden önce** var olması gerekiyor. Şifreli DNS'i
+sonradan açtığınızda da hazır olmuş oluyor.
+
+**Şifreli DNS kapalıyken ne yapıyor:** hiçbir şey. Yönlendirme yoksa görev bir şey
+değiştirmeden çıkar; bunu her sürümde otomatik testle doğruluyoruz.
+
+**Kaldırmak isterseniz:** uygulamayı Program Ekle/Kaldır'dan kaldırdığınızda görev de
+siliniyor. Yalnızca görevi silmek isterseniz (uygulama kurulu kalsın):
+
+```powershell
+& "$env:ProgramFiles\ZapretTR\ZapretTR.exe" --unregister-dns-guard
+```
+
+Bunu yaparsanız şifreli DNS'i açtığınız durumda çözümleyici ölürse internetinizin geri
+gelmesini sağlayan güvenlik ağını da kaldırmış olursunuz.
 
 <a id="internet-gitti"></a>
 

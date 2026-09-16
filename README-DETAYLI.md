@@ -166,6 +166,17 @@ değiştiği için hiçbir ürün için "işaretlemez" diyemiyoruz; Akıllı Uyg
 Windows 11 ise imzasız uygulamaları hiç çalıştırmıyor. Adım adım yol:
 [Windows engelliyor](docs/SORUN-GIDERME.md#windows-engelliyor).
 
+**Görev Zamanlayıcı'da "ZapretTR DNS Bekçisi" var, şifreli DNS kullanmıyorum bile.**
+Doğru görmüşsünüz: bu görev **şifreli DNS seçiminizden bağımsız olarak** kuruluyor ve
+10 dakikada bir (ayrıca açılışta ve ağ değişiminde) çalışıyor. Sebebi şu: görevin işi,
+sistem DNS'i `127.0.0.1`'e yönlendirilmişken çözümleyicinin ayakta olduğunu denetlemek.
+Çözümleyici ölürse yönlendirmeyi geri alıyor — yoksa makine **hiçbir adresi çözemez**
+hâle geliyor, yani internetiniz gider. Bunun en kritik hâli uygulama çökerse ortaya
+çıkıyor: o durumda temizliği yapacak başka bir şey kalmıyor ve görevin **çökmeden önce**
+kurulmuş olması gerekiyor. Şifreli DNS kapalıyken yönlendirme de olmadığı için görev her
+turda **hiçbir şey yapmadan** çıkar; bunu her sürümde otomatik testle doğruluyoruz.
+Uygulamayı kaldırdığınızda görev de siliniyor.
+
 **İnternetim gitti, adresler çözülmüyor.** Uygulama şifreli DNS için sistem DNS'ini kendine
 yönlendiriyor ve her çıkışta geri alıyor. Bir şekilde yarım kaldıysa şu komut geri alır:
 ```powershell
