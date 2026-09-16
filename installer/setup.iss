@@ -347,6 +347,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
   Exe: String;
+  Mesaj: String;
   Engellendi: Boolean;
 begin
   // ServisGeriKurulacak kosulu ARTIK BURADA DEGIL: DNS bekcisi, servis kurulu
@@ -395,18 +396,25 @@ begin
   // (2026-09-16): yalnizca SAC'i kapatmak YETMEDI, indirilen dosyanin
   // "Engellemeyi Kaldir" isaretinin de temizlenmesi gerekti.
   if Engellendi and (not WizardSilent()) then
-    MsgBox('Windows, ZapretTR.exe dosyasini calistirmadi (Akilli Uygulama Denetimi, hata 4551).' #13#10
-           #13#10
-           'ZapretTR kurulu ama otomatik baslatma servisi ve DNS bekcisi kurulamadi.' #13#10
-           #13#10
-           'Cozum icin SIRASIYLA:' #13#10
-           '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' #13#10
-           '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' #13#10
-           '2) Windows Guvenligi -> Uygulama ve tarayici denetimi ->' #13#10
-           '   Akilli Uygulama Denetimi ayarlari -> Kapali.' #13#10
-           '3) Kurulumu yeniden calistirin.' #13#10
-           #13#10
-           'ZapretTR''in kod imzalama sertifikasi yok; bu ozellik imzasiz' #13#10
-           'uygulamalara tek tek istisna tanimlamaya izin vermiyor.',
-           mbError, MB_OK);
+  begin
+    // Metin degiskene yaziliyor ve HICBIR SATIR '#' ile BASLAMIYOR. Sebep
+    // olculdu: ISCC'nin onislemcisi satir basindaki '#' karakterini yonerge
+    // sayiyor, dolayisiyla '#13#10' ile baslayan bir devam satiri derlemeyi
+    // "Unknown preprocessor directive" ile durduruyor. Bu, metin testlerinin
+    // goremedigi bir hata sinifi; yalnizca gercek derleme yakaliyor.
+    Mesaj := 'Windows, ZapretTR.exe dosyasini calistirmadi'
+             + ' (Akilli Uygulama Denetimi, hata 4551).' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'ZapretTR kurulu, ama otomatik baslatma servisi ve'
+             + ' DNS bekcisi kurulamadi.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'Cozum icin SIRASIYLA:' + #13#10;
+    Mesaj := Mesaj + '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' + #13#10;
+    Mesaj := Mesaj + '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' + #13#10;
+    Mesaj := Mesaj + '2) Windows Guvenligi -> Uygulama ve tarayici denetimi ->' + #13#10;
+    Mesaj := Mesaj + '   Akilli Uygulama Denetimi ayarlari -> Kapali.' + #13#10;
+    Mesaj := Mesaj + '3) Kurulumu yeniden calistirin.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'ZapretTR''in kod imzalama sertifikasi yok; bu ozellik'
+             + ' imzasiz uygulamalara tek tek istisna tanimlamaya izin vermiyor.';
+
+    MsgBox(Mesaj, mbError, MB_OK);
+  end;
 end;

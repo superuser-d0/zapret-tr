@@ -8,6 +8,16 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.2.4]
+
+Hata düzeltme sürümü. Başlığı: **Akıllı Uygulama Denetimi açıkken kurulum.** Üçü de aynı
+kök sebepten geliyor — kurulum, Windows'un imzasız `ZapretTR.exe`'yi çalıştıracağını
+varsayıyordu. Varsaymıyor artık.
+
+Hepsi gerçek bir makinede ölçüldü (2026-09-16, 0.2.3 kurulumu): Windows hem Inno'nun
+`%TEMP%`'teki geçici dosyasını hem de kurulmuş `ZapretTR.exe`'yi çalıştırmadı —
+**hata 4551**, *"Uygulama Denetimi ilkesi bu dosyayı engelledi."*
+
 ### Düzeltildi
 
 - **Akıllı Uygulama Denetimi açıkken yükseltme servisleri söküyor.** Gerçek makinede

@@ -148,6 +148,30 @@ public sealed class KurulumSacTests
     }
 
     [Fact]
+    public void Kod_Icinde_Satir_Basi_Diyez_YOK()
+    {
+        // OLCULDU: ISCC'nin onislemcisi satir basindaki '#' karakterini yonerge
+        // sayiyor. Cok satirli bir MsgBox'ta devam satiri '#13#10' ile baslayinca
+        // derleme "Unknown preprocessor directive" ile DURDU (setup.iss:399).
+        //
+        // Bu tam da metin testlerinin goremedigi sinifti: begin/end dengeliydi,
+        // degiskenler bildirilmisti, icerik dogruydu -- ama dosya derlenmiyordu.
+        // Testi, gercek derleme hatayi bulduktan SONRA yazdim; derlemenin yerine
+        // gecmez, yalnizca ayni hatanin sessizce geri gelmesini engeller.
+        var src = Iss;
+        var kodBasi = src.IndexOf("[Code]", StringComparison.Ordinal);
+
+        var suclular = src[kodBasi..]
+            .Split('\n')
+            .Select((satir, i) => (satir: satir.TrimEnd('\r'), no: i))
+            .Where(x => x.satir.TrimStart().StartsWith('#'))
+            .Select(x => $"[Code]+{x.no}: {x.satir.Trim()}")
+            .ToList();
+
+        Assert.Empty(suclular);
+    }
+
+    [Fact]
     public void Kullanilan_Degiskenler_Bildirilmis()
     {
         // Pascal'da bildirilmemis degisken derleme hatasi; ISCC olmadan bunu
