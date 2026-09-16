@@ -1,6 +1,7 @@
 using System.IO;
 using ZapretTr.Core.Engine;
 using ZapretTr.Core.Profiles;
+using ZapretTr.Prober;
 using IoPath = System.IO.Path;
 
 namespace ZapretTr.Tests;
@@ -115,6 +116,37 @@ public sealed class HostlistTests
         // Issue #1'in ta kendisi: engellenmemis siteler listeye GIRMEMELI.
         Assert.DoesNotContain("github.com", domains);
         Assert.DoesNotContain("youtube.com", domains);
+    }
+
+    [Fact]
+    public void Roblox_Kategorisi_Yalnizca_Engelli_Olculen_Adi_Kapsiyor()
+    {
+        // Olculdu (2026-09-16, Turk Telekom): roblox.com TLS'te kesiliyor, rbxcdn.com
+        // aciliyor. Daraltmadan sonra Roblox hic kapsanmiyordu (iki kullanici bildirdi).
+        var domains = HostlistStore.Load(ProfilesRoot).DomainsFor(["roblox"]);
+
+        Assert.Equal(["roblox.com"], domains);
+    }
+
+    [Fact]
+    public void Her_Test_Kategorisinin_Hostlist_Karsiligi_Var()
+    {
+        // Test bir kategoriyi engelli bulup strateji dogrulayip da hostlist'te o
+        // kategori yoksa koruma o siteyi SESSIZCE kapsamaz -- Roblox'ta olan buydu
+        // (tersi yonden: hedef hic yoktu). kontrol bilerek bos; discord-voice UDP
+        // bolumu hostlist almiyor.
+        var store = HostlistStore.Load(ProfilesRoot);
+        var kategoriler = ProbeTargetStore.Load(ProfilesRoot)
+            .Select(t => t.Category)
+            .Where(c => c is not ("kontrol" or "discord-voice"))
+            .Distinct(StringComparer.Ordinal);
+
+        foreach (var kategori in kategoriler)
+        {
+            Assert.True(store.DomainsFor([kategori]).Count > 0, $"'{kategori}' kategorisinin hostlist karsiligi yok.");
+        }
+
+        Assert.Contains(ProbeTargetStore.Load(ProfilesRoot), t => t.Host == "www.roblox.com" && t.Category == "roblox");
     }
 
     [Fact]

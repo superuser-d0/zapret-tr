@@ -8,6 +8,31 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+
+- **Her parametre testinde "Sahipsiz ağ sürücüsü kaydı: windivert" sorusu çıkıyordu.**
+  Gerçek makinede görüldü (2026-09-16, 0.2.5). Sorulan kayıt başka bir aracın değil,
+  **kendi** sürücümüzdü: `C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys`. WinDivert
+  kaydı sürücü çekirdekten düşene kadar kalıyor; bir önceki testten sonra winws kapalıyken
+  bakınca "sahipsiz" görünüyordu. "Evet" denince siliniyor, sonraki test yeniden yüklüyor
+  ve soru her seferinde geri geliyordu. Artık kayıt bu kurulumun kendi `WinDivert64.sys`
+  dosyasını gösteriyorsa kalıntı sayılmıyor; başka bir klasördeki sürücü (başka bir zapret
+  kopyası, GoodbyeDPI) eskisi gibi bildiriliyor. Karşılaştırma bu makinedeki gerçek `sc qc`
+  çıktısıyla denendi.
+
+- **Roblox, "Açılmayan site" kutusu boşken korunmuyordu.** İki kullanıcı bildirdi. 0.2.2'deki
+  daraltmadan beri strateji yalnızca testin engelli ölçtüğü kategorilerin adreslerine
+  uygulanıyor; test Roblox'u hiç ölçmediği için Roblox bu listeye hiç girmiyordu.
+  - Test hedeflerine `www.roblox.com` (kategori `roblox`), adres listesine `roblox.com`
+    eklendi. Engelli olmayan hatlarda test onu "açılıyor" bulup aramaya sokmuyor.
+  - Ölçüldü (Türk Telekom, koruma kapalı): `www.roblox.com`, `auth.roblox.com` ve
+    `apis.roblox.com` TLS el sıkışmasında kesiliyor; `css.rbxcdn.com`, `js.rbxcdn.com`,
+    `tr.rbxcdn.com` ve Roblox'un doğrulama sunucusu (`roblox-api.arkoselabs.com`) açık.
+    Bu yüzden yalnızca `roblox.com` listede; `rbxcdn.com` engelli ölçülmediği için yok.
+  - **Parametre testini yeniden çalıştırmak gerekiyor:** önceki testlerin kaydında Roblox
+    doğrulanmış kategori olarak yok. **Doğrulanmadı:** Türk Telekom'da kazanan stratejinin
+    Roblox'u açtığı ve Roblox girişinin bu adreslerle tamamlandığı henüz ölçülmedi.
+
 ## [0.2.5]
 
 Hata düzeltme sürümü. Başlığı: **saha testi paketi olmayan bir raporu gönderin diyordu.**

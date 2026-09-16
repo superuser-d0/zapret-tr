@@ -213,10 +213,28 @@ public static class ConflictScanner
             return;
         }
 
+        var bizimSurucu = VendorPaths.TryLocate()?.WinDivertSys;
+
         foreach (var surucu in WinDivertCleanup.DriverServiceNames)
         {
-            var (exitCode, _) = await RunScAsync(["qc", surucu], cancellationToken).ConfigureAwait(false);
+            var (exitCode, output) = await RunScAsync(["qc", surucu], cancellationToken).ConfigureAwait(false);
             if (exitCode != 0)
+            {
+                continue;
+            }
+
+            // KAYIT BIZIM SURUCUMUZU GOSTERIYORSA KALINTI DEGIL.
+            //
+            // Olculdu (2026-09-16, gercek makine, 0.2.5): her parametre testinde
+            // "Sahipsiz ag surucusu kaydi: windivert" sorusu cikiyordu. Kayit
+            // "\??\C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys"
+            // gosteriyordu -- yani bir onceki testte KENDI winws'imizin yukledigi
+            // surucu. WinDivert kaydi surucu cekirdekten dusene kadar kaliyor;
+            // winws kapaliyken bakinca "sahipsiz" gorunuyor. Kullanici "evet"
+            // deyince siliniyor, bir sonraki test yeniden yukluyor ve soru her
+            // seferinde geri geliyordu. Ustelik ayni surumdeki kendi surucumuz
+            // winws'in acilmasini engellemiyor; bu kontrolun gerekcesi o degildi.
+            if (IsOwnDriver(ExtractExecutablePath(ReadScField(output, "BINARY_PATH_NAME")), bizimSurucu))
             {
                 continue;
             }
@@ -229,6 +247,31 @@ public static class ConflictScanner
                 + "sürücü, winws'in kendi sürücüsünü yüklemesini engelliyor ve bütün adaylar "
                 + "aynı şekilde başarısız oluyor.",
                 Removable: true));
+        }
+    }
+
+    /// <summary>
+    /// Sürücü kaydının gösterdiği dosya bizim WinDivert64.sys'imiz mi.
+    /// </summary>
+    /// <param name="driverPath">sc qc'deki BINARY_PATH_NAME'den ayrıştırılmış yol.</param>
+    /// <param name="ownDriverPath">Bu kurulumun WinDivert64.sys yolu; bulunamadıysa null.</param>
+    public static bool IsOwnDriver(string? driverPath, string? ownDriverPath)
+    {
+        if (string.IsNullOrWhiteSpace(driverPath) || string.IsNullOrWhiteSpace(ownDriverPath))
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.Equals(
+                Path.GetFullPath(driverPath),
+                Path.GetFullPath(ownDriverPath),
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
         }
     }
 

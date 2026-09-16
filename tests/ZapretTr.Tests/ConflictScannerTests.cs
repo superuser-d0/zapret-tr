@@ -153,4 +153,53 @@ public sealed class ConflictScannerTests
 
         Assert.Empty(ConflictScanner.ParseHostsOverrides(hosts, ["discord.com"]));
     }
+
+    // --- Kendi surucumuz kalinti sayilmamali ---------------------------------------
+    //
+    // Olculdu (2026-09-16, 0.2.5): her parametre testinde "Sahipsiz ag surucusu
+    // kaydi: windivert" sorusu cikiyordu; kayit bir onceki testte kendi winws'imizin
+    // yukledigi surucuyu gosteriyordu.
+
+    private const string OwnWinDivertQc = """
+        [SC] QueryServiceConfig SUCCESS
+
+        SERVICE_NAME: windivert
+                TYPE               : 1  KERNEL_DRIVER
+                START_TYPE         : 4   DISABLED
+                ERROR_CONTROL      : 1   NORMAL
+                BINARY_PATH_NAME   : \??\C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys
+                LOAD_ORDER_GROUP   :
+                TAG                : 0
+                DISPLAY_NAME       : WinDivert
+                DEPENDENCIES       :
+                SERVICE_START_NAME :
+        """;
+
+    [Fact]
+    public void Kendi_Surucumuzu_Gosteren_Kayit_Kalinti_Sayilmiyor()
+    {
+        // ExtractExecutablePath bosluklu yolu diskte dogruluyor; CI'da ZapretTR kurulu
+        // olmadigi icin burada yalnizca \??\ oneki soyuluyor.
+        var yol = ConflictScanner.ReadScField(OwnWinDivertQc, "BINARY_PATH_NAME")![4..];
+
+        Assert.True(ConflictScanner.IsOwnDriver(yol, @"C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys"));
+        Assert.True(ConflictScanner.IsOwnDriver(yol, @"c:\program files\zapretTR\zapret-winws\windivert64.sys"));
+    }
+
+    [Theory]
+    [InlineData(@"C:\Tools\zapret-discord-youtubein\WinDivert64.sys")]
+    [InlineData(@"C:\GoodbyeDPI_64\WinDivert64.sys")]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Baska_Yerdeki_Surucu_Kalinti_Olarak_Kaliyor(string? yol)
+    {
+        Assert.False(ConflictScanner.IsOwnDriver(yol, @"C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys"));
+    }
+
+    [Fact]
+    public void Kendi_Yolumuz_Bilinmiyorsa_Hicbir_Surucu_Bizim_Sayilmiyor()
+    {
+        // Vendor bulunamadiysa guvenli taraf: eski davranis (bildir, kullanici karar versin).
+        Assert.False(ConflictScanner.IsOwnDriver(@"C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys", null));
+    }
 }

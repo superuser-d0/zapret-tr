@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "notes": "Calisma zamaninda winws'e --hostlist-domains= ile verilen alan adlari: strateji YALNIZCA bu adlara uygulanir, geri kalan trafik dokunulmadan gecer. Bu dosya 0.2.2'de eklendi ve sebebi olculmus bir hatadir (issue #1, Vodafone Net): kazanan 443 stratejisi (--dpi-desync-fooling=badseq) butun 443 trafigine uygulaniyordu ve GitHub'i bozuyordu. badseq'te sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir; bazi sunucular bunu RST ile karsilar. Yani engellenmemis bir siteye dokunmanin bedeli o siteyi bozmak. Kural: sorunu olmayan yere dokunma. 'kontrol' kategorisi BILEREK bos ve bos kalmali -- example.com, cloudflare-quic.com ve stun.cloudflare.com engellenmemesi BEKLENEN olcum hedefleri; onlara strateji uygulamak olcumun kendisini bozar. Alt alan adlari winws tarafindan kendiliginden kapsanir (ikilinin yardim metni: 'subdomains auto apply'), bu yuzden updates.discord.com ya da media.discordapp.net ayri ayri yazilmiyor: discord.com ve discordapp.net yeter. Kullanicinin arayuzden girdigi 'Acilmayan site' bu listeye calisma zamaninda EKLENIR (HostlistStore.DomainsFor); listede olmayan bir siteye erisemeyen kullanicinin yolu budur. discord.gg ayri yazilmak ZORUNDA: gateway.discord.gg bir discord.com alt alani degil, bagimsiz bir alan adi -- olcumde de ayri hedef olarak duruyor.",
+  "notes": "Calisma zamaninda winws'e --hostlist-domains= ile verilen alan adlari: strateji YALNIZCA bu adlara uygulanir, geri kalan trafik dokunulmadan gecer. Bu dosya 0.2.2'de eklendi ve sebebi olculmus bir hatadir (issue #1, Vodafone Net): kazanan 443 stratejisi (--dpi-desync-fooling=badseq) butun 443 trafigine uygulaniyordu ve GitHub'i bozuyordu. badseq'te sahte paket TTL ile yolda olmez, gercek sunucuya bozuk sequence numarasiyla ulasir; bazi sunucular bunu RST ile karsilar. Yani engellenmemis bir siteye dokunmanin bedeli o siteyi bozmak. Kural: sorunu olmayan yere dokunma. 'kontrol' kategorisi BILEREK bos ve bos kalmali -- example.com, cloudflare-quic.com ve stun.cloudflare.com engellenmemesi BEKLENEN olcum hedefleri; onlara strateji uygulamak olcumun kendisini bozar. Alt alan adlari winws tarafindan kendiliginden kapsanir (ikilinin yardim metni: 'subdomains auto apply'), bu yuzden updates.discord.com ya da media.discordapp.net ayri ayri yazilmiyor: discord.com ve discordapp.net yeter. Kullanicinin arayuzden girdigi 'Acilmayan site' bu listeye calisma zamaninda EKLENIR (HostlistStore.DomainsFor); listede olmayan bir siteye erisemeyen kullanicinin yolu budur. discord.gg ayri yazilmak ZORUNDA: gateway.discord.gg bir discord.com alt alani degil, bagimsiz bir alan adi -- olcumde de ayri hedef olarak duruyor. 2026-09-16: 'roblox' kategorisi eklendi. Olculdu (Turk Telekom, koruma kapali, sifreli DNS acik): www.roblox.com, auth.roblox.com ve apis.roblox.com TLS el sikismasinda kesiliyor (curl 35); css.rbxcdn.com, js.rbxcdn.com, tr.rbxcdn.com ve roblox-api.arkoselabs.com ACIK. Bu yuzden yalnizca roblox.com yaziliyor (alt alanlar kendiliginden kapsaniyor), rbxcdn.com engelli olculmedigi icin YAZILMIYOR. Sebep: 0.2.2'deki daraltmadan sonra 'Acilmayan site' kutusu bos birakilinca Roblox hic kapsanmiyordu ve iki ayri kullanici Roblox'un acilmadigini bildirdi.",
   "categories": {
     "kontrol": [],
     "discord": [
@@ -13,6 +13,9 @@
     ],
     "discord-guncelleme": [
       "discord.com"
+    ],
+    "roblox": [
+      "roblox.com"
     ],
     "youtube": [
       "youtube.com",
