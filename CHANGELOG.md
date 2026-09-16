@@ -57,8 +57,16 @@ Sahadan gelen iki yeni ölçüm de bu sürümde profillere işlendi.
     ne yapılacağını anlatıp "yine de kurulsun mu" diye soruyor. Sessiz kurulumu (CI)
     durdurmuyor. **Doğrulanmadı:** "1 = açık" eşlemesi Microsoft'un belgelediği değer; SAC
     açık bir makinede okunarak ölçülmedi.
-  - Kurulum sonundaki açıklama "ZapretTR kurulu" yerine artık uygulamanın bu ayar açıkken
-    **açılmayacağını** söylüyor.
+  - **Ölçüldü:** SAC açık makinede uyarı en başta çıktı, yani kayıt defteri değeri gerçekten
+    `1`. "Evet" deyince kurulum sürdü ve sonda yalnızca açıklama kutusu çıktı.
+  - Kullanıcıdan SAC'yi **kapatması isteniyor**: kurulum uyarısı, kurulum sonu açıklaması,
+    README (gereksinimler), sorun giderme rehberi ve saha paketinin okuma dosyası aynı şeyi
+    söylüyor. Bazı Windows sürümlerinde geri açılamadığı ve Defender'ın çalışmaya devam
+    ettiği de yazılı.
+  - Kurulum sonundaki açıklama "ZapretTR kurulu" yerine "bu ayar açıkken düzgün çalışmaz"
+    diyor. Taslakta bir ara "açılmaz" yazıyordu; aynı makinede kullanıcı pencereyi sonradan
+    açabildiği için bu cümle ölçümle çelişti ve düzeltildi. Ölçülen: servis ve DNS bekçisi
+    kurulamadı, saha testi aracı hiç açılmadı.
   - Açıklama kutusundan sonra "ZapretTR uygulamasını şimdi başlat" işaretliyse Inno yine ham
     *"ShellExecuteEx failed; code 4551"* hatasını gösteriyordu (aynı makinede görüldü). Exe az
     önce çalışamadıysa bu seçenek artık hiç sunulmuyor.

@@ -188,8 +188,9 @@ gibi) kendiliğinden kapsanır.
 
 **Antivirüs ya da Windows engellerse?** Paket yakalama sürücüsü ile imzasız derlemenin
 birleşimi yanlış alarm üretebiliyor. Microsoft Defender'ın bulut tabanlı kararları gün gün
-değiştiği için hiçbir ürün için "işaretlemez" diyemiyoruz; Akıllı Uygulama Denetimi açık bir
-Windows 11 ise imzasız uygulamaları hiç çalıştırmıyor. Adım adım yol:
+değiştiği için hiçbir ürün için "işaretlemez" diyemiyoruz. Akıllı Uygulama Denetimi açık bir
+Windows 11'de ZapretTR düzgün çalışmıyor; **kapatmanızı öneriyoruz**, kurulum da açıksa
+en başta uyarıyor. Adım adım yol:
 [Windows engelliyor](docs/SORUN-GIDERME.md#windows-engelliyor).
 
 **Görev Zamanlayıcı'da "ZapretTR DNS Bekçisi" var, şifreli DNS kullanmıyorum bile.**
@@ -716,7 +717,9 @@ Kalanlar:
       WiFi) kapsam dışında kalıyor; onun için uygulamayı açıp servisi bir kez yeniden kurmak
       gerekiyor.
 - [ ] **Kod imzalama sertifikası yok.** SmartScreen "bilinmeyen yayımcı" uyarısı veriyor,
-      Akıllı Uygulama Denetimi açık makinelerde uygulama hiç çalışmıyor ve Defender'ın bulut
+      Akıllı Uygulama Denetimi açık makinelerde uygulama düzgün çalışmıyor (servis, DNS
+      bekçisi ve saha testi aracı engelleniyor; kullanıcıdan özelliği kapatması isteniyor)
+      ve Defender'ın bulut
       tabanlı kararı (`!cl`) imzasız dosyaları zaman zaman siliyor. Sertifika alınana kadar
       kullanıcının elindeki tek doğrulama aracı yayındaki SHA256 özetleri.
 - [ ] **`--dns test` bir makinede geçmiyordu, orada yeniden üretilemedi.** Başka bir makinede

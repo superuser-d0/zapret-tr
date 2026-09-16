@@ -166,9 +166,11 @@ public sealed class KurulumSacTests
     [Fact]
     public void Engellenince_Uygulamanin_Acilmayacagi_Soyleniyor()
     {
-        // "ZapretTR kurulu" yazmak dogruydu ama kullanici uygulamayi acabilecegini sandi.
+        // "ZapretTR kurulu" yaniltici, "ZapretTR acilmaz" ise olculerek YANLIS cikti
+        // (SAC acik makinede pencere sonradan acildi). Olculen: duzgun calismiyor.
         Assert.DoesNotContain("'ZapretTR kurulu, ama", Iss, StringComparison.Ordinal);
-        Assert.Contains("ZapretTR acilmaz", Iss, StringComparison.Ordinal);
+        Assert.DoesNotContain("ZapretTR acilmaz", Iss, StringComparison.Ordinal);
+        Assert.Contains("ZapretTR duzgun calismaz", Iss, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -22,7 +22,9 @@
 Bu sayfa yalnızca kurmak ve kullanmak için gerekenleri anlatır. Nasıl çalıştığı, ölçüm
 sonuçları ve geliştirme bilgileri [ayrıntılı belgede](README-DETAYLI.md).
 
-**Gereksinim:** Windows 10/11, 64 bit, yönetici yetkisi.
+**Gereksinim:** Windows 10/11, 64 bit, yönetici yetkisi. Windows 11'de **Akıllı Uygulama
+Denetimi kapalı** olmalı ([neden ve nasıl](docs/SORUN-GIDERME.md#windows-engelliyor)).
+Kurulum bu özellik açıksa en başta uyarır.
 
 ## 1. İndirin
 
@@ -111,12 +113,19 @@ Microsoft Defender, Akıllı Uygulama Denetimi ya da başka bir antivirüs kurul
 silebilir veya engelleyebilir. Ne yapacağınız
 [sorun giderme rehberinde](docs/SORUN-GIDERME.md#windows-engelliyor).
 
-> **İndirdikten sonra, çalıştırmadan önce:** kurulum dosyasına sağ tıklayın →
-> **Özellikler** → en altta **"Engellemeyi Kaldır"** kutusu varsa işaretleyin → **Tamam**.
-> Windows internetten inen dosyaları işaretliyor ve bu işaret, Akıllı Uygulama Denetimi
-> açıkken kurulumun *"Hata 4551: Uygulama Denetimi ilkesi bu dosyayı engelledi"* diyerek
-> yarıda kesilmesine yol açabiliyor. Tek adımda çözülmezse
-> [rehberdeki iki adımı](docs/SORUN-GIDERME.md#windows-engelliyor) sırasıyla uygulayın.
+> **Akıllı Uygulama Denetimi (Windows 11):** ZapretTR'in düzgün çalışması için **kapalı**
+> olmalı. ZapretTR'in ve kullandığı araçların kod imzası yok; özellik açıkken Windows onları
+> engelliyor (*"Hata 4551: Uygulama Denetimi ilkesi bu dosyayı engelledi"*). Pencere açılsa
+> bile otomatik başlatma, DNS bekçisi ve koruma çalışmayabilir. Kurmadan önce:
+>
+> 1. Kurulum dosyasına sağ tıklayın → **Özellikler** → en altta **"Engellemeyi Kaldır"**
+>    kutusu varsa işaretleyin → **Tamam**.
+> 2. **Windows Güvenliği → Uygulama ve tarayıcı denetimi → Akıllı Uygulama Denetimi
+>    ayarları → Kapalı.**
+>
+> Bu, bilgisayarınızın genel bir korumasını kapatmak demek; Microsoft Defender çalışmaya
+> devam eder. Bazı Windows sürümlerinde özellik kapatılınca yeniden açılamıyor. Ayrıntılar:
+> [sorun giderme rehberi](docs/SORUN-GIDERME.md#windows-engelliyor).
 
 ## Bir sorun olursa
 

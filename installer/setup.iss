@@ -267,14 +267,18 @@ begin
   if SacAcik() then
   begin
     Mesaj := 'Bu bilgisayarda Akilli Uygulama Denetimi ACIK.' + #13#10 + #13#10;
-    Mesaj := Mesaj + 'ZapretTR''in kod imzalama sertifikasi yok. Bu ayar acikken Windows'
-             + ' ZapretTR''i calistirmiyor (hata 4551): kurulum biter ama uygulama acilmaz.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'ZapretTR''in duzgun calismasi icin bu ozelligin KAPALI olmasi gerekiyor.'
+             + ' ZapretTR''in ve kullandigi araclarin kod imzasi yok; ozellik acikken Windows'
+             + ' onlari engelliyor (hata 4551). Pencere acilsa bile otomatik baslatma,'
+             + ' DNS bekcisi ve koruma calismayabilir.' + #13#10 + #13#10;
     Mesaj := Mesaj + 'Kurmadan once, SIRASIYLA:' + #13#10;
     Mesaj := Mesaj + '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' + #13#10;
     Mesaj := Mesaj + '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' + #13#10;
     Mesaj := Mesaj + '2) Windows Guvenligi -> Uygulama ve tarayici denetimi ->' + #13#10;
     Mesaj := Mesaj + '   Akilli Uygulama Denetimi ayarlari -> Kapali.' + #13#10;
     Mesaj := Mesaj + '3) Kurulumu yeniden calistirin.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'Not: bu ozellik kapatilinca bazi Windows surumlerinde yeniden'
+             + ' acilamiyor. Microsoft Defender calismaya devam eder.' + #13#10 + #13#10;
     Mesaj := Mesaj + 'Yine de simdi kurulsun mu?';
 
     if SuppressibleMsgBox(Mesaj, mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDYES) <> IDYES then
@@ -460,10 +464,12 @@ begin
     // goremedigi bir hata sinifi; yalnizca gercek derleme yakaliyor.
     Mesaj := 'Windows, ZapretTR.exe dosyasini calistirmadi'
              + ' (Akilli Uygulama Denetimi, hata 4551).' + #13#10 + #13#10;
-    // "ZapretTR kurulu" yaziyordu; dogru ama yaniltici. Bu durumda uygulamanin
-    // kendisi de acilmiyor (gercek makinede goruldu, 2026-09-16).
-    Mesaj := Mesaj + 'Dosyalar kopyalandi, ama bu ayar acikken ZapretTR acilmaz;'
-             + ' otomatik baslatma servisi ve DNS bekcisi de kurulamadi.' + #13#10 + #13#10;
+    // "ZapretTR kurulu" yaziyordu; dogru ama yaniltici. "Acilmaz" da YANLIS cikti:
+    // ayni makinede (SAC acik, 2026-09-16) kurulum exe'yi calistiramadi ama kullanici
+    // uygulamayi sonradan acabildi. Olculen: servis ve bekci kurulamadi; winws.exe
+    // ve dnscrypt-proxy.exe de imzasiz.
+    Mesaj := Mesaj + 'Dosyalar kopyalandi, ama bu ayar acikken ZapretTR duzgun calismaz:'
+             + ' otomatik baslatma servisi ve DNS bekcisi kurulamadi.' + #13#10 + #13#10;
     Mesaj := Mesaj + 'Cozum icin SIRASIYLA:' + #13#10;
     Mesaj := Mesaj + '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' + #13#10;
     Mesaj := Mesaj + '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' + #13#10;

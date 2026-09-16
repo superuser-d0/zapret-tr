@@ -70,6 +70,20 @@ Bu surucu ve DNS degisikligi gecici. TEMIZLIK.bat ile kaldiriliyor. Istersen onc
 ne yaptigina bakabilirsin, iki satirlik bir dosya.
 
 
+AKILLI UYGULAMA DENETIMI ACIKSA CALISMAZ
+----------------------------------------
+
+Windows 11'de "Akilli Uygulama Denetimi" (Smart App Control) aciksa test araci
+hic acilmaz: "An Application Control policy has blocked this file" der. Arac
+imzasiz ve bu ozellik imzasiz programlara istisna tanimaz; yonetici olarak
+calistirmak da ise yaramaz.
+
+Kapatmak icin: Windows Guvenligi -> Uygulama ve tarayici denetimi ->
+Akilli Uygulama Denetimi ayarlari -> Kapali. Bu, bilgisayarin genel bir
+korumasini kapatir; bazi Windows surumlerinde yeniden acilamiyor. Emin
+degilsen testi yapma, sorun degil.
+
+
 ANTIVIRUS UYARI VEREBILIR
 -------------------------
 

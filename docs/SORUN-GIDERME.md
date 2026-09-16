@@ -368,10 +368,17 @@ dosyanın engelini de kaldırınca geçti.
    denetime sokar.)
 2. **Özelliği kapatın:** **Windows Güvenliği → Uygulama ve tarayıcı denetimi →
    Akıllı Uygulama Denetimi ayarları → Kapalı**. Bu, bütün imzasız uygulamalara izin
-   verir; kararı siz verin.
+   verir. ZapretTR kod imzası olmadan bu özellik açıkken düzgün çalışamadığı için
+   **önerimiz kapatmanız**; yine de karar sizin.
 3. Kurulumu yeniden çalıştırın.
 
 Ek notlar:
+- **Pencere açılıyor diye çalıştığını düşünmeyin.** Ölçüldü (gerçek makine, 2026-09-16,
+  0.2.5): özellik açıkken kurulum `ZapretTR.exe`'yi çalıştıramadı, otomatik başlatma
+  servisi ve DNS bekçisi kurulamadı; kullanıcı uygulama penceresini sonradan açabildi.
+  Korumayı yapan `winws.exe` ve şifreli DNS'i sağlayan `dnscrypt-proxy.exe` de imzasız.
+- Saha testi aracı (`zapret-tr-test.exe`) bu özellik açıkken hiç açılmıyor (aynı makinede
+  ölçüldü; yönetici olarak çalıştırmak da değiştirmedi).
 - 2026 başındaki Windows güncellemelerinden önce bu özellik bir kez kapatılınca Windows
   yeniden kurulmadan geri açılamıyordu. Güncel bir Windows 11'de aynı ekrandan yeniden
   açılabiliyor; sizinkinde bu seçenek gri görünüyorsa kapatmadan önce düşünün.
