@@ -2460,3 +2460,59 @@ zaten A kaydı yok (NXDOMAIN normal, alt alan `media.discordapp.net` çözülüy
 6 alandan 2'si gerçekten engelli. Daraltmak issue #1'in kendi dersine uyar ama engelleme
 ISS'e ve zamana göre değişiyor; karar için "koruma açıkken bu üç site çalışıyor mu"
 sorusunun cevabı gerekiyor.
+
+### Yayın: v0.2.4 (2026-09-16)
+
+**Ölçüldü:** `releases/latest` = `v0.2.4`, taslak değil, ön sürüm değil, `published_at`
+10:29:27Z. API'nin `releases/latest` cevabı da `v0.2.4` → uygulama içi güncelleme denetimi
+0.2.x kullanıcılarına bu sürümü gösterecek. README'deki bütün indirme bağlantıları
+`releases/latest` kullanıyor; yönlendirme `tag/v0.2.4`'e gidiyor, paketin doğrudan
+bağlantısı 200 dönüyor. Belgede değiştirilecek bağlantı yok.
+
+Dosyalar (GitHub'ın kendi özetleri, paket indirilmeden `SHA256SUMS.txt` ile karşılaştırıldı —
+ikisi aynı):
+
+| Dosya | Bayt | sha256 |
+|---|---|---|
+| `ZapretTR-Setup-0.2.4.exe` | 54 051 354 | `6608dc67…` |
+| `zapret-tr-saha-testi.zip` | 13 147 527 | `f2de5f13…` |
+| `SHA256SUMS.txt` | 184 | `d97a9650…` |
+
+**Etiket `bce5510`'da, ama önce `3137427`'deydi.** İlk etiketlemede DNS bekçisi belgelemesi
+ve `--uninstall-services` maddesi henüz commit'lenmemişti; taslağın yayın notu o yüzden
+0.2.4 bölümünün yalnızca 3 maddesini içeriyordu. Taslak yayınlanmadan silindi, etiket
+`bce5510`'a zorla taşındı, akış yeniden koştu. Son taslakta beş madde + "Belgelendi"
+bölümü var (yayın notu gövdesinden okundu).
+- **Ders:** `release-notes.ps1` CHANGELOG'u ETİKETİN gösterdiği commit'ten okuyor. Etiketi
+  atmadan önce `git status` temiz olmalı; kirli ağaçla etiket atmak, notu sessizce eksik
+  dondurur. Taslak yayınlanmadıysa düzeltmesi ucuz, yayınlandıysa değil.
+- Etiket hafif (`git cat-file -t v0.2.4` → `commit`), açıklamalı değil.
+
+**CI (`bce5510`, üçü de başarılı):** `derle ve test` 35084479119, `kurulum testi`
+35084479054, `yayin` 35084499240. Kurulum testi temiz kurulum → servis → üzerine
+yükseltme → kaldırma dizisini gerçekten koştu; `[Run]` → `[Code]` taşımasının normal
+yolda gerileme yapmadığının kanıtı bu.
+
+**Yerel paket ≠ yayın paketi.** Arkadaşa atılan, yerelde ISCC ile üretilen paket
+`F0D8C847…`; yayındaki `6608dc67…`. Farklı derlemeler, beklenen durum (derleme tekrar
+üretilebilir değil). Arkadaş denemedi; bundan sonra denenecek olan yayındaki paket olmalı.
+
+**Saat kayması yine görüldü:** GitHub'ın `created_at` değeri 07:20:43Z (commit tarihi), oysa
+commit gerçekte ~10:20Z'de atıldı. Bu makinenin saati ~3 saat geride; commit
+tarihlerine güvenme, CI zamanlarına bak.
+
+**ÖLÇÜLMEDİ — asıl risk bu:** SAC'in `ZapretTR.exe`'yi gerçekten engellediği yol. Bu
+makinede SAC "Değerlendirme" modunda (`VerifiedAndReputablePolicyState` = 2) ve hiçbir şey
+engellemedi (CodeIntegrity kaydı boş); arkadaş denemedi. Yayın kararı şu gerekçeyle
+verildi: normal yol CI'da ve bu makinede doğrulandı; SAC yolunda 0.2.3 zaten bozuktu ve
+0.2.4 o durumu kötüleştirmiyor. Tek davranış farkı: SAC exe'yi engellerse kurulum
+servisleri `sc.exe` ile söküyor ama geri kuramıyor — kullanıcı otomatik başlatmasız kalıyor,
+bunu söyleyen bir mesaj görüyor. (SAC açıkken imzasız `winws.exe` servisi zaten
+çalışamazdı.)
+
+**Açık kalanlar:**
+- SAC açık (`VerifiedAndReputablePolicyState` = 1) bir makinede 0.2.4 kurulumu ve 0.2.3 →
+  0.2.4 yükseltmesi. Kullanıcı başka bir bilgisayarda deneyecek.
+- Kerem'den (issue #1) iki cevap: koruma AÇIKKEN `discordapp.com`, `discordcdn.com`,
+  `discord.media` çalışıyor mu (hayırsa hostlist daraltılacak); Roblox Vodafone Net
+  profiline varsayılan hedef olarak eklensin mi. Cevap 2026-09-16 10:25Z'de gönderildi.
