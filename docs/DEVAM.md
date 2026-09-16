@@ -2631,3 +2631,22 @@ mi.
 
 **Açık kalanlar:** boş Enter yolu ve exe'ye çift tıklama modu gerçek exe ile (yönetici,
 UAC) denenmedi; saha raporu ASN yazmıyor; güvenlik denetimi yarım.
+
+### 2026-09-16 (gece): 0.2.6 hazırlığı — sürücü sorusu, Roblox, Kerem'in cevabı
+
+**"Sahipsiz ağ sürücüsü kaydı: windivert" her testte çıkıyordu.** Kök sebep ölçüldü: `sc qc
+windivert` → `\??\C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys`, yani kendi
+sürücümüz. Kullanıcının günlüğünde 20:40 ve 20:46'daki iki testte de kayıt silinip yeniden
+yüklendi. `ConflictScanner.IsOwnDriver` kayıt bu kurulumun `WinDivert64.sys`'ini
+gösteriyorsa bulguyu atlıyor; bu makinedeki gerçek `sc qc` çıktısıyla denendi (True).
+
+**Roblox açılmıyordu.** `config.json`'da `customTarget` null: 0.2.2 daraltmasından beri
+Roblox yalnızca kutuya yazılınca kapsanıyordu. Koruma kapalıyken ölçüldü (TTNET): roblox.com
+alt alanları curl 35, rbxcdn.com ve arkoselabs açık. Test hedefi `www.roblox.com` +
+hostlist `roblox` → `roblox.com`. Kullanıcı 0.2.5'te kutuya `roblox.com` yazıp test etti:
+RST → `tt-443-fake-ttl4` ilk denemede açtı, "Açıldı". TT profili `verifiedFor` += roblox.
+Tuzak: learned.json aday `verifiedFor`'unu EZİYOR (birleştirmiyor), yani önceden test yapmış
+kullanıcılar yeniden test etmeden Roblox'u almıyor.
+
+**Kerem (17:27Z):** koruma açıkken ses ve medya çalışıyor → Discord listesi daraltılmıyor,
+soru kapandı. Roblox oynamıyor → Vodafone'da Roblox ölçülmedi.

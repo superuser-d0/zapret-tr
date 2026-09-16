@@ -8,6 +8,10 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.2.6]
+
+Hata düzeltme sürümü. Başlığı: **her testte çıkan sürücü sorusu ve Roblox.**
+
 ### Düzeltildi
 
 - **Her parametre testinde "Sahipsiz ağ sürücüsü kaydı: windivert" sorusu çıkıyordu.**
@@ -37,6 +41,15 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
     de `windivert` kaydı "sahipsiz" diye silindi.
   - Daha önce test yapmış kullanıcıların kaydı Roblox'u içermiyor; parametre testini bir
     kez yeniden çalıştırmaları gerekiyor. Diğer hatlarda Roblox ölçülmedi.
+
+### Bildirildi
+
+- **Vodafone Net'te Discord adres listesi daraltılmıyor.** Listedeki altı adresten ikisi
+  koruma kapalıyken engelli ölçülmüştü; diğerlerine (`discordapp.com`, `discordcdn.com`,
+  `discord.media`) strateji uygulamanın bir şeyi bozup bozmadığı sorulmuştu
+  ([issue #1](https://github.com/superuser-d0/zapret-tr/issues/1)). Kullanıcı koruma
+  açıkken sesli sohbete girebildiğini ve medyaların yüklendiğini bildirdi. Kullanıcı
+  bildirimi, ölçüm değil; liste olduğu gibi kaldı.
 
 ## [0.2.5]
 
