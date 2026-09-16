@@ -133,6 +133,43 @@ public sealed class KurulumSacTests
         Assert.Contains("4551", src, StringComparison.Ordinal);
     }
 
+    // --- SAC aciksa kurmadan ONCE soyleniyor --------------------------------------
+
+    [Fact]
+    public void Sac_Acikken_Kurulum_Basinda_Uyariyor()
+    {
+        // OLCULDU (2026-09-16): SAC acik makinede 0.2.5 taslagi kuruldu, uyari
+        // kurulum SONUNDA geldi ve uygulama hic acilmadi.
+        var kod = Kod;
+        var init = kod[kod.IndexOf("function InitializeSetup", StringComparison.Ordinal)..];
+        init = init[..init.IndexOf("Exec(", StringComparison.Ordinal)];
+
+        Assert.Contains("SacAcik()", init, StringComparison.Ordinal);
+        Assert.Contains("VerifiedAndReputablePolicyState", kod, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Sac_Uyarisi_Sessiz_Kurulumu_Durdurmuyor()
+    {
+        // CI /VERYSILENT /SUPPRESSMSGBOXES ile kuruyor. Duz MsgBox sessiz kurulumda
+        // da soru sorar; SuppressibleMsgBox varsayilan cevabi (IDYES) kullanir.
+        var kod = Kod;
+        var init = kod[kod.IndexOf("function InitializeSetup", StringComparison.Ordinal)..];
+        init = init[..init.IndexOf("Exec(", StringComparison.Ordinal)];
+
+        Assert.Contains("SuppressibleMsgBox(", init, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"SuppressibleMsgBox\([^;]*,\s*IDYES\)"), init);
+        Assert.DoesNotMatch(new Regex(@"(?<!Suppressible)MsgBox\("), init);
+    }
+
+    [Fact]
+    public void Engellenince_Uygulamanin_Acilmayacagi_Soyleniyor()
+    {
+        // "ZapretTR kurulu" yazmak dogruydu ama kullanici uygulamayi acabilecegini sandi.
+        Assert.DoesNotContain("'ZapretTR kurulu, ama", Iss, StringComparison.Ordinal);
+        Assert.Contains("ZapretTR acilmaz", Iss, StringComparison.Ordinal);
+    }
+
     // --- Yapisal saglik ----------------------------------------------------------
 
     [Fact]
@@ -178,7 +215,7 @@ public sealed class KurulumSacTests
         // yakalayan tek sey bu.
         var kod = KodYapisal;
 
-        foreach (var ad in new[] { "TemizlikYapildi", "Engellendi", "Exe", "Sc", "OncekiExe" })
+        foreach (var ad in new[] { "TemizlikYapildi", "Engellendi", "Exe", "Sc", "OncekiExe", "Mesaj", "Durum" })
         {
             Assert.Matches(new Regex($@"^\s*{ad}\s*:\s*\w+\s*;", RegexOptions.Multiline), kod);
         }

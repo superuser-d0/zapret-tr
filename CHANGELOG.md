@@ -36,6 +36,32 @@ Sahadan gelen iki yeni ölçüm de bu sürümde profillere işlendi.
     olabiliyor ve `cmd`, LF satır sonlu betiklerde `goto` ile etiket bulmayı güvenilir
     yapmıyor; yeni betik sonucu `goto` ile seçiyor.
 
+- **`zapret-tr-test.exe`'ye doğrudan çift tıklamak işe yaramaz bir test yapıyordu.** Gerçek
+  makinede görüldü (2026-09-16, Türk Telekom): araç argümansız çalıştı; hat tespiti yapmadı
+  (bütün profilleri denedi), şifreli DNS kullanmadı, rapor yazmadı ve bitince pencere
+  kapandı. Kullanıcının elinde ne dosya ne de okuyabileceği bir sonuç kaldı.
+  - Argümansız çalıştırma artık `TESTI-BASLAT.bat` ile **aynı ayarlarla** test yapıyor
+    (hat tespiti, şifreli DNS, rapor dosyası), sonucu betikle aynı kurala göre açıklıyor ve
+    pencereyi Enter'a basılana kadar açık tutuyor.
+  - Betik, yönetici penceresi açılır açılmaz "test aracı açılıyor" yazıyor. Kullanıcı
+    açılışta bir gecikme bildirdi; betiğin kendi adımları bu makinede ~0,2 sn ölçüldü,
+    kalan süre UAC ve imzasız exe'nin ilk açılışı (tek dosya paketinin açılması, antivirüs
+    taraması). O kısım betikten hızlandırılamıyor; ekranın boş kalmaması sağlandı.
+
+- **Akıllı Uygulama Denetimi açıkken kurulum bunu en başta söylüyor.** Gerçek makinede
+  görüldü (2026-09-16): SAC açık bir bilgisayarda kurulum tamamlandı, açıklama kutusu
+  kurulumun **sonunda** geldi ve uygulama hiç açılmadı. Aynı sürüm, SAC değerlendirme
+  modundaki bir makinede sorunsuz kuruldu ve 0.2.1'den 0.2.4'e güncelleme servisleri
+  durdurup hatasız tamamlandı.
+  - Kurulum artık başta SAC durumunu okuyor (`VerifiedAndReputablePolicyState`) ve açıksa
+    ne yapılacağını anlatıp "yine de kurulsun mu" diye soruyor. Sessiz kurulumu (CI)
+    durdurmuyor. **Doğrulanmadı:** "1 = açık" eşlemesi Microsoft'un belgelediği değer; SAC
+    açık bir makinede okunarak ölçülmedi.
+  - Kurulum sonundaki açıklama "ZapretTR kurulu" yerine artık uygulamanın bu ayar açıkken
+    **açılmayacağını** söylüyor.
+  - Kod imzası olmadan SAC açıkken ZapretTR'yi çalıştırmanın yolu yok; bu değişiklik engeli
+    kaldırmıyor, kullanıcıyı kurmadan önce bilgilendiriyor.
+
 - **Vodafone Mobil profili saha raporuyla ölçüldü** (aynı kullanıcı, telefon paylaşımı;
   saha paketi hattı Vodafone Mobil olarak tespit etti). HTTPS'te
   `vfm-443-multisplit-pos2` (discord, discord-güncelleme), düz HTTP'de

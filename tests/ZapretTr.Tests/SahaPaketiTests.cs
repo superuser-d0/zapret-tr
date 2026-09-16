@@ -159,6 +159,75 @@ public sealed class SahaPaketiTests
         Assert.Contains("rapor OLUSMADI", cikti, StringComparison.Ordinal);
     }
 
+    // --- Cift tiklama (argumansiz calistirma) -------------------------------------
+    //
+    // OLCULDU (2026-09-16): kullanici dogrudan zapret-tr-test.exe'ye cift tikladi;
+    // hat tespiti ve sifreli DNS yoktu, rapor yazilmadi, pencere kapandi.
+
+    [Fact]
+    public void Argumansiz_Calistirma_Saha_Moduna_Gidiyor()
+    {
+        var kaynak = CliKaynagi;
+        var yonlendirme = kaynak.IndexOf("return SahaModu.CiftTiklamaIleCalistir();", StringComparison.Ordinal);
+        var ayristirma = kaynak.IndexOf("var options = CliOptions.Parse(args);", StringComparison.Ordinal);
+
+        Assert.True(yonlendirme >= 0, "Argumansiz calistirma saha moduna yonlendirilmiyor.");
+        Assert.True(yonlendirme < ayristirma, "Yonlendirme arguman ayristirmadan ONCE olmali.");
+        Assert.Contains("if (args.Length == 0)", kaynak, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Cift_Tiklama_Betikle_AYNI_Ayarlarla_Calisiyor()
+    {
+        // Iki giris noktasi farkli olcerse iki rapor karsilastirilamaz.
+        Assert.Equal(
+            ExeSatiri,
+            "zapret-tr-test.exe " + string.Join(' ', SahaModu.Argumanlar.Select(a => a.Contains('.') ? $"\"{a}\"" : a)));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Cift_Tiklama_Yeni_Rapor_Varsa_Gonderin_Diyor(int kod)
+    {
+        var mesaj = string.Join('\n', SahaModu.SonucMesaji(kod, raporYeni: true, eskiRaporVar: false));
+
+        Assert.Contains("Test bitti", mesaj, StringComparison.Ordinal);
+        Assert.Contains("geri gönderin", mesaj, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(0)]   // basari kodu ama dosya yok
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    [InlineData(130)]
+    public void Cift_Tiklama_Rapor_Yoksa_Gonderin_DEMIYOR(int kod)
+    {
+        var mesaj = string.Join('\n', SahaModu.SonucMesaji(kod, raporYeni: false, eskiRaporVar: false));
+
+        Assert.DoesNotContain("Test bitti", mesaj, StringComparison.Ordinal);
+        Assert.DoesNotContain("gönderin", mesaj, StringComparison.Ordinal);
+        Assert.Contains("rapor OLUŞMADI", mesaj, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Cift_Tiklama_Iptalde_Ne_Yapilacagini_Soyluyor()
+    {
+        var mesaj = string.Join('\n', SahaModu.SonucMesaji(130, raporYeni: false, eskiRaporVar: true));
+
+        Assert.Contains("E yazın", mesaj, StringComparison.Ordinal);
+        Assert.Contains("ÖNCEKİ", mesaj, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Cift_Tiklama_Cokmede_Hata_Raporu_Isteniyor()
+    {
+        var mesaj = string.Join('\n', SahaModu.SonucMesaji(5, raporYeni: true, eskiRaporVar: false));
+
+        Assert.Contains("hata raporu yazıldı", mesaj, StringComparison.Ordinal);
+    }
+
     // --- Test araci ---------------------------------------------------------------
 
     private static string CliKaynagi => File.ReadAllText(

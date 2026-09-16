@@ -2573,3 +2573,33 @@ eski betik aynı düzenekte hatayı birebir tekrarladı (130, dosya yok → "Tes
 çalışma kopyasında LF. `cmd` LF'li betikte `goto` etiketlerini güvenilir bulmuyor. Paket
 betiği artık CRLF'ye çevirerek yazıyor. Ayrıca bu makinenin kabuğunda `cmd /c betik.bat`
 mevcut dizinde aramadı (muhtemelen `NoDefaultCurrentDirectoryInExePath`); testte tam yol.
+
+### 2026-09-16 (akşam): ikinci bilgisayarda saha denemesi — 0.2.5 taslağına ek düzeltmeler
+
+Kullanıcı başka bir bilgisayarda (Türk Telekom) denedi. Ölçülenler:
+
+- **SAC değerlendirme modunda** 0.2.4 sıfırdan sorunsuz kuruldu. Ardından 0.2.4 kaldırıldı,
+  0.2.1 kuruldu, parametre testi + servis kuruldu, 0.2.4'e güncellendi: **hatasız, servisler
+  durduruldu.** 0.2.4'ün "güncellemede servisler kapanmıyor" düzeltmesi gerçek makinede
+  doğrulandı (değerlendirme modunda; SAC açıkken bu yol ölçülmedi).
+- **SAC açık** makinede 0.2.5 taslağı: kurulum bitti, sonda bizim açıklama kutumuz çıktı
+  (ham 4551 değil — 0.2.4 düzeltmesi çalışıyor), ama uygulama açılmıyor. Kod imzası olmadan
+  çözümü yok. Ek: kurulum başında `HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy`
+  `VerifiedAndReputablePolicyState` = 1 ise uyarı + "yine de kurulsun mu" (sessiz kurulumda
+  soru yok). Bu makinede değer 2 (değerlendirme) okundu; **1 = açık eşlemesi ölçülmedi.**
+- **Saha paketi (`TESTI-BASLAT.bat`, E ile onay):** rapor oluştu, Türk Telekom'da üç bölüm de
+  profildeki ilk adayla 20,4 sn'de açıldı; 6-7 Eylül ölçümüyle aynı. Boş Enter yolu yine
+  gerçek exe ile denenmedi.
+- **Exe'ye doğrudan çift tıklama:** argümansız koştu → hat tespiti yok ("Diger TR profilleri
+  1/18"), DNS sistem, `--out` yok, bitince pencere kapandı. Ekran görüntüsünde sistem DNS'i
+  ile Discord DNS yönlendirmesi görünüyor (Türk Telekom). Düzeltme: argümansız = betikle
+  aynı argümanlarla alt süreç + sonuç açıklaması + Enter bekleme (`SahaModu.cs`). Pencerenin
+  "iki strateji bulup kapanması" test bitişi mi çökme mi, ekrandan ayırt edilemedi; yeni
+  mod çıkış kodunu gösterdiği için bir dahaki sefere görünür.
+- **Betik açılışında gecikme:** betiğin kendi adımları bu makinede ölçüldü (`net session`
+  40 ms, `powershell` başlangıcı 145 ms, `chcp` 25 ms). Kalan süre UAC + imzasız tek dosya
+  exe'nin ilk açılışı; betikten hızlandırılamaz. Yönetici penceresine anında "açılıyor"
+  satırı eklendi.
+
+v0.2.5 etiketi bu düzeltmelerden ÖNCEKİ commit'te (b775855); taslak yayınlanmadı. Yayından
+önce etiket taşınmalı (0.2.4'te yapıldığı gibi) ya da ayrı sürüm çıkmalı.

@@ -21,6 +21,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!--
+    Test araci bir exe (tek dosya, kirpilmis); proje olarak baglamak yerine yalnizca
+    saf mantik iceren dosyasi derleniyor.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\src\ZapretTr.Prober.Cli\SahaModu.cs" Link="Cli\SahaModu.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\ZapretTr.Prober\ZapretTr.Prober.csproj" />
     <ProjectReference Include="..\..\src\ZapretTr.Core\ZapretTr.Core.csproj" />

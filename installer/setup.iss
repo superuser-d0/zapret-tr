@@ -223,10 +223,52 @@ end;
 // durdurup DNS'i geri aliyor. Zorla oldurme yalnizca kapanmayan bir surec icin,
 // son care olarak kaliyor -- kurulumun dosya kilidi yuzunden yarim kalmasi da
 // kabul edilebilir degil.
+// Akilli Uygulama Denetimi ZORLAMA modunda mi.
+//
+// Deger: 0 kapali, 1 acik (zorlama), 2 degerlendirme. OLCULDU (2026-09-16):
+// degerlendirme modundaki bir makinede 0.2.4 hatasiz kuruldu ve calisti;
+// SAC ACIK bir makinede 0.2.5 taslagi kuruldu ama ZapretTR.exe hic calismadi
+// (hata 4551). "1 = acik" eslemesi Microsoft'un belgeledigi deger; acik bir
+// makinede okunarak DOGRULANMADI.
+function SacAcik(): Boolean;
+var
+  Durum: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM, 'SYSTEM\CurrentControlSet\Control\CI\Policy',
+                               'VerifiedAndReputablePolicyState', Durum)
+            and (Durum = 1);
+end;
+
 function InitializeSetup(): Boolean;
 var
   ResultCode: Integer;
+  Mesaj: String;
 begin
+  // SAC aciksa kurulum BASTAN soylemeli. Eskiden kullanici once kuruluyor, sonra
+  // "exe calistirilamadi" kutusunu goruyor ve elinde acilmayan bir uygulama
+  // kaliyordu. Kod imzasi olmadan bu engeli asmanin yolu yok; yapabildigimiz tek
+  // sey kullaniciyi kurmadan once bilgilendirmek. Sessiz kurulumda (CI) soru
+  // sorulmuyor ve kurulum suruyor.
+  if SacAcik() then
+  begin
+    Mesaj := 'Bu bilgisayarda Akilli Uygulama Denetimi ACIK.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'ZapretTR''in kod imzalama sertifikasi yok. Bu ayar acikken Windows'
+             + ' ZapretTR''i calistirmiyor (hata 4551): kurulum biter ama uygulama acilmaz.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'Kurmadan once, SIRASIYLA:' + #13#10;
+    Mesaj := Mesaj + '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' + #13#10;
+    Mesaj := Mesaj + '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' + #13#10;
+    Mesaj := Mesaj + '2) Windows Guvenligi -> Uygulama ve tarayici denetimi ->' + #13#10;
+    Mesaj := Mesaj + '   Akilli Uygulama Denetimi ayarlari -> Kapali.' + #13#10;
+    Mesaj := Mesaj + '3) Kurulumu yeniden calistirin.' + #13#10 + #13#10;
+    Mesaj := Mesaj + 'Yine de simdi kurulsun mu?';
+
+    if SuppressibleMsgBox(Mesaj, mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDYES) <> IDYES then
+    begin
+      Result := False;
+      Exit;
+    end;
+  end;
+
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
@@ -404,8 +446,10 @@ begin
     // goremedigi bir hata sinifi; yalnizca gercek derleme yakaliyor.
     Mesaj := 'Windows, ZapretTR.exe dosyasini calistirmadi'
              + ' (Akilli Uygulama Denetimi, hata 4551).' + #13#10 + #13#10;
-    Mesaj := Mesaj + 'ZapretTR kurulu, ama otomatik baslatma servisi ve'
-             + ' DNS bekcisi kurulamadi.' + #13#10 + #13#10;
+    // "ZapretTR kurulu" yaziyordu; dogru ama yaniltici. Bu durumda uygulamanin
+    // kendisi de acilmiyor (gercek makinede goruldu, 2026-09-16).
+    Mesaj := Mesaj + 'Dosyalar kopyalandi, ama bu ayar acikken ZapretTR acilmaz;'
+             + ' otomatik baslatma servisi ve DNS bekcisi de kurulamadi.' + #13#10 + #13#10;
     Mesaj := Mesaj + 'Cozum icin SIRASIYLA:' + #13#10;
     Mesaj := Mesaj + '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' + #13#10;
     Mesaj := Mesaj + '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' + #13#10;

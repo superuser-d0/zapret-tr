@@ -25,6 +25,7 @@ NASIL CALISTIRILIR
 ------------------
 
 1. Bu klasordeki  TESTI-BASLAT.bat  dosyasina cift tikla.
+   (zapret-tr-test.exe dosyasina cift tiklamak da ayni testi baslatir.)
 
 2. Windows "bu uygulamanin degisiklik yapmasina izin veriyor musunuz?" diye
    soracak. Evet de. (Sebebi asagida yaziyor.)

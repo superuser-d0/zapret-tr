@@ -11,6 +11,13 @@ using ZapretTr.Prober;
 // yaptirmak. Ikincisi yuzunden kasitli olarak tek dosya, bagimlilıksiz ve
 // ciktisi okunabilir tutuldu.
 
+// Argumansiz = cift tiklama. Saha testini paketteki ayarlarla kostur ve pencereyi
+// acik tut; gerekcesi SahaModu'nda (gercek kullanicida olculdu).
+if (args.Length == 0)
+{
+    return SahaModu.CiftTiklamaIleCalistir();
+}
+
 var options = CliOptions.Parse(args);
 if (options.ShowHelp)
 {

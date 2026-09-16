@@ -116,6 +116,7 @@ if %errorlevel% neq 0 (
 )
 
 cd /d "%~dp0"
+echo Test araci aciliyor, ilk acilis birkac saniye surebilir...
 zapret-tr-test.exe --isp auto --doh --max-candidates 25 --out "zapret-tr-rapor.json"
 set "KOD=%errorlevel%"
 
