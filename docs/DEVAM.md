@@ -2517,3 +2517,26 @@ bunu söyleyen bir mesaj görüyor. (SAC açıkken imzasız `winws.exe` servisi 
 - Kerem'den (issue #1) iki cevap: koruma AÇIKKEN `discordapp.com`, `discordcdn.com`,
   `discord.media` çalışıyor mu (hayırsa hostlist daraltılacak); Roblox Vodafone Net
   profiline varsayılan hedef olarak eklensin mi. Cevap 2026-09-16 10:25Z'de gönderildi.
+
+### 2026-09-16: 16 Eylül raporlarında hat bilgisi yok
+
+Kullanıcı sordu: "Vodafone Mobil ölçülmedi yazıyor, raporlarda ölçülmüş görünmüyor mu?"
+Beş ekin hepsi açıldı: hepsinde profil **Vodafone Net**; Vodafone Mobil'de alınmış rapor YOK
+(Kerem de "mobil için ayrı rapor oluşturmadım" demişti). 🟡 doğru.
+
+Ama bakarken asıl bulgu çıktı: **hattın ASN ile kanıtlandığı tek rapor 15 Eylül'deki**
+(`Bağlantı: AS8386 ... (ipinfo.io)`). 16 Eylül raporlarında (12:07, 12:17 JSON, 12:33) ASN
+satırı ve alanı yok — profil önceden seçili olduğu için tespit hiç çalışmamış. Bağlantı her
+iki günde de `Wi-Fi` bağdaştırıcısı üzerinden; rapor ağ geçidi/IP/SSID yazmıyor, dolayısıyla
+ev modemi mi telefon paylaşımı mı ayırt edilemiyor. README'de "iki koşum" diye yazılmıştı;
+"AS8386'da bir koşum, sonrakinde aynı sonuç ama hat bilgisi yok" olarak düzeltildi, profil
+`lastVerified` 2026-09-15'e geri alındı. Kerem'e soruldu.
+
+Aynı bakışta: README "AdGuard 127.0.0.1:53'ü tutuyor" diyordu. Raporlarda portu tutan
+**`svchost.exe`**; AdGuard kullanıcının tahmini (16 Eylül'de Wi-Fi'da AdGuard DNS sunucuları
+94.140.14.14/15.15 ayarlı, ama o port tutmaz). Metin düzeltildi.
+
+**Teşhis açığı:** rapor, ölçümün hangi hatta yapıldığını yalnızca ASN tespiti o oturumda
+çalıştıysa söylüyor. Profil elle ya da kayıttan seçiliyse rapor hat hakkında hiçbir şey
+söylemiyor. Saha verisinin değeri "hangi hatta" sorusuna bağlı olduğu için rapor her zaman
+ASN yazmalı (özellik değil teşhis düzeltmesi sayılır). Yapılmadı.

@@ -125,10 +125,11 @@ verilen itibar uyarısı ([ayrıntı](docs/SORUN-GIDERME.md#windows-engelliyor))
 Tamamı bu kadar. **"Şifreli DNS kullan" seçeneği işaretli kalsın**: engelleme çoğu zaman iki
 katmanlı ve o kutu kapalıyken alttaki katman aşılamaz.
 
-İstisna: bilgisayarınızda **AdGuard** gibi DNS'i kendi üzerinden geçiren bir program varsa
-`127.0.0.1:53` portu doludur ve şifreli DNS başlayamaz. Uygulama bunu çakışma taramasında
-söyler; o durumda kutuyu kapatın. Her hatta DNS katmanı da engelli değil: Vodafone Net'te
-Discord'un engeli bağlantı sıfırlamaydı ve bir kullanıcıda kutu kapalıyken de açıldı.
+İstisna: bilgisayarınızda başka bir program `127.0.0.1:53` portunu tutuyorsa şifreli DNS
+başlayamaz. Uygulama bunu çakışma taramasında portu tutan programın adıyla söyler; o durumda
+kutuyu kapatın. (Bir kullanıcıda portu `svchost.exe` tutuyordu; kullanıcı sebebin AdGuard
+olduğunu düşünüyor, bunu doğrulamadık.) Her hatta DNS katmanı da engelli değil: Vodafone
+Net'te Discord'un engeli bağlantı sıfırlamaydı ve kutu kapalıyken de açıldı.
 
 **Tema.** Pencerenin sağ altındaki **"Koyu tema" / "Açık tema"** düğmesi görünümü değiştirir;
 seçim `config.json`'a yazılır. Hiç seçilmediyse Windows'un uygulama teması (Ayarlar →
@@ -148,8 +149,9 @@ ediliyor. Hiçbir yere gönderilmez, sadece diske yazılır.
 çalıştırın. Doğrusu da budur — kimin neye erişemediği kişiden kişiye değişiyor. Yazdığınız
 adres yalnızca testte denenmez, **koruma açıkken stratejinin uygulandığı listeye de girer**.
 Kutuya tek adres yazın; virgülle birden fazla adres şimdilik desteklenmiyor ve anlaşılmayan
-girdi günlükte sebebiyle bildirilir. Örnek: Vodafone Net'te `roblox.com` bağlantı sıfırlamayla
-engelliydi; kutuya yazılınca listeye girdi (`uygulanacak (7): ... roblox.com`) ve açıldı.
+girdi günlükte sebebiyle bildirilir. Örnek: Vodafone kullanan bir kullanıcıda `roblox.com`
+bağlantı sıfırlamayla engelliydi; kutuya yazılınca listeye girdi
+(`uygulanacak (7): ... roblox.com`) ve açıldı.
 
 **"Servis Olarak Yükle"** bir Windows servisi kurar: uygulamayı açmanız gerekmez ve
 **yeniden başlatmaya da gerek yok** — servis hemen çalışmaya başlar, sonraki açılışlarda
@@ -168,7 +170,8 @@ bütün adayların aynı şekilde başarısız olmasına yol açabiliyor.
 Sonuç kaydedilir; bir sonraki açılışta testi tekrarlamanız gerekmez. Hiç cevap alınamayan bir
 bölümde (art arda 12 aday ve en az 4 farklı yöntem) arama bırakılıyor. Vodafone Net'te QUIC
 bölümü önceden 25 adayın hepsini deneyip tek başına yaklaşık 5 dakika (293 saniye) sürüyordu ve
-testin tamamı 378 saniyeydi; 0.2.3'te 12. adayda bırakıldı ve test 187 saniyede bitti
+testin tamamı 378 saniyeydi; aynı kullanıcının 0.2.3 ile yaptığı sonraki koşumda 12. adayda
+bırakıldı ve test 187 saniyede bitti
 (kullanıcının iki saha raporu).
 
 **"ENGEL BULUNAMADI" yazarsa ne olur?** Test hedeflerinin hepsi zaten açılıyor demektir. Sizde
@@ -293,9 +296,9 @@ AMA AÇMIYOR"** diyerek yeni bir parametre testi öneriyor.
 ### Discord
 
 **Discord'da sesli görüşme çalışıyor mu?** Evet. Türk Telekom hattında gerçek kullanımda
-denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Vodafone Net'te de bir kullanıcı
-sesli sohbete girebildiğini bildirdi (kullanıcı bildirimi; ses dışarıdan ölçülemiyor). Ekran paylaşımının ayrıca anlamı var,
-çünkü sesten çok daha ağır bir medya akışı.
+denendi: **sesli görüşme de ekran paylaşımı da çalıştı.** Ekran paylaşımının ayrıca anlamı var,
+çünkü sesten çok daha ağır bir medya akışı. Vodafone'da da bir kullanıcı sesli sohbete
+girebildiğini bildirdi (kullanıcı bildirimi; ses dışarıdan ölçülemiyor).
 
 Mekanizması şöyle: o hatta ses zaten engelli değil; metin ve bağlantı engeli aşılınca ses
 kendiliğinden kuruluyor. ZapretTR ses trafiğine **hiç dokunmuyor**, çünkü "sorunu olmayan bölüme
@@ -505,7 +508,7 @@ yaptı ve rapor dosyası elimizde, ama 3/3 kontrollü tekrar değil.
 |---|:---:|:---:|:---:|---|
 | Türk Telekom (AS9121) | 6 | 10 | 7 | ✅ doğrulandı (ölçüm) — üç ayrı kullanıcıda çalıştı |
 | Turkcell Mobil (AS16135) | — | 1 | 1 | ✅ doğrulandı (ölçüm) |
-| Vodafone Net (AS8386) | 1 | 1 | ✗ | 🟢 **saha raporuyla ölçüldü** — iki ayrı günde, iki koşumda aynı adaylar kazandı |
+| Vodafone Net (AS8386) | 1 | 1 | ✗ | 🟢 **saha raporuyla ölçüldü** — AS8386'da bir koşum; sonraki koşumda aynı sonuç, ama hat bilgisi yok |
 | Vodafone Mobil | — | — | — | 🟡 **kullanıcı bildirimi** — "çalıştı" denildi, rapor yok |
 | Türksat Kablonet | — | — | — | 🟡 **kullanıcı bildirimi** — bağlantı kuruldu ve giriş yapıldı (0.1.6) |
 | Turkcell Superonline | — | — | — | ⬜ **testçi aranıyor** |
@@ -521,20 +524,29 @@ kazandı:
 - **tcp80:** `--dpi-desync=fake,fakedsplit --dpi-desync-autottl=2 --dpi-desync-fooling=md5sig`
   → `discord.com`
 
-O hatta ölçülenler:
+**Hangi hatta ölçüldüğü:** ilk raporda uygulama bağlantıyı **AS8386** (Vodafone Net, sabit hat)
+olarak tespit etmiş. İkinci raporda hat bilgisi **yok**: profil önceden seçili olduğu için
+ASN sorgulanmamış ve bağlantı Wi-Fi üzerinden. Wi-Fi ev modemi de olabilir telefondan
+paylaşım da; rapordan ayırt edemiyoruz. Temel ölçüm ve kazananlar birebir aynı çıktığı için
+aynı hat olması güçlü ihtimal, ama kanıt değil — kullanıcıya sorduk.
 
-- Discord'un engeli **bağlantı sıfırlama** (RST); DNS yönlendirmesi değil. Kullanıcıda şifreli
-  DNS kapalıyken de açıldı.
-- **QUIC için çalışan ayar yok.** İlk koşumda 25 adayın, ikincisinde denenen 12 adayın hepsi zaman
-  aşımına uğradı. Bu bölüm komuta hiç girmiyor; Discord'u etkilemiyor.
-- YouTube ve genel STUN o hatta engelli değil.
-- Kullanıcının kendi elle yaptığı denemede `roblox.com` da bağlantı sıfırlamayla engelliydi;
-  "Açılmayan site" kutusuna yazılınca açıldı. Aynı denemede `discordapp.com`, `discordcdn.com` ve
-  `discord.media` engelli değildi.
-- Sesli sohbete girilebildi (kullanıcı bildirimi).
+AS8386 koşumunda ölçülenler:
 
-✅ yerine 🟢 olmasının sebebi: iki koşum var ama bizim koyduğumuz 3/3 kontrollü tekrar kuralı
-değil. Aynı hattan bir koşum daha gelirse doğrulanmışa geçer.
+- Discord'un engeli **bağlantı sıfırlama** (RST); DNS yönlendirmesi değil. Şifreli DNS o
+  makinede başlayamıyordu (port doluydu), yani Discord şifreli DNS olmadan açıldı.
+- **QUIC için çalışan ayar yok:** 25 adayın hepsi zaman aşımına uğradı (ikinci koşumda da
+  denenen 12 adayın hepsi). Bu bölüm komuta hiç girmiyor; Discord'u etkilemiyor.
+- YouTube ve genel STUN engelli değil.
+
+Kullanıcının bildirdikleri (rapor dosyası dışında, hat bilgisi olmadan):
+
+- Elle yaptığı denemede `roblox.com` bağlantı sıfırlamayla engelliydi ve "Açılmayan site"
+  kutusuna yazılınca açıldı; `discordapp.com`, `discordcdn.com` ve `discord.media` engelli
+  değildi.
+- Sesli sohbete girilebildi.
+
+✅ yerine 🟢 olmasının sebebi: hattı kanıtlı tek koşum var; bizim koyduğumuz 3/3 kontrollü
+tekrar kuralı değil. Aynı hattan tekrar koşumlar gelirse doğrulanmışa geçer.
 
 ⚠️ **Sonuç alınamayan bir koşum — ama hangi hatta olduğunu bilmiyoruz.** Bir kullanıcıda
 49 aday denendi ve hiçbiri `tcp80` ile QUIC bölümünü açamadı. Motor düzgün çalışıyordu;
@@ -665,8 +677,8 @@ Tamamlananlar:
       uygulanıyordu; Vodafone Net'te koruma açıkken GitHub açılmıyordu. Artık yalnızca engelli
       olduğu ölçülen kategorilerin adreslerine ve kullanıcının yazdığı adrese uygulanıyor.
 - [x] **Cevapsız bölümde erken vazgeçme (0.2.3).** Hiç cevap gelmeyen bir bölüm için dakikalarca
-      aday denenmiyor. Vodafone Net'te gerçek koşumda doğrulandı: QUIC 25 → 12 aday, testin
-      tamamı 378 → 187 saniye.
+      aday denenmiyor. Bir kullanıcının gerçek koşumlarında doğrulandı: QUIC 25 → 12 aday,
+      testin tamamı 378 → 187 saniye.
 - [x] **Paket boyutu.** `PublishTrimmed` açık ve güvenli: bütün JSON yolları kaynak üretimine
       taşındı, kırpma analizörü hata verecek şekilde açık. 34.3 → 12.5 MB.
 

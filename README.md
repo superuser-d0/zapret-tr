@@ -59,10 +59,10 @@ Dosyaya çift tıklayın.
 > başlattığınızda koruma kapalı gelir. 4. adımdan sonra yeniden başlatmaya gerek yok.
 
 **"Şifreli DNS kullan (önerilir)" kutusu işaretli kalsın.** Engelleme çoğu zaman iki
-katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız. Bilgisayarınızda **AdGuard** gibi
-DNS'i kendi üzerinden geçiren bir program varsa şifreli DNS açılamaz; o durumda kutuyu
-kapatın. Vodafone Net'te engel DNS değil bağlantı sıfırlama olduğu için Discord kutu
-kapalıyken de açıldı (kullanıcı raporu).
+katmanlıdır; bu kutu kapalıyken bir katmanı aşamazsınız. Bilgisayarınızda başka bir program
+`127.0.0.1:53` portunu tutuyorsa şifreli DNS açılamaz; uygulama bunu çakışma taramasında
+söyler, o durumda kutuyu kapatın. Vodafone Net'te engel DNS değil bağlantı sıfırlama olduğu
+için Discord kutu kapalıyken de açıldı (kullanıcının saha raporu).
 
 **Belirli bir site açılmıyorsa** adresini **"Açılmayan site"** kutusuna yazıp testi öyle
 çalıştırın. Bu adres korumanın uygulandığı listeye de eklenir. Kutuya **tek adres** yazın
@@ -151,7 +151,7 @@ döner.
 |---|---|
 | Türk Telekom | ✅ ölçülerek doğrulandı |
 | Turkcell Mobil | ✅ ölçülerek doğrulandı |
-| Vodafone Net | 🟢 kullanıcının saha raporlarıyla ölçüldü (iki koşum); Discord açılıyor, QUIC için çalışan ayar yok |
+| Vodafone Net | 🟢 kullanıcının saha raporuyla ölçüldü; Discord açılıyor, QUIC için çalışan ayar yok |
 | Vodafone Mobil | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
 | Türksat Kablonet | 🟡 kullanıcı "çalıştı" dedi, henüz ölçülmedi |
 | Superonline, TurkNet ve diğerleri | ⬜ henüz test edilmedi |
