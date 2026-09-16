@@ -2603,3 +2603,31 @@ Kullanıcı başka bir bilgisayarda (Türk Telekom) denedi. Ölçülenler:
 
 v0.2.5 etiketi bu düzeltmelerden ÖNCEKİ commit'te (b775855); taslak yayınlanmadı. Yayından
 önce etiket taşınmalı (0.2.4'te yapıldığı gibi) ya da ayrı sürüm çıkmalı.
+
+### 2026-09-16: v0.2.5 yayını
+
+Etiket üç kez taşındı (b775855 → 86ead53 → d74f388 → e8a26c0), her seferinde yayınlanmamış
+taslak silinip CI yeniden üretti. Son taslakta CI'ın üç işi geçti; saha paketi indirilip
+özeti `SHA256SUMS.txt` ile karşılaştırıldı, okuma dosyası ve betik kontrol edildi. Kullanıcı
+yayınladı.
+
+**SAC açık makinede ölçülenler (taslak d74f388):** kurulum dosyası çift tıklamada SAC
+tarafından engellendi, yönetici olarak çalıştırınca açıldı (tek gözlem, belgelere
+konmadı). Kurulum başındaki uyarı çıktı → `VerifiedAndReputablePolicyState` = 1 artık
+ölçülmüş. "Evet" sonrası yalnızca bizim açıklama kutumuz çıktı. Saha testi aracı hiç
+açılmadı (yönetici olarak da). Kullanıcı ZapretTR penceresini kurulumdan sonra açabildi →
+"ZapretTR açılmaz" cümlesi yanlıştı, "düzgün çalışmaz" oldu. `winws.exe` ve
+`dnscrypt-proxy.exe` imzasız (yerelde `Get-AuthenticodeSignature`); SAC açıkken korumanın
+çalışıp çalışmadığı ÖLÇÜLMEDİ.
+
+**Karar:** kullanıcıdan SAC'yi kapatması isteniyor (kurulum uyarısı, README gereksinimleri,
+sorun giderme, saha paketi okuma dosyası). Geri açılamayabileceği ve Defender'ın sürdüğü
+yazılı. Kod imzası gelene kadar başka yol yok.
+
+**Issue #1:** Kerem'e cevap gönderildi (ev interneti teyidi, mobil sonuç, boş Enter hatası
+ve 0.2.5, SAC notu). Açık sorular: koruma açıkken discordapp.com / discordcdn.com /
+discord.media çalışıyor mu (hostlist daraltma), Roblox Vodafone Net varsayılanına eklensin
+mi.
+
+**Açık kalanlar:** boş Enter yolu ve exe'ye çift tıklama modu gerçek exe ile (yönetici,
+UAC) denenmedi; saha raporu ASN yazmıyor; güvenlik denetimi yarım.
