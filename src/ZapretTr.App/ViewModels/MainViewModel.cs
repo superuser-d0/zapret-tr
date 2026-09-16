@@ -1691,7 +1691,33 @@ public sealed class MainViewModel : INotifyPropertyChanged
     /// denenmemis bir QUIC stratejisi uygulanınca bozuldu.
     /// </remarks>
     private Dictionary<StrategySection, string> BuildRuntimeSelection()
-        => RuntimeSelection.Build(SelectedIsp?.Profile, SelectedStrategy!.Args);
+        => RuntimeSelection.Build(CurrentProfile(), SelectedStrategy!.Args);
+
+    /// <summary>
+    /// Secili saglayicinin, en son ogrenilmis dogrulamalar bindirilmis profili.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="SelectedIsp"/> listedeki kaydi tutuyor ve o kayit uygulama acilirken
+    /// yuklenmis profili gosteriyor. Test yeni bir sey dogrulayinca diske yaziliyordu ama
+    /// bellekteki profil ESKI kaliyordu. Olculdu (2026-09-16, 0.2.6, Turk Telekom): test
+    /// "acilan: discord-guncelleme, discord, roblox" dedi, hemen ardindan Baslat
+    /// "yalnizca su adreslere (6): discord..." dedi -- roblox.com yoktu, dogrulama
+    /// "Acilmayanlar: www.roblox.com" diye uyardi. Uygulama yeniden acilana kadar yeni
+    /// dogrulama hicbir yere yansimiyordu; bu 0.2.2'den beri her kategori icin boyleydi.
+    /// Calisma zamani kararlari (hangi bolumler, hangi adresler) bu yuzden buradan okunur.
+    /// </remarks>
+    private IspProfile? CurrentProfile()
+    {
+        var secili = SelectedIsp?.Profile;
+        if (secili is null || _profiles is null)
+        {
+            return secili;
+        }
+
+        return _profiles.Profiles.FirstOrDefault(p =>
+                   string.Equals(p.Id, secili.Id, StringComparison.OrdinalIgnoreCase))
+               ?? secili;
+    }
 
     /// <summary>
     /// Stratejinin uygulanacagi alan adlari. Bos donerse strateji butun trafige uygulanir.
@@ -1717,7 +1743,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append(sorun, isError: true);
         }
 
-        var kategoriler = RuntimeSelection.VerifiedCategories(SelectedIsp?.Profile, winners);
+        var kategoriler = RuntimeSelection.VerifiedCategories(CurrentProfile(), winners);
 
         return HostlistStore.Load(_profiles.Root).DomainsFor(kategoriler, CustomTarget);
     }
@@ -2729,6 +2755,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             Append("Sonuçlar kaydedilemedi: " + ex.Message, isError: true);
+            return;
+        }
+
+        // Bellekteki profiller de tazelensin; yoksa hemen ardindan basilan Baslat
+        // yeni dogrulamayi gormuyor (bkz. CurrentProfile). Listeyi yeniden kurmuyoruz:
+        // secimi ve "test edildi" satirini silerdi.
+        try
+        {
+            _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
+        }
+        catch (Exception ex)
+        {
+            Append("Yeni doğrulamalar uygulamayı yeniden açınca devreye girecek: " + ex.Message, isError: true);
         }
     }
 

@@ -2650,3 +2650,22 @@ kullanıcılar yeniden test etmeden Roblox'u almıyor.
 
 **Kerem (17:27Z):** koruma açıkken ses ve medya çalışıyor → Discord listesi daraltılmıyor,
 soru kapandı. Roblox oynamıyor → Vodafone'da Roblox ölçülmedi.
+
+### 2026-09-16 (gece): 0.2.7 — yeni doğrulama yeniden açılışa kadar korumaya yansımıyordu
+
+0.2.6'da Roblox kutu boşken yine açılmadı. Günlük (21:14): test `açılan: discord-guncelleme,
+discord, roblox` → 4 sn sonra Başlat `(6): discord…` (roblox.com yok) → doğrulama
+`Açılmayanlar: www.roblox.com`. Kök sebep: `PersistLearned` learned.json'a yazıyor ama
+`SelectedIsp.Profile` açılıştaki profil; `BuildRuntimeSelection` ve `BuildHostlistDomains`
+onu okuyordu. 0.2.2'den beri bütün kategoriler için geçerli; Roblox görünür kıldı.
+
+Düzeltme: `CurrentProfile()` (`_profiles`'tan id ile taze profil) + `PersistLearned`
+sonrası `_profiles` yeniden yükleniyor; liste yeniden kurulmuyor (seçim ve "test edildi"
+satırı kalsın). `YeniDogrulamaTests`: veri zinciri gerçek profil dosyalarıyla, akış kaynak
+metniyle.
+
+**Teşhis ölçüldü:** kullanıcı 0.2.6'da kutuyu boşaltıp Çıkış → yeniden aç → Başlat yaptı;
+roblox.com listeye girdi, Roblox açıldı. Düzeltmenin kendisi (yeniden açmadan) gerçek
+uygulamada henüz denenmedi — 0.2.7 kurulunca test → Başlat ile doğrudan görülmeli.
+
+Kerem'e "Roblox varsayılan oldu" denmişti; 0.2.7 çıkınca kısa düzeltme notu gerekiyor.

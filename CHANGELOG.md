@@ -8,6 +8,27 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+## [0.2.7]
+
+Hata düzeltme sürümü. Başlığı: **Roblox, 0.2.6'da testten hemen sonra açılmıyordu.**
+
+### Düzeltildi
+
+- **Testte yeni doğrulanan site, uygulama yeniden açılana kadar korunmuyordu.** Gerçek
+  makinede görüldü (2026-09-16, 0.2.6, Türk Telekom, "Açılmayan site" boş): test
+  *"açılan: discord-guncelleme, discord, roblox"* dedi, hemen ardından Başlat
+  *"yalnızca şu adreslere uygulanacak (6): discord…"* dedi; `roblox.com` yoktu ve başlatma
+  sonrası doğrulama *"Açılmayanlar: www.roblox.com"* diye uyardı. Sonuç diske yazılıyordu
+  ama bellekteki profil açılıştaki hâliyle kalıyordu. 0.2.2'deki adres daraltmasından beri
+  her kategori için böyleydi (ör. testte yeni açılan Discord güncelleme sunucusu da
+  yeniden açılışa kadar listeye girmiyordu); Roblox'u varsayılan yapınca görünür oldu.
+  - Test sonucu kaydedilince profiller yeniden yükleniyor; koruma komutu ve adres listesi
+    her seferinde en güncel doğrulamayla kuruluyor. Seçim ve "test edildi" satırı
+    korunuyor.
+  - Teşhis gerçek makinede doğrulandı: aynı 0.2.6 kurulumunda kutu boşken uygulamadan
+    **Çıkış** yapılıp yeniden açılınca Başlat `roblox.com`'u listeye aldı ve Roblox açıldı.
+    0.2.6'da kalan kullanıcılar için geçici çözüm bu.
+
 ## [0.2.6]
 
 Hata düzeltme sürümü. Başlığı: **her testte çıkan sürücü sorusu ve Roblox.**
