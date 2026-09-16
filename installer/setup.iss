@@ -116,17 +116,15 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription: "Ek görevler:"
 
 [Run]
-; DNS bekcisi: SYSTEM olarak calisan zamanlanmis gorev. Servis modunda arkada DNS'i
-; izleyen baska hicbir sey yok -- sonradan takilan ag karti yonlendirilmiyor,
-; dnscrypt kalici olarak olurse makine hicbir adi cozemiyordu. Gerekcesi
-; DnsGuard.cs'de. Her kurulumda yeniden yaziliyor ki gorev yeni exe'yi gostersin.
-Filename: "{app}\{#AppExe}"; Parameters: "--register-dns-guard"; Flags: runhidden waituntilterminated; StatusMsg: "DNS bekcisi kuruluyor..."
-
-; Kurulum biterken bir bekci turu. Yukseltmenin onceki surumu sokerken DNS geri
-; alinamamis ve servis geri kurulmamissa sistem DNS'i 127.0.0.1'de, cozumleyicisiz
-; kalmis olabilir; bir sonraki tetikleyiciyi (en gec 10 dk) beklemeye gerek yok.
-; nowait: bekci cozumleyiciyi 90 sn'ye kadar bekleyebiliyor, kurulum beklememeli.
-Filename: "{app}\{#AppExe}"; Parameters: "--dns-guard"; Flags: runhidden nowait
+; DNS bekcisi kaydi ve bekci turu ARTIK BURADA DEGIL, [Code] icinde (CurStepChanged).
+;
+; Sebep olculdu (2026-09-16, gercek makine, 0.2.3): Akilli Uygulama Denetimi acikken
+; Windows imzasiz ZapretTR.exe'yi calistirmiyor ve Inno'nun [Run] girdisi bunu ham
+; haliyle kullanicinin yuzune veriyordu:
+;   "Su dosya yurutulmedi: C:\Program Files\ZapretTR\ZapretTR.exe
+;    CreateProcess tamamlanamadi; kod 4551. Uygulama Denetimi ilkesi bu dosyayi engelledi."
+; Kurulumun ortasinda, ne yapacagini soylemeyen bir kutu. [Code] icinde sonucu
+; kendimiz denetliyor ve sonunda TEK ve anlasilir bir aciklama veriyoruz.
 
 ; shellexec ZORUNLU. Uygulamanin manifesti requireAdministrator ve Inno, kurulum
 ; sonu "simdi baslat" girdisini yukseltilmemis baglamda CreateProcess ile
@@ -261,18 +259,50 @@ var
   ResultCode: Integer;
   OncekiExe: String;
   Sc: String;
+  TemizlikYapildi: Boolean;
 begin
   Result := '';
   OncekiExe := ExpandConstant('{app}\{#AppExe}');
+  Sc := ExpandConstant('{sys}\sc.exe');
 
   // Durum, sokme ISLEMINDEN ONCE okunmali; sonra bakmanin anlami olmaz.
   ServisGeriKurulacak := ServisKurulu('ZapretTR');
 
   // 1) Onceki surumun kendi temizligi: servisleri soker ve DNS'i geri alir.
   //    Kullanici ayarlari ve ogrenilmis dogrulamalar KORUNUR.
+  //
+  //    SONUCU DENETLENIYOR ve denetlenmesi ZORUNLU. Eskiden burada Exec'in donus
+  //    degeri de ResultCode da yok sayiliyordu. Gercek bir makinede olculdu
+  //    (2026-09-16, 0.2.3 kurulumu): Akilli Uygulama Denetimi acikken Windows
+  //    ZapretTR.exe'yi calistirmiyor (hata 4551, "An Application Control policy
+  //    has blocked this file") -- yani bu cagri basarisiz oluyor, servisler
+  //    SOKULMUYOR ve kimse fark etmiyor. Kullanicinin bildirimi: "guncelleme
+  //    sirasinda servisleri kapamiyor".
+  TemizlikYapildi := False;
   if FileExists(OncekiExe) then
   begin
-    Exec(OncekiExe, '--uninstall-services', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    TemizlikYapildi :=
+      Exec(OncekiExe, '--uninstall-services', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
+      and (ResultCode = 0);
+  end;
+
+  // 1b) Exe calismadiysa servisleri KURULUM kendisi soker.
+  //
+  //     sc.exe Microsoft imzali; SAC onu engellemiyor, dolayisiyla bu yol imzasiz
+  //     exe'mize hic bagli degil. Tek basina yetmiyor -- exe'nin yaptigi DNS geri
+  //     almayi sc.exe yapamaz; ama servisin ayakta kalip dosyalari kilitlemesi ve
+  //     yukseltmenin yarim kalmasi bundan daha kotu.
+  //
+  //     DNS geri alma bu durumda DNS bekcisine kaliyor: gorev SYSTEM olarak kosuyor
+  //     ve cozumleyici yoksa yonlendirmeyi zaten geri aliyor.
+  if not TemizlikYapildi then
+  begin
+    Exec(Sc, 'stop ZapretTR', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(Sc, 'stop ZapretTR-DNS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    SurucuDussun('ZapretTR');
+    SurucuDussun('ZapretTR-DNS');
+    Exec(Sc, 'delete ZapretTR', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec(Sc, 'delete ZapretTR-DNS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 
   // 2) Surucuyu KURULUM KENDISI kaldirir; onceki exe'ye guvenmez.
@@ -282,8 +312,7 @@ begin
   //    exe onu YAPMIYOR. Tam da duzeltmeye calistigimiz kullanicilar eski surumde
   //    olacagi icin, kurulumun kendi ayaklari uzerinde durmasi sart.
   //
-  //    sc.exe cagrilari WinDivertCleanup'in yaptiginin aynisi.
-  Sc := ExpandConstant('{sys}\sc.exe');
+  //    sc.exe cagrilari WinDivertCleanup'in yaptiginin aynisi. (Sc yukarida atandi.)
 
   // winws surucuyu acik tutuyor olabilir; once o gitmeli.
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM winws.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -317,16 +346,67 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
+  Exe: String;
+  Engellendi: Boolean;
 begin
-  if (CurStep <> ssPostInstall) or (not ServisGeriKurulacak) then
+  // ServisGeriKurulacak kosulu ARTIK BURADA DEGIL: DNS bekcisi, servis kurulu
+  // olmasa da her kurulumda yazilmali (gerekcesi DnsGuard.cs). Eskiden bu satir
+  // "not ServisGeriKurulacak" ile de cikiyordu ama bekci [Run] icindeydi, yani
+  // ayri kosuyordu; ikisi burada birlestigi icin kosul daraltildi.
+  if CurStep <> ssPostInstall then
     Exit;
 
-  if not Exec(ExpandConstant('{app}\{#AppExe}'), '--install-services', '',
-              SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-    ResultCode := -1;
+  Exe := ExpandConstant('{app}\{#AppExe}');
+  Engellendi := False;
 
-  if (ResultCode <> 0) and (not WizardSilent()) then
-    MsgBox('Otomatik baslatma servisi geri kurulamadi (kod ' + IntToStr(ResultCode) + ').' #13#10
-           'Uygulamayi acip "Servis Olarak Yukle" dugmesiyle yeniden kurabilirsiniz.',
-           mbInformation, MB_OK);
+  // 1) DNS bekcisi gorevi. Her kurulumda yeniden yaziliyor ki gorev YENI exe'yi
+  //    gostersin. Gerekcesi DnsGuard.cs'de: servis modunda arkada DNS'i izleyen
+  //    baska hicbir sey yok.
+  if not Exec(Exe, '--register-dns-guard', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    Engellendi := True;
+
+  // 2) Sokulen otomatik baslatma servisini geri kur. Sessizce basarisiz olmamali:
+  //    olursa kullanici korundugunu sanarak korumasiz kalir.
+  if ServisGeriKurulacak then
+  begin
+    if not Exec(Exe, '--install-services', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+    begin
+      Engellendi := True;
+      ResultCode := -1;
+    end;
+
+    if (ResultCode <> 0) and (not Engellendi) and (not WizardSilent()) then
+      MsgBox('Otomatik baslatma servisi geri kurulamadi (kod ' + IntToStr(ResultCode) + ').' #13#10
+             'Uygulamayi acip "Servis Olarak Yukle" dugmesiyle yeniden kurabilirsiniz.',
+             mbInformation, MB_OK);
+  end;
+
+  // 3) Kurulum biterken bir bekci turu: yukseltme sirasinda DNS geri alinamamissa
+  //    sistem 127.0.0.1'de cozumleyicisiz kalmis olabilir ve bir sonraki
+  //    tetikleyiciyi (en gec 10 dk) beklemeye gerek yok. nowait: bekci
+  //    cozumleyiciyi 90 sn'ye kadar bekleyebiliyor, kurulum beklememeli.
+  Exec(Exe, '--dns-guard', '', SW_HIDE, ewNoWait, ResultCode);
+
+  // Exe HIC calismadiysa sebebi neredeyse her zaman Akilli Uygulama Denetimi
+  // (hata 4551). Kullanici bunu ham CreateProcess hatasi olarak gormesin: ne
+  // oldugunu ve ne yapacagini TEK bir yerde, sirasiyla soyluyoruz.
+  //
+  // Iki adim da gerekli ve ikincisini gercek kullanici bulup bildirdi
+  // (2026-09-16): yalnizca SAC'i kapatmak YETMEDI, indirilen dosyanin
+  // "Engellemeyi Kaldir" isaretinin de temizlenmesi gerekti.
+  if Engellendi and (not WizardSilent()) then
+    MsgBox('Windows, ZapretTR.exe dosyasini calistirmadi (Akilli Uygulama Denetimi, hata 4551).' #13#10
+           #13#10
+           'ZapretTR kurulu ama otomatik baslatma servisi ve DNS bekcisi kurulamadi.' #13#10
+           #13#10
+           'Cozum icin SIRASIYLA:' #13#10
+           '1) Indirdiginiz kurulum dosyasina sag tiklayin -> Ozellikler ->' #13#10
+           '   alttaki "Engellemeyi Kaldir" kutusunu isaretleyip Tamam deyin.' #13#10
+           '2) Windows Guvenligi -> Uygulama ve tarayici denetimi ->' #13#10
+           '   Akilli Uygulama Denetimi ayarlari -> Kapali.' #13#10
+           '3) Kurulumu yeniden calistirin.' #13#10
+           #13#10
+           'ZapretTR''in kod imzalama sertifikasi yok; bu ozellik imzasiz' #13#10
+           'uygulamalara tek tek istisna tanimlamaya izin vermiyor.',
+           mbError, MB_OK);
 end;

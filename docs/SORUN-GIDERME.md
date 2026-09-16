@@ -346,9 +346,31 @@ engellenen başka bir dosyayı adlandırır. `cygwin1.dll` ya da `WinDivert.dll`
 uygulama açılır ama koruma (winws) başlamaz; ZapretTR günlüğe "winws.exe açılır açılmaz
 kapandı (çıkış kodu 0xC0000428)" yazar. Çözüm yine yukarıdaki yol.
 
-- Tek yol özelliği kapatmak: **Windows Güvenliği → Uygulama ve tarayıcı denetimi →
-  Akıllı Uygulama Denetimi ayarları → Kapalı**. Bu, bütün imzasız uygulamalara izin verir;
-  kararı siz verin.
+Kurulum sırasında şu hâlde de görünebilir — **ölçüldü** (gerçek makine, 2026-09-16, 0.2.3):
+
+> Geçici klasördeki dosya çalıştırılamadığından kurulum iptal edildi.
+> **Hata 4551: Uygulama Denetimi ilkesi bu dosyayı engelledi.**
+
+ya da kurulumun ortasında:
+
+> Şu dosya yürütülmedi: `C:\Program Files\ZapretTR\ZapretTR.exe`
+> CreateProcess tamamlanamadı, kod **4551**.
+
+**Çözüm iki adım ve sırası önemli. Tek başına ikincisi yetmeyebilir** — bunu bildiren
+kullanıcı Akıllı Uygulama Denetimi'ni kapattı, kurulum yine engellendi; ancak indirdiği
+dosyanın engelini de kaldırınca geçti.
+
+1. **İndirdiğiniz kurulum dosyasının engelini kaldırın.** Dosyaya sağ tıklayın →
+   **Özellikler** → en altta *"Bu dosya başka bir bilgisayardan geldi..."* yazıyorsa
+   yanındaki **"Engellemeyi Kaldır"** kutusunu işaretleyin → **Tamam**.
+   (Windows internetten inen her dosyayı işaretler; bu işaret dosyayı daha sıkı
+   denetime sokar.)
+2. **Özelliği kapatın:** **Windows Güvenliği → Uygulama ve tarayıcı denetimi →
+   Akıllı Uygulama Denetimi ayarları → Kapalı**. Bu, bütün imzasız uygulamalara izin
+   verir; kararı siz verin.
+3. Kurulumu yeniden çalıştırın.
+
+Ek notlar:
 - 2026 başındaki Windows güncellemelerinden önce bu özellik bir kez kapatılınca Windows
   yeniden kurulmadan geri açılamıyordu. Güncel bir Windows 11'de aynı ekrandan yeniden
   açılabiliyor; sizinkinde bu seçenek gri görünüyorsa kapatmadan önce düşünün.

@@ -103,6 +103,13 @@ Microsoft Defender, Akıllı Uygulama Denetimi ya da başka bir antivirüs kurul
 silebilir veya engelleyebilir. Ne yapacağınız
 [sorun giderme rehberinde](docs/SORUN-GIDERME.md#windows-engelliyor).
 
+> **İndirdikten sonra, çalıştırmadan önce:** kurulum dosyasına sağ tıklayın →
+> **Özellikler** → en altta **"Engellemeyi Kaldır"** kutusu varsa işaretleyin → **Tamam**.
+> Windows internetten inen dosyaları işaretliyor ve bu işaret, Akıllı Uygulama Denetimi
+> açıkken kurulumun *"Hata 4551: Uygulama Denetimi ilkesi bu dosyayı engelledi"* diyerek
+> yarıda kesilmesine yol açabiliyor. Tek adımda çözülmezse
+> [rehberdeki iki adımı](docs/SORUN-GIDERME.md#windows-engelliyor) sırasıyla uygulayın.
+
 ## Bir sorun olursa
 
 1. **Ekrandaki mesajı** [sorun giderme rehberinde](docs/SORUN-GIDERME.md) bulun; her mesajın

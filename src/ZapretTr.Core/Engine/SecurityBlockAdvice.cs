@@ -116,7 +116,14 @@ public static class SecurityBlockAdvice
     /// ile bütün 0xC00xxxxx aralığı taranarak ölçüldü: 0xC0000428 → 577,
     /// 0xC0000906/0xC0000907 → 225/226, 0xC0000361-0xC0000364 → 1260. 4551 ailesine
     /// eşlenen yerel bir NTSTATUS YOK; kod bütünlüğünün DLL reddi yükleyicide
-    /// 0xC0000428 olarak görünüyor. Gerçek bir engelle denenmedi (SAC'i açmak gerekiyor).
+    /// 0xC0000428 olarak görünüyor.
+    /// </para>
+    /// <para>
+    /// 4551'in kendisi ARTIK ÖLÇÜLDÜ (2026-09-16, gerçek makine, 0.2.3 kurulumu):
+    /// Akıllı Uygulama Denetimi açıkken Windows hem Inno'nun <c>%TEMP%</c>'teki
+    /// <c>setup.tmp</c>'sini hem de kurulmuş <c>ZapretTR.exe</c>'yi çalıştırmadı --
+    /// "CreateProcess tamamlanamadı; kod 4551. Uygulama Denetimi ilkesi bu dosyayı
+    /// engelledi." Yani bu kod bir varsayım değil, görülmüş bir durum.
     /// </para>
     /// </remarks>
     /// <param name="exitCode"><see cref="System.Diagnostics.Process.ExitCode"/>.</param>
@@ -185,12 +192,21 @@ public static class SecurityBlockAdvice
                 "sonra kurulum paketini yeniden çalıştırın. Başka bir antivirüs kullanıyorsanız " +
                 "onun karantinasına bakın. Adımlar: docs/SORUN-GIDERME.md, \"Windows engelliyor\".",
 
+            // İki adım da gerekli ve İKİNCİSİ TEK BAŞINA YETMİYOR. Gerçek makinede
+            // ölçüldü (2026-09-16, 0.2.3 kurulumu): kullanıcı Akıllı Uygulama
+            // Denetimi'ni kapattı ve kurulum yine engellendi; ancak indirdiği
+            // dosyanın "Engellemeyi Kaldır" işaretini de temizleyince geçti.
+            // Önceki metin yalnızca SAC'ten bahsediyordu, yani kullanıcıyı
+            // "yaptım, yine olmadı" noktasında bırakıyordu.
             SecurityBlockKind.ApplicationControl =>
                 "Bu özellik imzasız uygulamaları çalıştırmıyor ve tek tek " +
-                "istisna tanımlanamıyor; ZapretTR'in kod imzalama sertifikası yok. Tek yol Windows " +
-                "Güvenliği → Uygulama ve tarayıcı denetimi → Akıllı Uygulama Denetimi ayarları'ndan " +
-                "özelliği kapatmak. Kurumsal bilgisayarda bu bir BT ilkesi olabilir; o durumda " +
-                "yöneticinize danışın. Adımlar: docs/SORUN-GIDERME.md, \"Windows engelliyor\".",
+                "istisna tanımlanamıyor; ZapretTR'in kod imzalama sertifikası yok. Sırasıyla: " +
+                "(1) indirdiğiniz kurulum dosyasına sağ tıklayıp Özellikler'i açın ve alttaki " +
+                "\"Engellemeyi Kaldır\" kutusunu işaretleyip Tamam deyin; (2) Windows Güvenliği → " +
+                "Uygulama ve tarayıcı denetimi → Akıllı Uygulama Denetimi ayarları'ndan özelliği " +
+                "kapatın; (3) kurulumu yeniden çalıştırın. Yalnızca ikincisini yapmak yetmeyebilir. " +
+                "Kurumsal bilgisayarda bu bir BT ilkesi olabilir; o durumda yöneticinize danışın. " +
+                "Adımlar: docs/SORUN-GIDERME.md, \"Windows engelliyor\".",
 
             _ =>
                 "Bu genellikle " +

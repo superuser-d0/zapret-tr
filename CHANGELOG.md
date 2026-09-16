@@ -8,6 +8,32 @@ Toplulukta bildirilmiş ya da mekanizmadan türetilmiş şeyler doğrulanmış s
 
 ## [Yayınlanmamış]
 
+### Düzeltildi
+
+- **Akıllı Uygulama Denetimi açıkken yükseltme servisleri söküyor.** Gerçek makinede
+  ölçüldü (2026-09-16, 0.2.3 kurulumu): Windows imzasız `ZapretTR.exe`'yi çalıştırmıyor
+  (**hata 4551**, "Uygulama Denetimi ilkesi bu dosyayı engelledi"). Kurulum, servisleri
+  sökmek için önceki sürümün exe'sini çağırıyor ve `Exec`'in sonucunu **yok sayıyordu** —
+  çağrı başarısız oluyor, servisler ayakta kalıyor ve kimse fark etmiyordu. Kullanıcının
+  bildirimi: *"güncelleme sırasında servisleri kapamıyor."*
+  - Sonuç artık denetleniyor; exe çalışmazsa servisleri kurulumun kendisi `sc.exe` ile
+    söküyor. `sc.exe` Microsoft imzalı, yani bu yol imzasız exe'mize hiç bağlı değil —
+    kurulum zaten `windivert` için aynı şeyi yapıyordu.
+  - Asıl tasarım hatası buydu: kurulum, kendi imzasız exe'sini çalıştırabilmeye
+    **bağımlıydı**. Artık onu çağırmak "en iyi ihtimal", tek yol değil.
+
+- **Kurulum ortasındaki anlaşılmaz hata kutusu gitti.** DNS bekçisi kaydı `[Run]`
+  içindeydi ve engellendiğinde Inno ham hatayı kullanıcının yüzüne veriyordu:
+  *"CreateProcess tamamlanamadı; kod 4551."* Ne olduğunu da ne yapılacağını da
+  söylemiyordu. Artık `[Code]` içinde, sonucu denetlenerek çalışıyor ve engellenirse
+  sonunda **tek ve sıralı** bir açıklama veriliyor.
+
+- **"Windows engelliyor" tavsiyesi eksikti.** Metin "tek yol Akıllı Uygulama Denetimi'ni
+  kapatmak" diyordu. Ölçüldü ki **yetmiyor**: kullanıcı özelliği kapattı, kurulum yine
+  engellendi; indirdiği dosyanın **"Engellemeyi Kaldır"** işaretini de temizleyince geçti.
+  Bu adım artık uygulamanın mesajında, kurulum hatasında, README'de ve sorun giderme
+  rehberinde — hepsinde ve doğru sırayla.
+
 ## [0.2.3]
 
 Hata düzeltme sürümü. Başlığı: **kullanıcıya bir şeyin olmadığını söylemek.** Üç
