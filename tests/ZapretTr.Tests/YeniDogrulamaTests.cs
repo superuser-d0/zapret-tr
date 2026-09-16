@@ -67,7 +67,7 @@ public sealed class YeniDogrulamaTests
     [Fact]
     public void Kayittan_Sonra_Profiller_Yeniden_Yukleniyor()
     {
-        var m = Regex.Match(ViewModel, @"private void PersistLearned\(ProbeReport report\)(?<govde>.*?)\n    }\n",
+        var m = Regex.Match(ViewModel, @"private void PersistLearned\(ProbeReport report\)(?<govde>.*?)\r?\n    }\r?\n",
             RegexOptions.Singleline);
 
         Assert.True(m.Success, "PersistLearned bulunamadi.");
