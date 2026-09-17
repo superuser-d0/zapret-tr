@@ -4,13 +4,13 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Uygulamanin kendi simgesi exe'de, bildirim alaninda ve kurulum paketinde olmali.
+/// Uygulamanın kendi simgesi exe'de, bildirim alanında ve kurulum paketinde olmalı.
 /// </summary>
 /// <remarks>
-/// 0.1.21'e kadar simge yoktu ve bu hicbir derlemede ya da testte gorunmedi: exe,
-/// gorev cubugu ve bildirim alani .NET'in varsayilan simgesini, kurulum sihirbazi
-/// Inno Setup'in resmini gosteriyordu. Eksik bir simge uygulamayi bozmaz; o yuzden
-/// kimse fark etmez ve bir "sadelestirme" onu sessizce geri goturebilir.
+/// 0.1.21'e kadar simge yoktu ve bu hiçbir derlemede ya da testte görünmedi: exe,
+/// görev çubuğu ve bildirim alanı .NET'in varsayılan simgesini, kurulum sihirbazı
+/// Inno Setup'ın resmini gösteriyordu. Eksik bir simge uygulamayı bozmaz; o yüzden
+/// kimse fark etmez ve bir "sadeleştirme" onu sessizce geri götürebilir.
 /// </remarks>
 public sealed class AppIconTests
 {
@@ -26,8 +26,8 @@ public sealed class AppIconTests
 
         var boyutlar = IcoBoyutlari(akis!);
 
-        // 16/20/24: %100, %125, %150 olcekte bildirim alani. Eksikse Windows daha
-        // buyugunu kucultur ve Z bulaniklasir -- simgenin ayri cizilme sebebi bu.
+        // 16/20/24: %100, %125, %150 ölçekte bildirim alanı. Eksikse Windows daha
+        // büyüğünü küçültür ve Z bulanıklaşır; simgenin ayrı çizilme sebebi bu.
         foreach (var beklenen in new[] { 16, 20, 24, 32, 48, 256 })
         {
             Assert.Contains(beklenen, boyutlar);
@@ -54,8 +54,8 @@ public sealed class AppIconTests
                ?.Substring(anahtar.Length + 1)
             ?? throw new InvalidOperationException($"setup.iss'te {anahtar} yok.");
 
-        // Yollar .iss'e gore; dosya yoksa ISCC CI'da derlemeyi durdurur, ama bu test
-        // bunu yerelde, paketi uretmeden de yakaliyor.
+        // Yollar .iss'e göre; dosya yoksa ISCC CI'da derlemeyi durdurur, ama bu test
+        // bunu yerelde, paketi üretmeden de yakalıyor.
         Assert.True(File.Exists(IoPath.Combine(installerDir, Deger("SetupIconFile"))));
 
         foreach (var resim in Deger("WizardSmallImageFile").Split(','))
@@ -64,7 +64,7 @@ public sealed class AppIconTests
         }
     }
 
-    /// <summary>.ico dizinindeki goruntu boyutlarini okur (0 = 256).</summary>
+    /// <summary>.ico dizinindeki görüntü boyutlarını okur (0 = 256).</summary>
     private static List<int> IcoBoyutlari(Stream akis)
     {
         using var okuyucu = new BinaryReader(akis);

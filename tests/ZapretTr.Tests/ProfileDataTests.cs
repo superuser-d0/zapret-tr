@@ -3,13 +3,13 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Depoyla birlikte gelen gercek profil verisini dogrular.
+/// Depoyla birlikte gelen gerçek profil verisini doğrular.
 /// </summary>
 /// <remarks>
-/// Bu testler kod degil VERI test ediyor. Profil veritabani projenin asil degeri ve
-/// elle duzenlenecek; bir aday eklenirken bolum adinin yanlis yazilmasi ya da iki adaya
-/// ayni id verilmesi gibi hatalarin derleme zamaninda degil test zamaninda yakalanmasi
-/// gerekiyor.
+/// Bu testler kod değil VERİ test ediyor. Profil veritabanı projenin asıl değeri ve
+/// elle düzenlenecek; bir aday eklenirken bölüm adının yanlış yazılması ya da iki adaya
+/// aynı kimlik verilmesi gibi hataların çalışma zamanında değil test zamanında
+/// yakalanması gerekiyor.
 /// </remarks>
 public sealed class ProfileDataTests
 {
@@ -61,8 +61,8 @@ public sealed class ProfileDataTests
     [Fact]
     public void HerProfil_En_Az_Tcp443_Adayi_Iceriyor()
     {
-        // 443 asil savas alani. Bir profilin 80/quic bolumu bos olabilir ama
-        // 443'u bossa o profil pratikte ise yaramaz.
+        // 443 asıl savaş alanı. Bir profilin 80/quic bölümü boş olabilir ama
+        // 443'ü boşsa o profil pratikte işe yaramaz.
         foreach (var profile in Store.Profiles)
         {
             Assert.True(
@@ -84,7 +84,7 @@ public sealed class ProfileDataTests
         }
     }
 
-    // --- Superonline: oncelikli profil, ayri ve daha siki kontroller ------------
+    // --- Superonline: öncelikli profil, ayrı ve daha sıkı kontroller ------------
 
     [Fact]
     public void Superonline_Profili_Var_ve_DortBolumu_de_Dolu()
@@ -103,10 +103,10 @@ public sealed class ProfileDataTests
     [Fact]
     public void Superonline_Md5sig_Disinda_Alternatif_Iceriyor()
     {
-        // Bu testin varlik sebebi tasarimin ozu: upstream belgesine gore md5sig
-        // yalnizca sunucu TCP MD5 secenegini reddettiginde ise yarar. Yani md5sig
-        // hedefe gore calisip calismayabilir. Superonline merdiveni md5sig'e
-        // indirgenirse, md5sig'in tutmadigi hedeflerde profil bosa duser.
+        // Bu testin var olma sebebi tasarımın özü: upstream belgesine göre md5sig
+        // yalnızca sunucu TCP MD5 seçeneğini reddettiğinde işe yarar. Yani md5sig
+        // hedefe göre çalışabilir ya da çalışmayabilir. Superonline merdiveni md5sig'e
+        // indirgenirse md5sig'in tutmadığı hedeflerde profil boşa düşer.
         var sol = Store.FindById("superonline");
         Assert.NotNull(sol);
 
@@ -119,9 +119,9 @@ public sealed class ProfileDataTests
     [Fact]
     public void Superonline_SahtePaket_Kullanmayan_Aile_Iceriyor()
     {
-        // Ayni gerekce, farkli eksen: DPI sahte paketleri eliyorsa (TTL/checksum
-        // dogruluyorsa) "fake" tabanli adaylarin HEPSI birden coker. O durumda
-        // calisacak tek sey saf bolme; merdivende mutlaka bulunmali.
+        // Aynı gerekçe, farklı eksen: DPI sahte paketleri eliyorsa (TTL/checksum
+        // doğruluyorsa) "fake" tabanlı adayların HEPSİ birden çöker. O durumda
+        // çalışacak tek şey saf bölme; merdivende mutlaka bulunmalı.
         var sol = Store.FindById("superonline");
         Assert.NotNull(sol);
 
@@ -142,7 +142,7 @@ public sealed class ProfileDataTests
     [Fact]
     public void Superonline_KurulusAdi_ile_de_Eslesiyor()
     {
-        // ASN bilinmiyorsa kurulus adi yedek yol. Gercek ip-api ciktisina benzer bir dizgi.
+        // ASN bilinmiyorsa kuruluş adı yedek yol. Gerçek ip-api çıktısına benzer bir dizgi.
         var matches = Store.Match(asn: null, orgName: "Superonline Iletisim Hizmetleri A.S.");
         Assert.Contains(matches, p => p.Id == "superonline");
     }
@@ -150,7 +150,7 @@ public sealed class ProfileDataTests
     [Fact]
     public void TurkTelekom_Asn_ile_Eslesiyor()
     {
-        // AS9121 = TTNet. Gelistirme makinesinin baglantisi.
+        // AS9121 = TTNet. Geliştirme makinesinin bağlantısı.
         var matches = Store.Match(asn: 9121, orgName: null);
         Assert.NotEmpty(matches);
         Assert.Equal("turk-telekom", matches[0].Id);

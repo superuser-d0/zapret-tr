@@ -1,6 +1,6 @@
-// System.IO acikca yaziliyor: bu projede ortulu using degil (MainViewModel.cs de
-// ayni sebeple yaziyor). Cokme gunlugunu diske yazan yol Directory/Path/File
-// kullaniyor.
+// System.IO açıkça yazılıyor: bu projede örtülü using değil (MainViewModel.cs de
+// aynı sebeple yazıyor). Çökme günlüğünü diske yazan yol Directory/Path/File
+// kullanıyor.
 using System.IO;
 using System.Windows;
 using ZapretTr.Core.Engine;
@@ -8,73 +8,73 @@ using ZapretTr.Core.Profiles;
 
 namespace ZapretTr.App;
 
-/// <summary>Uygulama giris noktasi.</summary>
+/// <summary>Uygulama giriş noktası.</summary>
 public partial class App : Application
 {
     /// <summary>
-    /// Kaldirma sirasinda servisleri sokup DNS'i geri almak icin kullanilan bayrak.
+    /// Kaldırma sırasında servisleri söküp DNS'i geri almak için kullanılan bayrak.
     /// </summary>
     /// <remarks>
-    /// Kaldirici bu bayrakla cagiriyor. Adim atlanirsa kullanicinin sistem DNS'i
-    /// 127.0.0.1'de kalir, dnscrypt-proxy de silinmis olur ve makine hicbir adi
-    /// cozemez -- kaldirma sirasinda yapilabilecek en kotu sey bu.
+    /// Kaldırıcı bu bayrakla çağırıyor. Adım atlanırsa kullanıcının sistem DNS'i
+    /// 127.0.0.1'de kalır, dnscrypt-proxy de silinmiş olur ve makine hiçbir adı
+    /// çözemez; kaldırma sırasında yapılabilecek en kötü şey bu.
     /// </remarks>
     private const string UninstallServicesFlag = "--uninstall-services";
 
     /// <summary>
-    /// Servisleri kayitli yapilandirmayla kurar ve cikar.
+    /// Servisleri kayıtlı yapılandırmayla kurar ve çıkar.
     /// </summary>
     /// <remarks>
-    /// Arayuz acmadan kurulum yapabilmek icin: sessiz dagitimda ve otomatik
-    /// testlerde dugmeye tiklanamiyor. Kayitli yapilandirma yoksa hicbir sey
-    /// yapmadan cikar -- hangi stratejinin kurulacagini tahmin etmek yanlis
+    /// Arayüz açmadan kurulum yapabilmek için: sessiz dağıtımda ve otomatik
+    /// testlerde düğmeye tıklanamıyor. Kayıtlı yapılandırma yoksa hiçbir şey
+    /// yapmadan çıkar; hangi stratejinin kurulacağını tahmin etmek yanlış
     /// olurdu.
     /// </remarks>
     private const string InstallServicesFlag = "--install-services";
 
-    /// <summary>DNS bekcisinin zamanlanmis gorevini kuran bayrak (kurulum paketi cagiriyor).</summary>
+    /// <summary>DNS bekçisinin zamanlanmış görevini kuran bayrak (kurulum paketi çağırıyor).</summary>
     private const string RegisterDnsGuardFlag = "--register-dns-guard";
 
-    /// <summary>DNS bekcisinin zamanlanmis gorevini silen bayrak (kaldirici cagiriyor).</summary>
+    /// <summary>DNS bekçisinin zamanlanmış görevini silen bayrak (kaldırıcı çağırıyor).</summary>
     private const string UnregisterDnsGuardFlag = "--unregister-dns-guard";
 
     /// <summary>
-    /// Ayni anda yalnizca bir arayuz ornegi calissin diye tutulan kilit.
+    /// Aynı anda yalnızca bir arayüz örneği çalışsın diye tutulan kilit.
     /// </summary>
     /// <remarks>
-    /// Alan olarak duruyor cunku Mutex toplanirsa kilit de birakilir; degiskeni
-    /// yerelde tutmak, ikinci ornegin ilkini gormemesine yol acardi.
+    /// Alan olarak duruyor, çünkü Mutex toplanırsa kilit de bırakılır; değişkeni
+    /// yerelde tutmak, ikinci örneğin ilkini görmemesine yol açardı.
     /// </remarks>
     private static Mutex? _instanceLock;
 
-    /// <summary>Kisayola ikinci kez tiklanma isteklerini dinleyen; yalnizca gercek acilista kurulur.</summary>
+    /// <summary>Kısayola ikinci kez tıklanma isteklerini dinleyen; yalnızca gerçek açılışta kurulur.</summary>
     private IDisposable? _activationListener;
 
-    /// <summary>Calisan ornegin penceresi one getirildi; "zaten çalışıyor" uyarisi gereksiz.</summary>
+    /// <summary>Çalışan örneğin penceresi öne getirildi; "zaten çalışıyor" uyarısı gereksiz.</summary>
     private bool _suppressAlreadyRunningMessage;
 
     /// <remarks>
-    /// Her komut satiri yolu sonucunu <c>Shutdown(kod)</c> ile veriyor. Bicim tercihi;
-    /// <c>Environment.ExitCode</c> atamak da CALISIR.
+    /// Her komut satırı yolu sonucunu <c>Shutdown(kod)</c> ile veriyor. Biçim tercihi;
+    /// <c>Environment.ExitCode</c> atamak da ÇALIŞIR.
     ///
-    /// OLCULDU (2026-09-16, tek kullanimlik bir WPF uygulamasiyla): bu yapida --
-    /// StartupUri yok, pencere yok, karar OnStartup'ta, uretilen <c>Main</c> void --
-    /// iki yol da cikis kodunu dogru dupruz donduruyor: <c>Shutdown(42)</c> 42,
+    /// ÖLÇÜLDÜ (2026-09-16, tek kullanımlık bir WPF uygulamasıyla): bu yapıda
+    /// (StartupUri yok, pencere yok, karar OnStartup'ta, üretilen <c>Main</c> void)
+    /// iki yol da çıkış kodunu dosdoğru döndürüyor: <c>Shutdown(42)</c> 42,
     /// <c>Environment.ExitCode = 43; Shutdown();</c> 43.
     ///
-    /// Bu not, yanlis bir teshisin tekrarlanmamasi icin duruyor. Ayni gun
-    /// <c>--register-dns-guard</c> yetkisiz calistirilip 2 yerine 0 donduruldugu
-    /// sanildi ve "cikis kodlari hep 0" diye bir hata uyduruldu. Olcum GECERSIZDI:
-    /// app.manifest <c>requireAdministrator</c> oldugu icin ShellExecute sureci UAC
-    /// ile YUKSELTIYOR, yani "yetkisiz" sanilan calistirma aslinda yetkiliydi ve 0
-    /// dogru cevapti. Bu uygulama yetkisiz HIC calisamaz; oyle bir test kurulamaz.
+    /// Bu not, yanlış bir teşhisin tekrarlanmaması için duruyor. Aynı gün
+    /// <c>--register-dns-guard</c> yetkisiz çalıştırılıp 2 yerine 0 döndürüldüğü
+    /// sanıldı ve "çıkış kodları hep 0" diye bir hata uyduruldu. Ölçüm GEÇERSİZDİ:
+    /// app.manifest <c>requireAdministrator</c> olduğu için ShellExecute süreci UAC
+    /// ile YÜKSELTİYOR, yani "yetkisiz" sanılan çalıştırma aslında yetkiliydi ve 0
+    /// doğru cevaptı. Bu uygulama yetkisiz HİÇ çalışamaz; öyle bir test kurulamaz.
     /// </remarks>
     protected override void OnStartup(StartupEventArgs e)
     {
         if (e.Args.Any(a => string.Equals(a, UninstallServicesFlag, StringComparison.OrdinalIgnoreCase)))
         {
-            // Arayuz hic acilmadan is yapilip cikiliyor: kaldirici bunu sessiz
-            // calistiriyor ve pencere acilmasi kullaniciyi saskina cevirirdi.
+            // Arayüz hiç açılmadan iş yapılıp çıkılıyor: kaldırıcı bunu sessiz
+            // çalıştırıyor ve pencere açılması kullanıcıyı şaşkına çevirirdi.
             Shutdown(RunServiceCleanup());
             return;
         }
@@ -85,9 +85,9 @@ public partial class App : Application
             return;
         }
 
-        // Bekci tek ornek kilidinden ONCE: arayuz acikken de calisabilmeli ve
-        // karari "arayuz acik mi" sorusuna kilidin kendisine bakarak veriyor.
-        // Kilidi burada almak, acik arayuzu kapali gosterirdi.
+        // Bekçi tek örnek kilidinden ÖNCE: arayüz açıkken de çalışabilmeli ve
+        // kararı "arayüz açık mı" sorusuna kilidin kendisine bakarak veriyor.
+        // Kilidi burada almak, açık arayüzü kapalı gösterirdi.
         if (e.Args.Any(a => string.Equals(a, DnsGuardTask.GuardFlag, StringComparison.OrdinalIgnoreCase)))
         {
             Shutdown(RunDnsGuard());
@@ -106,17 +106,17 @@ public partial class App : Application
             return;
         }
 
-        // Beklenmedik hatada SESSIZCE KAYBOLMA. Bu kanca olmadan, arayuz
-        // kurulurken cikan bir hata Windows'un kendi cokme penceresiyle
-        // sonuclaniyor ve kullanicinin elinde "acilmiyor"dan baska bir sey
-        // kalmiyordu -- teshis edilemeyen bildirimlerin en kotu sinifi.
+        // Beklenmedik hatada SESSİZCE KAYBOLMA. Bu kanca olmadan, arayüz
+        // kurulurken çıkan bir hata Windows'un kendi çökme penceresiyle
+        // sonuçlanıyor ve kullanıcının elinde "açılmıyor"dan başka bir şey
+        // kalmıyordu; teşhis edilemeyen bildirimlerin en kötü sınıfı.
         DispatcherUnhandledException += (_, args) =>
         {
             ReportCrash(args.Exception);
 
-            // Isaretleniyor ki uygulama ayakta kalsin: yarim calisan bir pencere,
-            // kaybolan bir pencereden iyidir -- kullanici en azindan "Raporu
-            // Kaydet" dugmesine ulasabilir.
+            // İşaretleniyor ki uygulama ayakta kalsın: yarım çalışan bir pencere,
+            // kaybolan bir pencereden iyidir; kullanıcı en azından "Raporu
+            // Kaydet" düğmesine ulaşabilir.
             args.Handled = true;
         };
 
@@ -125,16 +125,16 @@ public partial class App : Application
 
         if (!TryClaimSingleInstance() && !HandOverToRunningInstance())
         {
-            // IKINCI ORNEK CALISMAMALI.
+            // İKİNCİ ÖRNEK ÇALIŞMAMALI.
             //
-            // Pencereyi X ile kapatmak uygulamayi bildirim alanina indiriyor, yani
-            // "kapattim" sanan kullanici masaustu kisayoluna tekrar tiklayabiliyor.
-            // O anda iki ZapretTR birden acik oluyor ve ikincisinde her sey
-            // bozuluyor: winws ayni filtreyle ikinci kez acilamadigi icin "1
-            // koduyla kapandi" veriyor (kullaniciya gore "Baslat calismiyor"), ve
-            // daha kotusu, ikinci ornek kapanirken sistem DNS yedegini geri alip
-            // SILIYOR -- birinci ornegin sifreli DNS'i sessizce devre disi
-            // kaliyor, geri donus kaydi da kalmiyor.
+            // Pencereyi X ile kapatmak uygulamayı bildirim alanına indiriyor, yani
+            // "kapattım" sanan kullanıcı masaüstü kısayoluna tekrar tıklayabiliyor.
+            // O anda iki ZapretTR birden açık oluyor ve ikincisinde her şey
+            // bozuluyor: winws aynı filtreyle ikinci kez açılamadığı için "1
+            // koduyla kapandı" veriyor (kullanıcıya göre "Başlat çalışmıyor") ve
+            // daha kötüsü, ikinci örnek kapanırken sistem DNS yedeğini geri alıp
+            // SİLİYOR; birinci örneğin şifreli DNS'i sessizce devre dışı
+            // kalıyor, geri dönüş kaydı da kalmıyor.
             if (_suppressAlreadyRunningMessage)
             {
                 Shutdown();
@@ -156,41 +156,41 @@ public partial class App : Application
 
         base.OnStartup(e);
 
-        // PENCERE YALNIZCA BURADA KURULUR, App.xaml'daki StartupUri ile DEGIL.
+        // PENCERE YALNIZCA BURADA KURULUR, App.xaml'daki StartupUri ile DEĞİL.
         //
-        // StartupUri, OnStartup Shutdown() cagirip donse BILE ana pencereyi
-        // kuruyordu -- Shutdown yalnizca siraya konuyor. Pencereyle birlikte
-        // gorunum modeli de kuruluyor ve kurucusu is yapiyor: servis durumunu
-        // okuyup yapilandirmaya yaziyor, DNS kurtarmasi deniyor, guncelleme
-        // sorusu gonderiyor. Yani --uninstall-services, --install-services,
-        // 10 dakikada bir kosan --dns-guard ve "zaten calisiyor" diyen ikinci
-        // ornek, hepsi arkada gorunmez bir arayuz calistiriyordu. Olculdu
-        // (2026-09-13): kurulum paketinin cagirdigi --uninstall-services,
+        // StartupUri, OnStartup Shutdown() çağırıp dönse BİLE ana pencereyi
+        // kuruyordu; Shutdown yalnızca sıraya konuyor. Pencereyle birlikte
+        // görünüm modeli de kuruluyor ve kurucusu iş yapıyor: servis durumunu
+        // okuyup yapılandırmaya yazıyor, DNS kurtarması deniyor, güncelleme
+        // sorusu gönderiyor. Yani --uninstall-services, --install-services,
+        // 10 dakikada bir koşan --dns-guard ve "zaten çalışıyor" diyen ikinci
+        // örnek, hepsi arkada görünmez bir arayüz çalıştırıyordu. Ölçüldü
+        // (2026-09-13): kurulum paketinin çağırdığı --uninstall-services,
         // servisleri sildikten sonra bu yoldan config.json'a
-        // "servicePaused": false yazdi ve VPN icin duraklatilmis servis
-        // yukseltmeden sonra calisir halde geri geldi.
+        // "servicePaused": false yazdı ve VPN için duraklatılmış servis
+        // yükseltmeden sonra çalışır hâlde geri geldi.
         //
-        // Tema pencereden ONCE uygulaniyor: sonra uygulanirsa pencere bir an acik
-        // renkte gorunup koyuya donuyor.
+        // Tema pencereden ÖNCE uygulanıyor: sonra uygulanırsa pencere bir an açık
+        // renkte görünüp koyuya dönüyor.
         try
         {
             ThemeManager.Apply(ThemeManager.Resolve(ConfigStore.Load().Theme));
         }
         catch (Exception)
         {
-            // Yapilandirma okunamadi; acik temayla devam. Pencere yine acilmali.
+            // Yapılandırma okunamadı; açık temayla devam. Pencere yine açılmalı.
         }
 
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
 
-        // Kisayola ikinci kez tiklanirsa uyari yerine bu pencere one gelsin.
+        // Kısayola ikinci kez tıklanırsa uyarı yerine bu pencere öne gelsin.
         _activationListener = InstanceActivation.StartListening(Dispatcher, window.BringToFront);
 
-        // Disariya dokunan acilis isleri burada, gorunum modelinin kurucusunda DEGIL:
-        // kurucu testlerde de kosuyor. Oradayken temizlik gercek guncelleme klasorunu
-        // siliyor, guncelleme sorgusu da her test kosumunda GitHub'a gidiyordu.
+        // Dışarıya dokunan açılış işleri burada, görünüm modelinin kurucusunda DEĞİL:
+        // kurucu testlerde de koşuyor. Oradayken temizlik gerçek güncelleme klasörünü
+        // siliyor, güncelleme sorgusu da her test koşumunda GitHub'a gidiyordu.
         if (window.DataContext is ViewModels.MainViewModel viewModel)
         {
             _ = viewModel.CheckForUpdateAsync();
@@ -206,16 +206,16 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Baska bir ornek calisiyorken: onun penceresini one getirir ya da kapanmasini bekler.
+    /// Başka bir örnek çalışıyorken: onun penceresini öne getirir ya da kapanmasını bekler.
     /// </summary>
     /// <returns>
-    /// true: bu ornek normal acilisa devam etmeli (onceki ornek kapandi ve kilit alindi).
-    /// false: bu ornek cikmali; ya pencere one getirildi ya da eski uyari gosterilecek.
+    /// true: bu örnek normal açılışa devam etmeli (önceki örnek kapandı ve kilit alındı).
+    /// false: bu örnek çıkmalı; ya pencere öne getirildi ya da eski uyarı gösterilecek.
     /// </returns>
     /// <remarks>
-    /// Pencere one getirildiyse uyari gostermeden cikiyoruz. Gerekcesi
-    /// InstanceActivation'da. <see cref="_suppressAlreadyRunningMessage"/> uyarinin
-    /// gosterilmemesi gerektigini cagirana bildiriyor.
+    /// Pencere öne getirildiyse uyarı göstermeden çıkıyoruz. Gerekçesi
+    /// InstanceActivation'da. <see cref="_suppressAlreadyRunningMessage"/> uyarının
+    /// gösterilmemesi gerektiğini çağırana bildiriyor.
     /// </remarks>
     private bool HandOverToRunningInstance()
     {
@@ -226,19 +226,19 @@ public partial class App : Application
                 return false;
 
             case ActivationResult.Closing:
-                // "Çıkış"a basilmis ve temizlik suruyor (winws durduruluyor, DNS geri
-                // aliniyor). Eskiden burada "zaten çalışıyor" deniyordu -- ki yanlisti.
-                // Onceki ornek cikinca kilit bize geciyor ve normal aciliyoruz.
+                // "Çıkış"a basılmış ve temizlik sürüyor (winws durduruluyor, DNS geri
+                // alınıyor). Eskiden burada "zaten çalışıyor" deniyordu; bu yanlıştı.
+                // Önceki örnek çıkınca kilit bize geçiyor ve normal açılıyoruz.
                 return WaitForInstanceLock(TimeSpan.FromSeconds(20));
 
             default:
-                // Dinleyen yok (baska oturum) ya da cevap gelmedi (donmus olabilir):
-                // eski uyari.
+                // Dinleyen yok (başka oturum) ya da cevap gelmedi (donmuş olabilir):
+                // eski uyarı.
                 return false;
         }
     }
 
-    /// <summary>Onceki ornegin biraktigi tek ornek kilidini bekler.</summary>
+    /// <summary>Önceki örneğin bıraktığı tek örnek kilidini bekler.</summary>
     private static bool WaitForInstanceLock(TimeSpan timeout)
     {
         if (_instanceLock is null)
@@ -252,40 +252,40 @@ public partial class App : Application
         }
         catch (AbandonedMutexException)
         {
-            // Onceki ornek kilidi birakmadan oldu; kilit yine de artik bizde.
+            // Önceki örnek kilidi bırakmadan öldü; kilit yine de artık bizde.
             return true;
         }
     }
 
-    /// <summary>Tek ornek kilidini alir. Baska bir ornek varsa false.</summary>
+    /// <summary>Tek örnek kilidini alır. Başka bir örnek varsa false.</summary>
     private static bool TryClaimSingleInstance()
     {
         try
         {
-            // Global: uygulama her zaman yukseltilmis calisiyor ve yukseltilmis
-            // surec farkli bir oturumda acilabiliyor. Yerel ad alani o durumda
-            // iki ornegi birbirinden habersiz birakirdi.
+            // Global: uygulama her zaman yükseltilmiş çalışıyor ve yükseltilmiş
+            // süreç farklı bir oturumda açılabiliyor. Yerel ad alanı o durumda
+            // iki örneği birbirinden habersiz bırakırdı.
             //
-            // Ad DnsGuard'dan geliyor: bekci "arayuz acik mi" sorusunu bu kilide
-            // bakarak cevapliyor. Iki yerde ayri yazilip ayrisirsa bekci acik bir
-            // arayuzun DNS yonlendirmesini geri alir.
+            // Ad DnsGuard'dan geliyor: bekçi "arayüz açık mı" sorusunu bu kilide
+            // bakarak cevaplıyor. İki yerde ayrı yazılıp ayrışırsa bekçi açık bir
+            // arayüzün DNS yönlendirmesini geri alır.
             _instanceLock = new Mutex(initiallyOwned: true, DnsGuard.AppInstanceMutexName, out var yeni);
             return yeni;
         }
         catch (Exception)
         {
-            // Kilit kurulamadi. Tek ornek guvencesi bir kolaylik; uygulamanin
-            // hic acilmamasina sebep olmamali.
+            // Kilit kurulamadı. Tek örnek güvencesi bir kolaylık; uygulamanın
+            // hiç açılmamasına sebep olmamalı.
             return true;
         }
     }
 
     /// <summary>
-    /// Beklenmedik hatayi diske yazar ve kullaniciya soyler.
+    /// Beklenmedik hatayı diske yazar ve kullanıcıya söyler.
     /// </summary>
     /// <remarks>
-    /// Dosyaya yazmak sart: cokme uygulama kapanirken olursa pencere gosterecek
-    /// zaman kalmiyor, ama kullanicinin bize gonderebilecegi bir dosya kaliyor.
+    /// Dosyaya yazmak şart: çökme uygulama kapanırken olursa pencere gösterecek
+    /// zaman kalmıyor, ama kullanıcının bize gönderebileceği bir dosya kalıyor.
     /// </remarks>
     private static void ReportCrash(Exception? exception)
     {
@@ -302,7 +302,7 @@ public partial class App : Application
         }
         catch (Exception)
         {
-            // Diske yazamadiysak en azindan pencerede gosterelim.
+            // Diske yazamadıysak en azından pencerede gösterelim.
             yol = null;
         }
 
@@ -318,11 +318,11 @@ public partial class App : Application
         }
         catch (Exception)
         {
-            // Pencere de acilamiyorsa yapilabilecek bir sey kalmadi.
+            // Pencere de açılamıyorsa yapılabilecek bir şey kalmadı.
         }
     }
 
-    /// <summary>Kayitli yapilandirmayla servisleri kurar. Cikis kodu doner.</summary>
+    /// <summary>Kayıtlı yapılandırmayla servisleri kurar. Çıkış kodu döner.</summary>
     private static int RunServiceInstall()
     {
         try
@@ -335,8 +335,8 @@ public partial class App : Application
             var config = ConfigStore.Load();
             if (string.IsNullOrWhiteSpace(config.SelectedStrategyArgs))
             {
-                // Kayitli bir secim yoksa hangi stratejinin kurulacagini tahmin
-                // etmek yanlis olur; kullanici once uygulamayi acip secmeli.
+                // Kayıtlı bir seçim yoksa hangi stratejinin kurulacağını tahmin
+                // etmek yanlış olur; kullanıcı önce uygulamayı açıp seçmeli.
                 return 3;
             }
 
@@ -346,16 +346,16 @@ public partial class App : Application
 
             var winners = RuntimeSelection.Build(profile, config.SelectedStrategyArgs);
 
-            // Arayuzun kurdugu komutla BIREBIR ayni daraltma: servis, kullanicinin
-            // denedigi seyden farkli davranmamali (issue #1).
+            // Arayüzün kurduğu komutla BİREBİR aynı daraltma: servis, kullanıcının
+            // denediği şeyden farklı davranmamalı (issue #1).
             var alanlar = HostlistStore
                 .Load(profiles.Root)
                 .DomainsFor(RuntimeSelection.VerifiedCategories(profile, winners), config.CustomTarget);
 
             var arguments = new WinwsCommandBuilder(vendor).BuildRuntimeCommand(winners, alanlar);
 
-            // Duraklatilmis servis duraklatilmis olarak geri kurulur: guncelleme,
-            // kullanicinin VPN icin kapattigi korumayi habersizce acmamali.
+            // Duraklatılmış servis duraklatılmış olarak geri kurulur: güncelleme,
+            // kullanıcının VPN için kapattığı korumayı habersizce açmamalı.
             var steps = ServiceManager
                 .InstallAsync(vendor, arguments, config.SecureDnsEnabled, startPaused: config.ServicePaused)
                 .GetAwaiter().GetResult();
@@ -368,7 +368,7 @@ public partial class App : Application
         }
     }
 
-    /// <summary>Bir DNS bekcisi turu kosar. Cikis kodu: 0 normal, 2 yetki yok, 4 hata.</summary>
+    /// <summary>Bir DNS bekçisi turu koşar. Çıkış kodu: 0 normal, 2 yetki yok, 4 hata.</summary>
     private static int RunDnsGuard()
     {
         try
@@ -378,8 +378,8 @@ public partial class App : Application
                 return 2;
             }
 
-            // Cozumleyiciye taninan sure gorevin 5 dakikalik sinirinin cok altinda:
-            // acilista dnscrypt once agi (en cok 60 sn) sonra listeyi bekliyor.
+            // Çözümleyiciye tanınan süre görevin 5 dakikalık sınırının çok altında:
+            // açılışta dnscrypt önce ağı (en çok 60 sn) sonra listeyi bekliyor.
             var lines = DnsGuard.RunAsync(TimeSpan.FromSeconds(90)).GetAwaiter().GetResult();
             DnsGuard.AppendLog(lines);
             return 0;
@@ -433,28 +433,28 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Servisleri ve suruculeri soker. Kaldirmayi ASLA durdurmaz; yalnizca sonucu
-    /// cikis koduyla BILDIRIR (0 basarili, 2 yetki yok, 4 istisna).
+    /// Servisleri ve sürücüleri söker. Kaldırmayı ASLA durdurmaz; yalnızca sonucu
+    /// çıkış koduyla BİLDİRİR (0 başarılı, 2 yetki yok, 4 istisna).
     /// </summary>
     /// <remarks>
-    /// Eskiden <c>void</c>'di: cagiran taraf HER ZAMAN 0 goruyordu, cunku donecek bir
-    /// sey yoktu. Kaldirmayi bir hata yuzunden durdurmamak dogru bir karar (gerekcesi
-    /// asagida) ama SESSIZ KALMAK ayri bir sey -- bu yol basarisiz olursa kullanicinin
-    /// sistem DNS'i 127.0.0.1'de, cozumleyicisiz kalabilir; projenin en kotu senaryosu
+    /// Eskiden <c>void</c>'di: çağıran taraf HER ZAMAN 0 görüyordu, çünkü dönecek bir
+    /// şey yoktu. Kaldırmayı bir hata yüzünden durdurmamak doğru bir karar (gerekçesi
+    /// aşağıda), ama SESSİZ KALMAK ayrı bir şey; bu yol başarısız olursa kullanıcının
+    /// sistem DNS'i 127.0.0.1'de, çözümleyicisiz kalabilir. Projenin en kötü senaryosu
     /// tam olarak bu.
     ///
-    /// Kod dondurmek kaldirmayi hala durdurmuyor (Inno <c>[UninstallRun]</c> donus
-    /// kodunu zaten kullanmiyor); kazanilan sey, CI'daki
-    /// <c>if ($p.ExitCode -ne 0) { throw }</c> denetiminin artik GERCEKTEN bir sey
-    /// olcmesi. Cikis kodunun bu yapida dogru dondugu olculdu (bkz. OnStartup).
+    /// Kod döndürmek kaldırmayı hâlâ durdurmuyor (Inno <c>[UninstallRun]</c> dönüş
+    /// kodunu zaten kullanmıyor); kazanılan şey, CI'daki
+    /// <c>if ($p.ExitCode -ne 0) { throw }</c> denetiminin artık GERÇEKTEN bir şey
+    /// ölçmesi. Çıkış kodunun bu yapıda doğru döndüğü ölçüldü (bkz. OnStartup).
     /// </remarks>
     private static int RunServiceCleanup()
     {
         try
         {
-            // Kaldirici zaten yonetici olarak calisiyor; yine de yetki yoksa
-            // sessizce gecmek yerine hicbir sey yapmamak dogru: yarim kalmis bir
-            // temizlik, hic yapilmamis olandan daha kotu durumlar birakabilir.
+            // Kaldırıcı zaten yönetici olarak çalışıyor; yine de yetki yoksa
+            // sessizce geçmek yerine hiçbir şey yapmamak doğru: yarım kalmış bir
+            // temizlik, hiç yapılmamış olandan daha kötü durumlar bırakabilir.
             if (!ElevationGuard.IsElevated())
             {
                 return 2;
@@ -462,28 +462,28 @@ public partial class App : Application
 
             ServiceManager.UninstallAsync().GetAwaiter().GetResult();
 
-            // SURUCUYU DE CEKIRDEKTEN KALDIR. ServiceManager yalnizca ZapretTR
-            // servislerini soker; "windivert" surucusune dokunmaz. Sonucu gercek bir
-            // kullanicida goruldu: bir test kosumundan sonra surucu cekirdekte asili
-            // kaliyor, WinDivert64.sys kilitleniyor ve
+            // SÜRÜCÜYÜ DE ÇEKİRDEKTEN KALDIR. ServiceManager yalnızca ZapretTR
+            // servislerini söker; "windivert" sürücüsüne dokunmaz. Sonucu gerçek bir
+            // kullanıcıda görüldü: bir test koşumundan sonra sürücü çekirdekte asılı
+            // kalıyor, WinDivert64.sys kilitleniyor ve
             //
-            //   - YUKSELTME dosyayi degistiremiyor: "DeleteFile tamamlanamadi; kod 5.
-            //     Erisim engellendi." Kullaniciya "bu dosya atlansin" demekten baska
-            //     secenek kalmiyor.
-            //   - KALDIRMA klasoru bosaltamiyor; geriye kalinti dosyalar kaliyor ve
-            //     bir sonraki kurulum ayni duvara tosluyor.
+            //   - YÜKSELTME dosyayı değiştiremiyor: "DeleteFile tamamlanamadı; kod 5.
+            //     Erişim engellendi." Kullanıcıya "bu dosya atlansın" demekten başka
+            //     seçenek kalmıyor.
+            //   - KALDIRMA klasörü boşaltamıyor; geriye kalıntı dosyalar kalıyor ve
+            //     bir sonraki kurulum aynı duvara tosluyor.
             //
-            // removeConfig: false -- bu yol yukseltme sirasinda da calisiyor ve
-            // kullanicinin profil secimini, ogrenilmis dogrulamalarini silmek
-            // yanlis olurdu. Kaldirma zaten [UninstallDelete] ile klasoru temizliyor.
+            // removeConfig: false. Bu yol yükseltme sırasında da çalışıyor ve
+            // kullanıcının profil seçimini, öğrenilmiş doğrulamalarını silmek
+            // yanlış olurdu. Kaldırma zaten [UninstallDelete] ile klasörü temizliyor.
             WinDivertCleanup.RunAsync(removeConfig: false).GetAwaiter().GetResult();
             return 0;
         }
         catch (Exception)
         {
-            // Kaldirmayi bir istisna yuzunden durdurmuyoruz. Servis zaten yoksa
-            // ya da baska bir sey ters gittiyse kullanicinin kaldirma islemi
-            // yine de tamamlanmali. Kod donuyor ki sessiz kalmasin.
+            // Kaldırmayı bir istisna yüzünden durdurmuyoruz. Servis zaten yoksa
+            // ya da başka bir şey ters gittiyse kullanıcının kaldırma işlemi
+            // yine de tamamlanmalı. Kod dönüyor ki sessiz kalmasın.
             return 4;
         }
     }

@@ -4,19 +4,19 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// winws'in surucu hatasini tanimak ve takili surucuyu bosaltmaya karar vermek.
+/// winws'in sürücü hatasını tanımak ve takılı sürücüyü boşaltmaya karar vermek.
 /// </summary>
 /// <remarks>
-/// Sahadan gelen bildirim: "yeni surumu indirip parametre testi yaptim, motor
-/// calismiyor; yeniden baslatinca aciliyor." Surucu hatasi TANINMAZSA motor
-/// kurtarma denemeden "baslar baslamaz N koduyla kapandi" deyip duser ve tek cikis
-/// yeniden baslatma olur. Yanlis taninirsa (her erken olum surucu hatasi sayilirsa)
-/// "ayni filtreyle zaten calisiyor" gibi bambaska bir durumda gereksiz yere 20 sn
-/// bosaltma beklenir.
+/// Sahadan gelen bildirim: "yeni sürümü indirip parametre testi yaptım, motor
+/// çalışmıyor; yeniden başlatınca açılıyor." Sürücü hatası TANINMAZSA motor
+/// kurtarma denemeden "başlar başlamaz N koduyla kapandı" deyip düşer ve tek çıkış
+/// yeniden başlatma olur. Yanlış tanınırsa (her erken ölüm sürücü hatası sayılırsa)
+/// "aynı filtreyle zaten çalışıyor" gibi bambaşka bir durumda gereksiz yere 20 sn
+/// boşaltma beklenir.
 ///
-/// Ornek satirlar winws.exe ikilisinden cikarilan bicim dizgilerinden kuruldu
+/// Örnek satırlar winws.exe ikilisinden çıkarılan biçim dizgilerinden kuruldu
 /// ("windivert: error opening filter: %s", "win_dark_init failed. win32 error %u
-/// (0x%08X)") -- DEVAM'in kurali: secenegi ve ciktiyi surum numarasina degil
+/// (0x%08X)"). DEVAM'ın kuralı: seçeneği ve çıktıyı sürüm numarasına değil
 /// ikiliye sor.
 /// </remarks>
 public sealed class WinDivertDriverTests
@@ -39,8 +39,8 @@ public sealed class WinDivertDriverTests
     [Fact]
     public void AyniFiltreyleZatenCalisiyor_SurucuHatasiSayilmaz()
     {
-        // En sik erken olum bu ve surucuyle ilgisi yok: bosaltmak hem ise
-        // yaramaz hem de calisan servisin surucusunu durdurmaya kalkar.
+        // En sık erken ölüm bu ve sürücüyle ilgisi yok: boşaltmak hem işe
+        // yaramaz hem de çalışan servisin sürücüsünü durdurmaya kalkar.
         string[] satirlar =
         [
             "github version v72.12 (5cc46a9815b00e97401b1459984dff44abfec411)",
@@ -51,9 +51,9 @@ public sealed class WinDivertDriverTests
     }
 
     [Theory]
-    [InlineData(577)]   // imza reddi: bosaltmak gecirmez
-    [InlineData(1275)]  // guvenlik yazilimi engeli
-    [InlineData(1753)]  // BFE servisi kapali
+    [InlineData(577)]   // imza reddi: boşaltmak geçirmez
+    [InlineData(1275)]  // güvenlik yazılımı engeli
+    [InlineData(1753)]  // BFE servisi kapalı
     [InlineData(5)]     // yetki
     [InlineData(2)]     // dosya yok
     public void BosaltmanınDuzeltemeyecegiHatalar_Denenmez(int kod)
@@ -64,7 +64,7 @@ public sealed class WinDivertDriverTests
     [Theory]
     [InlineData(654)]
     [InlineData(1072)]
-    [InlineData(null)]  // kod yazilmadiysa en olasi sebep takili surucu
+    [InlineData(null)]  // kod yazılmadıysa en olası sebep takılı sürücü
     public void TakiliSurucuHatalari_Denenir(int? kod)
     {
         Assert.True(WinDivertDriver.IsRecoverable(kod));
@@ -83,9 +83,9 @@ public sealed class WinDivertDriverTests
     [InlineData("SERVICE_NAME: windivert\r\n        TYPE               : 1  KERNEL_DRIVER\r\n        STATE              : 3  STOP_PENDING", false)]
     public void SurucuDurumu_TakiliKalmayiAyiriyor(string scQuery, bool dustu)
     {
-        // STOP_PENDING'i "durdu" saymak tam da takili kalmis surucuyu gozden
-        // kacirmak olurdu. (Ayri bir dislama gerekmiyor: "STOP_PENDING"
-        // "STOPPED" dizgisini icermiyor -- ilk yazimda gereksiz bir kosul vardi
+        // STOP_PENDING'i "durdu" saymak tam da takılı kalmış sürücüyü gözden
+        // kaçırmak olurdu. (Ayrı bir dışlama gerekmiyor: "STOP_PENDING"
+        // "STOPPED" dizgisini içermiyor; ilk yazımda gereksiz bir koşul vardı
         // ve mutasyon onu ele verdi.)
         Assert.Equal(dustu, WinDivertDriver.IsGoneOrStopped(scQuery));
     }

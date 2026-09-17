@@ -1,18 +1,18 @@
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// Motor (winws) hicbir adayda baslamadigi icin olcum YAPILAMADI.
+/// Motor (winws) hiçbir adayda başlamadığı için ölçüm YAPILAMADI.
 /// </summary>
 /// <remarks>
-/// Bu, "hicbir strateji ise yaramadi" ile karistirilmamasi gereken ayri bir
-/// durum. Gercek bir kullanicida 304 aday 23 saniyede "denendi" ve hepsi ayni
-/// sebeple dustu: winws hic baslamadi. Arayuz sonunda "CALISAN STRATEJI YOK"
-/// dedi, kullanici da bu hatta aracin yetmedigini dusundu.
+/// Bu, "hiçbir strateji işe yaramadı" ile karıştırılmaması gereken ayrı bir
+/// durum. Gerçek bir kullanıcıda 304 aday 23 saniyede "denendi" ve hepsi aynı
+/// sebeple düştü: winws hiç başlamadı. Arayüz sonunda "ÇALIŞAN STRATEJİ YOK"
+/// dedi, kullanıcı da bu hatta aracın yetmediğini düşündü.
 ///
-/// Oysa dogru cumle "hicbir strateji DENENEMEDI" idi. Fark kullanici icin
-/// belirleyici: birincisi "baska bir cozum ara" demek, ikincisi "makinede bir
-/// sey bozuk, duzelt ve tekrar dene" demek. Ayni ekrani gostermek, kullaniciyi
-/// yanlis yone gonderiyordu.
+/// Oysa doğru cümle "hiçbir strateji DENENEMEDİ" idi. Fark kullanıcı için
+/// belirleyici: birincisi "başka bir çözüm ara" demek, ikincisi "makinede bir
+/// şey bozuk, düzelt ve tekrar dene" demek. Aynı ekranı göstermek kullanıcıyı
+/// yanlış yöne gönderiyordu.
 /// </remarks>
 public sealed class ProbeEngineException : Exception
 {

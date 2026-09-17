@@ -6,21 +6,21 @@ using ZapretTr.App.ViewModels;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Interaction logic for MainWindow.xaml
+/// MainWindow.xaml için etkileşim mantığı.
 /// </summary>
 public partial class MainWindow : Window
 {
     /// <summary>
-    /// Kapanma iptal edilip temizlik kosuldu mu. Ikinci kapanmada pencere gercekten kapanir.
+    /// Kapanma iptal edilip temizlik koşuldu mu. İkinci kapanmada pencere gerçekten kapanır.
     /// </summary>
     private bool _cleanupRan;
 
     /// <summary>
-    /// Kullanici GERCEKTEN cikmak istiyor mu ("Çıkış" dugmesi ya da tepsi menusu).
+    /// Kullanıcı GERÇEKTEN çıkmak istiyor mu ("Çıkış" düğmesi ya da tepsi menüsü).
     /// </summary>
     /// <remarks>
-    /// X dugmesiyle ayrimin tek yolu bu bayrak: WPF ikisini de ayni Closing
-    /// olayiyla bildiriyor.
+    /// X düğmesiyle ayrımın tek yolu bu bayrak: WPF ikisini de aynı Closing
+    /// olayıyla bildiriyor.
     /// </remarks>
     private bool _exitRequested;
 
@@ -30,15 +30,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Varsayilan yukseklik, varsayilan durumdaki her seyin (alt bilgi ve
-        // "Ayrıntılar" dahil) kaydirmadan sigdigi olculmus deger. 768 piksellik
-        // bir dizustu ekranda bu pencere ekrandan tasardi; ust kisim zaten
-        // kayabildigi icin calisma alanina kirpmak hicbir seyi gizlemiyor.
+        // Varsayılan yükseklik, varsayılan durumdaki her şeyin (alt bilgi ve
+        // "Ayrıntılar" dahil) kaydırmadan sığdığı ölçülmüş değer. 768 piksellik
+        // bir dizüstü ekranda bu pencere ekrandan taşardı; üst kısım zaten
+        // kayabildiği için çalışma alanına kırpmak hiçbir şeyi gizlemiyor.
         Height = Math.Max(MinHeight, Math.Min(Height, SystemParameters.WorkArea.Height));
         Closing += OnClosingAsync;
         Loaded += OnLoaded;
 
-        // Baslik cubugu Windows'un; tutamac ancak burada var.
+        // Başlık çubuğu Windows'un; tutamaç ancak burada var.
         SourceInitialized += (_, _) => ThemeManager.ApplyTitleBar(this);
     }
 
@@ -54,12 +54,12 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Kisayola ikinci kez tiklandiginda pencereyi one getirir (InstanceActivation).
+    /// Kısayola ikinci kez tıklandığında pencereyi öne getirir (InstanceActivation).
     /// </summary>
     /// <remarks>
-    /// Kapanmakta olan pencere GOSTERILMEZ: WPF kapanma sirasinda Show'u istisnayla
+    /// Kapanmakta olan pencere GÖSTERİLMEZ: WPF kapanma sırasında Show'u istisnayla
     /// reddediyor ("Cannot set Visibility ... while a Window is closing"). O durumda
-    /// ikinci ornek bu ornegin cikmasini bekleyip kendisi aciliyor.
+    /// ikinci örnek bu örneğin çıkmasını bekleyip kendisi açılıyor.
     /// </remarks>
     public ShowOutcome BringToFront()
     {
@@ -86,7 +86,7 @@ public partial class MainWindow : Window
         return ShowOutcome.Shown;
     }
 
-    /// <summary>Gercek cikis: temizlik kossun ve uygulama kapansin.</summary>
+    /// <summary>Gerçek çıkış: temizlik koşsun ve uygulama kapansın.</summary>
     private void Cik()
     {
         _exitRequested = true;
@@ -95,16 +95,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// X ile kapatmak uygulamayi sonlandirmaz, bildirim alanina indirir.
+    /// X ile kapatmak uygulamayı sonlandırmaz, bildirim alanına indirir.
     /// </summary>
     /// <remarks>
-    /// Kullanicinin istedigi davranis: koruma acikken pencereyi kapatmak
-    /// korumayi da kapatiyordu. Simdi X yalnizca pencereyi gizliyor; winws ve
-    /// dnscrypt calismaya devam ediyor. Uygulamayi gercekten sonlandirmak
-    /// "Çıkış" dugmesiyle ya da tepsi menusuyle yapiliyor.
+    /// Kullanıcının istediği davranış: koruma açıkken pencereyi kapatmak
+    /// korumayı da kapatıyordu. Şimdi X yalnızca pencereyi gizliyor; winws ve
+    /// dnscrypt çalışmaya devam ediyor. Uygulamayı gerçekten sonlandırmak
+    /// "Çıkış" düğmesiyle ya da tepsi menüsüyle yapılıyor.
     ///
-    /// Temizlik SADECE gercek cikista kosuyor. X'te de kosursa, gizlenen
-    /// uygulama korumayi kapatmis olurdu -- yani ozelligin amacinin tam tersi.
+    /// Temizlik SADECE gerçek çıkışta koşuyor. X'te de koşarsa gizlenen
+    /// uygulama korumayı kapatmış olurdu; yani özelliğin amacının tam tersi.
     /// </remarks>
     private async void OnClosingAsync(object? sender, CancelEventArgs e)
     {
@@ -129,13 +129,13 @@ public partial class MainWindow : Window
             await viewModel.ShutdownAsync();
         }
 
-        // Close() DOGRUDAN cagrilamaz. Hala bu kapanma isleminin icindeyiz ve WPF
+        // Close() DOĞRUDAN çağrılamaz. Hâlâ bu kapanma işleminin içindeyiz ve WPF
         // bunu reddediyor:
         //   "Cannot set Visibility to Visible or call Show, ShowDialog, Close, or
         //    WindowInteropHelper.EnsureHandle while a Window is closing."
-        // Ilk yazimda oyleydi ve duman testi test barindiricisini cokerterek
-        // yakaladi -- gercek kullanicida da pencereyi kapatirken cokme olurdu.
-        // Dispatcher'a birakmak, mevcut kapanmanin cozulmesini bekletiyor.
+        // İlk yazımda öyleydi ve duman testi, test barındırıcısını çökerterek
+        // yakaladı; gerçek kullanıcıda da pencereyi kapatırken çökme olurdu.
+        // Dispatcher'a bırakmak, mevcut kapanmanın çözülmesini bekletiyor.
         await Dispatcher.InvokeAsync(Close, DispatcherPriority.Background);
     }
 }

@@ -6,13 +6,13 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// QUIC bolumunun ve yer tutucu cozumlemesinin sessizce bozulmasini engelleyen testler.
+/// QUIC bölümünün ve yer tutucu çözümlemesinin sessizce bozulmasını engelleyen testler.
 /// </summary>
 /// <remarks>
-/// Bu bolumdeki hatalarin ortak ozelligi GORUNMEZ olmalari: winws yanlis bir
-/// argumanla da baslar, hicbir sey soylemez, yalnizca stratejiyi uygulamaz. Disaridan
-/// bu "strateji ise yaramadi" ile birebir ayni goruntu -- ve 15 QUIC adayinin tamami
-/// tam bu sekilde, hic uygulanmadan "basarisiz" raporlanmisti.
+/// Bu bölümdeki hataların ortak özelliği GÖRÜNMEZ olmaları: winws yanlış bir
+/// argümanla da başlar, hiçbir şey söylemez, yalnızca stratejiyi uygulamaz. Dışarıdan
+/// bu, "strateji işe yaramadı" ile birebir aynı görüntü; 15 QUIC adayının tamamı
+/// tam bu şekilde, hiç uygulanmadan "başarısız" raporlanmıştı.
 /// </remarks>
 public sealed class QuicLadderTests
 {
@@ -22,9 +22,9 @@ public sealed class QuicLadderTests
     [Fact]
     public void MerdivendekiYerTutucularin_Hepsi_Cozuluyor()
     {
-        // Yanlis yazilmis bir yer tutucu ({FAKE_QUIC_VK} yerine {FAKE_QUIC_VK_}) oldugu
-        // gibi winws'e geciyor; winws da adi kelimesi kelimesine boyle olan bir dosya
-        // acmaya calisip o adayi sessizce isesiz birakiyor.
+        // Yanlış yazılmış bir yer tutucu ({FAKE_QUIC_VK} yerine {FAKE_QUIC_VK_}) olduğu
+        // gibi winws'e geçiyor; winws da adı kelimesi kelimesine böyle olan bir dosyayı
+        // açmaya çalışıp o adayı sessizce işlevsiz bırakıyor.
         foreach (var section in Enum.GetValues<StrategySection>())
         {
             foreach (var candidate in Ladder.Expand(section))
@@ -44,8 +44,8 @@ public sealed class QuicLadderTests
     public void TanimliHerYerTutucu_ResolvePlaceholders_Tarafindan_Isleniyor()
     {
         // VendorPaths'e yeni bir yer tutucu sabiti eklenip ResolvePlaceholders'a
-        // baglanmayi unutmak, tam da yukaridaki sessiz hatayi uretir. Sabitler
-        // yansimayla geziliyor ki yeni eklenen biri testi kendiliginden kapsasin.
+        // bağlanmayı unutmak, tam da yukarıdaki sessiz hatayı üretir. Sabitler
+        // yansımayla geziliyor ki yeni eklenen biri testi kendiliğinden kapsasın.
         var placeholders = typeof(VendorPaths)
             .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
             .Where(f => f is { IsLiteral: true, IsInitOnly: false } && f.FieldType == typeof(string))
@@ -65,10 +65,10 @@ public sealed class QuicLadderTests
     [Fact]
     public void AnyProtocol_HerZaman_Cutoff_Ile_Birlikte()
     {
-        // winws'in kendi uyarisi: "you are using --dpi-desync-any-protocol without
-        // --dpi-desync-cutoff". Cutoff'suz any-protocol baglantinin TUM paketlerine
-        // mudahale eder. Olculmus zarar var: sorunsuz calisan bir QUIC baglantisi,
-        // uzerine denenmemis bir QUIC stratejisi uygulaninca bozulmustu.
+        // winws'in kendi uyarısı: "you are using --dpi-desync-any-protocol without
+        // --dpi-desync-cutoff". Cutoff'suz any-protocol bağlantının TÜM paketlerine
+        // müdahale eder. Ölçülmüş zarar var: sorunsuz çalışan bir QUIC bağlantısı,
+        // üzerine denenmemiş bir QUIC stratejisi uygulanınca bozulmuştu.
         foreach (var section in Enum.GetValues<StrategySection>())
         {
             var offenders = Ladder.Expand(section)
@@ -85,9 +85,9 @@ public sealed class QuicLadderTests
     [Fact]
     public void QuicMerdiveni_TekBirYuke_Bagli_Degil()
     {
-        // Ilk halde tek bir sahte yuk (google) vardi ve QUIC arama uzayi bu yuzden
-        // yapay olarak dardi: hangi yukun ise yaradigi DPI kutusunun paketin neyini
-        // dogruladigina bagli.
+        // İlk hâlde tek bir sahte yük (google) vardı ve QUIC arama uzayı bu yüzden
+        // yapay olarak dardı: hangi yükün işe yaradığı DPI kutusunun paketin neyini
+        // doğruladığına bağlı.
         var payloads = Ladder.Expand(StrategySection.Quic)
             .SelectMany(c => c.Args.Split(' ', StringSplitOptions.RemoveEmptyEntries))
             .Where(p => p.StartsWith("--dpi-desync-fake-quic=", StringComparison.Ordinal))
@@ -101,9 +101,9 @@ public sealed class QuicLadderTests
     [Fact]
     public void QuicMerdiveni_BirlesikModlari_Iceriyor()
     {
-        // winws dilbilgisi --dpi-desync=[<mode0>,]<mode>[,<mode2>]. Onceki merdiven
-        // fake / udplen / ipfrag2 ailelerini birbirini disliyor sanip her zaman tek
-        // basina denemisti; birlesimleri hic sinanmamisti.
+        // winws dilbilgisi --dpi-desync=[<mode0>,]<mode>[,<mode2>]. Önceki merdiven
+        // fake / udplen / ipfrag2 ailelerini birbirini dışlıyor sanıp her zaman tek
+        // başına denemişti; birleşimleri hiç sınanmamıştı.
         var combined = Ladder.Expand(StrategySection.Quic)
             .Where(c => c.Args.Contains("--dpi-desync=fake,", StringComparison.Ordinal))
             .ToList();

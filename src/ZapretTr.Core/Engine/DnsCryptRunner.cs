@@ -6,25 +6,25 @@ using System.Runtime.Versioning;
 namespace ZapretTr.Core.Engine;
 
 /// <summary>
-/// dnscrypt-proxy surecini yonetir ve sistem DNS'ini ona yonlendirir.
+/// dnscrypt-proxy sürecini yönetir ve sistem DNS'ini ona yönlendirir.
 /// </summary>
 /// <remarks>
-/// Neden gerekli: Turkiye'de engelleme cogu zaman IKI KATMANLI. Once DNS
-/// kaciriliyor (sistem cozumleyicisi engel sunucusunun adresini donuyor), altta da
-/// SNI'ye bakan bir DPI duruyor. winws yalnizca ikinci katmani asabilir; birinci
-/// katman durdukca trafik zaten gercek sunucuya gitmiyor ve hicbir strateji ise
-/// yaramiyor. Bu makinede olculdu: discord.com, pornhub.com ve xvideos.com'un ucu
-/// de 195.175.254.2'ye, yani saglayicinin engel sunucusuna cozumleniyordu.
+/// Neden gerekli: Türkiye'de engelleme çoğu zaman İKİ KATMANLI. Önce DNS
+/// kaçırılıyor (sistem çözümleyicisi engel sunucusunun adresini dönüyor), altta da
+/// SNI'ye bakan bir DPI duruyor. winws yalnızca ikinci katmanı aşabilir; birinci
+/// katman durdukça trafik zaten gerçek sunucuya gitmiyor ve hiçbir strateji işe
+/// yaramıyor. Bu makinede ölçüldü: discord.com, pornhub.com ve xvideos.com'un üçü
+/// de 195.175.254.2'ye, yani sağlayıcının engel sunucusuna çözümleniyordu.
 ///
-/// Baslatma sirasi kasitli ve degistirilmemeli:
-///   1. dnscrypt-proxy baslatilir.
-///   2. GERCEKTEN cevap verdigi dogrulanir (127.0.0.1:53'e bir sorgu atilir).
-///   3. Ancak ondan sonra sistem DNS'i oraya cevrilir.
-/// Ters sirada yapilsaydi, proxy acilmadigi bir durumda kullanici ad cozemez hale
-/// gelirdi -- ona gore internetin tamamen gitmesi demek.
+/// Başlatma sırası kasıtlı ve değiştirilmemeli:
+///   1. dnscrypt-proxy başlatılır.
+///   2. GERÇEKTEN cevap verdiği doğrulanır (127.0.0.1:53'e bir sorgu atılır).
+///   3. Ancak ondan sonra sistem DNS'i oraya çevrilir.
+/// Ters sırada yapılsaydı, proxy açılmadığı bir durumda kullanıcı ad çözemez hâle
+/// gelirdi; ona göre internetin tamamen gitmesi demek.
 ///
-/// Surec beklenmedik sekilde olurse DNS ANINDA geri alinir; bu sinifin en onemli
-/// gorevi de budur.
+/// Süreç beklenmedik şekilde ölürse DNS ANINDA geri alınır; bu sınıfın en önemli
+/// görevi de budur.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class DnsCryptRunner : IAsyncDisposable
@@ -49,18 +49,18 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         }
     }
 
-    /// <summary>Sistem DNS'i su an bize yonlendirilmis durumda mi.</summary>
+    /// <summary>Sistem DNS'i şu an bize yönlendirilmiş durumda mı.</summary>
     public bool IsDnsRedirected => _dnsRedirected;
 
     /// <summary>
-    /// dnscrypt-proxy'yi baslatir, cevap verdigini dogrular ve sistem DNS'ini cevirir.
+    /// dnscrypt-proxy'yi başlatır, cevap verdiğini doğrular ve sistem DNS'ini çevirir.
     /// </summary>
-    /// <exception cref="FileNotFoundException">Ikili ya da yapilandirma yoksa.</exception>
+    /// <exception cref="FileNotFoundException">İkili ya da yapılandırma yoksa.</exception>
     /// <exception cref="InvalidOperationException">Proxy cevap vermezse.</exception>
     /// <param name="owner">
-    /// Yonlendirmenin sahibi. Servis kurulumu sirasinda
-    /// <see cref="DnsBackupOwner.Service"/> verilir; o zaman uygulama kapanirken
-    /// DNS geri ALINMAZ, cunku yonlendirme acilistan acilisa surekli olmali.
+    /// Yönlendirmenin sahibi. Servis kurulumu sırasında
+    /// <see cref="DnsBackupOwner.Service"/> verilir; o zaman uygulama kapanırken
+    /// DNS geri ALINMAZ, çünkü yönlendirme açılıştan açılışa sürekli olmalı.
     /// </param>
     public async Task StartAsync(
         string owner = DnsBackupOwner.App, CancellationToken cancellationToken = default)
@@ -74,16 +74,16 @@ public sealed class DnsCryptRunner : IAsyncDisposable
                 _vendor.DnsCryptExe);
         }
 
-        // SIFRELI DNS SERVISI ZATEN AYAKTAYSA IKINCI BIR KOPYA ACILMAZ.
+        // ŞİFRELİ DNS SERVİSİ ZATEN AYAKTAYSA İKİNCİ BİR KOPYA AÇILMAZ.
         //
-        // winws servisi kurulu ama durmussa arayuz "Baslat"i acik birakiyor (bu
-        // dogru: koruma yok ve kullanici elle baslatabilmeli). Ama o durumda
-        // ZapretTR-DNS servisi cogu zaman CALISIYOR ve 127.0.0.1:53'u tutuyor.
-        // Eskiden uygulama yine de kendi dnscrypt'ini aciyordu; o surec portu
-        // baglayamayip hemen oluyor, dogrulama "surec yasamiyor" diye dusuyor ve
-        // "Baslat" tamamen BASARISIZ oluyordu -- sifreli DNS aslinda calisirken.
-        // Servisin cozumleyicisi kullaniliyor ve yonlendirme servise ait sayiliyor:
-        // uygulama kapaninca geri alinmamali, cozumleyici uygulamayla birlikte gitmiyor.
+        // winws servisi kurulu ama durmuşsa arayüz "Başlat"ı açık bırakıyor (bu
+        // doğru: koruma yok ve kullanıcı elle başlatabilmeli). Ama o durumda
+        // ZapretTR-DNS servisi çoğu zaman ÇALIŞIYOR ve 127.0.0.1:53'ü tutuyor.
+        // Eskiden uygulama yine de kendi dnscrypt'ini açıyordu; o süreç portu
+        // bağlayamayıp hemen ölüyor, doğrulama "süreç yaşamıyor" diye düşüyor ve
+        // "Başlat" tamamen BAŞARISIZ oluyordu; şifreli DNS aslında çalışırken.
+        // Servisin çözümleyicisi kullanılıyor ve yönlendirme servise ait sayılıyor:
+        // uygulama kapanınca geri alınmamalı, çözümleyici uygulamayla birlikte gitmiyor.
         var dnsServisi = await ServiceManager.GetDnsServiceStateAsync(cancellationToken).ConfigureAwait(false);
         if (dnsServisi.Running
             && await IsLocalResolverRespondingAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
@@ -123,7 +123,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             process.OutputDataReceived += (_, e) => Publish(e.Data);
             process.ErrorDataReceived += (_, e) => Publish(e.Data);
 
-            // Beklenmedik olum: DNS bizde kalirsa makine ad cozemez. Geri alma
+            // Beklenmedik ölüm: DNS bizde kalırsa makine ad çözemez. Geri alma
             // burada, en erken noktada tetikleniyor.
             process.Exited += (_, _) => OnUnexpectedExit();
 
@@ -134,8 +134,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             catch (System.ComponentModel.Win32Exception ex)
                 when (SecurityBlockAdvice.Describe(ex, "dnscrypt-proxy.exe") is { } engel)
             {
-                // dnscrypt-proxy.exe imzasiz; Defender ya da Akilli Uygulama Denetimi
-                // onu da engelleyebiliyor. Gerekcesi SecurityBlockAdvice'ta.
+                // dnscrypt-proxy.exe imzasız; Defender ya da Akıllı Uygulama Denetimi
+                // onu da engelleyebiliyor. Gerekçesi SecurityBlockAdvice'ta.
                 process.Dispose();
                 throw new InvalidOperationException(engel, ex);
             }
@@ -145,12 +145,12 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             _process = process;
         }
 
-        // Cevap verdigini DOGRULAMADAN sistem DNS'ine dokunmuyoruz.
+        // Cevap verdiğini DOĞRULAMADAN sistem DNS'ine dokunmuyoruz.
         var wait = TimeSpan.FromSeconds(15);
         if (!await WaitUntilRespondingAsync(wait, cancellationToken).ConfigureAwait(false))
         {
-            // Teshis, surec oldurulmeden ONCE toplaniyor: StopAsync'ten sonra
-            // "surec yasiyor muydu" sorusunun cevabi kalmiyor.
+            // Teşhis, süreç öldürülmeden ÖNCE toplanıyor: StopAsync'ten sonra
+            // "süreç yaşıyor muydu" sorusunun cevabı kalmıyor.
             var diagnosis = DescribeStartupFailure(wait);
             await StopAsync(CancellationToken.None).ConfigureAwait(false);
             throw new InvalidOperationException(
@@ -165,16 +165,16 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Sistem DNS'ini geri alir ve dnscrypt-proxy'yi durdurur.
+    /// Sistem DNS'ini geri alır ve dnscrypt-proxy'yi durdurur.
     /// </summary>
     /// <remarks>
-    /// Sira yine kasitli: once DNS geri alinir, sonra proxy durdurulur. Ters
-    /// yapilsaydi aradaki kisa surede makine ad cozemezdi.
+    /// Sıra yine kasıtlı: önce DNS geri alınır, sonra proxy durdurulur. Ters
+    /// yapılsaydı aradaki kısa sürede makine ad çözemezdi.
     /// </remarks>
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
-        // Yonlendirmenin sahibi kurulu servisse dokunmuyoruz: kullanici otomatik
-        // baslatmayi kurdu, uygulamanin kapanmasi onu bozmamali.
+        // Yönlendirmenin sahibi kurulu servisse dokunmuyoruz: kullanıcı otomatik
+        // başlatmayı kurdu, uygulamanın kapanması onu bozmamalı.
         if (SystemDnsManager.IsOwnedByService)
         {
             _dnsRedirected = false;
@@ -219,7 +219,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         }
         catch (InvalidOperationException)
         {
-            // Zaten olmus.
+            // Zaten ölmüş.
         }
         finally
         {
@@ -228,23 +228,23 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Bu satir arayuz gunlugune GIRMEMELI mi.
+    /// Bu satır arayüz günlüğüne GİRMEMELİ mi.
     /// </summary>
     /// <remarks>
-    /// dnscrypt-proxy acilista butun cozumleyici listesini yokluyor ve her biri
-    /// icin satir yaziyor: "OK (DNSCrypt) rtt: ...", "additional certificate",
-    /// "post-quantum ... key exchange", ardindan da 340 satirlik bir "Sorted
-    /// latencies" tablosu. Toplam bes yuz satiri asiyor.
+    /// dnscrypt-proxy açılışta bütün çözümleyici listesini yokluyor ve her biri
+    /// için satır yazıyor: "OK (DNSCrypt) rtt: ...", "additional certificate",
+    /// "post-quantum ... key exchange", ardından da 340 satırlık bir "Sorted
+    /// latencies" tablosu. Toplam beş yüz satırı aşıyor.
     ///
-    /// Arayuz gunlugu 500 satirla sinirli. Yani bu dokum, gunlukteki HER SEYI
-    /// disari itiyor -- baslatma komutunu, winws'in soylediklerini, test
-    /// sonuclarini. Gercek bir kullanicinin gonderdigi raporda tam olarak bu
-    /// oldu: 523 satirlik dosyanin 470'i cozumleyici listesiydi ve teshis icin
-    /// gereken satirlarin cogu ring buffer'dan dusmustu.
+    /// Arayüz günlüğü 500 satırla sınırlı. Yani bu döküm, günlükteki HER ŞEYİ
+    /// dışarı itiyor: başlatma komutunu, winws'in söylediklerini, test
+    /// sonuçlarını. Gerçek bir kullanıcının gönderdiği raporda tam olarak bu
+    /// oldu: 523 satırlık dosyanın 470'i çözümleyici listesiydi ve teşhis için
+    /// gereken satırların çoğu halka arabellekten düşmüştü.
     ///
-    /// Gurultu susturuluyor, BILGI degil: hata ve uyari seviyeleri her zaman
-    /// geciyor, "en dusuk gecikmeli sunucu" ozeti de geciyor. Susturulan sey
-    /// yalnizca sunucu basina tekrar eden satirlar.
+    /// Gürültü susturuluyor, BİLGİ değil: hata ve uyarı seviyeleri her zaman
+    /// geçiyor, "en düşük gecikmeli sunucu" özeti de geçiyor. Susturulan şey
+    /// yalnızca sunucu başına tekrar eden satırlar.
     /// </remarks>
     public static bool IsNoise(string? line)
     {
@@ -253,8 +253,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             return true;
         }
 
-        // Hata ve uyarilar HER ZAMAN gecer: susturma yalnizca gurultu icin.
-        // dnscrypt'in bir sorunu varsa kullanicinin ad cozumu tehlikede demektir.
+        // Hata ve uyarılar HER ZAMAN geçer: susturma yalnızca gürültü için.
+        // dnscrypt'in bir sorunu varsa kullanıcının ad çözümü tehlikede demektir.
         foreach (var seviye in new[] { "[ERROR]", "[WARNING]", "[CRITICAL]", "[FATAL]", "[PANIC]" })
         {
             if (line.Contains(seviye, StringComparison.Ordinal))
@@ -282,7 +282,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         return IsLatencyRow(line);
     }
 
-    /// <summary>Gecikme tablosunun bir satiri mi: "[NOTICE] -    19ms &lt;ad&gt;".</summary>
+    /// <summary>Gecikme tablosunun bir satırı mı: "[NOTICE] -    19ms &lt;ad&gt;".</summary>
     private static bool IsLatencyRow(string line)
     {
         var i = line.IndexOf("] -", StringComparison.Ordinal);
@@ -307,14 +307,14 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Yerel cozumleyici cevap veriyor mu. Ag ayarina bakmadan, dogrudan
-    /// 127.0.0.1:53'e bir sorgu atarak olcer.
+    /// Yerel çözümleyici cevap veriyor mu. Ağ ayarına bakmadan, doğrudan
+    /// 127.0.0.1:53'e bir sorgu atarak ölçer.
     /// </summary>
     public static async Task<bool> IsLocalResolverRespondingAsync(
         TimeSpan? timeout = null, CancellationToken cancellationToken = default)
     {
-        // Elle kurulmus en kucuk DNS sorgusu: "example.com A". Bir DNS kutuphanesi
-        // eklemek yerine bunu yazmak, bagimlilik yuzeyini buyutmemek icin.
+        // Elle kurulmuş en küçük DNS sorgusu: "example.com A". Bir DNS kütüphanesi
+        // eklemek yerine bunu yazmak, bağımlılık yüzeyini büyütmemek için.
         var query = BuildQuery("example.com");
 
         try
@@ -329,8 +329,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
 
             var result = await udp.ReceiveAsync(cts.Token).ConfigureAwait(false);
 
-            // Cevap, sordugumuz islemin cevabi mi: ilk iki bayt islem kimligi,
-            // ucuncu baytin ust biti "bu bir cevaptir" demek.
+            // Cevap, sorduğumuz işlemin cevabı mı: ilk iki bayt işlem kimliği,
+            // üçüncü baytın üst biti "bu bir cevaptır" demek.
             return result.Buffer.Length > 3
                    && result.Buffer[0] == query[0]
                    && result.Buffer[1] == query[1]
@@ -343,23 +343,23 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Baslatma dogrulamasi basarisiz oldugunda "neden" sorusuna cevap uretir.
+    /// Başlatma doğrulaması başarısız olduğunda "neden" sorusuna cevap üretir.
     /// </summary>
     /// <remarks>
-    /// Bu yol bir kez gercekten yasandi ve teshis edilemedi: bir makinede
-    /// dnscrypt-proxy aciliyor, cozumleyicilere baglaniyor (gunlukte
-    /// "OK (DNSCrypt) rtt: ...") ama bizim dogrulama sorgumuz cevapsiz kaliyordu.
-    /// Guvenli davranis dogru calisti -- sistem DNS'ine dokunulmadi -- ama elde
-    /// yalnizca "cevap vermedi" cumlesi kaldigi icin sebep bulunamadi. Baska bir
-    /// hatta ve baska bir makinede, hem sicak hem SOGUK baslangicta yeniden
-    /// uretilemedi (ikisi de saniyeler icinde gecti).
+    /// Bu yol bir kez gerçekten yaşandı ve teşhis edilemedi: bir makinede
+    /// dnscrypt-proxy açılıyor, çözümleyicilere bağlanıyor (günlükte
+    /// "OK (DNSCrypt) rtt: ...") ama bizim doğrulama sorgumuz cevapsız kalıyordu.
+    /// Güvenli davranış doğru çalıştı, sistem DNS'ine dokunulmadı; ama elde
+    /// yalnızca "cevap vermedi" cümlesi kaldığı için sebep bulunamadı. Başka bir
+    /// hatta ve başka bir makinede, hem sıcak hem SOĞUK başlangıçta yeniden
+    /// üretilemedi (ikisi de saniyeler içinde geçti).
     ///
-    /// Bu yuzden burada ayirt edici iki bilgi toplaniyor:
-    ///   - surec hala yasiyor mu (yasamiyorsa cikis kodu),
-    ///   - 127.0.0.1:53'u dinleyen BIRI var mi.
-    /// Ikisi birlikte uc farkli durumu ayiriyor: surec olmus, surec yasiyor ama
-    /// portu hic baglayamamis (baska bir servis tutuyor olabilir), ve port bagli
-    /// ama sorgu cevapsiz (asil bilinmeyen durum).
+    /// Bu yüzden burada ayırt edici iki bilgi toplanıyor:
+    ///   - süreç hâlâ yaşıyor mu (yaşamıyorsa çıkış kodu),
+    ///   - 127.0.0.1:53'ü dinleyen BİRİ var mı.
+    /// İkisi birlikte üç farklı durumu ayırıyor: süreç ölmüş, süreç yaşıyor ama
+    /// portu hiç bağlayamamış (başka bir servis tutuyor olabilir) ve port bağlı
+    /// ama sorgu cevapsız (asıl bilinmeyen durum).
     /// </remarks>
     private string DescribeStartupFailure(TimeSpan waited)
     {
@@ -397,7 +397,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         }
         catch (Exception)
         {
-            // Teshis, asil hatanin onune gecmemeli.
+            // Teşhis, asıl hatanın önüne geçmemeli.
             parts.Add("Port durumu okunamadi.");
         }
 
@@ -431,23 +431,23 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Yapilandirmayi yazar ve yolunu doner.
+    /// Yapılandırmayı yazar ve yolunu döner.
     /// </summary>
     /// <remarks>
-    /// Kendi toml'umuzu uretiyoruz; dagitimla gelen 40 KB'lik ornek dosya bize
-    /// gereken ondan cok daha dar bir yapilandirmanin yaninda okunamaz kaliyor.
+    /// Kendi toml'umuzu üretiyoruz; dağıtımla gelen 40 KB'lık örnek dosya bize
+    /// gereken ondan çok daha dar bir yapılandırmanın yanında okunamaz kalıyor.
     /// </remarks>
     private Task<string> EnsureConfigAsync(CancellationToken cancellationToken)
         => WriteConfigAsync(_vendor, cancellationToken);
 
     /// <summary>
-    /// Yapilandirmayi yazar; servis kurulumu da bunu kullaniyor.
+    /// Yapılandırmayı yazar; servis kurulumu da bunu kullanıyor.
     /// </summary>
     /// <remarks>
-    /// Servis kurulumu eskiden dosyanin VAR OLMASINI bekliyordu ve dosyayi yalnizca
-    /// uygulamanin "Baslat"i yaziyordu. Arayuzsuz kurulumda (<c>--install-services</c>:
-    /// yukseltme ve sessiz dagitim) uygulama hic baslatilmamissa sifreli DNS servisi
-    /// sessizce KURULMUYORDU -- ayarlarda "sifreli DNS acik" yazarken.
+    /// Servis kurulumu eskiden dosyanın VAR OLMASINI bekliyordu ve dosyayı yalnızca
+    /// uygulamanın "Başlat"ı yazıyordu. Arayüzsüz kurulumda (<c>--install-services</c>:
+    /// yükseltme ve sessiz dağıtım) uygulama hiç başlatılmamışsa şifreli DNS servisi
+    /// sessizce KURULMUYORDU; ayarlarda "şifreli DNS açık" yazarken.
     /// </remarks>
     internal static async Task<string> WriteConfigAsync(VendorPaths vendor, CancellationToken cancellationToken)
     {
@@ -511,7 +511,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Sorgu paketi kurar: standart bir A kaydi sorgusu.
+    /// Sorgu paketi kurar: standart bir A kaydı sorgusu.
     /// </summary>
     private static byte[] BuildQuery(string host)
     {
@@ -519,11 +519,11 @@ public sealed class DnsCryptRunner : IAsyncDisposable
         var bytes = new List<byte>
         {
             (byte)(id >> 8), (byte)(id & 0xFF),
-            0x01, 0x00,             // standart sorgu, ozyineleme istiyoruz
+            0x01, 0x00,             // standart sorgu, özyineleme istiyoruz
             0x00, 0x01,             // 1 soru
             0x00, 0x00,             // 0 cevap
-            0x00, 0x00,             // 0 yetkili kayit
-            0x00, 0x00,             // 0 ek kayit
+            0x00, 0x00,             // 0 yetkili kayıt
+            0x00, 0x00,             // 0 ek kayıt
         };
 
         foreach (var label in host.Split('.'))
@@ -534,7 +534,7 @@ public sealed class DnsCryptRunner : IAsyncDisposable
 
         bytes.Add(0x00);            // ad sonu
         bytes.AddRange([0x00, 0x01]); // tip A
-        bytes.AddRange([0x00, 0x01]); // sinif IN
+        bytes.AddRange([0x00, 0x01]); // sınıf IN
 
         return [.. bytes];
     }
@@ -546,8 +546,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
             return;
         }
 
-        // Yonlendirmeyi bu arada servis devraldiysa DNS artik bu surece bagli
-        // degil; geri almak servisin sifreli DNS'ini sokmek olurdu.
+        // Yönlendirmeyi bu arada servis devraldıysa DNS artık bu sürece bağlı
+        // değil; geri almak servisin şifreli DNS'ini sökmek olurdu.
         if (SystemDnsManager.IsOwnedByService)
         {
             _dnsRedirected = false;
@@ -556,8 +556,8 @@ public sealed class DnsCryptRunner : IAsyncDisposable
 
         Publish("dnscrypt-proxy beklenmedik sekilde kapandi. DNS geri aliniyor...");
 
-        // Bu yolu beklemeye birakamayiz: DNS bizde kaldigi her saniye makine ad
-        // cozemiyor demek.
+        // Bu yolu beklemeye bırakamayız: DNS bizde kaldığı her saniye makine ad
+        // çözemiyor demek.
         try
         {
             SystemDnsManager.RestoreAsync().GetAwaiter().GetResult();

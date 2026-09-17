@@ -3,14 +3,14 @@
   <assemblyIdentity version="1.0.0.0" name="ZapretTR.ProberCli" />
 
   <!--
-    winws.exe cekirdek modunda calisan WinDivert surucusunu kullaniyor ve
-    yukseltilmis yetki olmadan baslatilamiyor. Yetkiyi sonradan istemek diye bir
-    secenek olmadigi icin arac bastan yonetici olarak baslatiliyor: saha testini
-    yapan kisi "neden calismadi" diye ugrasmasin, UAC penceresi dogrudan ciksin.
+    winws.exe çekirdek modunda çalışan WinDivert sürücüsünü kullanıyor ve
+    yükseltilmiş yetki olmadan başlatılamıyor. Yetkiyi sonradan istemek diye bir
+    seçenek olmadığı için araç baştan yönetici olarak başlatılıyor: saha testini
+    yapan kişi "neden çalışmadı" diye uğraşmasın, UAC penceresi doğrudan çıksın.
 
-    NOT: Bu dosyayi duzenlerken yorumlarin icinde cift tire kullanma. XML
-    yorumlari cift tire iceremez; SxS yukleyicisi dosyayi reddeder ve uygulama
-    "side-by-side configuration is incorrect" ile hic acilmaz. Derleme bu hatayi
+    NOT: Bu dosyayı düzenlerken yorumların içinde çift tire kullanma. XML
+    yorumları çift tire içeremez; SxS yükleyicisi dosyayı reddeder ve uygulama
+    "side-by-side configuration is incorrect" ile hiç açılmaz. Derleme bu hatayı
     YAKALAMAZ.
   -->
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">

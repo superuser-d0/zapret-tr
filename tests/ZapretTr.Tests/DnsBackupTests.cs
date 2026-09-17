@@ -4,14 +4,14 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// DNS yedeginin diske yazilip geri okunmasi.
+/// DNS yedeğinin diske yazılıp geri okunması.
 /// </summary>
 /// <remarks>
-/// Bu, uygulamanin en tehlikeli yolu. Yedek bozulursa ya da eksik okunursa
-/// kullanicinin DNS'i 127.0.0.1'de kalir ve makine HICBIR adi cozemez -- ona gore
-/// internetin tamamen gitmesi demek. Yedek bu yuzden bellekte degil DISKTE
-/// tutuluyor (cokme/yeniden baslatma sonrasi da geri donulebilsin diye) ve bu
-/// testler o dosyanin sadakatini dogruluyor.
+/// Bu, uygulamanın en tehlikeli yolu. Yedek bozulursa ya da eksik okunursa
+/// kullanıcının DNS'i 127.0.0.1'de kalır ve makine HİÇBİR adı çözemez; ona göre
+/// internetin tamamen gitmesi demek. Yedek bu yüzden bellekte değil DİSKTE
+/// tutuluyor (çökme/yeniden başlatma sonrası da geri dönülebilsin diye) ve bu
+/// testler o dosyanın sadakatini doğruluyor.
 /// </remarks>
 public sealed class DnsBackupTests
 {
@@ -51,8 +51,8 @@ public sealed class DnsBackupTests
         Assert.False(ethernet.WasStatic);
         Assert.Equal(["192.168.8.1"], ethernet.Addresses);
 
-        // Coklu adres sirasi korunmali: netsh geri yuklerken index veriyoruz ve
-        // sira degisirse kullanicinin birincil/ikincil DNS'i yer degistirir.
+        // Çoklu adres sırası korunmalı: netsh geri yüklerken index veriyoruz ve
+        // sıra değişirse kullanıcının birincil/ikincil DNS'i yer değiştirir.
         var wifi = restored.Entries[1];
         Assert.True(wifi.WasStatic);
         Assert.Equal(["8.8.8.8", "8.8.4.4"], wifi.Addresses);
@@ -61,10 +61,10 @@ public sealed class DnsBackupTests
     [Fact]
     public void DhcpKaydi_StaticOlarak_GeriYuklenmemeli()
     {
-        // Bu ayrimin kaybolmasi sinsi bir hasar verir: DHCP'den gelen adresi
-        // static yazarsak, kullanici baska bir aga baglandiginda (baska wifi,
-        // mobil paylasim) eski ag gecidinin DNS'ine sabitlenmis kalir. Biz
-        // "geri aldik" deriz ama makine bozuk kalmis olur.
+        // Bu ayrımın kaybolması sinsi bir hasar verir: DHCP'den gelen adresi
+        // statik yazarsak, kullanıcı başka bir ağa bağlandığında (başka WiFi,
+        // mobil paylaşım) eski ağ geçidinin DNS'ine sabitlenmiş kalır. Biz
+        // "geri aldık" deriz ama makine bozuk kalmış olur.
         var entry = new DnsBackupEntry
         {
             Alias = "Ethernet",
@@ -82,10 +82,10 @@ public sealed class DnsBackupTests
     [Fact]
     public void Ipv6Alanlari_GidipGeliyor()
     {
-        // Yonlendirme artik arayuzun IPv6 DNS sunucularini da BOSALTIYOR: yalnizca
-        // IPv4'u 127.0.0.1'e cevirmek yetmiyor, cunku arayuzde duran bir IPv6
-        // cozumleyicisi (yonlendirici duyurusu ya da DHCPv6) DNS kacirma katmanini
-        // ayakta tutuyor. Bosaltilan sey yedekte tasinmazsa geri alma yarim kalir.
+        // Yönlendirme artık arayüzün IPv6 DNS sunucularını da BOŞALTIYOR: yalnızca
+        // IPv4'ü 127.0.0.1'e çevirmek yetmiyor, çünkü arayüzde duran bir IPv6
+        // çözümleyicisi (yönlendirici duyurusu ya da DHCPv6) DNS kaçırma katmanını
+        // ayakta tutuyor. Boşaltılan şey yedekte taşınmazsa geri alma yarım kalır.
         var entry = new DnsBackupEntry
         {
             Alias = "Wi-Fi",
@@ -108,10 +108,10 @@ public sealed class DnsBackupTests
     [Fact]
     public void EskiYedek_Ipv6ya_Dokunulmamis_Sayilir()
     {
-        // 0.1.18 ve oncesinde yazilmis yedeklerde IPv6 alanlari HIC YOK. Boyle bir
-        // kaydi "IPv6 DHCP'ydi" diye okumak, geri alma sirasinda kullanicinin ELLE
-        // girdigi bir IPv6 DNS'ini silmek olurdu -- hic dokunmadigimiz bir seyi
-        // bozmak. Bayrak bu yuzden ayri ve varsayilani false.
+        // 0.1.18 ve öncesinde yazılmış yedeklerde IPv6 alanları HİÇ YOK. Böyle bir
+        // kaydı "IPv6 DHCP'ydi" diye okumak, geri alma sırasında kullanıcının ELLE
+        // girdiği bir IPv6 DNS'ini silmek olurdu; hiç dokunmadığımız bir şeyi
+        // bozmak. Bayrak bu yüzden ayrı ve varsayılanı false.
         var eski = """
             {"alias":"Ethernet","guid":"{1}","wasStatic":true,"addresses":["8.8.8.8"]}
             """;
@@ -127,22 +127,22 @@ public sealed class DnsBackupTests
     [Fact]
     public void BosYedek_Cozumlenebiliyor()
     {
-        // Bozuk/bos bir dosya yuzunden geri alma yolunun tamamen patlamamasi
-        // gerekiyor; patlarsa kullanici DNS'i elle duzeltmek zorunda kalir.
+        // Bozuk/boş bir dosya yüzünden geri alma yolunun tamamen patlamaması
+        // gerekiyor; patlarsa kullanıcı DNS'i elle düzeltmek zorunda kalır.
         var restored = JsonSerializer.Deserialize<DnsBackup>("""{"createdAt":"","entries":[]}""");
 
         Assert.NotNull(restored);
         Assert.Empty(restored.Entries);
     }
 
-    // --- Bizim 127.0.0.1'imiz asla "orijinal" sayilmaz --------------------------
+    // --- Bizim 127.0.0.1'imiz asla "orijinal" sayılmaz --------------------------
 
     [Fact]
     public void YedegeGiren_Yalnizca127_DhcpSayilir()
     {
-        // Yedek kaybolmusken yeniden yonlendirme yapilirsa kartin DNS'i zaten
-        // 127.0.0.1. Onu "elle girilmis" diye kaydedip geri yazmak, kaldirmadan
-        // sonra o kartta hicbir adin cozulmemesi demekti.
+        // Yedek kaybolmuşken yeniden yönlendirme yapılırsa kartın DNS'i zaten
+        // 127.0.0.1. Onu "elle girilmiş" diye kaydedip geri yazmak, kaldırmadan
+        // sonra o kartta hiçbir adın çözülmemesi demekti.
         var (wasStatic, addresses) = SystemDnsManager.SanitizeCaptured(true, ["127.0.0.1"]);
 
         Assert.False(wasStatic);
@@ -170,13 +170,13 @@ public sealed class DnsBackupTests
     [Theory]
     [InlineData("127.0.0.1", true)]
     [InlineData("127.0.0.1,8.8.8.8", true)]
-    [InlineData(null, true)]        // okunamadi: bizimki duruyor olabilir, geri al
-    [InlineData("", false)]         // otomatige alinmis: geri alinacak bir sey yok
-    [InlineData("1.1.1.1", false)]  // kullanici sonradan elle degistirmis: EZME
+    [InlineData(null, true)]        // okunamadı: bizimki duruyor olabilir, geri al
+    [InlineData("", false)]         // otomatiğe alınmış: geri alınacak bir şey yok
+    [InlineData("1.1.1.1", false)]  // kullanıcı sonradan elle değiştirmiş: EZME
     public void GeriAlma_YalnizcaHalaBizdeyse(string? mevcut, bool beklenen)
     {
-        // Servis modunda yonlendirme ile geri alma arasinda aylar gecebiliyor.
-        // Eskiden kullanicinin o arada yaptigi DNS ayari yedekle eziliyordu.
+        // Servis modunda yönlendirme ile geri alma arasında aylar geçebiliyor.
+        // Eskiden kullanıcının o arada yaptığı DNS ayarı yedekle eziliyordu.
         Assert.Equal(beklenen, SystemDnsManager.ShouldRestore(mevcut));
     }
 
@@ -188,10 +188,10 @@ public sealed class DnsBackupTests
     [InlineData(null, false)]
     public void ZatenYonlendirilmis_YalnizcaTek127(string? mevcut, bool beklenen)
     {
-        // Bekci her ag olayinda yonlendirmeyi yeniden yapiyor; zaten bizde olan
-        // karta tekrar netsh kosmak her seferinde gereksiz bir kesinti olurdu.
-        // Ama 127.0.0.1'in yaninda baska bir adres varsa Windows sorguyu oraya da
-        // yollayabilir: o kart "bizde" sayilmamali.
+        // Bekçi her ağ olayında yönlendirmeyi yeniden yapıyor; zaten bizde olan
+        // karta tekrar netsh koşmak her seferinde gereksiz bir kesinti olurdu.
+        // Ama 127.0.0.1'in yanında başka bir adres varsa Windows sorguyu oraya da
+        // yollayabilir: o kart "bizde" sayılmamalı.
         Assert.Equal(beklenen, SystemDnsManager.IsOnlyLocalResolver(mevcut));
     }
 
@@ -202,16 +202,16 @@ public sealed class DnsBackupTests
     [InlineData(DnsBackupOwner.Service, DnsBackupOwner.Service, DnsBackupOwner.Service)]
     public void YedekSahibi_ServisHepKazanir(string mevcut, string istenen, string beklenen)
     {
-        // Uygulama korumayi calistirirken servis kurulunca sahip "app" kaliyordu;
-        // uygulama kapaninca servisin sifreli DNS'i sessizce geri aliniyordu.
+        // Uygulama korumayı çalıştırırken servis kurulunca sahip "app" kalıyordu;
+        // uygulama kapanınca servisin şifreli DNS'i sessizce geri alınıyordu.
         Assert.Equal(beklenen, SystemDnsManager.DecideOwner(mevcut, istenen));
     }
 
     [Fact]
     public void YerelCozumleyici_Adresi_Sabit()
     {
-        // Bu deger yapilandirma dosyasina da yaziliyor; ikisi ayrisirsa
-        // dnscrypt-proxy bir adreste dinler, sistem baska adrese sorar.
+        // Bu değer yapılandırma dosyasına da yazılıyor; ikisi ayrışırsa
+        // dnscrypt-proxy bir adreste dinler, sistem başka adrese sorar.
         Assert.Equal("127.0.0.1", SystemDnsManager.LocalResolver);
     }
 }

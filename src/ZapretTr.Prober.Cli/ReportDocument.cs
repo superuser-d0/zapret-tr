@@ -1,25 +1,25 @@
 using System.Text.Encodings.Web;
 using System.Text.Json.Serialization;
 
-// Ad alani YOK, bilerek: Program.cs ust duzey deyimler kullaniyor ve global ad
-// alaninda calisiyor. Yanindaki CliOptions da ayni sekilde ad alanisiz duruyor.
+// Ad alanı YOK, bilerek: Program.cs üst düzey deyimler kullanıyor ve global ad
+// alanında çalışıyor. Yanındaki CliOptions da aynı şekilde ad alanısız duruyor.
 
 /// <summary>
-/// Diske yazilan rapor dosyasinin sekli.
+/// Diske yazılan rapor dosyasının şekli.
 /// </summary>
 /// <remarks>
-/// Bu tipler eskiden ANONIM tiplerdi. Anonim tipler kaynak uretimiyle ele
-/// ALINAMAZ, dolayisiyla rapor yazma yolu kirpilmis yayinlarda calisan tek
-/// yansima yolu olarak kalirdi. Kirpma acilinca bu yol sessizce bozulur ve
-/// belirti "test bitti ama rapor bos/eksik" olur.
+/// Bu tipler eskiden ANONİM tiplerdi. Anonim tipler kaynak üretimiyle ele
+/// ALINAMAZ, dolayısıyla rapor yazma yolu kırpılmış yayınlarda çalışan tek
+/// yansıma yolu olarak kalırdı. Kırpma açılınca bu yol sessizce bozulur ve
+/// belirti "test bitti ama rapor boş/eksik" olur.
 ///
-/// Alan adlari JSON'da kucuk harfle basliyor; bu, rapor semasinin ONCEDEN
-/// yayinlanmis hali ve saha kullanicilarindan gelen dosyalarla uyumlu kalmasi
-/// gerekiyor. Bu yuzden adlar acikca JsonPropertyName ile sabitlendi -- adlandirma
-/// politikasina birakilsaydi bir secenek degisikligi semayi sessizce kirardi.
+/// Alan adları JSON'da küçük harfle başlıyor; bu, rapor şemasının ÖNCEDEN
+/// yayınlanmış hâli ve saha kullanıcılarından gelen dosyalarla uyumlu kalması
+/// gerekiyor. Bu yüzden adlar açıkça JsonPropertyName ile sabitlendi; adlandırma
+/// politikasına bırakılsaydı bir seçenek değişikliği şemayı sessizce kırardı.
 ///
-/// KASITLI OLARAK DAR: kisiyi tanimlayabilecek hicbir alan yok. IP adresi
-/// (ResolvedIp dahil), makine adi, kullanici adi disarida.
+/// KASITLI OLARAK DAR: kişiyi tanımlayabilecek hiçbir alan yok. IP adresi
+/// (ResolvedIp dahil), makine adı, kullanıcı adı dışarıda.
 /// </remarks>
 internal sealed class ReportDocument
 {
@@ -109,13 +109,13 @@ internal sealed class ReportWinner
 }
 
 /// <summary>
-/// Rapor yazma yolunun kaynak uretimli baglami.
+/// Rapor yazma yolunun kaynak üretimli bağlamı.
 /// </summary>
 /// <remarks>
-/// UnsafeRelaxedJsonEscaping korunuyor: rapor Turkce metin iceriyor ve varsayilan
-/// kacislama "baglanti sifirlandi" gibi dizgileri \uXXXX yiginina cevirip dosyayi
-/// insan tarafindan okunamaz hale getiriyor. Rapor kullaniciya "acip okuyabilirsin,
-/// duz metindir" diye sunuluyor; okunamaz olmasi o sozu bozar.
+/// UnsafeRelaxedJsonEscaping korunuyor: rapor Türkçe metin içeriyor ve varsayılan
+/// kaçışlama "baglanti sifirlandi" gibi dizgileri \uXXXX yığınına çevirip dosyayı
+/// insan tarafından okunamaz hâle getiriyor. Rapor kullanıcıya "açıp okuyabilirsin,
+/// düz metindir" diye sunuluyor; okunamaz olması o sözü bozar.
 /// </remarks>
 [JsonSourceGenerationOptions(
     WriteIndented = true,
@@ -123,7 +123,7 @@ internal sealed class ReportWinner
 [JsonSerializable(typeof(ReportDocument))]
 internal sealed partial class ReportJsonContext : JsonSerializerContext
 {
-    /// <summary>Turkce metni kacislamadan yazan secenekler.</summary>
+    /// <summary>Türkçe metni kaçışlamadan yazan seçenekler.</summary>
     public static readonly ReportJsonContext Relaxed = new(new System.Text.Json.JsonSerializerOptions
     {
         WriteIndented = true,

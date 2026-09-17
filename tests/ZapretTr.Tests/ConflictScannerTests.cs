@@ -3,13 +3,13 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Baska DPI araclarinin kalintilarini bulan ayristiricilar.
+/// Başka DPI araçlarının kalıntılarını bulan ayrıştırıcılar.
 /// </summary>
 /// <remarks>
-/// Uc bicim de DISARIDAN geliyor -- <c>sc qc</c>, <c>netstat -ano</c> ve
-/// <c>hosts</c>. Bicimi biz belirlemiyoruz, dolayisiyla ayristiricilarin
-/// sinanmasi sart. Ustelik bu yolun sonu SILME: yanlis ayristirma, silinmemesi
-/// gereken bir seyi silinebilir gostermek demek.
+/// Üç biçim de DIŞARIDAN geliyor: <c>sc qc</c>, <c>netstat -ano</c> ve
+/// <c>hosts</c>. Biçimi biz belirlemiyoruz, dolayısıyla ayrıştırıcıların
+/// sınanması şart. Üstelik bu yolun sonu SİLME: yanlış ayrıştırma, silinmemesi
+/// gereken bir şeyi silinebilir göstermek demek.
 /// </remarks>
 public sealed class ConflictScannerTests
 {
@@ -35,13 +35,13 @@ public sealed class ConflictScannerTests
             @"C:\Program Files\GoodbyeDPI\goodbyedpi.exe -5",
             ConflictScanner.ReadScField(GoodbyeDpiQc, "BINARY_PATH_NAME"));
 
-        // Baslatma turu "acilista geri geliyor mu" sorusunun cevabi; kalintinin
-        // tehlikeli olup olmadigini belirleyen sey de bu.
+        // Başlatma türü "açılışta geri geliyor mu" sorusunun cevabı; kalıntının
+        // tehlikeli olup olmadığını belirleyen şey de bu.
         Assert.Contains("AUTO_START", ConflictScanner.ReadScField(GoodbyeDpiQc, "START_TYPE")!,
             StringComparison.Ordinal);
 
-        // Bos alan null donmeli, bos dizgi degil: "DEPENDENCIES :" satiri
-        // "bagimlilik var ama adi bos" diye okunmamali.
+        // Boş alan null dönmeli, boş dizgi değil: "DEPENDENCIES :" satırı
+        // "bağımlılık var ama adı boş" diye okunmamalı.
         Assert.Null(ConflictScanner.ReadScField(GoodbyeDpiQc, "DEPENDENCIES"));
         Assert.Null(ConflictScanner.ReadScField(GoodbyeDpiQc, "BOYLE_BIR_ALAN_YOK"));
         Assert.Null(ConflictScanner.ReadScField(null, "START_TYPE"));
@@ -50,9 +50,9 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Surucu_yolundaki_nt_oneki_kaldiriliyor()
     {
-        // Surucu servislerinde yol NT ad alaninda geliyor. On ek kalirsa
-        // File.Exists her zaman false doner ve calisan bir surucu "kalinti"
-        // sanilirdi -- yani silinmemesi gereken sey silinebilir gorunurdu.
+        // Sürücü servislerinde yol NT ad alanında geliyor. Ön ek kalırsa
+        // File.Exists her zaman false döner ve çalışan bir sürücü "kalıntı"
+        // sanılırdı; yani silinmemesi gereken şey silinebilir görünürdü.
         Assert.Equal(
             @"C:\Windows\System32\drivers\WinDivert64.sys",
             ConflictScanner.ExtractExecutablePath(@"\??\C:\Windows\System32\drivers\WinDivert64.sys"));
@@ -69,10 +69,10 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Tirnaksiz_bosluksuz_yol_argumanlardan_ayriliyor()
     {
-        // Tirnaksiz ve bosluklu yollar diskteki dosyaya bakilarak ayriliyor;
-        // burada dosya yok, dolayisiyla ilk boslukta kesiliyor. Bu geri
-        // cekilmenin dogru davranmasi onemli: yanlis kesilen bir yol
-        // File.Exists'te false verir ve calisan bir kurulumu "oksuz" gosterir.
+        // Tırnaksız ve boşluklu yollar diskteki dosyaya bakılarak ayrılıyor;
+        // burada dosya yok, dolayısıyla ilk boşlukta kesiliyor. Bu geri
+        // çekilmenin doğru davranması önemli: yanlış kesilen bir yol
+        // File.Exists'te false verir ve çalışan bir kurulumu "öksüz" gösterir.
         Assert.Equal(
             @"C:\Tools\ciadpi.exe",
             ConflictScanner.ExtractExecutablePath(@"C:\Tools\ciadpi.exe -p 1080"));
@@ -84,9 +84,9 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Netstat_ciktisinda_portu_tutan_pid_bulunuyor()
     {
-        // Sifreli DNS 127.0.0.1:53'u dinlemek zorunda. Orayi baskasi tutuyorsa
-        // dnscrypt hic acilamaz ve kullanici yalnizca "sifreli DNS calismadi"
-        // gorur. Tutanin adini soylemek o duvari tek cumleye indiriyor.
+        // Şifreli DNS 127.0.0.1:53'ü dinlemek zorunda. Orayı başkası tutuyorsa
+        // dnscrypt hiç açılamaz ve kullanıcı yalnızca "şifreli DNS çalışmadı"
+        // görür. Tutanın adını söylemek o duvarı tek cümleye indiriyor.
         const string netstat = """
               Proto  Local Address          Foreign Address        State           PID
               UDP    0.0.0.0:5353           *:*                                    1234
@@ -102,8 +102,8 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Netstat_ciktisinda_port_numarasi_kismen_eslesmiyor()
     {
-        // 5353 ve 5355 de "53" ile BASLIYOR. Metin karsilastirmasiyla yazilmis
-        // bir ayristirici bunlari 53 sanardi ve kullaniciya masum bir servisi
+        // 5353 ve 5355 de "53" ile BAŞLIYOR. Metin karşılaştırmasıyla yazılmış
+        // bir ayrıştırıcı bunları 53 sanardı ve kullanıcıya masum bir servisi
         // "DNS portunu tutuyor" diye bildirirdi.
         const string netstat = """
               UDP    0.0.0.0:5353           *:*                                    1234
@@ -116,9 +116,9 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Hosts_dosyasinda_yalnizca_ilgilendigimiz_adlar_bulunuyor()
     {
-        // Aranan sey dar ve somut: TEST HEDEFLERIMIZDEN biri yonlendirilmis mi.
-        // "Butun hosts girdilerini supheli say" yaklasimi gurultu uretirdi --
-        // reklam engelleyiciler o dosyayi mesru olarak dolduruyor.
+        // Aranan şey dar ve somut: TEST HEDEFLERİMİZDEN biri yönlendirilmiş mi.
+        // "Bütün hosts girdilerini şüpheli say" yaklaşımı gürültü üretirdi;
+        // reklam engelleyiciler o dosyayı meşru olarak dolduruyor.
         const string hosts = """
             # Copyright (c) 1993-2009 Microsoft Corp.
             127.0.0.1       localhost
@@ -133,19 +133,19 @@ public sealed class ConflictScannerTests
         Assert.Equal(3, bulunan.Count);
         Assert.Contains(bulunan, b => b.Host == "discord.com" && b.Address == "195.175.254.2");
 
-        // Tek satirda birden cok ad olabiliyor; ikisi de bulunmali.
+        // Tek satırda birden çok ad olabiliyor; ikisi de bulunmalı.
         Assert.Contains(bulunan, b => b.Host == "gateway.discord.gg" && b.Address == "10.0.0.5");
         Assert.Contains(bulunan, b => b.Host == "www.youtube.com" && b.Address == "10.0.0.5");
 
-        // Ilgilenmedigimiz ad ve yorum satiri gecmemeli.
+        // İlgilenmediğimiz ad ve yorum satırı geçmemeli.
         Assert.DoesNotContain(bulunan, b => b.Host == "ads.example.net");
     }
 
     [Fact]
     public void Hosts_yorum_satirlari_bulgu_sayilmiyor()
     {
-        // Yorumlanmis bir satir ETKISIZ. Bulgu saymak, kullaniciyi olmayan bir
-        // sorunun pesine dusururdu.
+        // Yorumlanmış bir satır ETKİSİZ. Bulgu saymak, kullanıcıyı olmayan bir
+        // sorunun peşine düşürürdü.
         const string hosts = """
             # 195.175.254.2 discord.com
             127.0.0.1 localhost   # discord.com
@@ -154,11 +154,11 @@ public sealed class ConflictScannerTests
         Assert.Empty(ConflictScanner.ParseHostsOverrides(hosts, ["discord.com"]));
     }
 
-    // --- Kendi surucumuz kalinti sayilmamali ---------------------------------------
+    // --- Kendi sürücümüz kalıntı sayılmamalı ---------------------------------------
     //
-    // Olculdu (2026-09-16, 0.2.5): her parametre testinde "Sahipsiz ag surucusu
-    // kaydi: windivert" sorusu cikiyordu; kayit bir onceki testte kendi winws'imizin
-    // yukledigi surucuyu gosteriyordu.
+    // Ölçüldü (2026-09-16, 0.2.5): her parametre testinde "Sahipsiz ağ sürücüsü
+    // kaydı: windivert" sorusu çıkıyordu; kayıt bir önceki testte kendi winws'imizin
+    // yüklediği sürücüyü gösteriyordu.
 
     private const string OwnWinDivertQc = """
         [SC] QueryServiceConfig SUCCESS
@@ -178,8 +178,8 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Kendi_Surucumuzu_Gosteren_Kayit_Kalinti_Sayilmiyor()
     {
-        // ExtractExecutablePath bosluklu yolu diskte dogruluyor; CI'da ZapretTR kurulu
-        // olmadigi icin burada yalnizca \??\ oneki soyuluyor.
+        // ExtractExecutablePath boşluklu yolu diskte doğruluyor; CI'da ZapretTR kurulu
+        // olmadığı için burada yalnızca \??\ öneki soyuluyor.
         var yol = ConflictScanner.ReadScField(OwnWinDivertQc, "BINARY_PATH_NAME")![4..];
 
         Assert.True(ConflictScanner.IsOwnDriver(yol, @"C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys"));
@@ -199,7 +199,7 @@ public sealed class ConflictScannerTests
     [Fact]
     public void Kendi_Yolumuz_Bilinmiyorsa_Hicbir_Surucu_Bizim_Sayilmiyor()
     {
-        // Vendor bulunamadiysa guvenli taraf: eski davranis (bildir, kullanici karar versin).
+        // Vendor bulunamadıysa güvenli taraf: eski davranış (bildir, kullanıcı karar versin).
         Assert.False(ConflictScanner.IsOwnDriver(@"C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys", null));
     }
 }

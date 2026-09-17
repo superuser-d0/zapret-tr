@@ -4,25 +4,25 @@ using System.Text.Json.Serialization;
 
 namespace ZapretTr.Core.Profiles;
 
-/// <summary>Bir aday stratejinin nereden geldigi. Duyum ile cikarimi ayirmak icin.</summary>
+/// <summary>Bir aday stratejinin nereden geldiği. Duyum ile çıkarımı ayırmak için.</summary>
 [JsonConverter(typeof(CandidateSourceJsonConverter))]
 public enum CandidateSource
 {
-    /// <summary>TR toplulugunda bildirilmis ama bizim dogrulamadigimiz.</summary>
+    /// <summary>TR topluluğunda bildirilmiş ama bizim doğrulamadığımız.</summary>
     CommunityUnverified,
 
-    /// <summary>Belgelenen mekanizmadan turetilmis; kimse bildirmedi, biz cikardik.</summary>
+    /// <summary>Belgelenen mekanizmadan türetilmiş; kimse bildirmedi, biz çıkardık.</summary>
     Hypothesis,
 
-    /// <summary>zapret'in kendi ornek preset dosyasindan.</summary>
+    /// <summary>zapret'in kendi örnek preset dosyasından.</summary>
     UpstreamPreset,
 
-    /// <summary>Bizim testimizde gercekten calisti.</summary>
+    /// <summary>Bizim testimizde gerçekten çalıştı.</summary>
     Verified,
 }
 
 /// <summary>
-/// Kaynak etiketlerini JSON'daki tireli hallerine baglar.
+/// Kaynak etiketlerini JSON'daki tireli hâllerine bağlar.
 /// (.NET 9'daki JsonStringEnumMemberName bu hedefte yok.)
 /// </summary>
 public sealed class CandidateSourceJsonConverter : JsonConverter<CandidateSource>
@@ -59,9 +59,9 @@ public sealed class StrategyCandidate
     public required StrategySection Section { get; init; }
 
     /// <summary>
-    /// winws argumanlari. <c>{FAKE_QUIC_GOOGLE}</c> gibi yer tutucular
-    /// <see cref="VendorPaths"/> tarafindan cozulur -- profiller makineye ozel
-    /// mutlak yol icermesin diye.
+    /// winws argümanları. <c>{FAKE_QUIC_GOOGLE}</c> gibi yer tutucular
+    /// <see cref="VendorPaths"/> tarafından çözülür; profiller makineye özel
+    /// mutlak yol içermesin diye.
     /// </summary>
     [JsonPropertyName("args")]
     public required string Args { get; init; }
@@ -69,14 +69,14 @@ public sealed class StrategyCandidate
     [JsonPropertyName("protocols")]
     public IReadOnlyList<string> Protocols { get; init; } = Array.Empty<string>();
 
-    /// <summary>Deneme sirasi; buyuk once denenir. Kullanicinin kendi sonuclari bunu yerelde gunceller.</summary>
+    /// <summary>Deneme sırası; büyük önce denenir. Kullanıcının kendi sonuçları bunu yerelde günceller.</summary>
     [JsonPropertyName("weight")]
     public int Weight { get; init; }
 
     [JsonPropertyName("source")]
     public CandidateSource Source { get; init; } = CandidateSource.Hypothesis;
 
-    /// <summary>Hangi hedef siniflarinda dogrulandigi: genel-web, youtube, discord, discord-voice.</summary>
+    /// <summary>Hangi hedef sınıflarında doğrulandığı: genel-web, youtube, discord, discord-voice.</summary>
     [JsonPropertyName("verifiedFor")]
     public IReadOnlyList<string> VerifiedFor { get; init; } = Array.Empty<string>();
 
@@ -87,7 +87,7 @@ public sealed class StrategyCandidate
     public string? Note { get; init; }
 }
 
-/// <summary>Bir servis saglayicisi icin siralanmis aday listesi.</summary>
+/// <summary>Bir servis sağlayıcısı için sıralanmış aday listesi.</summary>
 public sealed class IspProfile
 {
     [JsonPropertyName("id")]
@@ -96,13 +96,13 @@ public sealed class IspProfile
     [JsonPropertyName("displayName")]
     public required string DisplayName { get; init; }
 
-    /// <summary>Otomatik tespit icin ASN listesi. Bos olabilir.</summary>
+    /// <summary>Otomatik tespit için ASN listesi. Boş olabilir.</summary>
     [JsonPropertyName("asns")]
     public IReadOnlyList<int> Asns { get; init; } = Array.Empty<int>();
 
     /// <summary>
-    /// ASN kayit adinda aranacak kucuk harfli anahtar kelimeler.
-    /// ASN listeleri eskidigi ve her ISP'nin ASN'sini dogrulayamadigimiz icin yedek eslesme yolu.
+    /// ASN kayıt adında aranacak küçük harfli anahtar kelimeler.
+    /// ASN listeleri eskidiği ve her İSS'nin ASN'sini doğrulayamadığımız için yedek eşleşme yolu.
     /// </summary>
     [JsonPropertyName("orgKeywords")]
     public IReadOnlyList<string> OrgKeywords { get; init; } = Array.Empty<string>();
@@ -110,7 +110,7 @@ public sealed class IspProfile
     [JsonPropertyName("engine")]
     public string Engine { get; init; } = "winws";
 
-    /// <summary>Tier 2 genislemede komsu profillerin denenme sirasi. Kucuk = once.</summary>
+    /// <summary>Tier 2 genişlemede komşu profillerin denenme sırası. Küçük = önce.</summary>
     [JsonPropertyName("priority")]
     public int Priority { get; init; } = 100;
 
@@ -121,24 +121,24 @@ public sealed class IspProfile
     public IReadOnlyList<StrategyCandidate> Candidates { get; init; } = Array.Empty<StrategyCandidate>();
 
     /// <summary>
-    /// Bu profilin adaylarini, kullanicinin kendi dogruladiklariyle birlestirilmis
-    /// yeni bir profil doner.
+    /// Bu profilin adaylarını, kullanıcının kendi doğruladıklarıyla birleştirilmiş
+    /// yeni bir profil döner.
     /// </summary>
     /// <remarks>
-    /// Dogrulanmis adaylar listenin BASINA gecer (agirlik 200) cunku "bu makinede
-    /// gercekten calisti" bilgisi, toplulukta bildirilmis ya da mekanizmadan
-    /// turetilmis her seyden daha guclu bir kanit. Merdivende zaten var olan bir
-    /// aday dogrulanmissa yerine gecer, yoksa yeni aday olarak eklenir -- genel
+    /// Doğrulanmış adaylar listenin BAŞINA geçer (ağırlık 200), çünkü "bu makinede
+    /// gerçekten çalıştı" bilgisi, toplulukta bildirilmiş ya da mekanizmadan
+    /// türetilmiş her şeyden daha güçlü bir kanıt. Merdivende zaten var olan bir
+    /// aday doğrulanmışsa yerine geçer, yoksa yeni aday olarak eklenir; genel
     /// aramada bulunan kazananlar bu ikinci yoldan giriyor.
     /// </remarks>
-    /// <summary>Ogrenilmis adayin notu: olcumun neyi gosterdigini abartmadan soyler.</summary>
+    /// <summary>Öğrenilmiş adayın notu: ölçümün neyi gösterdiğini abartmadan söyler.</summary>
     /// <remarks>
-    /// discord-voice bolumu STUN ile olculuyor. STUN cevabi UDP yolunun acik oldugunu
-    /// gosteriyor, Discord sesli gorusmenin calistigini DEGIL: ses sunucusunun adresi
-    /// ancak kimligi dogrulanmis bir ses oturumundan aliniyor ve disaridan olculemiyor.
-    /// Eskiden bu bolumun kazanani da "parametre testiyle dogrulandi" diye
-    /// kaydediliyordu. Kaynak yine Verified kaliyor, cunku olcumu gecti ve calisma
-    /// zamaninda olcum gecmemis adaylardan once gelmeli; abartan yalnizca metindi.
+    /// discord-voice bölümü STUN ile ölçülüyor. STUN cevabı UDP yolunun açık olduğunu
+    /// gösteriyor, Discord sesli görüşmenin çalıştığını DEĞİL: ses sunucusunun adresi
+    /// ancak kimliği doğrulanmış bir ses oturumundan alınıyor ve dışarıdan ölçülemiyor.
+    /// Eskiden bu bölümün kazananı da "parametre testiyle doğrulandı" diye
+    /// kaydediliyordu. Kaynak yine Verified kalıyor, çünkü ölçümü geçti ve çalışma
+    /// zamanında ölçüm geçmemiş adaylardan önce gelmeli; abartan yalnızca metindi.
     /// </remarks>
     public static string LearnedNote(StrategySection section) => section == StrategySection.DiscordVoice
         ? "Bu baglantida STUN ile olculdu: UDP yolu acik. Discord sesli gorusmenin calistigi ayrica dogrulanmadi."
@@ -204,14 +204,14 @@ public sealed class IspProfile
     }
 
     /// <summary>
-    /// Bir bolumun adaylarini deneme sirasina gore verir (agirligi buyuk once).
+    /// Bir bölümün adaylarını deneme sırasına göre verir (ağırlığı büyük önce).
     /// </summary>
     public IEnumerable<StrategyCandidate> CandidatesFor(StrategySection section)
         => Candidates.Where(c => c.Section == section).OrderByDescending(c => c.Weight);
 
     /// <summary>
-    /// Bu profilin verilen ASN ve kurulus adiyla eslesip esmedigi.
-    /// ASN kesin eslesme; kurulus adi ise anahtar kelime iceriyor mu diye bakilir.
+    /// Bu profilin verilen ASN ve kuruluş adıyla eşleşip eşleşmediği.
+    /// ASN kesin eşleşme; kuruluş adında ise anahtar kelime geçiyor mu diye bakılır.
     /// </summary>
     public bool Matches(int? asn, string? orgName)
     {

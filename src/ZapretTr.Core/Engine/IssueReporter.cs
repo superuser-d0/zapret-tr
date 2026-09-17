@@ -2,94 +2,94 @@ using System.Text;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Kullanicinin gozden gecirip gonderecegi hata bildirimini hazirlar.</summary>
+/// <summary>Kullanıcının gözden geçirip göndereceği hata bildirimini hazırlar.</summary>
 /// <remarks>
-/// Bu sinif HICBIR SEY GONDERMEZ. Yalnizca GitHub'in "yeni konu" formunu
-/// dolduran bir adres uretir; formu acan tarayicidir, gonder dugmesine basan
-/// kullanicidir.
+/// Bu sınıf HİÇBİR ŞEY GÖNDERMEZ. Yalnızca GitHub'ın "yeni konu" formunu
+/// dolduran bir adres üretir; formu açan tarayıcıdır, gönder düğmesine basan
+/// kullanıcıdır.
 ///
-/// Neden boyle:
+/// Neden böyle:
 ///
-/// 1. Uygulamanin icinden dogrudan issue acmak icin bir GitHub belirteci
-///    gerekir. Belirteci exe'ye gomersek herkes cikartip bizim adimiza konu
-///    acabilir; kendi sunucumuza gondermek ise ayri bir sistem ve ayri bir
+/// 1. Uygulamanın içinden doğrudan issue açmak için bir GitHub belirteci
+///    gerekir. Belirteci exe'ye gömersek herkes çıkarıp bizim adımıza konu
+///    açabilir; kendi sunucumuza göndermek ise ayrı bir sistem ve ayrı bir
 ///    gizlilik sorunu demek.
-/// 2. Anonim gelen rapora GERI SORU SORULAMIYOR. Elimizdeki en ogretici saha
-///    bildirimi ("cikis kodu 34") tek basina ise yaramadi; ikinci bir kosum
-///    gerekti. Bildirimin bir kullaniciya bagli olmasi, raporun kendisi kadar
-///    degerli.
-/// 3. Gonderilecek metni kullanicinin GORMESI gerekiyor: icinde hattinin
-///    servis saglayicisi ve denenen parametreler var.
+/// 2. Anonim gelen rapora GERİ SORU SORULAMIYOR. Elimizdeki en öğretici saha
+///    bildirimi ("çıkış kodu 34") tek başına işe yaramadı; ikinci bir koşum
+///    gerekti. Bildirimin bir kullanıcıya bağlı olması, raporun kendisi kadar
+///    değerli.
+/// 3. Gönderilecek metni kullanıcının GÖRMESİ gerekiyor: içinde hattının
+///    servis sağlayıcısı ve denenen parametreler var.
 ///
-/// Adres uzunlugu sinirli oldugu icin gunlugun TAMAMI buraya konmuyor; son
-/// satirlar konuyor ve gerisi "Raporu Kaydet" dosyasina birakiliyor.
+/// Adres uzunluğu sınırlı olduğu için günlüğün TAMAMI buraya konmuyor; son
+/// satırlar konuyor ve gerisi "Raporu Kaydet" dosyasına bırakılıyor.
 /// </remarks>
 public static class IssueReporter
 {
-    /// <summary>Bos konu formu.</summary>
+    /// <summary>Boş konu formu.</summary>
     public const string NewIssuePage =
         "https://github.com/superuser-d0/zapret-tr/issues/new";
 
-    /// <summary>Mevcut konularin listesi.</summary>
+    /// <summary>Mevcut konuların listesi.</summary>
     public const string IssuesPage =
         "https://github.com/superuser-d0/zapret-tr/issues";
 
     /// <summary>
-    /// Uretilen adres icin ust sinir.
+    /// Üretilen adres için üst sınır.
     /// </summary>
     /// <remarks>
-    /// Cok uzun adresler sunucudan 414 donuyor ve bazi tarayicilar sessizce
-    /// kesiyor. 6000, hem GitHub'in hem tarayicilarin rahatca tasidigi bir
-    /// deger. Sinira takilirsak gunlugun EN ESKI satirlarindan atiyoruz:
-    /// hatanin izi son satirlarda.
+    /// Çok uzun adresler sunucudan 414 dönüyor ve bazı tarayıcılar sessizce
+    /// kesiyor. 6000, hem GitHub'ın hem tarayıcıların rahatça taşıdığı bir
+    /// değer. Sınıra takılırsak günlüğün EN ESKİ satırlarından atıyoruz:
+    /// hatanın izi son satırlarda.
     /// </remarks>
     public const int MaxUrlLength = 6000;
 
-    /// <summary>Gunlukten alinacak en fazla satir sayisi.</summary>
+    /// <summary>Günlükten alınacak en fazla satır sayısı.</summary>
     public const int MaxLogLines = 25;
 
-    /// <summary>Tek bir gunluk satirinin govdeye girecek en fazla uzunlugu.</summary>
+    /// <summary>Tek bir günlük satırının gövdeye girecek en fazla uzunluğu.</summary>
     /// <remarks>
-    /// Satir SAYISINI sinirlamak tek basina yetmiyor: tek bir satir da cok uzun
-    /// olabiliyor (tam komut satiri, uzun bir istisna metni). Satir basina sinir
-    /// olmadan "adres sinirin altinda kalir" diye bir guvence veremiyoruz.
+    /// Satır SAYISINI sınırlamak tek başına yetmiyor: tek bir satır da çok uzun
+    /// olabiliyor (tam komut satırı, uzun bir istisna metni). Satır başına sınır
+    /// olmadan "adres sınırın altında kalır" diye bir güvence veremiyoruz.
     /// </remarks>
     public const int MaxLogLineLength = 200;
 
     /// <summary>
-    /// Bir gunluk satirinin kullanicinin kendi girdigi veriyi tasiyip
-    /// tasimadigini soyler.
+    /// Bir günlük satırının kullanıcının kendi girdiği veriyi taşıyıp
+    /// taşımadığını söyler.
     /// </summary>
     /// <remarks>
-    /// "Kendi hedefiniz" satiri kullanicinin arayuze YAZDIGI adresi iceriyor.
-    /// Denenen parametreler ve varsayilan hedefler bizim listemiz -- onlarin
-    /// paylasilmasinda sakinca yok -- ama kullanicinin kendi yazdigi adres
-    /// bize ait degil ve bir forma kendiliginden dusmemeli.
+    /// "Kendi hedefiniz" satırı kullanıcının arayüze YAZDIĞI adresi içeriyor.
+    /// Denenen parametreler ve varsayılan hedefler bizim listemiz, onların
+    /// paylaşılmasında sakınca yok; ama kullanıcının kendi yazdığı adres
+    /// bize ait değil ve bir forma kendiliğinden düşmemeli.
     /// </remarks>
     public static bool IsUserSupplied(string logLine)
         => logLine.Contains("Kendi hedefiniz", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Konu basligini kurar.</summary>
+    /// <summary>Konu başlığını kurar.</summary>
     /// <remarks>
-    /// Ayrac "·", uzun tire degil: durum metinlerinin KENDISI uzun tire
-    /// iceriyor ("ÇALIŞIYOR — AMA AÇMIYOR") ve ayrac da uzun tire olunca baslik
-    /// uc parcali mi dort parcali mi belli olmuyordu. Gercek ciktida goruldu.
+    /// Ayraç "·", uzun tire değil: durum metinlerinin KENDİSİ uzun tire
+    /// içeriyor ("ÇALIŞIYOR — AMA AÇMIYOR") ve ayraç da uzun tire olunca başlık
+    /// üç parçalı mı dört parçalı mı belli olmuyordu. Gerçek çıktıda görüldü.
     ///
-    /// Surum basta: konu listesi tarandiginda ilk sorulan sey "bu hangi surum".
+    /// Sürüm başta: konu listesi tarandığında ilk sorulan şey "bu hangi sürüm".
     ///
-    /// Surumun "+sha" kuyrugu ATILIYOR. Gercek kosumda baslik soyle cikti:
-    /// "[hata] v0.1.18+a8a66ca13a4b2675ea2f8b6fe217a3ba9fd3bad8 · ..." -- 93
-    /// karakterin yarisi tek bir yapinin karmasiydi ve konu listesinde okunacak
-    /// hicbir sey birakmiyordu. Karma yine de kayboluyor degil: ortam
-    /// tablosunda tam haliyle duruyor, yani "hangi yapi" sorusu cevapsiz kalmiyor.
+    /// Sürümün "+sha" kuyruğu ATILIYOR. Gerçek koşumda başlık şöyle çıktı:
+    /// "[hata] v0.1.18+a8a66ca13a4b2675ea2f8b6fe217a3ba9fd3bad8 · ..."; 93
+    /// karakterin yarısı tek bir yapının karmasıydı ve konu listesinde okunacak
+    /// hiçbir şey bırakmıyordu. Karma yine de kaybolmuyor: ortam
+    /// tablosunda tam hâliyle duruyor, yani "hangi yapı" sorusu cevapsız kalmıyor.
     /// </remarks>
     public static string BuildTitle(IssueDetails details)
         => $"[hata] v{Bos(details.AppVersion, "?").Split('+')[0]} · {Bos(details.Isp, "ISS seçilmemiş")} · {Bos(details.Status, "durum yok")}";
 
-    /// <summary>Konu govdesini kurar.</summary>
+    /// <summary>Konu gövdesini kurar.</summary>
     /// <param name="logLineBudget">
-    /// Govdeye girecek gunluk satiri sayisi. <see cref="BuildUrl"/> adres
-    /// sinirina sigana kadar bunu kucultuyor.
+    /// Gövdeye girecek günlük satırı sayısı. <see cref="BuildUrl"/> adres
+    /// sınırına sığana kadar bunu küçültüyor.
     /// </param>
     public static string BuildBody(IssueDetails details, int logLineBudget = MaxLogLines)
     {
@@ -150,12 +150,12 @@ public static class IssueReporter
         return sb.ToString();
     }
 
-    /// <summary>Doldurulmus konu formunun adresini kurar.</summary>
+    /// <summary>Doldurulmuş konu formunun adresini kurar.</summary>
     /// <remarks>
-    /// Adres <see cref="MaxUrlLength"/>'i asarsa gunluk satiri sayisi
-    /// azaltilarak yeniden deneniyor. Sifir satirla bile sigmiyorsa -- ki
-    /// ortam tablosu sabit boyutta oldugu icin olmamali -- yine de o adres
-    /// donuyor: eksik bir bildirim, hic bildirim olmamasindan iyi.
+    /// Adres <see cref="MaxUrlLength"/>'i aşarsa günlük satırı sayısı
+    /// azaltılarak yeniden deneniyor. Sıfır satırla bile sığmıyorsa (ki
+    /// ortam tablosu sabit boyutta olduğu için olmamalı) yine de o adres
+    /// dönüyor: eksik bir bildirim, hiç bildirim olmamasından iyi.
     /// </remarks>
     public static string BuildUrl(IssueDetails details)
     {
@@ -173,7 +173,7 @@ public static class IssueReporter
             }
         }
 
-        // Dongu butce == 0'da mutlaka donuyor; derleyiciyi memnun etmek icin.
+        // Döngü bütçe == 0'da mutlaka dönüyor; derleyiciyi memnun etmek için.
         return NewIssuePage;
     }
 
@@ -185,13 +185,13 @@ public static class IssueReporter
     private static string Bos(string? deger, string yedek)
         => string.IsNullOrWhiteSpace(deger) ? yedek : deger.Trim();
 
-    // Tablo hucresinde bolme cizgisi sutunu kiriyor; parametrelerde "|" gecmiyor
-    // ama gecerse tabloyu bozmasin.
+    // Tablo hücresinde dikey çizgi sütunu kırıyor; parametrelerde "|" geçmiyor
+    // ama geçerse tabloyu bozmasın.
     private static string Hucre(string? deger)
         => Bos(deger, "-").Replace("|", @"\|", StringComparison.Ordinal);
 }
 
-/// <summary>Hata bildirimine girecek ortam ozeti.</summary>
+/// <summary>Hata bildirimine girecek ortam özeti.</summary>
 public sealed record IssueDetails(
     string AppVersion,
     string EngineVersion,

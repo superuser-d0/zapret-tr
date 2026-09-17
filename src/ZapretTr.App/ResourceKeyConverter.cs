@@ -6,13 +6,13 @@ using System.Windows.Media;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Kaynak anahtari dizgisini gercek fircaya cevirir.
+/// Kaynak anahtarı dizgisini gerçek fırçaya çevirir.
 /// </summary>
 /// <remarks>
-/// Gorunum modeli durumu bir anahtar olarak veriyor ("StatusRunningBrush"), fircanin
-/// kendisini degil. Boylece renk kararlari App.xaml'de tek yerde kaliyor ve gorunum
-/// modeli cizim tipleriyle ugrasmiyor -- ileride koyu tema eklendiginde degisecek
-/// tek yer kaynak sozlugu olur.
+/// Görünüm modeli durumu bir anahtar olarak veriyor ("StatusRunningBrush"), fırçanın
+/// kendisini değil. Böylece renk kararları App.xaml'de tek yerde kalıyor ve görünüm
+/// modeli çizim tipleriyle uğraşmıyor; ileride koyu tema eklendiğinde değişecek
+/// tek yer kaynak sözlüğü olur.
 /// </remarks>
 public sealed class ResourceKeyConverter : IValueConverter
 {

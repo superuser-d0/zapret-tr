@@ -9,20 +9,20 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Uygulamanin baglandigi dis adresler belgede yazili olmali; olcumler olduklarindan fazlasini soylememeli.
+/// Uygulamanın bağlandığı dış adresler belgede yazılı olmalı; ölçümler olduklarından fazlasını söylememeli.
 /// </summary>
 /// <remarks>
-/// Disaridan bir kod incelemesi iki seyi yakaladi:
+/// Dışarıdan bir kod incelemesi iki şeyi yakaladı:
 ///
-///   1. Ayrintili rehber, guncelleme denetimi kapatilinca uygulamanin "hicbir ag istegi
-///      yapmadigini" soyluyordu. Parametre testi IP adresini ISS tespit servislerine
-///      gonderiyor, DNS'i Cloudflare'e ya da Google'a soruyor; sifreli DNS sunucu listesi
-///      indiriyor. Hicbiri belgede yoktu. ISS tespitinde ilk sorulan kaynak da sifresizdi.
-///   2. discord-voice bolumu STUN ile olculuyor, ama gunluk "Discord ses" yaziyor ve kayit
-///      "dogrulandi" diyordu.
+///   1. Ayrıntılı rehber, güncelleme denetimi kapatılınca uygulamanın "hiçbir ağ isteği
+///      yapmadığını" söylüyordu. Parametre testi IP adresini İSS tespit servislerine
+///      gönderiyor, DNS'i Cloudflare'e ya da Google'a soruyor; şifreli DNS sunucu listesi
+///      indiriyor. Hiçbiri belgede yoktu. İSS tespitinde ilk sorulan kaynak da şifresizdi.
+///   2. discord-voice bölümü STUN ile ölçülüyor, ama günlük "Discord ses" yazıyor ve kayıt
+///      "doğrulandı" diyordu.
 ///
-/// Ikisi de derlemeyi ve testleri geciyordu: yanlis olan kod degil, kodun kendisi hakkinda
-/// soyledigi seydi.
+/// İkisi de derlemeyi ve testleri geçiyordu: yanlış olan kod değil, kodun kendisi hakkında
+/// söylediği şeydi.
 /// </remarks>
 public sealed class NetworkDisclosureTests
 {
@@ -55,14 +55,14 @@ public sealed class NetworkDisclosureTests
                 {
                     var host = m.Groups[1].Value;
 
-                    // Ag istegi degil: zamanlanmis gorev XML'inin ad alani.
+                    // Ağ isteği değil: zamanlanmış görev XML'inin ad alanı.
                     if (host.Equals("schemas.microsoft.com", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
 
-                    // GitHub adresleri (guncelleme, yayin, hata formu, dnscrypt listesi)
-                    // rehberde "GitHub" olarak geciyor.
+                    // GitHub adresleri (güncelleme, yayın, hata formu, dnscrypt listesi)
+                    // rehberde "GitHub" olarak geçiyor.
                     var bulundu = host.EndsWith("github.com", StringComparison.OrdinalIgnoreCase)
                                   || host.EndsWith("githubusercontent.com", StringComparison.OrdinalIgnoreCase)
                         ? rehber.Contains("GitHub", StringComparison.Ordinal)
@@ -96,7 +96,7 @@ public sealed class NetworkDisclosureTests
         Assert.Contains("UDP", not, StringComparison.Ordinal);
         Assert.Contains("dogrulanmadi", not, StringComparison.Ordinal);
 
-        // Diger bolumlerin notu degismedi.
+        // Diğer bölümlerin notu değişmedi.
         Assert.Equal("Bu baglantida parametre testiyle dogrulandi.", IspProfile.LearnedNote(StrategySection.Tcp443));
     }
 
@@ -123,7 +123,7 @@ public sealed class NetworkDisclosureTests
 
         var aday = Assert.Single(profil.Candidates);
 
-        // Kaynak Verified kaliyor: olcumu gecti ve calisma zamaninda gecmeyenlerden once gelmeli.
+        // Kaynak Verified kalıyor: ölçümü geçti ve çalışma zamanında geçmeyenlerden önce gelmeli.
         Assert.Equal(CandidateSource.Verified, aday.Source);
         Assert.Equal(IspProfile.LearnedNote(StrategySection.DiscordVoice), aday.Note);
     }

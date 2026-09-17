@@ -18,9 +18,9 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
 
-    <!-- Ust kisim kayabiliyor, gunluk ve alt bilgi her zaman gorunuyor. Duz bir
-         Grid'ken varsayilan boyutta "Çıkış" yarim kaliyor, "Ayrıntılar" ve alt
-         bilgi hic gorunmuyordu (0.1.21, gercek kurulumda olculdu). Gerekcesi
+    <!-- Üst kısım kayabiliyor, günlük ve alt bilgi her zaman görünüyor. Düz bir
+         Grid'ken varsayılan boyutta "Çıkış" yarım kalıyor, "Ayrıntılar" ve alt
+         bilgi hiç görünmüyordu (0.1.21, gerçek kurulumda ölçüldü). Gerekçesi
          SigdirmaPaneli'nde. -->
     <local:SigdirmaPaneli Margin="16,12,16,10">
 
@@ -29,7 +29,7 @@
                       Focusable="False">
             <ScrollViewer.Style>
                 <Style TargetType="ScrollViewer">
-                    <!-- Kaydirma cubugu ciktiginda dugmelerin kenarina yapismasin. -->
+                    <!-- Kaydırma çubuğu çıktığında düğmelerin kenarına yapışmasın. -->
                     <Style.Triggers>
                         <Trigger Property="ComputedVerticalScrollBarVisibility" Value="Visible">
                             <Setter Property="Padding" Value="0,0,8,0" />
@@ -40,11 +40,11 @@
             <StackPanel>
 
                 <!-- ================= DURUM BANDI =================
-                     Ekrandaki referansta burasi yalnizca "SISTEM HAZIR" yaziyor.
-                     Burada ek olarak hangi ISS ve hangi stratejinin secili oldugu ve
-                     stratejinin dogrulanip dogrulanmadigi da gosteriliyor: kullanicinin
-                     "acik mi, neyle acik, guveneyim mi" sorularinin ucune de tek bakista
-                     cevap vermesi icin. -->
+                     Ekrandaki referansta burası yalnızca "SİSTEM HAZIR" yazıyor.
+                     Burada ek olarak hangi İSS'nin ve hangi stratejinin seçili olduğu ve
+                     stratejinin doğrulanıp doğrulanmadığı da gösteriliyor: kullanıcının
+                     "açık mı, neyle açık, güveneyim mi" sorularının üçüne de tek bakışta
+                     cevap vermesi için. -->
                 <Border CornerRadius="6" Padding="14,12" Margin="0,0,0,14"
                         Background="{Binding StatusBrushKey, Converter={x:Static local:ResourceKeyConverter.Instance}}">
                     <StackPanel>
@@ -64,17 +64,17 @@
                             Command="{Binding StartCommand}"
                             Style="{StaticResource PrimaryButton}" />
 
-                    <!-- Referans arayuzde durdurma ayri bir durum degil, tek dugme
-                         basla/durdur arasinda gidip geliyor. Burada duraklatma ayri:
-                         yapilandirmayi kaybetmeden gecici olarak kapatmak, "internetim
-                         bozuldu, bir seyi kapatayim" aninda en cok istenen sey. -->
+                    <!-- Referans arayüzde durdurma ayrı bir durum değil, tek düğme
+                         başla/durdur arasında gidip geliyor. Burada duraklatma ayrı:
+                         yapılandırmayı kaybetmeden geçici olarak kapatmak, "internetim
+                         bozuldu, bir şeyi kapatayım" anında en çok istenen şey. -->
                     <Button Content="Duraklat"
                             Command="{Binding PauseCommand}"
                             Style="{StaticResource ActionButton}"
                             Margin="0,8,0,0" />
                 </StackPanel>
 
-                <!-- ================= SECIMLER ================= -->
+                <!-- ================= SEÇİMLER ================= -->
                 <Grid Margin="0,0,0,14">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -88,9 +88,9 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
-                    <!-- Referansta yalnizca hazir "Strateji" listesi var. Servis
-                         saglayicisi burada birinci sinif alan: aramayi hizlandiran
-                         sey tam olarak bu secim. -->
+                    <!-- Referansta yalnızca hazır "Strateji" listesi var. Servis
+                         sağlayıcısı burada birinci sınıf alan: aramayı hızlandıran
+                         şey tam olarak bu seçim. -->
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Servis Sağlayıcı:" Style="{StaticResource LabelText}" />
                     <ComboBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
                               ItemsSource="{Binding IspChoices}"
@@ -103,30 +103,30 @@
                               SelectedItem="{Binding SelectedStrategy}"
                               DisplayMemberPath="Display" />
 
-                    <!-- Etiket ve ipucu eskiden yalnizca TESTTEN bahsediyordu; kutunun
-                         adresi KORUMAYA da ekledigini soylemiyordu. Gercek kullanici
-                         (issue #1, KeremKuyucu) "ekstra site eklemeyi bulamadim" dedi ve
-                         hakliydi: ozellik vardi, ama boyle sunulmuyordu. -->
+                    <!-- Etiket ve ipucu eskiden yalnızca TESTTEN bahsediyordu; kutunun
+                         adresi KORUMAYA da eklediğini söylemiyordu. Gerçek kullanıcı
+                         (issue #1, KeremKuyucu) "ekstra site eklemeyi bulamadım" dedi ve
+                         haklıydı: özellik vardı, ama böyle sunulmuyordu. -->
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Açılmayan site:" Style="{StaticResource LabelText}" />
                     <TextBox Grid.Row="2" Grid.Column="1" Height="28" Padding="6,4" Margin="0,0,0,8"
                              VerticalContentAlignment="Center"
                              Text="{Binding CustomTarget, UpdateSourceTrigger=PropertyChanged}"
                              ToolTip="Sizde açılmayan bir adres yazın (örnek: roblox.com).&#10;Bu adres hem testte denenir HEM DE koruma açıkken stratejinin uygulandığı adresler listesine eklenir.&#10;TEK adres yazın; şimdilik birden fazla adres desteklenmiyor.&#10;Boş bırakılırsa varsayılan hedefler kullanılır." />
 
-                    <!-- Sifreli DNS anahtari. Varsayilan ACIK ve bu olculmus bir gerekceye
-                         dayaniyor: bu makinede discord.com, pornhub.com ve xvideos.com'un
-                         ucu de saglayicinin engel sunucusuna cozumleniyordu. O katman
-                         asilmadan winws stratejisi hicbir sey degistirmiyor - trafik
-                         zaten gercek sunucuya gitmiyor. -->
+                    <!-- Şifreli DNS anahtarı. Varsayılan AÇIK ve bu ölçülmüş bir gerekçeye
+                         dayanıyor: bu makinede discord.com, pornhub.com ve xvideos.com'un
+                         üçü de sağlayıcının engel sunucusuna çözümleniyordu. O katman
+                         aşılmadan winws stratejisi hiçbir şey değiştirmiyor; trafik
+                         zaten gerçek sunucuya gitmiyor. -->
                     <CheckBox Grid.Row="3" Grid.Column="1" Margin="0,0,0,8"
                               IsChecked="{Binding IsSecureDnsEnabled}"
                               Content="Şifreli DNS kullan (önerilir)"
                               ToolTip="Servis sağlayıcınız DNS cevaplarını değiştiriyorsa, tek başına DPI atlatma yetmez. Bu seçenek dnscrypt-proxy'yi çalıştırır ve sistem DNS'ini ona yönlendirir. Uygulamayı kapattığınızda ayarınız eski haline döner." />
 
-                    <!-- Dogrulanma rozeti. Profil verisinin buyuk kismi bizim test
-                         etmedigimiz adaylardan olusuyor; "denenmeye deger" ile
-                         "calisiyor" arasindaki farki gizlemek, ise yaramadiginda
-                         guveni tumden yikardi. -->
+                    <!-- Doğrulanma rozeti. Profil verisinin büyük kısmı bizim test
+                         etmediğimiz adaylardan oluşuyor; "denenmeye değer" ile
+                         "çalışıyor" arasındaki farkı gizlemek, işe yaramadığında
+                         güveni tümden yıkardı. -->
                     <Border Grid.Row="4" Grid.Column="1"
                             Visibility="{Binding IsSelectedStrategyUnverified, Converter={StaticResource BoolToVis}}"
                             Background="{DynamicResource WarningBackBrush}"
@@ -138,7 +138,7 @@
                     </Border>
                 </Grid>
 
-                <!-- ================= PARAMETRE TESTI ================= -->
+                <!-- ================= PARAMETRE TESTİ ================= -->
                 <StackPanel Margin="0,0,0,12">
                     <Button Content="PARAMETRE TESTİ YAP"
                             Command="{Binding TestCommand}"
@@ -165,18 +165,18 @@
                                 Style="{StaticResource ActionButton}"
                                 Height="22" Margin="8,0,0,0" Padding="8,0" FontSize="11" />
 
-                        <!-- Hangi asamada oldugunu yazmak, belirsiz bir cubuktan cok daha
-                             iyi: kullanici "ISS profilimde mi, genel aramada mi" bilirse
-                             beklemeye deger olup olmadigina kendisi karar verebilir. -->
+                        <!-- Hangi aşamada olduğunu yazmak, belirsiz bir çubuktan çok daha
+                             iyi: kullanıcı "İSS profilimde mi, genel aramada mı" bilirse
+                             beklemeye değer olup olmadığına kendisi karar verebilir. -->
                         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding ProgressText}"
                                    Foreground="{DynamicResource TextMutedBrush}"
                                    FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
                     </Grid>
                 </StackPanel>
 
-                <!-- ================= DIGER ISLEMLER ================= -->
+                <!-- ================= DİĞER İŞLEMLER ================= -->
                 <StackPanel>
-                    <!-- Yeni surum varsa: gorulur ama rahatsiz etmeyen bir satir. -->
+                    <!-- Yeni sürüm varsa: görülür ama rahatsız etmeyen bir satır. -->
                     <Border Background="{DynamicResource UpdateBackBrush}" BorderBrush="{DynamicResource UpdateBorderBrush}"
                             BorderThickness="1" CornerRadius="4" Padding="10,7"
                             Margin="0,0,0,10"
@@ -198,11 +198,11 @@
                             Command="{Binding ServiceCommand}"
                             Style="{StaticResource ActionButton}"
                             ToolTip="Bilgisayar açıldığında ZapretTR kendiliğinden çalışsın. Şu anki ayarınız kullanılır; sonradan değiştirirseniz servisi yeniden kurmanız gerekir." />
-                    <!-- Bu dugme once "Ayrintilar" panelinin ICINDE duruyordu; baglami
-                         orasi diye. Yanlisti: WPF kapali bir Expander'in icerigini gorsel
-                         agaca hic eklemiyor, dolayisiyla dugme paneli acmayan kullanici
-                         icin YOKTU. Gercek bir kurulumda da tam olarak bu yasandi.
-                         Bulunamayan bir dugmenin baglami da olmaz. -->
+                    <!-- Bu düğme önce "Ayrıntılar" panelinin İÇİNDE duruyordu; bağlamı
+                         orası diye. Yanlıştı: WPF kapalı bir Expander'ın içeriğini görsel
+                         ağaca hiç eklemiyor, dolayısıyla düğme paneli açmayan kullanıcı
+                         için YOKTU. Gerçek bir kurulumda da tam olarak bu yaşandı.
+                         Bulunamayan bir düğmenin bağlamı da olmaz. -->
                     <Button Content="Güncellemeleri Denetle"
                             Command="{Binding UpdateCommand}"
                             Style="{StaticResource ActionButton}"
@@ -225,22 +225,22 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- ================= CANLI GUNLUK + TEMA =================
-             Gunluk referans arayuzde yok. Burada var ve varsayilan olarak kapali:
-             normalde gurultu, ama bir sey calismadiginda kullanicinin elindeki
-             tek kanit bu. Testte kendiliginden aciliyor.
+        <!-- ================= CANLI GÜNLÜK + TEMA =================
+             Günlük referans arayüzde yok. Burada var ve varsayılan olarak kapalı:
+             normalde gürültü, ama bir şey çalışmadığında kullanıcının elindeki
+             tek kanıt bu. Testte kendiliğinden açılıyor.
 
-             Tema dugmesi "Ayrıntılar" basliginin sagindaki bos yerde: yeni bir satir
-             pencerenin varsayilan boyutta sigmasini yeniden bozardi (800'de bosluk
-             sifir). Dugme Expander'in USTUNDE duruyor, icinde degil; kapali bir
-             Expander'in icindeki dugme kullanici icin yoktur. -->
+             Tema düğmesi "Ayrıntılar" başlığının sağındaki boş yerde: yeni bir satır
+             pencerenin varsayılan boyutta sığmasını yeniden bozardı (800'de boşluk
+             sıfır). Düğme Expander'ın ÜSTÜNDE duruyor, içinde değil; kapalı bir
+             Expander'ın içindeki düğme kullanıcı için yoktur. -->
         <Grid>
             <Expander Header="Ayrıntılar" Margin="0,12,0,0"
                       IsExpanded="{Binding IsLogExpanded}">
                 <Border Background="{DynamicResource LogBackBrush}" BorderBrush="{DynamicResource BorderBrushSoft}"
                         BorderThickness="1" CornerRadius="4" Margin="0,6,0,0">
-                    <!-- Satir dolgusu ve secim rengi temadaki ListBoxItem stilinde.
-                         Burada ItemContainerStyle verilirse koyu temanin stilini ezer. -->
+                    <!-- Satır dolgusu ve seçim rengi temadaki ListBoxItem stilinde.
+                         Burada ItemContainerStyle verilirse koyu temanın stilini ezer. -->
                     <ListBox ItemsSource="{Binding LogLines}"
                              local:AutoScrollBehavior.AutoScroll="True"
                              BorderThickness="0" Background="Transparent"
@@ -258,7 +258,7 @@
                     ToolTip="Arayüzü koyu ya da açık renge çevirir. Seçiminiz saklanır." />
         </Grid>
 
-        <!-- ================= ALT BILGI ================= -->
+        <!-- ================= ALT BİLGİ ================= -->
         <TextBlock Text="{Binding FooterText}"
                    Foreground="{DynamicResource TextMutedBrush}"
                    FontSize="11" HorizontalAlignment="Center" Margin="0,10,0,0" />

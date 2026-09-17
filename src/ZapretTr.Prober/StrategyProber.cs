@@ -6,40 +6,40 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// Parametre test motoru. blockcheck.sh'in yerini alir.
+/// Parametre test motoru. blockcheck.sh'ın yerini alır.
 /// </summary>
 /// <remarks>
-/// Hizin kaynagi paralellik degil SIRALAMA. blockcheck tum kombinasyon uzayini
-/// bastan sona tarar; burada arama kademeli daraltiliyor:
+/// Hızın kaynağı paralellik değil SIRALAMA. blockcheck tüm kombinasyon uzayını
+/// baştan sona tarar; burada arama kademeli daraltılıyor:
 ///
-///   Tier 1  secilen ISP'nin profili        (Superonline icin 19 aday)
-///   Tier 2  komsu TR profilleri
+///   Tier 1  seçilen İSS'nin profili        (Superonline için 19 aday)
+///   Tier 2  komşu TR profilleri
 ///   Tier 3  genel kombinatoryal merdiven   (180 aday)
 ///
-/// Her bolum (tcp80 / tcp443 / quic / discord-voice) BAGIMSIZ aranir ve bagimsiz
-/// kazanani olur. Bunun sebebi upstream belgesindeki su detay: md5sig yalnizca
-/// sunucu TCP MD5 secenegini reddettiginde ise yarar, yani calisan strateji hedef
-/// sunucuya da bagli. Tek bir "kazanan parametre" aramak yanlis soru olurdu.
+/// Her bölüm (tcp80 / tcp443 / quic / discord-voice) BAĞIMSIZ aranır ve bağımsız
+/// kazananı olur. Bunun sebebi upstream belgesindeki şu ayrıntı: md5sig yalnızca
+/// sunucu TCP MD5 seçeneğini reddettiğinde işe yarar, yani çalışan strateji hedef
+/// sunucuya da bağlı. Tek bir "kazanan parametre" aramak yanlış soru olurdu.
 ///
-/// PARALELLIK: izolasyon --ipset-ip ile saglaniyor ve calistigi winws --debug=1
-/// ciktisiyla dogrulandi ("include ipset check for <ip> : positive / desync
-/// profile 1 matches"). Ama izolasyon HEDEF BAZINDA: ayni hedefe ayni anda iki
-/// farkli strateji uygulanamaz, cunku ikisi de ayni paketleri gorur ve hangi
-/// sonucun hangi stratejiye ait oldugu belirsizlesir.
+/// PARALELLİK: yalıtım --ipset-ip ile sağlanıyor ve çalıştığı winws --debug=1
+/// çıktısıyla doğrulandı ("include ipset check for <ip> : positive / desync
+/// profile 1 matches"). Ama yalıtım HEDEF BAZINDA: aynı hedefe aynı anda iki
+/// farklı strateji uygulanamaz, çünkü ikisi de aynı paketleri görür ve hangi
+/// sonucun hangi stratejiye ait olduğu belirsizleşir.
 ///
-/// Bu yuzden paralellik ADAYLAR arasinda degil HEDEFLER arasinda: bir aday, ayrik
-/// hedeflerde es zamanli sinaniyor. Kazanc en cok cok hedefli bolumlerde (tcp443:
-/// discord.com, gateway.discord.gg, kullanicinin kendi adresi) hissediliyor.
-/// Adaylari paralellestirmek cazip gorunuyor ama sessizce yanlis sonuc uretirdi --
-/// yavas olmaktan cok daha kotu.
+/// Bu yüzden paralellik ADAYLAR arasında değil HEDEFLER arasında: bir aday, ayrık
+/// hedeflerde eş zamanlı sınanıyor. Kazanç en çok çok hedefli bölümlerde (tcp443:
+/// discord.com, gateway.discord.gg, kullanıcının kendi adresi) hissediliyor.
+/// Adayları paralelleştirmek cazip görünüyor ama sessizce yanlış sonuç üretirdi;
+/// bu da yavaş olmaktan çok daha kötü.
 ///
-/// Paralel olan yalnizca AG ISTEKLERI. winws TEK ornek olarak, bolumun butun
-/// hedeflerini kapsayan tek bir ipset ile calisiyor. Hedef basina ayri ornek
-/// baslatmak denendi ve winws bunu reddediyor ("A copy of winws is already running
-/// with the same filter"): --ipset-ip global WinDivert filtresine girmedigi icin
-/// iki isçi birebir ayni filtreyi kuruyor. Bu hata SESSIZDI -- her adayda
-/// isçilerden biri oluyor, aday hedeflerin yalnizca birinde olculuyordu ve ayni
-/// strateji kosumdan kosuma farkli sonuc veriyordu.
+/// Paralel olan yalnızca AĞ İSTEKLERİ. winws TEK örnek olarak, bölümün bütün
+/// hedeflerini kapsayan tek bir ipset ile çalışıyor. Hedef başına ayrı örnek
+/// başlatmak denendi ve winws bunu reddediyor ("A copy of winws is already running
+/// with the same filter"): --ipset-ip global WinDivert filtresine girmediği için
+/// iki işçi birebir aynı filtreyi kuruyor. Bu hata SESSİZDİ: her adayda
+/// işçilerden biri ölüyor, aday hedeflerin yalnızca birinde ölçülüyordu ve aynı
+/// strateji koşumdan koşuma farklı sonuç veriyordu.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class StrategyProber(
@@ -50,53 +50,53 @@ public sealed class StrategyProber(
 {
     private readonly WinwsCommandBuilder _commandBuilder = new(vendor);
 
-    /// <summary>Bir adayin uygulanmasindan sonra ag yiginin oturmasi icin beklenen sure.</summary>
+    /// <summary>Bir adayın uygulanmasından sonra ağ yığınının oturması için beklenen süre.</summary>
     private static readonly TimeSpan SettleDelay = TimeSpan.FromMilliseconds(400);
 
     /// <summary>
-    /// Ayni anda kac hedefin sinanacagi.
+    /// Aynı anda kaç hedefin sınanacağı.
     /// </summary>
     /// <remarks>
-    /// Isçiler artik surec baslatmiyor, yalnizca ag istegi atiyor. Sinir yine de
-    /// duruyor: ayni anda cok sayida istek atmak olcumun kendisini bozar (istekler
-    /// birbirinin gecikmesini etkiler ve zaman asimi esigi anlamsizlasir).
+    /// İşçiler artık süreç başlatmıyor, yalnızca ağ isteği atıyor. Sınır yine de
+    /// duruyor: aynı anda çok sayıda istek atmak ölçümün kendisini bozar (istekler
+    /// birbirinin gecikmesini etkiler ve zaman aşımı eşiği anlamsızlaşır).
     /// </remarks>
     private const int MaxParallelProbes = 3;
 
-    /// <summary>Dogrulama tekrari oncesi beklenen sure.</summary>
+    /// <summary>Doğrulama tekrarı öncesi beklenen süre.</summary>
     private static readonly TimeSpan ConfirmationGap = TimeSpan.FromMilliseconds(300);
 
     /// <summary>
-    /// Engellenmemesi beklenen hedeflerin kategori adi. Bir bolumun kontrol hedefi
-    /// acilmiyorsa o bolumun sonuclari guvenilmez ve arama yapilmaz.
+    /// Engellenmemesi beklenen hedeflerin kategori adı. Bir bölümün kontrol hedefi
+    /// açılmıyorsa o bölümün sonuçları güvenilmez ve arama yapılmaz.
     /// </summary>
     public const string ControlCategory = "kontrol";
 
-    /// <summary>Testi calistirir.</summary>
+    /// <summary>Testi çalıştırır.</summary>
     /// <param name="profile">
-    /// Kullanicinin sectigi ISP profili. null verilirse Tier 1 atlanir ve dogrudan
-    /// komsu profillerden baslanir.
+    /// Kullanıcının seçtiği İSS profili. null verilirse Tier 1 atlanır ve doğrudan
+    /// komşu profillerden başlanır.
     /// </param>
     /// <param name="stopAtFirstSuccess">
-    /// true ise her bolumde ilk calisan aday bulununca o bolumun aramasi biter.
-    /// false ise tum tier'lar taranip en iyi aday secilir -- kullanici "daha iyisini
-    /// ara" dediginde kullanilir.
+    /// true ise her bölümde ilk çalışan aday bulununca o bölümün araması biter.
+    /// false ise tüm tier'lar taranıp en iyi aday seçilir; kullanıcı "daha iyisini
+    /// ara" dediğinde kullanılır.
     /// </param>
     /// <param name="maxCandidatesPerSection">
-    /// Bir bolumde denenecek en fazla aday sayisi. null ise sinirsiz.
-    /// Butun tier'lar boyunca ortak bir butce olarak sayilir, boylece Tier 3'un
-    /// 180 adayi kullaniciyi belirsiz sure bekletemez.
+    /// Bir bölümde denenecek en fazla aday sayısı. null ise sınırsız.
+    /// Bütün tier'lar boyunca ortak bir bütçe olarak sayılır, böylece Tier 3'ün
+    /// 180 adayı kullanıcıyı belirsiz süre bekletemez.
     /// </param>
     /// <param name="knownBaseline">
-    /// Daha once hesaplanmis mevcut durum taramasi. Verilirse yeniden taranmaz.
+    /// Daha önce hesaplanmış mevcut durum taraması. Verilirse yeniden taranmaz.
     /// </param>
     /// <remarks>
-    /// <paramref name="knownBaseline"/> yalnizca hiz icin degil DOGRULUK icin de var:
-    /// tarama iki kez kosuldugunda ayni hedef iki farkli sonuc verebiliyor (DNS
-    /// cevabi ya da zaman asimi degisince engel sayfasi yerine zaman asimi gorunuyor),
-    /// ve ikinci sonuc birincisini sessizce eziyor. Ilk gercek kosumda tam bu oldu:
-    /// DNS yonlendirmesi olarak dogru siniflanmis hedefler ikinci taramada "DPI
-    /// engeli" sayilip bosuna dort dakika strateji arandi.
+    /// <paramref name="knownBaseline"/> yalnızca hız için değil DOĞRULUK için de var:
+    /// tarama iki kez koşulduğunda aynı hedef iki farklı sonuç verebiliyor (DNS
+    /// cevabı ya da zaman aşımı değişince engel sayfası yerine zaman aşımı görünüyor)
+    /// ve ikinci sonuç birincisini sessizce eziyor. İlk gerçek koşumda tam bu oldu:
+    /// DNS yönlendirmesi olarak doğru sınıflanmış hedefler ikinci taramada "DPI
+    /// engeli" sayılıp boşuna dört dakika strateji arandı.
     /// </remarks>
     public async Task<ProbeReport> RunAsync(
         IspProfile? profile,
@@ -117,21 +117,21 @@ public sealed class StrategyProber(
         var attempts = new List<CandidateResult>();
         var winners = new List<SectionWinner>();
 
-        // Kontrol hedefi acilmayan bolumler aranmaz. Kontrol, engellenmemesi
-        // BEKLENEN bir adres; o da acilmiyorsa olcum yolunda ya da baglantida bir
-        // sorun var demektir ve o bolumun "engelli" sonuclari guvenilmez.
-        // Ilk saha kosumunda QUIC bolumunde tam bu oldu: butun hedefler "HTTP/3
-        // baglantisi kurulamadi" verdi ve bu engelleme sanilip 40 aday bosuna
-        // denendi. Oysa ayni hata QUIC'in makinede hic calismamasi durumunda da
-        // ciktigi icin ikisi ayirt edilemiyordu.
+        // Kontrol hedefi açılmayan bölümler aranmaz. Kontrol, engellenmemesi
+        // BEKLENEN bir adres; o da açılmıyorsa ölçüm yolunda ya da bağlantıda bir
+        // sorun var demektir ve o bölümün "engelli" sonuçları güvenilmez.
+        // İlk saha koşumunda QUIC bölümünde tam bu oldu: bütün hedefler "HTTP/3
+        // bağlantısı kurulamadı" verdi ve bu engelleme sanılıp 40 aday boşuna
+        // denendi. Oysa aynı hata QUIC'in makinede hiç çalışmaması durumunda da
+        // çıktığı için ikisi ayırt edilemiyordu.
         var unreliableSections = baseline
             .Where(b => b.Target.Category == ControlCategory && b.Status != BaselineStatus.Accessible)
             .Select(b => b.Target.Section)
             .ToHashSet();
 
-        // Yalnizca gercekten engelli hedefi olan bolumler aranir. Engelli hedefi
-        // olmayan bir bolumu aramak anlamsiz: her aday "basarili" gorunurdu.
-        // Kontrol hedefleri de aranmaz -- onlar zaten acilmasi beklenen adresler.
+        // Yalnızca gerçekten engelli hedefi olan bölümler aranır. Engelli hedefi
+        // olmayan bir bölümü aramak anlamsız: her aday "başarılı" görünürdü.
+        // Kontrol hedefleri de aranmaz; onlar zaten açılması beklenen adresler.
         var sectionsToSearch = baseline
             .Where(b => b.Status == BaselineStatus.Blocked
                         && b.Target.Category != ControlCategory
@@ -171,12 +171,12 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// winws KAPALIYKEN hangi hedeflerin gercekten erisilemedigini belirler.
+    /// winws KAPALIYKEN hangi hedeflerin gerçekten erişilemediğini belirler.
     /// </summary>
     /// <remarks>
-    /// Testin en kritik adimi. Atlanirsa zaten acilan bir hedefle test yapilir ve
-    /// her strateji calisiyor gorunur -- blockcheck de bu yuzden once erisim
-    /// kontrolu yapiyor.
+    /// Testin en kritik adımı. Atlanırsa zaten açılan bir hedefle test yapılır ve
+    /// her strateji çalışıyor görünür; blockcheck de bu yüzden önce erişim
+    /// kontrolü yapıyor.
     /// </remarks>
     public async Task<IReadOnlyList<BaselineResult>> RunBaselineAsync(
         IProgress<ProbeProgress>? progress = null,
@@ -198,27 +198,27 @@ public sealed class StrategyProber(
                 targets.Count,
                 target.Label));
 
-            // Sifreli DNS istenmisse adresi ONCE oradan cozuyoruz. Sistem DNS'i
-            // kacirilmis oldugunda baglanti engel sunucusuna gider ve alttaki
-            // asil DPI katmani hic gorunmez -- her strateji basarisiz olur.
+            // Şifreli DNS istenmişse adresi ÖNCE oradan çözüyoruz. Sistem DNS'i
+            // kaçırılmış olduğunda bağlantı engel sunucusuna gider ve alttaki
+            // asıl DPI katmanı hiç görünmez; her strateji başarısız olur.
             string? pinnedIp = null;
             if (resolver is not null)
             {
                 pinnedIp = await resolver.ResolveIPv4Async(target.Host, cancellationToken).ConfigureAwait(false);
 
-                // Sifreli DNS ISTENDI ama cozumleme basarisiz oldu. Buradan devam
-                // etmek olcumu sessizce baska bir seye cevirir: pinnedIp null
-                // kalinca baglanti SISTEM DNS'ine duser ve DNS kacirmasi olan bir
-                // hatta -- Turkiye'de olagan durum -- engel sunucusuna gider.
-                // O zaman "engelli mi" sorusunun cevabi DPI'i degil DNS katmanini
-                // olcer, ve arama bunun uzerine kurulur.
+                // Şifreli DNS İSTENDİ ama çözümleme başarısız oldu. Buradan devam
+                // etmek ölçümü sessizce başka bir şeye çevirir: pinnedIp null
+                // kalınca bağlantı SİSTEM DNS'ine düşer ve DNS kaçırması olan bir
+                // hatta (Türkiye'de olağan durum) engel sunucusuna gider.
+                // O zaman "engelli mi" sorusunun cevabı DPI'ı değil DNS katmanını
+                // ölçer ve arama bunun üzerine kurulur.
                 //
-                // Gercek bir hatta bu somut: sistem DNS'i discord.com'u
-                // 195.175.254.2'ye (saglayicinin engel sunucusu) cozuyor. Oradan
-                // gelen bir yonlendirme "acildi" diye okunabilir.
+                // Gerçek bir hatta bu somut: sistem DNS'i discord.com'u
+                // 195.175.254.2'ye (sağlayıcının engel sunucusu) çözüyor. Oradan
+                // gelen bir yönlendirme "açıldı" diye okunabilir.
                 //
-                // Belirsiz isaretlemek dogru davranis: belirsiz hedefte strateji
-                // aranmaz, kontrol hedefi belirsizse bolum tumuyle atlanir.
+                // Belirsiz işaretlemek doğru davranış: belirsiz hedefte strateji
+                // aranmaz, kontrol hedefi belirsizse bölüm tümüyle atlanır.
                 if (pinnedIp is null)
                 {
                     results.Add(new BaselineResult(
@@ -236,9 +236,9 @@ public sealed class StrategyProber(
 
             var status = outcome switch
             {
-                // Engel sayfasi kontrolu basari kontrolunden ONCE gelmeli: engel
-                // sayfasi HTTP 200 donduruyor, dolayisiyla sirayi ters kurmak onu
-                // "aciliyor" olarak isaretlerdi.
+                // Engel sayfası kontrolü başarı kontrolünden ÖNCE gelmeli: engel
+                // sayfası HTTP 200 döndürüyor, dolayısıyla sırayı ters kurmak onu
+                // "açılıyor" olarak işaretlerdi.
                 { IsBlockPage: true } => BaselineStatus.DnsRedirected,
                 { Succeeded: true } => BaselineStatus.Accessible,
                 { ResolvedIp: null } => BaselineStatus.Inconclusive,
@@ -255,16 +255,16 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Bir hedefin herhangi bir bolumde DNS yonlendirmesi tespit edildiyse, ayni
-    /// alan adinin diger bolumlerini de oyle isaretler.
+    /// Bir hedefin herhangi bir bölümde DNS yönlendirmesi tespit edildiyse, aynı
+    /// alan adının diğer bölümlerini de öyle işaretler.
     /// </summary>
     /// <remarks>
-    /// DNS yonlendirmesi alan adi bazinda olur, protokol bazinda degil: cevap
-    /// degistirildiginde TCP de UDP de ayni yanlis sunucuya gider. Ama belirti
-    /// protokole gore degisiyor -- engel sunucusu HTTPS'i karsilayip engel sayfasi
-    /// donerken QUIC'i hic cevaplamiyor, bu da zaman asimi olarak gorunup "DPI
-    /// engeli" sanilmasina yol aciyor. O bolumde yapilacak strateji aramasi
-    /// bastan kayip: hicbir aday calismaz cunku sorun DPI degil.
+    /// DNS yönlendirmesi alan adı bazında olur, protokol bazında değil: cevap
+    /// değiştirildiğinde TCP de UDP de aynı yanlış sunucuya gider. Ama belirti
+    /// protokole göre değişiyor: engel sunucusu HTTPS'i karşılayıp engel sayfası
+    /// dönerken QUIC'i hiç cevaplamıyor, bu da zaman aşımı olarak görünüp "DPI
+    /// engeli" sanılmasına yol açıyor. O bölümde yapılacak strateji araması
+    /// baştan kayıp: hiçbir aday çalışmaz, çünkü sorun DPI değil.
     /// </remarks>
     private static List<BaselineResult> PropagateDnsRedirection(List<BaselineResult> results)
     {
@@ -307,28 +307,28 @@ public sealed class StrategyProber(
         SectionWinner? best = null;
         var remaining = budget ?? int.MaxValue;
 
-        // Arama sirasinda engel sayfasi dondugu icin vazgecilen hedefler.
+        // Arama sırasında engel sayfası döndüğü için vazgeçilen hedefler.
         var abandoned = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Tier'lar arasi tekrar: her tier kendi icinde argumana gore tekillestiriliyordu
-        // ama TIER'LAR ARASINDA degil. Profiller birbirinden turedigi ve merdiven de
-        // ayni kombinasyonlari uretebildigi icin ayni strateji farkli adla ikinci kez
-        // deneniyordu. Olculdu: TTNET'te 40 denemenin 8'i (%20) birebir ayni argumanin
-        // tekrariydi -- ornegin "tt-quic-fake-plain" ile "superonline/sol-quic-fake-plain"
-        // ayni komut. Butce sinirli oldugu icin bunun bedeli dogrudan: denenmeyen
-        // 8 gercek aday.
+        // Tier'lar arası tekrar: her tier kendi içinde argümana göre tekilleştiriliyordu
+        // ama TIER'LAR ARASINDA değil. Profiller birbirinden türediği ve merdiven de
+        // aynı kombinasyonları üretebildiği için aynı strateji farklı adla ikinci kez
+        // deneniyordu. Ölçüldü: TTNET'te 40 denemenin 8'i (%20) birebir aynı argümanın
+        // tekrarıydı; örneğin "tt-quic-fake-plain" ile "superonline/sol-quic-fake-plain"
+        // aynı komut. Bütçe sınırlı olduğu için bunun bedeli doğrudan: denenmeyen
+        // 8 gerçek aday.
         var triedArgs = new HashSet<string>(StringComparer.Ordinal);
 
-        // Tamamen cevapsiz bolumu birakmak icin: art arda kac aday hic cevap almadi
-        // ve aralarinda kac FARKLI desync yontemi var. Gerekcesi BolumCevapsiz'da.
+        // Tamamen cevapsız bölümü bırakmak için: art arda kaç aday hiç cevap almadı
+        // ve aralarında kaç FARKLI desync yöntemi var. Gerekçesi BolumCevapsiz'da.
         var ardisikSessiz = 0;
         var sessizYontemler = new HashSet<string>(StringComparer.Ordinal);
 
-        // Anahtar NORMALLESTIRILMIS: bayrak sirasi disinda ayni olan iki aday ayni
-        // adaydir. Olculdu: "tt-80-fake-fakedsplit" ile merdivenin urettigi
-        // "fake-fakedsplit#1" ayni uc bayragi farkli sirada tasiyor ve uc bagimsiz
-        // kosumun ucunde de birebir ayni sonucu verdiler -- yani sira sonucu
-        // degistirmiyor, yalnizca butce yiyordu.
+        // Anahtar NORMALLEŞTİRİLMİŞ: bayrak sırası dışında aynı olan iki aday aynı
+        // adaydır. Ölçüldü: "tt-80-fake-fakedsplit" ile merdivenin ürettiği
+        // "fake-fakedsplit#1" aynı üç bayrağı farklı sırada taşıyor ve üç bağımsız
+        // koşumun üçünde de birebir aynı sonucu verdiler; yani sıra sonucu
+        // değiştirmiyor, yalnızca bütçe yiyordu.
 
         foreach (var (tier, label, candidates) in BuildTiers(section, profile))
         {
@@ -337,9 +337,9 @@ public sealed class StrategyProber(
                 break;
             }
 
-            // Where'in yan etkisi kasitli: Take tembel oldugu icin yalnizca listeye
-            // GERCEKTEN giren adaylar "denendi" diye isaretleniyor. Butce yuzunden hic
-            // cekilmeyen bir aday isaretlenmis olsaydi, ayni argumani tasiyan baska bir
+            // Where'in yan etkisi kasıtlı: Take tembel olduğu için yalnızca listeye
+            // GERÇEKTEN giren adaylar "denendi" diye işaretleniyor. Bütçe yüzünden hiç
+            // çekilmeyen bir aday işaretlenmiş olsaydı, aynı argümanı taşıyan başka bir
             // aday sonradan sessizce elenirdi.
             var candidateList = candidates
                 .Where(c => triedArgs.Add(NormalizeArgs(c.Args)))
@@ -354,9 +354,9 @@ public sealed class StrategyProber(
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // Motor art arda hic baslamadiysa devam etmenin anlami yok:
-                // her aday saniyenin onda birinde "denenip" ayni sebeple
-                // dusuyor ve kullanici olcum yapildigini saniyor.
+                // Motor art arda hiç başlamadıysa devam etmenin anlamı yok:
+                // her aday saniyenin onda birinde "denenip" aynı sebeple
+                // düşüyor ve kullanıcı ölçüm yapıldığını sanıyor.
                 if (MotorSurekliDusuyor(attempts, out var sebep))
                 {
                     throw new ProbeEngineException(sebep);
@@ -368,8 +368,8 @@ public sealed class StrategyProber(
                 progress?.Report(new ProbeProgress(
                     tier, label, i, candidateList.Count, $"{section.ToJsonName()} · {candidate.Id}"));
 
-                // Bu adayin kendi denemelerini ayirt edebilmek icin: liste bolum
-                // boyunca birikiyor, aday basina da hedef sayisi kadar satir ekleniyor.
+                // Bu adayın kendi denemelerini ayırt edebilmek için: liste bölüm
+                // boyunca birikiyor, aday başına da hedef sayısı kadar satır ekleniyor.
                 var oncekiDenemeSayisi = attempts.Count;
 
                 var verified = await TryCandidateAsync(
@@ -387,8 +387,8 @@ public sealed class StrategyProber(
                 }
                 else
                 {
-                    // Herhangi bir CEVAP geldiyse (RST, engel sayfasi, basari) sayac
-                    // sifirlanir: paketlerimiz karsi tarafa ulasiyor demektir.
+                    // Herhangi bir CEVAP geldiyse (RST, engel sayfası, başarı) sayaç
+                    // sıfırlanır: paketlerimiz karşı tarafa ulaşıyor demektir.
                     ardisikSessiz = 0;
                     sessizYontemler.Clear();
                 }
@@ -411,7 +411,7 @@ public sealed class StrategyProber(
 
                 var winner = new SectionWinner(section, candidate.Id, candidate.Args, verified);
 
-                // Daha fazla hedef sinifini acan aday daha iyidir.
+                // Daha fazla hedef sınıfını açan aday daha iyidir.
                 if (best is null || verified.Count > best.VerifiedCategories.Count)
                 {
                     best = winner;
@@ -429,59 +429,59 @@ public sealed class StrategyProber(
         return best;
     }
 
-    /// <summary>Motorun art arda kac denemede hic baslamadigina bakar.</summary>
+    /// <summary>Motorun art arda kaç denemede hiç başlamadığına bakar.</summary>
     /// <remarks>
-    /// Esik bilerek yuksek: tek tuk basarisizlik normal (gecersiz parametre,
-    /// gecici kilit). Aranan sey BU DEGIL -- surucunun cekirdekte takili
-    /// kalmasi gibi, her adayi ayni sekilde dusuren kalici bir bozukluk.
+    /// Eşik bilerek yüksek: tek tük başarısızlık normal (geçersiz parametre,
+    /// geçici kilit). Aranan şey BU DEĞİL; sürücünün çekirdekte takılı
+    /// kalması gibi, her adayı aynı şekilde düşüren kalıcı bir bozukluk.
     /// </remarks>
-    /// <summary>Motorun hic baslamadigini anlatan hata onek.</summary>
+    /// <summary>Motorun hiç başlamadığını anlatan hata öneki.</summary>
     public const string EngineFailurePrefix = "calistirilamadi: ";
 
     public const int MotorHataEsigi = 25;
 
-    /// <summary>Hicbir cevap gelmedigini anlatan detay.</summary>
+    /// <summary>Hiçbir cevap gelmediğini anlatan ayrıntı.</summary>
     public const string CevapsizlikDetayi = "zaman asimi";
 
     /// <summary>
-    /// Bir bolumde art arda bu kadar aday HICBIR cevap alamazsa bolum birakilir.
+    /// Bir bölümde art arda bu kadar aday HİÇBİR cevap alamazsa bölüm bırakılır.
     /// </summary>
     public const int SessizlikEsigi = 12;
 
     /// <summary>
-    /// ...ve sessiz kalan adaylar arasinda en az bu kadar FARKLI desync yontemi
-    /// bulunmali. Sayi tek basina yetmiyor: ayni yontemin 12 parametre varyasyonu
-    /// "her seyi denedik" demek degil.
+    /// ...ve sessiz kalan adaylar arasında en az bu kadar FARKLI desync yöntemi
+    /// bulunmalı. Sayı tek başına yetmiyor: aynı yöntemin 12 parametre varyasyonu
+    /// "her şeyi denedik" demek değil.
     /// </summary>
     public const int SessizlikYontemEsigi = 4;
 
     /// <summary>
-    /// Bolum tamamen cevapsiz mi: art arda <see cref="SessizlikEsigi"/> aday, hepsi
-    /// zaman asimi, ve aralarinda en az <see cref="SessizlikYontemEsigi"/> farkli
-    /// desync yontemi.
+    /// Bölüm tamamen cevapsız mı: art arda <see cref="SessizlikEsigi"/> aday, hepsi
+    /// zaman aşımı ve aralarında en az <see cref="SessizlikYontemEsigi"/> farklı
+    /// desync yöntemi.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// OLCULDU (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 25 adayin HEPSI
-    /// zaman asimina ugradi, her biri ~11.7 sn, toplam 293 sn. Yani ~5 dakika,
-    /// sonucu bastan belli bir arama icin harcandi. Ayni raporda tcp443 ve tcp80
-    /// kazananlari 1.4-1.9 sn'de bulunmustu.
+    /// ÖLÇÜLDÜ (issue #1, Vodafone Net, 2026-09-15): QUIC bölümünde 25 adayın HEPSİ
+    /// zaman aşımına uğradı, her biri ~11.7 sn, toplam 293 sn. Yani ~5 dakika,
+    /// sonucu baştan belli bir arama için harcandı. Aynı raporda tcp443 ve tcp80
+    /// kazananları 1.4-1.9 sn'de bulunmuştu.
     /// </para>
     /// <para>
-    /// Esikler o rapordaki gercek siraya bakilarak secildi: 12. adaya gelindiginde
-    /// dort farkli yontem (fake, udplen, fake+udplen, ipfrag2) denenmis ve dordu de
-    /// tam sessizlikle donmus oluyor; kalan 17 deneme ayni ailelerin parametre
-    /// varyasyonlari. Yani yontem cesitliligi tukendikten SONRA vazgeciliyor,
-    /// sayaç dolduğu icin degil.
+    /// Eşikler o rapordaki gerçek sıraya bakılarak seçildi: 12. adaya gelindiğinde
+    /// dört farklı yöntem (fake, udplen, fake+udplen, ipfrag2) denenmiş ve dördü de
+    /// tam sessizlikle dönmüş oluyor; kalan 17 deneme aynı ailelerin parametre
+    /// varyasyonları. Yani yöntem çeşitliliği tükendikten SONRA vazgeçiliyor,
+    /// sayaç dolduğu için değil.
     /// </para>
     /// <para>
-    /// Neden yalnizca ZAMAN ASIMI sayiliyor: RST ya da engel sayfasi bir CEVAPTIR,
-    /// yani paketlerimiz karsi tarafa ulasiyor ve baska bir aday ise yarayabilir.
-    /// Tam sessizlik ise istegin hic gitmedigini gosterir; bunu bir desync hilesiyle
-    /// cozemiyorsak baska bir hile de cozmuyor.
+    /// Neden yalnızca ZAMAN AŞIMI sayılıyor: RST ya da engel sayfası bir CEVAPTIR,
+    /// yani paketlerimiz karşı tarafa ulaşıyor ve başka bir aday işe yarayabilir.
+    /// Tam sessizlik ise isteğin hiç gitmediğini gösterir; bunu bir desync hilesiyle
+    /// çözemiyorsak başka bir hile de çözmüyor.
     /// </para>
     /// <para>
-    /// Bolum SESSIZCE birakilmiyor: cagiran taraf ilerleme mesajiyla sebebi yaziyor
+    /// Bölüm SESSİZCE bırakılmıyor: çağıran taraf ilerleme mesajıyla sebebi yazıyor
     /// ve denemelerin hepsi raporda duruyor.
     /// </para>
     /// </remarks>
@@ -489,11 +489,11 @@ public sealed class StrategyProber(
         => ardisikSessiz >= SessizlikEsigi && farkliYontem >= SessizlikYontemEsigi;
 
     /// <summary>
-    /// Arguman dizgisindeki <c>--dpi-desync=</c> degeri; yoksa <c>(yok)</c>.
+    /// Argüman dizgisindeki <c>--dpi-desync=</c> değeri; yoksa <c>(yok)</c>.
     /// </summary>
     /// <remarks>
-    /// Yontem cesitliligini saymak icin. "fake" ile "fake,udplen" AYRI sayiliyor:
-    /// ikincisi paketi baska turlu bicimlendiriyor, yani gercekten baska bir hile.
+    /// Yöntem çeşitliliğini saymak için. "fake" ile "fake,udplen" AYRI sayılıyor:
+    /// ikincisi paketi başka türlü biçimlendiriyor, yani gerçekten başka bir hile.
     /// </remarks>
     public static string DesyncYontemi(string? args)
     {
@@ -537,7 +537,7 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Bir adayi calistirip engelli hedeflerde deneyip hangi hedef siniflarini actigini dondurur.
+    /// Bir adayı çalıştırıp engelli hedeflerde deneyerek hangi hedef sınıflarını açtığını döndürür.
     /// </summary>
 
     private async Task<IReadOnlyList<string>> TryCandidateAsync(
@@ -562,11 +562,11 @@ public sealed class StrategyProber(
         var results = new List<CandidateResult>();
         var lockObject = new object();
 
-        // TEK winws ornegi, butun hedefleri kapsayan ipset. Hedef basina ayri ornek
-        // baslatmak winws tarafindan reddediliyor ("A copy of winws is already
-        // running with the same filter") cunku --ipset-ip global WinDivert
-        // filtresine girmiyor -- iki isçi birebir ayni filtreyi kuruyor.
-        // Ayrintili gerekce WinwsCommandBuilder.BuildProbeCommand'da.
+        // TEK winws örneği, bütün hedefleri kapsayan ipset. Hedef başına ayrı örnek
+        // başlatmak winws tarafından reddediliyor ("A copy of winws is already
+        // running with the same filter"), çünkü --ipset-ip global WinDivert
+        // filtresine girmiyor; iki işçi birebir aynı filtreyi kuruyor.
+        // Ayrıntılı gerekçe WinwsCommandBuilder.BuildProbeCommand'da.
         var runner = new WinwsRunner(vendor);
         var stopwatch = Stopwatch.StartNew();
 
@@ -580,10 +580,10 @@ public sealed class StrategyProber(
             var arguments = _commandBuilder.BuildProbeCommand(
                 section, candidate.Args, [.. targets.Select(t => t.ResolvedIp!)]);
 
-            // Once winws'in kendisine dogrulat. Gecersiz bir aday burada ~50 ms'de
-            // elenir; yoksa surucu acilir, ag istegi zaman asimina ugrar ve sonuc
-            // "zaman asimi" olarak kaydedilir -- yani gercekte parametre hatasi
-            // olan bir sey engelleme sanilir.
+            // Önce winws'in kendisine doğrulat. Geçersiz bir aday burada ~50 ms'de
+            // elenir; yoksa sürücü açılır, ağ isteği zaman aşımına uğrar ve sonuç
+            // "zaman aşımı" olarak kaydedilir; yani gerçekte parametre hatası
+            // olan bir şey engelleme sanılır.
             var validationError = await runner.ValidateAsync(arguments, cancellationToken).ConfigureAwait(false);
             if (validationError is not null)
             {
@@ -595,13 +595,13 @@ public sealed class StrategyProber(
 
             await runner.StartAsync(arguments, cancellationToken).ConfigureAwait(false);
 
-            // winws'in WinDivert filtresini kurmasi anlik degil; hemen istek
-            // atarsak strateji henuz devrede olmaz ve calisan bir aday basarisiz
-            // gorunur.
+            // winws'in WinDivert filtresini kurması anlık değil; hemen istek
+            // atarsak strateji henüz devrede olmaz ve çalışan bir aday başarısız
+            // görünür.
             await Task.Delay(SettleDelay, cancellationToken).ConfigureAwait(false);
 
-            // Artik yalnizca AG ISTEKLERI paralel. Surec baslatma tek sefer
-            // yapildigi icin isçiler arasinda paylasilan hicbir surec durumu yok.
+            // Artık yalnızca AĞ İSTEKLERİ paralel. Süreç başlatma tek sefer
+            // yapıldığı için işçiler arasında paylaşılan hiçbir süreç durumu yok.
             await Parallel.ForEachAsync(
                 targets,
                 new ParallelOptions
@@ -643,29 +643,29 @@ public sealed class StrategyProber(
             await runner.StopAsync(cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }
 
-        // Sonuclar deterministik sirada eklensin: paralel kosumda tamamlanma
-        // sirasi degisken ve rapor her seferinde farkli siralanirsa
-        // karsilastirilamaz hale gelir.
+        // Sonuçlar deterministik sırada eklensin: paralel koşumda tamamlanma
+        // sırası değişken ve rapor her seferinde farklı sıralanırsa
+        // karşılaştırılamaz hâle gelir.
         attempts.AddRange(results.OrderBy(r => r.TargetHost, StringComparer.Ordinal));
 
         return opened;
     }
 
     /// <summary>
-    /// Tek bir hedefte tek bir adayi dener.
+    /// Tek bir hedefte tek bir adayı dener.
     /// </summary>
     /// <returns>
-    /// Denemenin kaydi, acilan hedef sinifi (acilmadiysa null) ve engel sayfasi
-    /// gorulup gorulmedigi.
+    /// Denemenin kaydı, açılan hedef sınıfı (açılmadıysa null) ve engel sayfası
+    /// görülüp görülmediği.
     /// </returns>
     /// <remarks>
-    /// Paralel cagrilabilmesi icin PAYLASILAN DURUMA DOKUNMUYOR: sonuclari
-    /// listelere kendisi eklemek yerine geri donduruyor. Cagiran taraf onlari
-    /// kilit altinda topluyor.
+    /// Paralel çağrılabilmesi için PAYLAŞILAN DURUMA DOKUNMUYOR: sonuçları
+    /// listelere kendisi eklemek yerine geri döndürüyor. Çağıran taraf onları
+    /// kilit altında topluyor.
     ///
-    /// winws SURECINI BASLATMAZ. Surec, bolumun butun hedeflerini kapsayan tek bir
-    /// ornek olarak cagiran tarafta baslatiliyor; hedef basina ayri ornek winws
-    /// tarafindan reddediliyor (ayrintili gerekce
+    /// winws SÜRECİNİ BAŞLATMAZ. Süreç, bölümün bütün hedeflerini kapsayan tek bir
+    /// örnek olarak çağıran tarafta başlatılıyor; hedef başına ayrı örnek winws
+    /// tarafından reddediliyor (ayrıntılı gerekçe
     /// <see cref="WinwsCommandBuilder.BuildProbeCommand(StrategySection, string, IReadOnlyList{string})"/>).
     /// </remarks>
     private async Task<(CandidateResult Result, string? OpenedCategory, bool IsBlockPage)>
@@ -709,10 +709,10 @@ public sealed class StrategyProber(
                     outcome.IsBlockPage);
             }
 
-            // Tek basarili deneme yeterli DEGIL. Ilk gercek kosumda bir aday
-            // calisti, ayni aday sonraki kosumda calismadi -- ag kosullari
-            // gurultulu ve tek olcum bunu ayirt edemiyor. Kullaniciya "bulundu"
-            // deyip sonra calismamasi, hic bulamamaktan kotu.
+            // Tek başarılı deneme yeterli DEĞİL. İlk gerçek koşumda bir aday
+            // çalıştı, aynı aday sonraki koşumda çalışmadı; ağ koşulları
+            // gürültülü ve tek ölçüm bunu ayırt edemiyor. Kullanıcıya "bulundu"
+            // deyip sonra çalışmaması, hiç bulamamaktan kötü.
             var confirmed = await ConfirmAsync(section, blocked, cancellationToken).ConfigureAwait(false);
 
             if (!confirmed)
@@ -737,12 +737,12 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Basarili bulunan bir denemeyi, winws hala calisirken bir kez daha dogrular.
+    /// Başarılı bulunan bir denemeyi, winws hâlâ çalışırken bir kez daha doğrular.
     /// </summary>
     /// <remarks>
-    /// Ag kosullari gurultulu; tek bir basarili istek stratejinin calistigini
-    /// kanitlamiyor. Iki ust uste basari, kullaniciya "bulundu" demek icin
-    /// gereken en az kanit.
+    /// Ağ koşulları gürültülü; tek bir başarılı istek stratejinin çalıştığını
+    /// kanıtlamıyor. Üst üste iki başarı, kullanıcıya "bulundu" demek için
+    /// gereken en az kanıt.
     /// </remarks>
     private static async Task<bool> ConfirmAsync(
         StrategySection section, BaselineResult target, CancellationToken cancellationToken)
@@ -758,7 +758,7 @@ public sealed class StrategyProber(
         return outcome.Succeeded;
     }
 
-    /// <summary>Bir bolum icin denenecek adaylari tier sirasinda uretir.</summary>
+    /// <summary>Bir bölüm için denenecek adayları tier sırasında üretir.</summary>
     private IEnumerable<(ProbeTier Tier, string Label, IEnumerable<ProbeCandidate> Candidates)> BuildTiers(
         StrategySection section, IspProfile? profile)
     {
@@ -778,15 +778,15 @@ public sealed class StrategyProber(
                 .SelectMany(p => p.CandidatesFor(section).Select(c => new ProbeCandidate($"{p.Id}/{c.Id}", c.Args)))
                 .DistinctBy(c => NormalizeArgs(c.Args), StringComparer.Ordinal));
 
-        // Aile adi tek basina KIMLIK DEGIL: bir aile eksenlerin kartezyen carpimi
-        // kadar aday uretiyor, dolayisiyla "ladder/fake-quic-anyproto" adinda
-        // onlarca farkli aday oluyordu. Ilerleme satirlarinda ayni ad pes pese
-        // tekrarliyor ve -- asil sorun -- dogrulanan bir aday learned.json'a bu
-        // adla yazilinca hangi varyantin calistigi kayboluyordu. Aile icinde
-        // sira numarasi veriyoruz; asil kimlik yine argumanlar, ad okunabilirlik icin.
+        // Aile adı tek başına KİMLİK DEĞİL: bir aile eksenlerin Kartezyen çarpımı
+        // kadar aday üretiyor, dolayısıyla "ladder/fake-quic-anyproto" adında
+        // onlarca farklı aday oluyordu. İlerleme satırlarında aynı ad peş peşe
+        // tekrarlıyor ve (asıl sorun) doğrulanan bir aday learned.json'a bu
+        // adla yazılınca hangi varyantın çalıştığı kayboluyordu. Aile içinde
+        // sıra numarası veriyoruz; asıl kimlik yine argümanlar, ad okunabilirlik için.
         //
-        // GroupBy burada siralamayi bozmuyor: Expand bir ailenin butun
-        // kombinasyonlarini pes pese uretiyor, yani aileler zaten bitisik geliyor.
+        // GroupBy burada sıralamayı bozmuyor: Expand bir ailenin bütün
+        // kombinasyonlarını peş peşe üretiyor, yani aileler zaten bitişik geliyor.
         yield return (
             ProbeTier.GenericLadder,
             "Genel arama",
@@ -794,40 +794,40 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Bolum icin kullanilacak sinama protokolu.
+    /// Bölüm için kullanılacak sınama protokolü.
     /// </summary>
     /// <remarks>
-    /// Bu eslemeyi yanlis yapmak sessizce yanlis sonuc uretir; ilk saha kosumunda
-    /// tam da bu oldu: duz HTTP sunan bir hedefe HTTPS ile gidilmis ve hedef
-    /// "engelli" sayilmisti.
+    /// Bu eşlemeyi yanlış yapmak sessizce yanlış sonuç üretir; ilk saha koşumunda
+    /// tam da bu oldu: düz HTTP sunan bir hedefe HTTPS ile gidilmiş ve hedef
+    /// "engelli" sayılmıştı.
     ///
-    /// tcp443 icin TLS 1.2 kasitli secildi: sertifika DPI'a acik gorunur, yani DPI'in
-    /// en cok mudahale ettigi durum. TLS 1.3'te ServerHello sifreli oldugu icin bazi
-    /// engellemeler devreye bile girmez ve test kolay gecerek yaniltir.
+    /// tcp443 için TLS 1.2 kasıtlı seçildi: sertifika DPI'a açık görünür, yani DPI'ın
+    /// en çok müdahale ettiği durum. TLS 1.3'te ServerHello şifreli olduğu için bazı
+    /// engellemeler devreye bile girmez ve test kolay geçerek yanıltır.
     /// </remarks>
     /// <summary>
-    /// Bir bolumu kendi protokoluyle olcer.
+    /// Bir bölümü kendi protokolüyle ölçer.
     /// </summary>
     /// <remarks>
-    /// Bolume gore istemci secimi TEK YERDE tutuluyor. Uc ayri cagri yerinde
-    /// tekrarlaniyordu ve QUIC istemcisi eklenirken birine yazip digerini atlamak,
-    /// sessizce yanlis olcen bir kod yolu birakirdi -- bu bolumde tam olarak bu tur
-    /// bir hata zaten bir kez yasandi.
+    /// Bölüme göre istemci seçimi TEK YERDE tutuluyor. Üç ayrı çağrı yerinde
+    /// tekrarlanıyordu ve QUIC istemcisi eklenirken birine yazıp diğerini atlamak,
+    /// sessizce yanlış ölçen bir kod yolu bırakırdı; bu bölümde tam olarak bu tür
+    /// bir hata zaten bir kez yaşandı.
     ///
-    /// public olmasinin sebebi teshis yolu (--engage-check): teshisin, arama
-    /// motorunun olctugu SEYIN AYNISINI olcmesi gerekiyor. Ayri bir dallanma
-    /// yazilmisti ve discord-voice'u STUN yerine HTTP/3 ile olcuyordu -- yani
-    /// teshis, motorun gordugunden baska bir sey gosteriyordu.
+    /// public olmasının sebebi teşhis yolu (--engage-check): teşhisin, arama
+    /// motorunun ölçtüğü ŞEYİN AYNISINI ölçmesi gerekiyor. Ayrı bir dallanma
+    /// yazılmıştı ve discord-voice'u STUN yerine HTTP/3 ile ölçüyordu; yani
+    /// teşhis, motorun gördüğünden başka bir şey gösteriyordu.
     ///
-    /// QUIC'in ayri istemcisi olmasinin sebebi: <see cref="HttpProbeClient"/> HTTP/3'u
-    /// cozumlenmis IP'ye SABITLEYEMIYOR (ConnectCallback yalnizca TCP'de calisir).
-    /// DNS kacirmasi olan bir hatta baglanti engel sunucusuna gidiyor, winws'in
-    /// --ipset-ip kontrolu negatif donuyor ve strateji hic uygulanmadan paket geciyor.
+    /// QUIC'in ayrı istemcisi olmasının sebebi: <see cref="HttpProbeClient"/> HTTP/3'ü
+    /// çözümlenmiş IP'ye SABİTLEYEMİYOR (ConnectCallback yalnızca TCP'de çalışır).
+    /// DNS kaçırması olan bir hatta bağlantı engel sunucusuna gidiyor, winws'in
+    /// --ipset-ip kontrolü negatif dönüyor ve strateji hiç uygulanmadan paket geçiyor.
     /// </remarks>
     /// <param name="port">
-    /// Yalnizca discord-voice bolumunde kullanilir; verilmezse STUN icin 19302.
-    /// Hedef listesinden gelir, cunku Google disindaki STUN sunuculari 3478'i
-    /// kullaniyor ve bolumun kontrol hedefi baska bir isletmeciden olmali.
+    /// Yalnızca discord-voice bölümünde kullanılır; verilmezse STUN için 19302.
+    /// Hedef listesinden gelir, çünkü Google dışındaki STUN sunucuları 3478'i
+    /// kullanıyor ve bölümün kontrol hedefi başka bir işletmeciden olmalı.
     /// </param>
     public static async Task<ProbeOutcome> ProbeAsync(
         StrategySection section,
@@ -838,7 +838,7 @@ public sealed class StrategyProber(
         int? port = null)
         => section switch
         {
-            // Discord ses UDP uzerinden calisiyor; HTTP istemcisiyle olculemez.
+            // Discord ses UDP üzerinden çalışıyor; HTTP istemcisiyle ölçülemez.
             StrategySection.DiscordVoice => await new StunProbeClient()
                 .TryReachAsync(host, port ?? 19302, pinnedIp, cancellationToken)
                 .ConfigureAwait(false),
@@ -862,27 +862,27 @@ public sealed class StrategyProber(
     };
 
     /// <summary>
-    /// Merdiven adaylarini AILELER ARASINDA sirayla dizer: once her ailenin ilk
-    /// varyanti, sonra ikincileri, sonra ucunculeri...
+    /// Merdiven adaylarını AİLELER ARASINDA sırayla dizer: önce her ailenin ilk
+    /// varyantı, sonra ikincileri, sonra üçüncüleri...
     /// </summary>
     /// <remarks>
-    /// Onceden aileler pes pese, her aile sonuna kadar deneniyordu. Butce sinirsiz
-    /// olsaydi sira onemsizdi; ama butce var (arayuzde bolum basina 60) ve sonuc
-    /// olculdu: BASKA bir TTNET hattinda 176 aday denendi, 1105 saniye surdu ve
-    /// hicbiri tutmadi. `tcp443` genel aramasinda 7 aile / 136 varyant var ve ilk
-    /// aile (`fake-fooling`) tek basina 45 varyant -- genel aramaya kalan ~33
-    /// butcenin tamamini yiyor. Yani `multisplit-pure`, `multidisorder-pure`,
-    /// `fakedsplit`, `fake-tls-mod` ve `syndata` aileleri HIC DENENMEDI. Oysa bunlar
-    /// mekanizma olarak tamamen farkli seyler; aralarinda sahte paket hic uretmeyenler
+    /// Önceden aileler peş peşe, her aile sonuna kadar deneniyordu. Bütçe sınırsız
+    /// olsaydı sıra önemsizdi; ama bütçe var (arayüzde bölüm başına 60) ve sonuç
+    /// ölçüldü: BAŞKA bir TTNET hattında 176 aday denendi, 1105 saniye sürdü ve
+    /// hiçbiri tutmadı. `tcp443` genel aramasında 7 aile / 136 varyant var ve ilk
+    /// aile (`fake-fooling`) tek başına 45 varyant; genel aramaya kalan ~33'lük
+    /// bütçenin tamamını yiyor. Yani `multisplit-pure`, `multidisorder-pure`,
+    /// `fakedsplit`, `fake-tls-mod` ve `syndata` aileleri HİÇ DENENMEDİ. Oysa bunlar
+    /// mekanizma olarak tamamen farklı şeyler; aralarında sahte paket hiç üretmeyenler
     /// bile var.
     ///
-    /// Bir ailenin ilk varyanti tutmuyorsa o ailenin TTL/fooling varyasyonlarini
-    /// tuketmek, hic denenmemis bir mekanizmayi denemekten daha az bilgi veriyor.
-    /// Bu yuzden once genislik, sonra derinlik.
+    /// Bir ailenin ilk varyantı tutmuyorsa o ailenin TTL/fooling varyasyonlarını
+    /// tüketmek, hiç denenmemiş bir mekanizmayı denemekten daha az bilgi veriyor.
+    /// Bu yüzden önce genişlik, sonra derinlik.
     ///
-    /// Aile ICINDEKI eksen sirasi degismedi -- o `generic-ladder.json`'da profil
-    /// yazarinin karari ve `GenericLadder.Expand` orada birakildi. Burasi aramanin
-    /// stratejisi, merdivenin icerigi degil.
+    /// Aile İÇİNDEKİ eksen sırası değişmedi; o `generic-ladder.json`'da profil
+    /// yazarının kararı ve `GenericLadder.Expand` orada bırakıldı. Burası aramanın
+    /// stratejisi, merdivenin içeriği değil.
     /// </remarks>
     public static IReadOnlyList<ProbeCandidate> InterleaveFamilies(IEnumerable<LadderCandidate> expanded)
     {
@@ -917,14 +917,14 @@ public sealed class StrategyProber(
     }
 
     /// <summary>
-    /// Tekillestirme anahtari: bayraklar siralanmis halde. YALNIZCA karsilastirma
-    /// icin; winws'e her zaman adayin kendi yazimi veriliyor.
+    /// Tekilleştirme anahtarı: bayraklar sıralanmış hâlde. YALNIZCA karşılaştırma
+    /// için; winws'e her zaman adayın kendi yazımı veriliyor.
     /// </summary>
     private static string NormalizeArgs(string args)
         => string.Join(' ', args
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .OrderBy(part => part, StringComparer.Ordinal));
 
-    /// <summary>Denenecek tek bir aday: gorunur kimligi ve winws argumanlari.</summary>
+    /// <summary>Denenecek tek bir aday: görünür kimliği ve winws argümanları.</summary>
     public readonly record struct ProbeCandidate(string Id, string Args);
 }

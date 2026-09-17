@@ -5,37 +5,37 @@ using System.Net.Sockets;
 
 namespace ZapretTr.Prober;
 
-// System.Net.Quic .NET 8'de [RequiresPreviewFeatures] ile isaretli (CA2252). Uyari
-// projenin tamamina <EnablePreviewFeatures> acilarak da susturulabilirdi, ama o bayrak
-// URETILEN DERLEMEYI de "onizleme gerektirir" diye isaretliyor ve bu, derlemeyi
-// kullanan her projeye buluasiyor. Bastirma bu dosyaya sinirli tutuldu: API yuzeyi
-// kararli, yalnizca msquic'e bagimliligi yuzunden onizlemede tutuluyor ve
-// QuicConnection.IsSupported ile calisma zamaninda zaten kontrol ediliyor.
+// System.Net.Quic .NET 8'de [RequiresPreviewFeatures] ile işaretli (CA2252). Uyarı
+// projenin tamamına <EnablePreviewFeatures> açılarak da susturulabilirdi, ama o bayrak
+// ÜRETİLEN DERLEMEYİ de "önizleme gerektirir" diye işaretliyor ve bu, derlemeyi
+// kullanan her projeye bulaşıyor. Bastırma bu dosyaya sınırlı tutuldu: API yüzeyi
+// kararlı, yalnızca msquic'e bağımlılığı yüzünden önizlemede tutuluyor ve
+// QuicConnection.IsSupported ile çalışma zamanında zaten kontrol ediliyor.
 #pragma warning disable CA2252
 
 /// <summary>
-/// QUIC el sikismasinin tamamlanip tamamlanmadigini, HEDEF IP'YE SABITLENEREK olcer.
+/// QUIC el sıkışmasının tamamlanıp tamamlanmadığını, HEDEF IP'YE SABİTLENEREK ölçer.
 /// </summary>
 /// <remarks>
 /// Neden HttpClient/HTTP/3 yerine ham QUIC:
 ///
-/// <see cref="HttpProbeClient"/> baglantiyi <c>SocketsHttpHandler.ConnectCallback</c>
-/// ile cozumlenmis IP'ye sabitliyor, ama o geri cagri YALNIZCA TCP tabanli
-/// baglantilarda calisiyor. HTTP/3 kendi QUIC yolunu kullandigi icin orada sabitleme
-/// yok: .NET adresi kendisi, SISTEM DNS'i ile cozuyor.
+/// <see cref="HttpProbeClient"/> bağlantıyı <c>SocketsHttpHandler.ConnectCallback</c>
+/// ile çözümlenmiş IP'ye sabitliyor, ama o geri çağrı YALNIZCA TCP tabanlı
+/// bağlantılarda çalışıyor. HTTP/3 kendi QUIC yolunu kullandığı için orada sabitleme
+/// yok: .NET adresi kendisi, SİSTEM DNS'i ile çözüyor.
 ///
-/// Turkiye'de bu sessiz bir olcum hatasina yol aciyordu. Engelleme iki katmanli:
-/// once DNS kacirma, altta SNI'ye bakan DPI. <c>--doh</c> ile calisildiginda gercek
-/// IP bulunup winws'e <c>--ipset-ip</c> olarak veriliyordu, ama QUIC baglantisi yine
-/// kacirilmis sistem DNS'inin verdigi engel sunucusuna gidiyordu. Sonuc: winws'in
-/// ipset kontrolu her pakette NEGATIF donuyor, strateji hic uygulanmiyor ve paket
-/// degistirilmeden geciyordu. Disaridan bakildiginda bu "strateji ise yaramadi" ile
-/// birebir ayni goruntu -- bu yuzden QUIC bolumundeki adaylarin tamami birbirinin
-/// ayni islemsiz kosum olarak "basarisiz" raporlanmisti.
+/// Türkiye'de bu sessiz bir ölçüm hatasına yol açıyordu. Engelleme iki katmanlı:
+/// önce DNS kaçırma, altta SNI'ye bakan DPI. <c>--doh</c> ile çalışıldığında gerçek
+/// IP bulunup winws'e <c>--ipset-ip</c> olarak veriliyordu, ama QUIC bağlantısı yine
+/// kaçırılmış sistem DNS'inin verdiği engel sunucusuna gidiyordu. Sonuç: winws'in
+/// ipset kontrolü her pakette NEGATİF dönüyor, strateji hiç uygulanmıyor ve paket
+/// değiştirilmeden geçiyordu. Dışarıdan bakıldığında bu, "strateji işe yaramadı" ile
+/// birebir aynı görüntü; bu yüzden QUIC bölümündeki adayların tamamı birbirinin
+/// aynısı, işlemsiz koşumlar olarak "başarısız" raporlanmıştı.
 ///
-/// Olculen sey bilerek dar tutuldu: HTTP istegi degil, yalnizca QUIC el sikismasi.
-/// DPI mudahalesi zaten Initial paketinde oluyor; el sikismasi tamamlaniyorsa DPI
-/// asilmis demektir. Daha dar olcum, daha az yanlis sinyal.
+/// Ölçülen şey bilerek dar tutuldu: HTTP isteği değil, yalnızca QUIC el sıkışması.
+/// DPI müdahalesi zaten Initial paketinde oluyor; el sıkışması tamamlanıyorsa DPI
+/// aşılmış demektir. Daha dar ölçüm, daha az yanlış sinyal.
 /// </remarks>
 public sealed class QuicProbeClient
 {
@@ -45,23 +45,23 @@ public sealed class QuicProbeClient
         => _timeout = timeout ?? TimeSpan.FromSeconds(8);
 
     /// <summary>
-    /// Bu makinede ham QUIC kullanilabilir mi. Windows'ta msquic gerekiyor; yoksa
+    /// Bu makinede ham QUIC kullanılabilir mi. Windows'ta msquic gerekiyor; yoksa
     /// <see cref="QuicConnection.ConnectAsync(QuicClientConnectionOptions, CancellationToken)"/>
-    /// <see cref="PlatformNotSupportedException"/> firlatir.
+    /// <see cref="PlatformNotSupportedException"/> fırlatır.
     /// </summary>
     public static bool IsSupported => QuicConnection.IsSupported;
 
     /// <summary>
-    /// Verilen IP'ye QUIC ile baglanir; SNI olarak <paramref name="host"/> gonderilir.
+    /// Verilen IP'ye QUIC ile bağlanır; SNI olarak <paramref name="host"/> gönderilir.
     /// </summary>
     /// <param name="pinnedIp">
-    /// Baglanilacak adres. <c>null</c> ise sistem DNS'i kullanilir -- DNS kacirmasi
-    /// olan bir hatta bu, DPI katmanini degil DNS katmanini olcer.
+    /// Bağlanılacak adres. <c>null</c> ise sistem DNS'i kullanılır; DNS kaçırması
+    /// olan bir hatta bu, DPI katmanını değil DNS katmanını ölçer.
     /// </param>
     /// <remarks>
-    /// IP ile SNI'nin AYRI verilmesi bu olcumun butun amaci: paket gercek sunucuya
-    /// gider ama icinde DPI'in aradigi alan adi durur. Ikisi ayrilmazsa ya yanlis
-    /// sunucu olculur ya da DPI tetiklenmez.
+    /// IP ile SNI'nin AYRI verilmesi bu ölçümün bütün amacı: paket gerçek sunucuya
+    /// gider ama içinde DPI'ın aradığı alan adı durur. İkisi ayrılmazsa ya yanlış
+    /// sunucu ölçülür ya da DPI tetiklenmez.
     /// </remarks>
     public async Task<ProbeOutcome> TryReachAsync(
         string host,
@@ -96,27 +96,27 @@ public sealed class QuicProbeClient
                 DefaultStreamErrorCode = 0,
                 DefaultCloseErrorCode = 0,
 
-                // HTTP/3 sunucusu el sikismasindan hemen sonra UC tek yonlu akis
-                // acmak zorunda: kontrol akisi, QPACK encoder ve QPACK decoder.
-                // Bu sinir varsayilan olarak 0 geliyor; o zaman sunucu akislarini
-                // acamiyor ve baglantiyi ANINDA taşima hatasiyla kapatiyor.
+                // HTTP/3 sunucusu el sıkışmasından hemen sonra ÜÇ tek yönlü akış
+                // açmak zorunda: kontrol akışı, QPACK encoder ve QPACK decoder.
+                // Bu sınır varsayılan olarak 0 geliyor; o zaman sunucu akışlarını
+                // açamıyor ve bağlantıyı ANINDA taşıma hatasıyla kapatıyor.
                 //
-                // Belirtisi yaniltici: ~35 ms'de "TransportError" -- yani DPI
-                // engeliyle KARISTIRILABILIR bir hata. Gercek DPI engeli bu hatta
-                // 10 saniyelik zaman asimi olarak gorunuyor. Google ucları bu
-                // kurali sikica uyguluyor, Cloudflare uygulamiyordu; sonuc olarak
-                // engelli OLMAYAN www.google.com bile "engelli" olculuyordu.
+                // Belirtisi yanıltıcı: ~35 ms'de "TransportError", yani DPI
+                // engeliyle KARIŞTIRILABİLİR bir hata. Gerçek DPI engeli bu hatta
+                // 10 saniyelik zaman aşımı olarak görünüyor. Google uçları bu
+                // kuralı sıkıca uyguluyor, Cloudflare uygulamıyordu; sonuç olarak
+                // engelli OLMAYAN www.google.com bile "engelli" ölçülüyordu.
                 MaxInboundUnidirectionalStreams = 3,
                 MaxInboundBidirectionalStreams = 0,
                 ClientAuthenticationOptions = new SslClientAuthenticationOptions
                 {
-                    // SNI. DPI'in gordugu ve uzerinden karar verdigi alan.
+                    // SNI. DPI'ın gördüğü ve üzerinden karar verdiği alan.
                     TargetHost = host,
                     ApplicationProtocols = [new SslApplicationProtocol("h3")],
 
-                    // Sertifika gecerliligi olctugumuz sey degil; el sikismasinin
-                    // tamamlanip tamamlanmadigini olcuyoruz. Guvenli bir kanal
-                    // kurmuyoruz, bir davranisi olcuyoruz.
+                    // Sertifika geçerliliği ölçtüğümüz şey değil; el sıkışmasının
+                    // tamamlanıp tamamlanmadığını ölçüyoruz. Güvenli bir kanal
+                    // kurmuyoruz, bir davranışı ölçüyoruz.
                     RemoteCertificateValidationCallback = static (_, _, _, _) => true,
                 },
             };
@@ -136,15 +136,15 @@ public sealed class QuicProbeClient
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // DPI mudahalesinin tipik gorunumu: Initial paketi dusuruluyor, cevap hic gelmiyor.
+            // DPI müdahalesinin tipik görünümü: Initial paketi düşürülüyor, cevap hiç gelmiyor.
             return new ProbeOutcome(false, "zaman asimi", resolvedIp);
         }
         catch (QuicException ex)
         {
-            // Yalnizca QuicError yazmak yetmiyor: "TransportError" hem DPI
-            // mudahalesini hem de sunucunun ALPN/surum reddini ayni sekilde
-            // gosteriyor ve ikisi tamamen farkli sonuclar. Alt kod ve msquic'in
-            // kendi metni ayrimi yapabilmek icin gerekli.
+            // Yalnızca QuicError yazmak yetmiyor: "TransportError" hem DPI
+            // müdahalesini hem de sunucunun ALPN/sürüm reddini aynı şekilde
+            // gösteriyor ve ikisi tamamen farklı sonuçlar. Alt kod ve msquic'in
+            // kendi metni ayrımı yapabilmek için gerekli.
             var detail = $"QUIC hatasi: {ex.QuicError}";
 
             if (ex.ApplicationErrorCode is { } appCode)

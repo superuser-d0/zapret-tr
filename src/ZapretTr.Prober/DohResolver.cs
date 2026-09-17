@@ -4,28 +4,28 @@ using System.Net.Http.Json;
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// Alan adlarini sifreli DNS (DNS-over-HTTPS) uzerinden cozer.
+/// Alan adlarını şifreli DNS (DNS-over-HTTPS) üzerinden çözer.
 /// </summary>
 /// <remarks>
-/// Neden gerekli: Turkiye'de engelleme cogu zaman IKI KATMANLI. Once DNS
-/// kacirilir (sistem DNS'i engel sunucusunun IP'sini doner), altta da SNI'ye bakan
-/// bir DPI durur. Sistem DNS'iyle test yapildiginda ikinci katman hic gorunmez --
-/// baglanti zaten engel sunucusuna gittigi icin her strateji basarisiz olur ve
-/// arac "hicbir sey ise yaramiyor" der.
+/// Neden gerekli: Türkiye'de engelleme çoğu zaman İKİ KATMANLI. Önce DNS
+/// kaçırılır (sistem DNS'i engel sunucusunun IP'sini döner), altta da SNI'ye bakan
+/// bir DPI durur. Sistem DNS'iyle test yapıldığında ikinci katman hiç görünmez:
+/// bağlantı zaten engel sunucusuna gittiği için her strateji başarısız olur ve
+/// araç "hiçbir şey işe yaramıyor" der.
 ///
-/// Gercek IP ile test edildiginde alttaki DPI ortaya cikiyor ve iste O katman
-/// zapret'in cozebildigi sey. Yani DoH burada bir "ekstra ozellik" degil, DPI
-/// stratejisini bulabilmenin on kosulu.
+/// Gerçek IP ile test edildiğinde alttaki DPI ortaya çıkıyor ve işte O katman
+/// zapret'in çözebildiği şey. Yani DoH burada bir "ekstra özellik" değil, DPI
+/// stratejisini bulabilmenin ön koşulu.
 ///
-/// Bu, kullanicinin sistem DNS ayarlarina DOKUNMAZ. Yalnizca testin dogru IP'ye
-/// bakmasini saglar. Bulunan strateji gercekten ise yarasin diye kullanicinin
-/// da sifreli DNS kullanmasi gerekir; arac bunu ayrica soyluyor.
+/// Bu, kullanıcının sistem DNS ayarlarına DOKUNMAZ. Yalnızca testin doğru IP'ye
+/// bakmasını sağlar. Bulunan strateji gerçekten işe yarasın diye kullanıcının
+/// da şifreli DNS kullanması gerekir; araç bunu ayrıca söylüyor.
 /// </remarks>
 public sealed class DohResolver : IDisposable
 {
     /// <summary>
-    /// Varsayilan cozumleyiciler. Birden fazla var cunku bunlardan biri de
-    /// engellenmis olabilir; ilki cevap vermezse digerine gecilir.
+    /// Varsayılan çözümleyiciler. Birden fazla var, çünkü bunlardan biri de
+    /// engellenmiş olabilir; ilki cevap vermezse diğerine geçilir.
     /// </summary>
     private static readonly string[] DefaultEndpoints =
     [
@@ -36,7 +36,7 @@ public sealed class DohResolver : IDisposable
     private readonly HttpClient _client;
     private readonly string[] _endpoints;
 
-    /// <summary>Tarama boyunca cozulmus adlar. Ayni ad birden fazla bolumde geciyor.</summary>
+    /// <summary>Tarama boyunca çözülmüş adlar. Aynı ad birden fazla bölümde geçiyor.</summary>
     private readonly Dictionary<string, string?> _cache = new(StringComparer.OrdinalIgnoreCase);
 
     public DohResolver(TimeSpan? timeout = null, string[]? endpoints = null)
@@ -47,20 +47,20 @@ public sealed class DohResolver : IDisposable
     }
 
     /// <summary>
-    /// Alan adinin IPv4 adresini doner; cozulemezse null.
+    /// Alan adının IPv4 adresini döner; çözülemezse null.
     /// </summary>
     /// <remarks>
-    /// Sonuclar bu ornegin omru boyunca onbellekleniyor. Sebebi olculdu: hedef
-    /// listesinde 10 girdi var ama yalnizca 7 benzersiz adres -- discord.com uc
-    /// bolumde (tcp80, tcp443, quic), www.youtube.com iki bolumde geciyor.
-    /// Onbelleksiz hali ayni adi tekrar tekrar soruyordu ve baseline taramasi
-    /// SIRALI oldugu icin bu, gecikmeye dogrudan carpim olarak biniyordu: hizli
-    /// hatta ~300 ms, yavas hatta 3-6 saniye bosa gidiyordu.
+    /// Sonuçlar bu örneğin ömrü boyunca önbelleğe alınıyor. Sebebi ölçüldü: hedef
+    /// listesinde 10 girdi var ama yalnızca 7 benzersiz adres; discord.com üç
+    /// bölümde (tcp80, tcp443, quic), www.youtube.com iki bölümde geçiyor.
+    /// Önbelleksiz hâli aynı adı tekrar tekrar soruyordu ve baseline taraması
+    /// SIRALI olduğu için bu, gecikmeye doğrudan çarpım olarak biniyordu: hızlı
+    /// hatta ~300 ms, yavaş hatta 3-6 saniye boşa gidiyordu.
     ///
-    /// Onbellek kasitli olarak ornek omru kadar: bir tarama boyunca ayni adin
-    /// ayni adrese cozulmesi zaten istedigimiz sey -- aksi halde ayni alan adinin
-    /// iki bolumu farkli sunuculara gidip sonuclar kiyaslanamaz hale gelirdi.
-    /// TTL takibi gerekmiyor, cunku nesne tek bir taramadan uzun yasamiyor.
+    /// Önbellek kasıtlı olarak örnek ömrü kadar: bir tarama boyunca aynı adın
+    /// aynı adrese çözülmesi zaten istediğimiz şey; aksi hâlde aynı alan adının
+    /// iki bölümü farklı sunuculara gidip sonuçlar kıyaslanamaz hâle gelirdi.
+    /// TTL takibi gerekmiyor, çünkü nesne tek bir taramadan uzun yaşamıyor.
     /// </remarks>
     public async Task<string?> ResolveIPv4Async(string host, CancellationToken cancellationToken = default)
     {
@@ -71,9 +71,9 @@ public sealed class DohResolver : IDisposable
 
         var resolved = await ResolveUncachedAsync(host, cancellationToken).ConfigureAwait(false);
 
-        // Basarisizlik da onbellege giriyor: cozulemeyen bir ad ayni tarama
-        // icinde yeniden sorulursa yine cozulemeyecek, ama her denemede bir
-        // zaman asimi daha yenirdi.
+        // Başarısızlık da önbelleğe giriyor: çözülemeyen bir ad aynı tarama
+        // içinde yeniden sorulursa yine çözülemeyecek, ama her denemede bir
+        // zaman aşımı daha yenirdi.
         _cache[host] = resolved;
         return resolved;
     }
@@ -88,7 +88,7 @@ public sealed class DohResolver : IDisposable
                 var response = await _client.GetFromJsonAsync(url, ProberJsonContext.Default.DohResponse, cancellationToken)
                     .ConfigureAwait(false);
 
-                // type 1 = A kaydi. CNAME zincirleri de donebildigi icin filtreleniyor.
+                // type 1 = A kaydı. CNAME zincirleri de dönebildiği için filtreleniyor.
                 var address = response?.Answer?
                     .FirstOrDefault(a => a.Type == 1 && !string.IsNullOrWhiteSpace(a.Data))?.Data;
 
@@ -99,8 +99,8 @@ public sealed class DohResolver : IDisposable
             }
             catch (Exception) when (!cancellationToken.IsCancellationRequested)
             {
-                // Bu cozumleyici olmadi, digerini dene. Hepsi olmazsa null donuyoruz
-                // ve cagiran taraf sistem DNS'ine duser.
+                // Bu çözümleyici olmadı, diğerini dene. Hepsi olmazsa null dönüyoruz
+                // ve çağıran taraf sistem DNS'ine düşer.
             }
         }
 

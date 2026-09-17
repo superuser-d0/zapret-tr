@@ -4,34 +4,34 @@ using System.Security.Cryptography;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Yeni surumun kurulum paketini indirir ve ozetini dogrular.</summary>
+/// <summary>Yeni sürümün kurulum paketini indirir ve özetini doğrular.</summary>
 /// <remarks>
-/// Kullanicilar her surumde tarayici acip, dosyayi bulup, indirip, SmartScreen
-/// uyarisini gecmek zorundaydi. Bu, duzeltmenin kullaniciya ulasmasindaki en
-/// buyuk surtunmeydi -- ve ulasmayan duzeltme ise yaramiyor.
+/// Kullanıcılar her sürümde tarayıcı açıp, dosyayı bulup, indirip, SmartScreen
+/// uyarısını geçmek zorundaydı. Bu, düzeltmenin kullanıcıya ulaşmasındaki en
+/// büyük sürtünmeydi; ulaşmayan düzeltme de işe yaramıyor.
 ///
-/// OZET DOGRULAMASI ATLANAMAZ. Uygulama indirdigi dosyayi CALISTIRACAK;
-/// dogrulanmamis bir ikiliyi calistirmak, projenin kullaniciya "indirdiginizi
-/// SHA256 ile dogrulayin" demesiyle celisirdi. Yarim inen ya da bozulan bir
-/// paket de ayni kontrole takilir.
+/// ÖZET DOĞRULAMASI ATLANAMAZ. Uygulama indirdiği dosyayı ÇALIŞTIRACAK;
+/// doğrulanmamış bir ikiliyi çalıştırmak, projenin kullanıcıya "indirdiğinizi
+/// SHA256 ile doğrulayın" demesiyle çelişirdi. Yarım inen ya da bozulan bir
+/// paket de aynı kontrole takılır.
 ///
-/// Bunun kod imzalamanin yerine gecmedigini bilerek yaziyoruz: ozet de paketle
-/// ayni kaynaktan geliyor, dolayisiyla GitHub'a ve HTTPS'e duyulan guveni
-/// asmiyor. Sagladigi sey butunluk, koken degil.
+/// Bunun kod imzalamanın yerine geçmediğini bilerek yazıyoruz: özet de paketle
+/// aynı kaynaktan geliyor, dolayısıyla GitHub'a ve HTTPS'e duyulan güveni
+/// aşmıyor. Sağladığı şey bütünlük, köken değil.
 /// </remarks>
 public static class UpdateDownloader
 {
     private const string DownloadBase =
         "https://github.com/superuser-d0/zapret-tr/releases/download";
 
-    /// <summary>Yalnizca bu adla eslesen dosyalar silinir; klasordeki baska hicbir seye dokunulmaz.</summary>
+    /// <summary>Yalnızca bu adla eşleşen dosyalar silinir; klasördeki başka hiçbir şeye dokunulmaz.</summary>
     private const string InstallerPattern = "ZapretTR-Setup-*.exe";
 
-    /// <summary>Guncelleme paketlerinin indirildigi klasor.</summary>
+    /// <summary>Güncelleme paketlerinin indirildiği klasör.</summary>
     public static string DefaultDirectory => Path.Combine(Path.GetTempPath(), "ZapretTR-guncelleme");
 
-    /// <summary>Kurulum paketini indirir; ozet tutmazsa hata verir.</summary>
-    /// <returns>Indirilen dosyanin tam yolu.</returns>
+    /// <summary>Kurulum paketini indirir; özet tutmazsa hata verir.</summary>
+    /// <returns>İndirilen dosyanın tam yolu.</returns>
     public static async Task<string> DownloadAsync(
         string version,
         string targetDirectory,
@@ -46,7 +46,7 @@ public static class UpdateDownloader
 
         Directory.CreateDirectory(targetDirectory);
 
-        // Oncekiler artik gereksiz: ya kuruldular ya da yerlerine bu gelecek.
+        // Öncekiler artık gereksiz: ya kuruldular ya da yerlerine bu gelecek.
         DeleteOldInstallers(targetDirectory);
 
         var target = Path.Combine(targetDirectory, fileName);
@@ -66,8 +66,8 @@ public static class UpdateDownloader
 
         if (!string.Equals(gercek, beklenen, StringComparison.OrdinalIgnoreCase))
         {
-            // Bozuk dosya DISKTE BIRAKILMAZ: kullanici sonradan bulup elle
-            // calistirabilir ve o dosyanin dogrulanmadigini bilmez.
+            // Bozuk dosya DİSKTE BIRAKILMAZ: kullanıcı sonradan bulup elle
+            // çalıştırabilir ve o dosyanın doğrulanmadığını bilmez.
             TryDelete(target);
 
             throw new InvalidOperationException(
@@ -145,16 +145,16 @@ public static class UpdateDownloader
         return Convert.ToHexString(hash).ToLower(CultureInfo.InvariantCulture);
     }
 
-    /// <summary>Klasordeki eski kurulum paketlerini siler.</summary>
+    /// <summary>Klasördeki eski kurulum paketlerini siler.</summary>
     /// <remarks>
-    /// Guncelleme indirdigi paketi hic silmiyordu. 0.1.22 ile gercek bir makinede
-    /// olculdu: <c>%TEMP%\ZapretTR-guncelleme</c> icinde 0.1.16'dan 0.1.22'ye alti
-    /// paket, yaklasik 330 MB. Her guncelleme 55 MB daha ekliyordu.
+    /// Güncelleme, indirdiği paketi hiç silmiyordu. 0.1.22 ile gerçek bir makinede
+    /// ölçüldü: <c>%TEMP%\ZapretTR-guncelleme</c> içinde 0.1.16'dan 0.1.22'ye altı
+    /// paket, yaklaşık 330 MB. Her güncelleme 55 MB daha ekliyordu.
     ///
-    /// Paket kurulum bitene kadar silinemez: calisan kurulum kendi dosyasini
-    /// kilitliyor. Kilitli dosya atlanir ve sayilir; cagiran sonra tekrar deneyebilir.
-    /// Eslesmeyen dosyalara dokunulmaz -- kullanici klasore baska bir sey
-    /// koyduysa o bizim silecegimiz bir sey degil.
+    /// Paket kurulum bitene kadar silinemez: çalışan kurulum kendi dosyasını
+    /// kilitliyor. Kilitli dosya atlanır ve sayılır; çağıran sonra tekrar deneyebilir.
+    /// Eşleşmeyen dosyalara dokunulmaz; kullanıcı klasöre başka bir şey
+    /// koyduysa o bizim sileceğimiz bir şey değil.
     /// </remarks>
     public static InstallerCleanupResult DeleteOldInstallers(string directory)
     {
@@ -169,10 +169,10 @@ public static class UpdateDownloader
 
         foreach (var dosya in Directory.EnumerateFiles(directory, InstallerPattern, SearchOption.TopDirectoryOnly))
         {
-            // Ikinci guvence. .NET 8'in deseni ".exe_" gibi uzantilari eslestirmiyor
-            // (olculdu: bu kontrol kaldirilinca da test geciyor), ama Win32'nin eski
-            // "*.exe" davranisi eslestiriyordu. Silme isleminde desen motoruna
-            // guvenmek yerine uzanti birebir karsilastiriliyor.
+            // İkinci güvence. .NET 8'in deseni ".exe_" gibi uzantıları eşleştirmiyor
+            // (ölçüldü: bu kontrol kaldırılınca da test geçiyor), ama Win32'nin eski
+            // "*.exe" davranışı eşleştiriyordu. Silme işleminde desen motoruna
+            // güvenmek yerine uzantı birebir karşılaştırılıyor.
             if (!dosya.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -202,14 +202,14 @@ public static class UpdateDownloader
         }
         catch (Exception)
         {
-            // Silinemedi. Cagiran zaten hata firlatiyor; burada ikinci bir
-            // hatayla o mesaji gizlemenin anlami yok.
+            // Silinemedi. Çağıran zaten hata fırlatıyor; burada ikinci bir
+            // hatayla o mesajı gizlemenin anlamı yok.
         }
     }
 }
 
-/// <summary>Eski kurulum paketi temizliginin sonucu.</summary>
-/// <param name="Deleted">Silinen paket sayisi.</param>
-/// <param name="Bytes">Bosaltilan alan.</param>
-/// <param name="Skipped">Kilitli ya da erisilemedigi icin silinemeyen paket sayisi.</param>
+/// <summary>Eski kurulum paketi temizliğinin sonucu.</summary>
+/// <param name="Deleted">Silinen paket sayısı.</param>
+/// <param name="Bytes">Boşaltılan alan.</param>
+/// <param name="Skipped">Kilitli ya da erişilemediği için silinemeyen paket sayısı.</param>
 public sealed record InstallerCleanupResult(int Deleted, long Bytes, int Skipped);

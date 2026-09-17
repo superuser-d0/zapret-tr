@@ -3,18 +3,18 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// "Kurulu" ile "calisiyor" ayrimi.
+/// "Kurulu" ile "çalışıyor" ayrımı.
 /// </summary>
 /// <remarks>
-/// Ikisini ayni sey saymak kullaniciyi KILITLIYORDU: servis kurulu ama durmussa
-/// arayuz "servis modu aktif" deyip Baslat dugmesini kapatiyor, koruma olmuyor
-/// ve kullanicinin yapabilecegi bir sey de kalmiyordu. Gercek bir kullanicida
-/// 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi: yukseltme servisi geri
-/// kuruyor, "sc start" bir sebeple basarisiz oluyor, servis VAR ama DURMUS
-/// kaliyor.
+/// İkisini aynı şey saymak kullanıcıyı KİLİTLİYORDU: servis kurulu ama durmuşsa
+/// arayüz "SERVİS MODU AKTİF" deyip Başlat düğmesini kapatıyor, koruma olmuyor
+/// ve kullanıcının yapabileceği bir şey de kalmıyordu. Gerçek bir kullanıcıda
+/// 0.1.9'dan 0.1.15'e yükseltmeden sonra yaşandı: yükseltme servisi geri
+/// kuruyor, "sc start" bir sebeple başarısız oluyor, servis VAR ama DURMUŞ
+/// kalıyor.
 ///
-/// Bu yuzden ucuncu bir durum var: kurulu-ama-durmus. Uygulama o durumda
-/// Baslat'i ACIK birakiyor ki kullanici korumasini elle baslatabilsin.
+/// Bu yüzden üçüncü bir durum var: kurulu ama durmuş. Uygulama o durumda
+/// Başlat'ı AÇIK bırakıyor ki kullanıcı korumasını elle başlatabilsin.
 /// </remarks>
 public sealed class ServiceStatusTests
 {
@@ -30,7 +30,7 @@ public sealed class ServiceStatusTests
     [Fact]
     public void Kurulu_ama_durmus_ayirt_ediliyor()
     {
-        // TEHLIKELI DURUM. Eskiden bu, "kurulu" sayilip Baslat kapatiliyordu.
+        // TEHLİKELİ DURUM. Eskiden bu "kurulu" sayılıp Başlat kapatılıyordu.
         var durum = new ServiceStatus(WinwsInstalled: true, DnsInstalled: true, WinwsRunning: false);
 
         Assert.True(durum.AnyInstalled);
@@ -40,8 +40,8 @@ public sealed class ServiceStatusTests
     [Fact]
     public void Hic_kurulu_degilse_durmus_sayilmaz()
     {
-        // Servis yoksa "durmus" demek yanlis olur: kullanici otomatik baslatmayi
-        // hic kurmamis olabilir ve ona bir sorun varmis gibi gostermemeliyiz.
+        // Servis yoksa "durmuş" demek yanlış olur: kullanıcı otomatik başlatmayı
+        // hiç kurmamış olabilir ve ona bir sorun varmış gibi göstermemeliyiz.
         var durum = new ServiceStatus(WinwsInstalled: false, DnsInstalled: false, WinwsRunning: false);
 
         Assert.False(durum.AnyInstalled);
@@ -51,8 +51,8 @@ public sealed class ServiceStatusTests
     [Fact]
     public void Yalnizca_DNS_servisi_kuruluysa_winws_durmus_sayilmaz()
     {
-        // Sifreli DNS kapaliyken yalnizca winws servisi kuruluyor; tersi de
-        // mumkun. "winws durmus" uyarisi yalnizca winws servisi VARSA anlamli.
+        // Şifreli DNS kapalıyken yalnızca winws servisi kuruluyor; tersi de
+        // mümkün. "winws durmuş" uyarısı yalnızca winws servisi VARSA anlamlı.
         var durum = new ServiceStatus(WinwsInstalled: false, DnsInstalled: true, WinwsRunning: false);
 
         Assert.True(durum.AnyInstalled);
@@ -62,14 +62,14 @@ public sealed class ServiceStatusTests
     [Fact]
     public void Kullanicinin_duraklattigi_servis_durmus_uyarisi_vermez()
     {
-        // VPN icin bilerek kapatilan koruma "SERVİS DURMUŞ" diye alarm vermemeli.
+        // VPN için bilerek kapatılan koruma "SERVİS DURMUŞ" diye alarm vermemeli.
         var durum = new ServiceStatus(WinwsInstalled: true, DnsInstalled: true, WinwsRunning: false, WinwsPaused: true);
 
         Assert.True(durum.AnyInstalled);
         Assert.False(durum.InstalledButStopped);
     }
 
-    // --- Duraklatmanin izi: baslangic turu ----------------------------------------
+    // --- Duraklatmanın izi: başlangıç turu ----------------------------------------
 
     [Fact]
     public void Elle_baslatilan_servis_duraklatilmis_sayilir()
@@ -108,11 +108,11 @@ public sealed class ServiceStatusTests
             "[SC] OpenService FAILED 1060: The specified service does not exist as an installed service."));
     }
 
-    // --- Parametre testi icin servisi durdurma -----------------------------------
+    // --- Parametre testi için servisi durdurma -----------------------------------
     //
-    // Test, servisin winws'i durana kadar bekliyor; bekleme "sc query" ciktisindan
-    // okunuyor. STOP_PENDING'i durmus saymak, surec surucuyu hala tutarken testi
-    // baslatmak demek -- duzeltilen hatanin ta kendisi.
+    // Test, servisin winws'i durana kadar bekliyor; bekleme "sc query" çıktısından
+    // okunuyor. STOP_PENDING'i durmuş saymak, süreç sürücüyü hâlâ tutarken testi
+    // başlatmak demek; düzeltilen hatanın ta kendisi.
 
     [Fact]
     public void Durmus_servis_durmus_sayilir()

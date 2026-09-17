@@ -4,18 +4,18 @@ using System.Security.Principal;
 namespace ZapretTr.Core.Engine;
 
 /// <summary>
-/// Yonetici yetkisi kontrolu.
+/// Yönetici yetkisi kontrolü.
 /// </summary>
 /// <remarks>
-/// winws.exe kernel modunda calisan WinDivert surucusunu kullaniyor ve yukseltilmis
-/// yetki olmadan hicbir sey yapmiyor -- <c>--help</c> bile "requires elevation" ile
-/// dusuyor. Bu yuzden uygulamanin tamami elevated calismak zorunda; yetkiyi sonradan
-/// istemek diye bir secenek yok.
+/// winws.exe çekirdek modunda çalışan WinDivert sürücüsünü kullanıyor ve yükseltilmiş
+/// yetki olmadan hiçbir şey yapmıyor; <c>--help</c> bile "requires elevation" ile
+/// düşüyor. Bu yüzden uygulamanın tamamı yükseltilmiş yetkiyle çalışmak zorunda;
+/// yetkiyi sonradan istemek diye bir seçenek yok.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class ElevationGuard
 {
-    /// <summary>Surecin yonetici olarak calisip calismadigi.</summary>
+    /// <summary>Sürecin yönetici olarak çalışıp çalışmadığı.</summary>
     public static bool IsElevated()
     {
         using var identity = WindowsIdentity.GetCurrent();
@@ -23,7 +23,7 @@ public static class ElevationGuard
     }
 
     /// <summary>
-    /// Yetki yoksa acik bir mesajla dusurur.
+    /// Yetki yoksa açık bir mesajla düşürür.
     /// </summary>
     public static void EnsureElevated()
     {

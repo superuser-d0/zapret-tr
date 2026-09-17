@@ -7,16 +7,16 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Acik ve koyu tema sozlukleri birbirinin karsiligi olmali; arayuzde sabit renk kalmamali.
+/// Açık ve koyu tema sözlükleri birbirinin karşılığı olmalı; arayüzde sabit renk kalmamalı.
 /// </summary>
 /// <remarks>
-/// Koyu tema, renkleri uygulama kaynaklarindaki tema sozlugunu degistirerek boyuyor.
-/// Iki sessiz hata yolu var ve ikisi de derlemeyi geciyor:
+/// Koyu tema, renkleri uygulama kaynaklarındaki tema sözlüğünü değiştirerek boyuyor.
+/// İki sessiz hata yolu var ve ikisi de derlemeyi geçiyor:
 ///
-///   1. Bir anahtar yalnizca bir temada var. DynamicResource bulamazsa eleman eski
-///      renginde kaliyor; koyu temada tek bir bembeyaz kutu.
-///   2. XAML'a yeni bir sabit renk ("#FFFFFF") yaziliyor. O eleman tema degisince
-///      hic degismiyor. Koyu tema eklenirken MainWindow.xaml'da sekiz tane vardi.
+///   1. Bir anahtar yalnızca bir temada var. DynamicResource bulamazsa öğe eski
+///      renginde kalıyor; koyu temada tek bir bembeyaz kutu.
+///   2. XAML'a yeni bir sabit renk ("#FFFFFF") yazılıyor. O öğe tema değişince
+///      hiç değişmiyor. Koyu tema eklenirken MainWindow.xaml'da sekiz tane vardı.
 /// </remarks>
 public sealed class ThemeDictionaryTests
 {
@@ -30,8 +30,8 @@ public sealed class ThemeDictionaryTests
         var acik = Anahtarlar("Light.xaml");
         var koyu = Anahtarlar("Dark.xaml");
 
-        // Koyu temanin kendi sablon parcalari (Koyu... ile baslayanlar) acik temada
-        // yok; acik tema Windows'un sablonlarini kullaniyor.
+        // Koyu temanın kendi şablon parçaları (Koyu... ile başlayanlar) açık temada
+        // yok; açık tema Windows'un şablonlarını kullanıyor.
         var koyuOrtak = koyu.Where(k => !k.StartsWith("Koyu", StringComparison.Ordinal)).ToHashSet();
 
         Assert.Empty(acik.Except(koyuOrtak));
@@ -46,7 +46,7 @@ public sealed class ThemeDictionaryTests
     {
         var xaml = File.ReadAllText(IoPath.Combine(AppDir, dosya));
 
-        // Yorumlar haric: gerekceyi anlatan metinde renk kodu gecebilir.
+        // Yorumlar hariç: gerekçeyi anlatan metinde renk kodu geçebilir.
         var yorumsuz = Regex.Replace(xaml, "<!--.*?-->", string.Empty, RegexOptions.Singleline);
 
         Assert.DoesNotMatch("\"#[0-9A-Fa-f]{3,8}\"", yorumsuz);

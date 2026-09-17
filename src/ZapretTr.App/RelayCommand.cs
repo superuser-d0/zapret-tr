@@ -3,13 +3,13 @@ using System.Windows.Input;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Basit ICommand uygulamasi.
+/// Basit ICommand uygulaması.
 /// </summary>
 /// <remarks>
-/// Harici bir MVVM kutuphanesi eklemek yerine bu yazildi: uygulamanin bagimlilik
-/// yuzeyi kasitli olarak sifir tutuluyor. Paket yakalama surucusu tasiyan ve
-/// antivirus tarafindan zaten suphe ile karsilanacak bir uygulamada, her ek
-/// bagimlilik hem imza yuzeyini hem de aciklamamiz gereken seyi buyutuyor.
+/// Harici bir MVVM kütüphanesi eklemek yerine bu yazıldı: uygulamanın bağımlılık
+/// yüzeyi kasıtlı olarak sıfır tutuluyor. Paket yakalama sürücüsü taşıyan ve
+/// antivirüs tarafından zaten şüpheyle karşılanacak bir uygulamada her ek
+/// bağımlılık hem imza yüzeyini hem de açıklamamız gereken şeyi büyütüyor.
 /// </remarks>
 public sealed class RelayCommand(Func<object?, Task> execute, Func<object?, bool>? canExecute = null) : ICommand
 {

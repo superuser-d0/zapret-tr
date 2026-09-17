@@ -2,27 +2,27 @@ using System.Diagnostics;
 using System.IO;
 
 /// <summary>
-/// zapret-tr-test.exe argumansiz (cift tiklanarak) calistirildiginda saha testini
-/// TESTI-BASLAT.bat ile AYNI ayarlarla kosturur ve pencereyi acik tutar.
+/// zapret-tr-test.exe argümansız (çift tıklanarak) çalıştırıldığında saha testini
+/// TESTI-BASLAT.bat ile AYNI ayarlarla koşturur ve pencereyi açık tutar.
 /// </summary>
 /// <remarks>
-/// OLCULDU (2026-09-16, gercek makine, Turk Telekom): kullanici paketi acip
-/// dogrudan zapret-tr-test.exe'ye cift tikladi. Arguman yoktu, dolayisiyla:
-/// hat tespiti yapilmadi ("Diger TR profilleri 1/18"), sifreli DNS kullanilmadi
-/// ("DNS: sistem"), rapor yazilmadi (--out yok) ve test bitince konsol penceresi
-/// kapandi. Kullanici elinde ne bir dosya ne de sonucu okuyabilecegi bir ekran
-/// kaldi. Cift tiklama en dogal yol; o yolun en yararsiz sonucu vermesi hataydi.
+/// ÖLÇÜLDÜ (2026-09-16, gerçek makine, Türk Telekom): kullanıcı paketi açıp
+/// doğrudan zapret-tr-test.exe'ye çift tıkladı. Argüman yoktu, dolayısıyla:
+/// hat tespiti yapılmadı ("Diger TR profilleri 1/18"), şifreli DNS kullanılmadı
+/// ("DNS: sistem"), rapor yazılmadı (--out yok) ve test bitince konsol penceresi
+/// kapandı. Kullanıcının elinde ne bir dosya ne de sonucu okuyabileceği bir ekran
+/// kaldı. Çift tıklama en doğal yol; o yolun en yararsız sonucu vermesi hataydı.
 ///
-/// Test ayri bir surecte kosuyor, bu surec yalnizca bekleyip sonucu acikliyor.
-/// Boylece test kodundaki onlarca "return" yolunun hepsi pencereyi acik tutuyor
-/// ve sonuc mesaji cikis koduna bakiyor -- TESTI-BASLAT.bat'taki kuralin aynisi.
-/// Alt surec yukseltilmis belirteci devraliyor; ikinci bir UAC sorusu cikmiyor.
+/// Test ayrı bir süreçte koşuyor, bu süreç yalnızca bekleyip sonucu açıklıyor.
+/// Böylece test kodundaki onlarca "return" yolunun hepsi pencereyi açık tutuyor
+/// ve sonuç mesajı çıkış koduna bakıyor; TESTI-BASLAT.bat'taki kuralın aynısı.
+/// Alt süreç yükseltilmiş belirteci devralıyor; ikinci bir UAC sorusu çıkmıyor.
 /// </remarks>
 internal static class SahaModu
 {
     public const string RaporAdi = "zapret-tr-rapor.json";
 
-    /// <summary>TESTI-BASLAT.bat'taki satirin birebir aynisi.</summary>
+    /// <summary>TESTI-BASLAT.bat'taki satırın birebir aynısı.</summary>
     public static readonly string[] Argumanlar =
         ["--isp", "auto", "--doh", "--max-candidates", "25", "--out", RaporAdi];
 
@@ -47,15 +47,15 @@ internal static class SahaModu
             psi.ArgumentList.Add(arguman);
         }
 
-        // Ctrl+C alt surece de gidiyor ve o kendi iptal yolunu (130) isletiyor. Bu
-        // surec olurse pencere sonucu gostermeden kapanir; yakalayip bekliyoruz.
+        // Ctrl+C alt sürece de gidiyor ve o kendi iptal yolunu (130) işletiyor. Bu
+        // süreç ölürse pencere sonucu göstermeden kapanır; yakalayıp bekliyoruz.
         Console.CancelKeyPress += (_, e) => e.Cancel = true;
 
         int kod;
         try
         {
-            // Ust sinir var (EarlyExitDeadlockTests kurali), ama akislar yonlendirilmedigi
-            // icin kilitlenme riski yok; sinir yalnizca asili kalan bir test icin.
+            // Üst sınır var (EarlyExitDeadlockTests kuralı), ama akışlar yönlendirilmediği
+            // için kilitlenme riski yok; sınır yalnızca asılı kalan bir test için.
             // Normal test 2-5 dakika.
             using var test = Process.Start(psi)!;
             if (test.WaitForExit(TimeSpan.FromMinutes(60)))
@@ -75,7 +75,7 @@ internal static class SahaModu
             kod = 2;
         }
 
-        // Klasorde onceki bir testten kalan dosya "rapor var" sayilmamali.
+        // Klasörde önceki bir testten kalan dosya "rapor var" sayılmamalı.
         var raporVar = File.Exists(rapor);
         var raporYeni = raporVar && File.GetLastWriteTimeUtc(rapor) >= baslangic.AddSeconds(-2);
 
@@ -94,8 +94,8 @@ internal static class SahaModu
     }
 
     /// <summary>
-    /// Cikis koduna ve raporun bu testte yazilip yazilmadigina gore kullaniciya
-    /// ne olacagini soyler. "Gonderin" yalnizca gercekten yeni bir rapor varsa.
+    /// Çıkış koduna ve raporun bu testte yazılıp yazılmadığına göre kullanıcıya
+    /// ne olacağını söyler. "Gönderin" yalnızca gerçekten yeni bir rapor varsa.
     /// </summary>
     public static IReadOnlyList<string> SonucMesaji(int kod, bool raporYeni, bool eskiRaporVar)
     {

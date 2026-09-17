@@ -4,17 +4,17 @@ using System.Text.Json.Serialization;
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// Prober tarafinin kaynak uretimli JSON baglami.
+/// Prober tarafının kaynak üretimli JSON bağlamı.
 /// </summary>
 /// <remarks>
-/// Gerekcesi <see cref="ZapretTr.Core.Engine.CoreJsonContext"/> ile ayni: yansimaya
-/// dayali JSON kirpilmis yayinlarda SESSIZCE bozulur. Buradaki tipler kirilirsa
-/// belirti "engelli" gibi gorunur -- hedef listesi cozulemezse test hic hedef
-/// bulamaz, DoH yaniti cozulemezse sifreli DNS sessizce sistem DNS'ine duser ve
-/// Turkiye'de bu, DNS kacirmasinin geri gelmesi demek.
+/// Gerekçesi <see cref="ZapretTr.Core.Engine.CoreJsonContext"/> ile aynı: yansımaya
+/// dayalı JSON kırpılmış yayınlarda SESSİZCE bozulur. Buradaki tipler kırılırsa
+/// belirti "engelli" gibi görünür: hedef listesi çözülemezse test hiç hedef
+/// bulamaz, DoH yanıtı çözülemezse şifreli DNS sessizce sistem DNS'ine düşer ve
+/// Türkiye'de bu, DNS kaçırmasının geri gelmesi demek.
 ///
-/// Bu tiplerin hepsi ilgili sinifin icinde <c>internal</c> olarak duruyor
-/// (<c>private</c> degil): kaynak uretici baglamin onlara erisebilmesini istiyor.
+/// Bu tiplerin hepsi ilgili sınıfın içinde <c>internal</c> olarak duruyor
+/// (<c>private</c> değil): kaynak üretici bağlamın onlara erişebilmesini istiyor.
 /// </remarks>
 [JsonSourceGenerationOptions(
     PropertyNameCaseInsensitive = true,

@@ -1,18 +1,18 @@
 ﻿<#
 .SYNOPSIS
-    Bir surumun yayin notunu CHANGELOG.md'den uretir.
+    Bir sürümün yayın notunu CHANGELOG.md'den üretir.
 
 .DESCRIPTION
-    Yayin notunun basina "bu surumde ne degisti" ozetini koyar, ardindan her
-    surumde ayni kalan kurulum/guvenlik metnini ekler.
+    Yayın notunun başına "bu sürümde ne değişti" özetini koyar, ardından her
+    sürümde aynı kalan kurulum/güvenlik metnini ekler.
 
-    Neden uretiliyor da elle yazilmiyor: elle yazilan not, yazmayi unuttugun
-    surumde sessizce bir onceki surumun notuyla cikar. Kullanici indirdigi
-    pakette neyin duzeldigini goremez -- ki bir hata bildirdiyse tam olarak
-    bunu ariyordur. CHANGELOG zaten tutuluyor; TEK kaynak o olsun.
+    Neden üretiliyor da elle yazılmıyor: elle yazılan not, yazmayı unuttuğun
+    sürümde sessizce bir önceki sürümün notuyla çıkar. Kullanıcı indirdiği
+    pakette neyin düzeldiğini göremez; bir hata bildirdiyse tam olarak bunu
+    arıyordur. CHANGELOG zaten tutuluyor; TEK kaynak o olsun.
 
-    CHANGELOG'da o surumun bolumu yoksa is BASARISIZ olur. Sessizce bos not
-    yayinlamak, notu unutmakla ayni sonucu verirdi.
+    CHANGELOG'da o sürümün bölümü yoksa iş BAŞARISIZ olur. Sessizce boş not
+    yayınlamak, notu unutmakla aynı sonucu verirdi.
 #>
 [CmdletBinding()]
 param(
@@ -29,7 +29,7 @@ if (-not (Test-Path $PreamblePath)) { throw "Yayin notu govdesi bulunamadi: $Pre
 
 $lines = Get-Content $ChangelogPath -Encoding UTF8
 
-# Bolum "## [x.y.z]" ile baslar ve bir sonraki "## " basligina kadar surer.
+# Bölüm "## [x.y.z]" ile başlar ve bir sonraki "## " başlığına kadar sürer.
 $start = -1
 for ($i = 0; $i -lt $lines.Count; $i++) {
     if ($lines[$i] -match "^##\s*\[$([regex]::Escape($Version))\]") { $start = $i; break }
@@ -43,7 +43,7 @@ for ($i = $start + 1; $i -lt $lines.Count; $i++) {
     if ($lines[$i] -match '^##\s') { $end = $i; break }
 }
 
-# Baslik satirini atiyoruz: yayin sayfasi zaten surumu basligindan gosteriyor.
+# Başlık satırını atıyoruz: yayın sayfası zaten sürümü başlığından gösteriyor.
 $body = $lines[($start + 1)..($end - 1)]
 $body = ($body -join "`n").Trim()
 
@@ -63,25 +63,25 @@ $body
 $preamble
 "@
 
-# GORELI BAGLANTILAR MUTLAK ADRESE CEVRILIYOR.
+# GÖRELİ BAĞLANTILAR MUTLAK ADRESE ÇEVRİLİYOR.
 #
-# Yayin sayfasi .../releases/tag/vX adresinde duruyor ve GitHub notlardaki goreli
-# baglantilari o adrese gore cozuyor. "../blob/main/CHANGELOG.md" boylece gecersiz bir
-# adrese gidiyordu; kullanici tikladiginda "404 - Cannot find a valid ref in
-# blob/main/CHANGELOG.md" gordu (2026-09-16). CHANGELOG'daki depo ici goreli
-# baglantilar (ornegin docs/SORUN-GIDERME.md#...) depoda dogru, notta ise ayni sekilde
-# bozuluyordu. Sayfa ici (#...) ve mutlak baglantilara dokunulmuyor.
+# Yayın sayfası .../releases/tag/vX adresinde duruyor ve GitHub notlardaki göreli
+# bağlantıları o adrese göre çözüyor. "../blob/main/CHANGELOG.md" böylece geçersiz bir
+# adrese gidiyordu; kullanıcı tıkladığında "404 - Cannot find a valid ref in
+# blob/main/CHANGELOG.md" gördü (2026-09-16). CHANGELOG'daki depo içi göreli
+# bağlantılar (örneğin docs/SORUN-GIDERME.md#...) depoda doğru, notta ise aynı şekilde
+# bozuluyordu. Sayfa içi (#...) ve mutlak bağlantılara dokunulmuyor.
 $repoBlob = 'https://github.com/superuser-d0/zapret-tr/blob/main/'
 $note = [regex]::Replace(
     $note,
     '\]\((?!https?://|#|mailto:)(?:\.\./blob/main/|\./)?([^)\s]+)\)',
     { param($m) '](' + $repoBlob + $m.Groups[1].Value + ')' })
 
-# Out-File, Windows PowerShell 5.1'de BOM ekliyor ve BOM yayin notunun ilk
-# basligina gorunmez bir karakter olarak sizabiliyor.
+# Out-File, Windows PowerShell 5.1'de BOM ekliyor ve BOM yayın notunun ilk
+# başlığına görünmez bir karakter olarak sızabiliyor.
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-# .NET'in calisma dizini PowerShell'inkiyle ayni olmayabiliyor, o yuzden goreli
-# yol burada elle mutlaklastiriliyor.
+# .NET'in çalışma dizini PowerShell'inkiyle aynı olmayabiliyor, o yüzden göreli
+# yol burada elle mutlaklaştırılıyor.
 $fullOut = if ([System.IO.Path]::IsPathRooted($OutPath)) {
     $OutPath
 } else {

@@ -4,15 +4,15 @@ using ZapretTr.Core.Engine;
 using ZapretTr.Core.Profiles;
 using ZapretTr.Prober;
 
-// ZapretTR saha testi araci.
+// ZapretTR saha testi aracı.
 //
-// Iki isi var: gelistirirken motoru arayuzden bagimsiz kosturmak, ve baska
-// birinin makinesinde (ornegin Superonline hattinda) hicbir sey kurmadan test
-// yaptirmak. Ikincisi yuzunden kasitli olarak tek dosya, bagimlilıksiz ve
-// ciktisi okunabilir tutuldu.
+// İki işi var: geliştirirken motoru arayüzden bağımsız koşturmak ve başka
+// birinin makinesinde (örneğin Superonline hattında) hiçbir şey kurmadan test
+// yaptırmak. İkincisi yüzünden kasıtlı olarak tek dosya, bağımlılıksız ve
+// çıktısı okunabilir tutuldu.
 
-// Argumansiz = cift tiklama. Saha testini paketteki ayarlarla kostur ve pencereyi
-// acik tut; gerekcesi SahaModu'nda (gercek kullanicida olculdu).
+// Argümansız = çift tıklama. Saha testini paketteki ayarlarla koştur ve pencereyi
+// açık tut; gerekçesi SahaModu'nda (gerçek kullanıcıda ölçüldü).
 if (args.Length == 0)
 {
     return SahaModu.CiftTiklamaIleCalistir();
@@ -41,11 +41,11 @@ if (!ElevationGuard.IsElevated())
     return 2;
 }
 
-// --- Secili yapilandirmayi uygula ve olc -------------------------------------
-// Arayuzdeki "Baslat" dugmesinin urettigi BIRLESIK komutu calistirip once/sonra
-// farkini olcer. Tek bir adayi test etmekten farkli: gercekte kullanilan komut
-// dort bolumu --new ile birlestiriyor ve o birlesik halin calistigi ayrica
-// dogrulanmali.
+// --- Seçili yapılandırmayı uygula ve ölç -------------------------------------
+// Arayüzdeki "Başlat" düğmesinin ürettiği BİRLEŞİK komutu çalıştırıp önce/sonra
+// farkını ölçer. Tek bir adayı test etmekten farklı: gerçekte kullanılan komut
+// dört bölümü --new ile birleştiriyor ve o birleşik hâlin çalıştığı ayrıca
+// doğrulanmalı.
 if (options.Apply)
 {
     var applyVendor = VendorPaths.Locate();
@@ -59,9 +59,9 @@ if (options.Apply)
         return 4;
     }
 
-    // Arayuzdekiyle AYNI kural (RuntimeSelection): secilen HTTPS stratejisi +
-    // yalnizca dogrulanmis diger bolumler. Ikisi ayrisirsa arayuzde test edilen
-    // sey ile gercekte calisan sey farkli olur.
+    // Arayüzdekiyle AYNI kural (RuntimeSelection): seçilen HTTPS stratejisi +
+    // yalnızca doğrulanmış diğer bölümler. İkisi ayrışırsa arayüzde test edilen
+    // şey ile gerçekte çalışan şey farklı olur.
     var primary = applyProfile.CandidatesFor(StrategySection.Tcp443).FirstOrDefault();
     if (primary is null)
     {
@@ -82,8 +82,8 @@ if (options.Apply)
 
     var applyBuilder = new WinwsCommandBuilder(applyVendor);
 
-    // Arayuzle AYNI daraltma. Saha araci kullanicinin calistiracagindan farkli bir
-    // komut olcerse, olctugu sey kullanicinin yasadigi sey olmaz (issue #1).
+    // Arayüzle AYNI daraltma. Saha aracı kullanıcının çalıştıracağından farklı bir
+    // komut ölçerse, ölçtüğü şey kullanıcının yaşadığı şey olmaz (issue #1).
     var applyDomains = HostlistStore
         .Load(applyProfiles.Root)
         .DomainsFor(RuntimeSelection.VerifiedCategories(applyProfile, winners));
@@ -115,16 +115,16 @@ if (options.Apply)
         }
         else
         {
-            // Sessizce dusurmek burada daha da kotu: olcumu BIZ yapiyoruz ve
-            // eksik hedefle cikan bir rapor "o site sorunsuz" gibi okunuyor.
+            // Sessizce düşürmek burada daha da kötü: ölçümü BİZ yapıyoruz ve
+            // eksik hedefle çıkan bir rapor "o site sorunsuz" gibi okunuyor.
             Console.Error.WriteLine(
                 HostlistStore.DescribeUnusableTarget(extraHost) ?? $"Hedef anlasilamadi: {extraHost}");
         }
     }
 
-    // Sifreli DNS istege bagli ama Turkiye'de cogu zaman SART: DNS kacirilmisken
-    // baglanti zaten engel sunucusuna gider ve winws stratejisi hicbir sey
-    // degistirmez. Ikisini birlikte olcmek, gercek kullanim senaryosu.
+    // Şifreli DNS isteğe bağlı ama Türkiye'de çoğu zaman ŞART: DNS kaçırılmışken
+    // bağlantı zaten engel sunucusuna gider ve winws stratejisi hiçbir şey
+    // değiştirmez. İkisini birlikte ölçmek, gerçek kullanım senaryosu.
     DnsCryptRunner? applyDns = null;
     if (options.UseSecureDns)
     {
@@ -135,14 +135,14 @@ if (options.Apply)
         Console.WriteLine();
     }
 
-    // Olcum bolume gore secilmeli: QUIC ham QuicConnection ile, discord-voice
-    // STUN ile. Burada duz HttpProbeClient kullaniliyordu ve QUIC hedefleri
-    // HTTP uzerinden olculup "HTTP 200" donuyordu -- yani QUIC hic olculmuyordu.
+    // Ölçüm bölüme göre seçilmeli: QUIC ham QuicConnection ile, discord-voice
+    // STUN ile. Burada düz HttpProbeClient kullanılıyordu ve QUIC hedefleri
+    // HTTP üzerinden ölçülüp "HTTP 200" dönüyordu; yani QUIC hiç ölçülmüyordu.
     //
-    // IP SABITLENMIYOR (pinnedIp: null) ve bu kasitli: --apply'in olctugu sey
-    // "gercekten calisiyor mu", yani kullanicinin uygulamasinin gordugu yol.
-    // --doh verildiginde dnscrypt zaten SISTEM DNS'ini yonlendiriyor, dolayisiyla
-    // sistem cozumlemesi de sifreli oluyor.
+    // IP SABİTLENMİYOR (pinnedIp: null) ve bu kasıtlı: --apply'ın ölçtüğü şey
+    // "gerçekten çalışıyor mu", yani kullanıcının uygulamasının gördüğü yol.
+    // --doh verildiğinde dnscrypt zaten SİSTEM DNS'ini yönlendiriyor, dolayısıyla
+    // sistem çözümlemesi de şifreli oluyor.
     Console.WriteLine("Önce (winws kapalı):");
     var before = new Dictionary<string, bool>();
     using (var c = new HttpProbeClient())
@@ -199,7 +199,7 @@ if (options.Apply)
     Console.WriteLine($"Sonuç: {fixedCount} hedef düzeldi, {brokeCount} hedef bozuldu.");
     if (brokeCount > 0)
     {
-        // Calisan bir seyi bozmak, calismayan bir seyi duzeltmemekten kotu.
+        // Çalışan bir şeyi bozmak, çalışmayan bir şeyi düzeltmemekten kötü.
         Console.WriteLine("UYARI: Daha önce açılan bir hedef bu yapılandırmayla kapandı.");
     }
 
@@ -207,7 +207,7 @@ if (options.Apply)
     return fixedCount > 0 && brokeCount == 0 ? 0 : 1;
 }
 
-// --- Otomatik baslatma servisi ----------------------------------------------
+// --- Otomatik başlatma servisi ----------------------------------------------
 if (options.ServiceCommand is { } serviceCommand)
 {
     var svcVendor = VendorPaths.Locate();
@@ -308,10 +308,10 @@ if (options.ServiceCommand is { } serviceCommand)
     }
 }
 
-// --- Sifreli DNS ------------------------------------------------------------
-// Turkiye'de engelleme cogu zaman once DNS katmaninda; o katman asilmadan DPI
-// stratejisi ise yaramiyor. Bu mod dnscrypt-proxy'yi calistirip sistem DNS'ini
-// ona yonlendirir.
+// --- Şifreli DNS ------------------------------------------------------------
+// Türkiye'de engelleme çoğu zaman önce DNS katmanında; o katman aşılmadan DPI
+// stratejisi işe yaramıyor. Bu mod dnscrypt-proxy'yi çalıştırıp sistem DNS'ini
+// ona yönlendirir.
 if (options.DnsCommand is { } dnsCommand)
 {
     var dnsVendor = VendorPaths.Locate();
@@ -327,7 +327,7 @@ if (options.DnsCommand is { } dnsCommand)
             Console.WriteLine($"Yerel çözümleyici : {(responding ? "cevap veriyor" : "cevap vermiyor")}");
             Console.WriteLine($"DNS yedeği        : {(SystemDnsManager.HasBackup ? "VAR (sistem DNS'i bize yönlendirilmiş)" : "yok")}");
 
-            // Yedek var ama proxy cevap vermiyorsa makine su an ad cozemiyor.
+            // Yedek var ama proxy cevap vermiyorsa makine şu an ad çözemiyor.
             if (SystemDnsManager.HasBackup && !responding)
             {
                 Console.WriteLine();
@@ -370,7 +370,7 @@ if (options.DnsCommand is { } dnsCommand)
 
             foreach (var stale in System.Diagnostics.Process.GetProcessesByName("dnscrypt-proxy"))
             {
-                try { stale.Kill(); } catch { /* zaten olmus */ }
+                try { stale.Kill(); } catch { /* zaten ölmüş */ }
                 finally { stale.Dispose(); }
             }
 
@@ -379,9 +379,9 @@ if (options.DnsCommand is { } dnsCommand)
 
         case "test":
         {
-            // Tam dongu, kendi kendini geri alarak. Amac guvenlik yolunu
-            // dogrulamak: DNS degistirilebiliyor mu VE her kosulda geri
-            // alinabiliyor mu. Test sonunda sistem mutlaka eski haline doner.
+            // Tam döngü, kendi kendini geri alarak. Amaç güvenlik yolunu
+            // doğrulamak: DNS değiştirilebiliyor mu VE her koşulda geri
+            // alınabiliyor mu. Test sonunda sistem mutlaka eski hâline döner.
             Console.WriteLine("DNS güvenlik testi — sistem sonunda eski haline döndürülecek.");
             Console.WriteLine();
 
@@ -423,8 +423,8 @@ if (options.DnsCommand is { } dnsCommand)
                 Console.WriteLine("3) Geri alınıyor...");
                 await dnsRunner.StopAsync();
 
-                // Geri alma gercekten oldu mu, yedegin yoklugundan degil
-                // sistemin kendisinden dogrulaniyor.
+                // Geri alma gerçekten oldu mu, yedeğin yokluğundan değil
+                // sistemin kendisinden doğrulanıyor.
                 var after = SystemDnsManager.HasBackup;
                 Console.WriteLine(after
                     ? "   [!] DNS yedeği hâlâ duruyor — geri alma tamamlanmadı!"
@@ -443,15 +443,15 @@ if (options.DnsCommand is { } dnsCommand)
 }
 
 // --- Temizlik ---------------------------------------------------------------
-// Bu arac baska birinin makinesinde calisiyor ve calisirken cekirdek modunda bir
-// paket surucusu yukluyor. Onu kaldirabilmesi bir "ekstra" degil, sorumluluk.
+// Bu araç başka birinin makinesinde çalışıyor ve çalışırken çekirdek modunda bir
+// paket sürücüsü yüklüyor. Onu kaldırabilmesi bir "ekstra" değil, sorumluluk.
 if (options.Cleanup)
 {
     Console.WriteLine("Temizlik yapılıyor...");
     Console.WriteLine();
 
-    // removeConfig: false -- buradaki amac surucuyu ve calisan sureci kaldirmak,
-    // kullanicinin ayarlarini silmek degil.
+    // removeConfig: false. Buradaki amaç sürücüyü ve çalışan süreci kaldırmak,
+    // kullanıcının ayarlarını silmek değil.
     var steps = await WinDivertCleanup.RunAsync(removeConfig: false);
     foreach (var step in steps)
     {
@@ -464,15 +464,15 @@ if (options.Cleanup)
     return steps.All(s => s.Succeeded) ? 0 : 1;
 }
 
-// --- Teshis modu ------------------------------------------------------------
+// --- Teşhis modu ------------------------------------------------------------
 // --- Hat tespiti ------------------------------------------------------------
-// Olcum yapmadan once "hangi hattayim" sorusunu cevaplar. Yanlis hatta kosup
-// sonucu yanlis profile yazmak bu projedeki en pahali sessiz hata: veri kirlenir
-// ve hangi olcumun hangi sebekeye ait oldugu geri kazanilamaz.
+// Ölçüm yapmadan önce "hangi hattayım" sorusunu cevaplar. Yanlış hatta koşup
+// sonucu yanlış profile yazmak bu projedeki en pahalı sessiz hata: veri kirlenir
+// ve hangi ölçümün hangi şebekeye ait olduğu geri kazanılamaz.
 //
-// Ayrica IspDetector'i CLI'dan calistirabilen TEK yol bu. Onemi kirpilmis
-// yayinlarda ortaya cikiyor: kirpma bir JSON yolunu bozarsa belirti calisma
-// aninda gorunur, ve sinanamayan kod yolu sinanmamis kod yoludur.
+// Ayrıca IspDetector'ı CLI'dan çalıştırabilen TEK yol bu. Önemi kırpılmış
+// yayınlarda ortaya çıkıyor: kırpma bir JSON yolunu bozarsa belirti çalışma
+// anında görünür ve sınanamayan kod yolu sınanmamış kod yoludur.
 if (options.DetectIsp)
 {
     using var detector = new IspDetector();
@@ -512,16 +512,16 @@ if (options.DetectIsp)
     return 0;
 }
 
-// Tek bir adresi dort protokolle de deneyip ham sonucu basar. Destek istegi
-// geldiginde "su komutun ciktisini gonder" diyebilecegimiz sey.
+// Tek bir adresi dört protokolle de deneyip ham sonucu basar. Destek isteği
+// geldiğinde "şu komutun çıktısını gönder" diyebileceğimiz şey.
 if (options.DiagnoseHost is { } diagnoseHost)
 {
     Console.WriteLine($"Teşhis: {diagnoseHost}");
     Console.WriteLine();
 
-    // --doh verilirse cozumleme sifreli yoldan yapilir. DNS kacirmasi olan bir
-    // hatta sistem DNS'i engel sunucusunu dondurur ve teshis, DPI katmanini degil
-    // DNS katmanini olcer.
+    // --doh verilirse çözümleme şifreli yoldan yapılır. DNS kaçırması olan bir
+    // hatta sistem DNS'i engel sunucusunu döndürür ve teşhis, DPI katmanını değil
+    // DNS katmanını ölçer.
     string? diagnoseIp = null;
     if (options.UseSecureDns)
     {
@@ -536,9 +536,9 @@ if (options.DiagnoseHost is { } diagnoseHost)
     {
         var started = System.Diagnostics.Stopwatch.StartNew();
 
-        // Http3 slotu HttpProbeClient ile OLCULEMEZ: HTTP/3 IP'ye sabitlenemedigi
-        // icin adres sistem DNS'i ile cozulur ve --doh sessizce etkisiz kalir.
-        // Ham QUIC istemcisi IP ile SNI'yi ayri verebiliyor.
+        // Http3 yuvası HttpProbeClient ile ÖLÇÜLEMEZ: HTTP/3 IP'ye sabitlenemediği
+        // için adres sistem DNS'i ile çözülür ve --doh sessizce etkisiz kalır.
+        // Ham QUIC istemcisi IP ile SNI'yi ayrı verebiliyor.
         var result = mode == ProbeMode.Http3
             ? await new QuicProbeClient(TimeSpan.FromSeconds(10)).TryReachAsync(diagnoseHost, diagnoseIp)
             : await diagnostic.TryReachAsync(diagnoseHost, mode, diagnoseIp);
@@ -559,18 +559,18 @@ if (options.DiagnoseHost is { } diagnoseHost)
     return 0;
 }
 
-// --- Motor devrede mi kontrolu ----------------------------------------------
-// "Strateji calismadi" ile "winws trafige hic dokunmadi" birbirinden cok farkli
-// iki sonuc, ama disaridan ikisi de zaman asimi olarak gorunuyor. Bu mod winws'i
-// --debug=1 ile calistirip paketleri gercekten gordugunu gosteriyor.
+// --- Motor devrede mi kontrolü ----------------------------------------------
+// "Strateji çalışmadı" ile "winws trafiğe hiç dokunmadı" birbirinden çok farklı
+// iki sonuç, ama dışarıdan ikisi de zaman aşımı olarak görünüyor. Bu mod winws'i
+// --debug=1 ile çalıştırıp paketleri gerçekten gördüğünü gösteriyor.
 if (options.EngageCheckHost is { } engageHost)
 {
     var engageVendor = VendorPaths.Locate();
     var engageProfiles = ProfileStore.Load();
 
-    // Bolum secilebilir olmali. Sabit tcp80 ile QUIC hic teshis edilemiyordu:
-    // winws QUIC Initial'i cozup SNI bulamazsa stratejiyi HIC uygulamiyor ve
-    // disaridan bu, "strateji ise yaramadi" ile birebir ayni gorunuyor.
+    // Bölüm seçilebilir olmalı. Sabit tcp80 ile QUIC hiç teşhis edilemiyordu:
+    // winws QUIC Initial'ı çözüp SNI bulamazsa stratejiyi HİÇ uygulamıyor ve
+    // dışarıdan bu, "strateji işe yaramadı" ile birebir aynı görünüyor.
     var engageSection = StrategySection.Tcp80;
     if (options.Section is { } sectionName)
     {
@@ -590,8 +590,8 @@ if (options.EngageCheckHost is { } engageHost)
     var engageMode = StrategyProber.ModeFor(engageSection);
 
     Console.WriteLine($"Hedef    : {engageHost}");
-    // Bolumun NASIL olculdugu yaziliyor, ProbeMode degil: quic ve discord-voice
-    // HttpProbeClient kullanmiyor, dolayisiyla ProbeMode orada anlamsiz bir deger.
+    // Bölümün NASIL ölçüldüğü yazılıyor, ProbeMode değil: quic ve discord-voice
+    // HttpProbeClient kullanmıyor, dolayısıyla ProbeMode orada anlamsız bir değer.
     var engageHow = engageSection switch
     {
         StrategySection.Quic => "ham QUIC el sıkışması",
@@ -603,9 +603,9 @@ if (options.EngageCheckHost is { } engageHost)
     Console.WriteLine($"Strateji : {strategy}");
     Console.WriteLine();
 
-    // Sistem DNS'i kacirilmissa hedef IP engel sunucusunu gosterir ve olcum
-    // DPI'i degil DNS katmanini olcer. --doh verildiginde cozumleme sifreli
-    // yoldan yapiliyor; boylece alttaki DPI katmani gorunur hale geliyor.
+    // Sistem DNS'i kaçırılmışsa hedef IP engel sunucusunu gösterir ve ölçüm
+    // DPI'ı değil DNS katmanını ölçer. --doh verildiğinde çözümleme şifreli
+    // yoldan yapılıyor; böylece alttaki DPI katmanı görünür hâle geliyor.
     string? ip = null;
     if (options.UseSecureDns)
     {
@@ -639,9 +639,9 @@ if (options.EngageCheckHost is { } engageHost)
     await runner.StartAsync(engageArgs);
     await Task.Delay(1500);
 
-    // Teshis, arama motorunun olctugu seyin AYNISINI olcmeli. Bu yuzden bolume
-    // gore istemci secimi burada tekrar yazilmiyor, motorun kendi dagitimi
-    // cagriliyor: QUIC ham QuicConnection ile, discord-voice STUN ile olculur.
+    // Teşhis, arama motorunun ölçtüğü şeyin AYNISINI ölçmeli. Bu yüzden bölüme
+    // göre istemci seçimi burada tekrar yazılmıyor, motorun kendi dağıtımı
+    // çağrılıyor: QUIC ham QuicConnection ile, discord-voice STUN ile ölçülür.
     using (var engageClient = new HttpProbeClient(TimeSpan.FromSeconds(8)))
     {
         var engageResult = await StrategyProber.ProbeAsync(engageSection, engageHost, ip, engageClient);
@@ -657,9 +657,9 @@ if (options.EngageCheckHost is { } engageHost)
         engageSnapshot = [.. log];
     }
 
-    // winws'in kendi karar satirlari. "Paketi gordu mu" ile "gordugu paketi
-    // degistirdi mi" ayri sorular; ikincisi sessizce hayir olabiliyor ve
-    // gunlugun tamami icinde kaybolmasin diye ayrica ozetleniyor.
+    // winws'in kendi karar satırları. "Paketi gördü mü" ile "gördüğü paketi
+    // değiştirdi mi" ayrı sorular; ikincisi sessizce hayır olabiliyor ve
+    // günlüğün tamamı içinde kaybolmasın diye ayrıca özetleniyor.
     var verdictMarkers = new[]
     {
         "packet contains QUIC initial",
@@ -673,10 +673,10 @@ if (options.EngageCheckHost is { } engageHost)
         "desync",
     };
 
-    // Global WinDivert filtresi butun udp/443 trafigini yakaladigi icin gunluk
-    // makinedeki her QUIC baglantisini iceriyor -- on binlerce satir. Teshis icin
-    // anlamli olan yalnizca HEDEF IP'ye ait olanlar; gerisi ekrani doldurup asil
-    // satirlarin kaybolmasina yol aciyordu.
+    // Global WinDivert filtresi bütün udp/443 trafiğini yakaladığı için günlük
+    // makinedeki her QUIC bağlantısını içeriyor; on binlerce satır. Teşhis için
+    // anlamlı olan yalnızca HEDEF IP'ye ait olanlar; gerisi ekranı doldurup asıl
+    // satırların kaybolmasına yol açıyordu.
     var engageRelevant = engageSnapshot
         .Where(l => l.Contains(ip, StringComparison.Ordinal))
         .ToList();
@@ -685,8 +685,8 @@ if (options.EngageCheckHost is { } engageHost)
         .Where(l => verdictMarkers.Any(m => l.Contains(m, StringComparison.OrdinalIgnoreCase)))
         .ToList();
 
-    // Tam gunluk her zaman diske yazilir: bir teshis kosumunu yalnizca ciktiyi
-    // kirptigi icin tekrarlamak, yonetici onayi gerektirdigi icin pahali.
+    // Tam günlük her zaman diske yazılır: bir teşhis koşumunu yalnızca çıktıyı
+    // kırptığı için tekrarlamak, yönetici onayı gerektirdiği için pahalı.
     var engageLogPath = options.OutputPath
                         ?? Path.Combine(AppContext.BaseDirectory, "engage-check.log");
     File.WriteAllLines(engageLogPath, engageSnapshot);
@@ -746,13 +746,13 @@ if (missing.Count > 0)
     return 3;
 }
 
-// --- ISS secimi -------------------------------------------------------------
+// --- İSS seçimi -------------------------------------------------------------
 //
-// "auto", saha paketi icin var. Paket herkese acik yayinlaniyor ve indiren
-// kisinin hangi ISS'te oldugunu bilmiyoruz; sabit bir ISS yazmak, baska bir
-// hattaki kullanicinin testini YANLIS profille baslatir (Tier 1 alakasiz
-// adaylari once dener, butce onlara harcanir). Tespit basarisiz olursa hata
-// degil: genel aramaya duserek test yine calisir.
+// "auto", saha paketi için var. Paket herkese açık yayınlanıyor ve indiren
+// kişinin hangi İSS'te olduğunu bilmiyoruz; sabit bir İSS yazmak, başka bir
+// hattaki kullanıcının testini YANLIŞ profille başlatır (Tier 1 alakasız
+// adayları önce dener, bütçe onlara harcanır). Tespit başarısız olursa hata
+// değil: genel aramaya düşerek test yine çalışır.
 IspProfile? profile = null;
 if (string.Equals(options.IspId, "auto", StringComparison.OrdinalIgnoreCase))
 {
@@ -760,9 +760,9 @@ if (string.Equals(options.IspId, "auto", StringComparison.OrdinalIgnoreCase))
     using var autoDetector = new IspDetector();
     var autoDetection = await autoDetector.DetectAsync(profiles);
 
-    // Birden fazla profil eslesirse ilki aliniyor: siralama en iyi eslesme
-    // once. Yanlis secim olumcul degil -- kazanan bulunamazsa arama zaten
-    // diger profillere ve genel merdivene geciyor.
+    // Birden fazla profil eşleşirse ilki alınıyor: sıralama en iyi eşleşme
+    // önce. Yanlış seçim ölümcül değil; kazanan bulunamazsa arama zaten
+    // diğer profillere ve genel merdivene geçiyor.
     profile = autoDetection.Matches.Count > 0 ? autoDetection.Matches[0] : null;
 
     Console.WriteLine(profile is null
@@ -795,10 +795,10 @@ if (options.Exhaustive)
 }
 
 // --- Hedefler ---------------------------------------------------------------
-// --target hangi bolume yazilacak: varsayilan tcp443, --section ile degistirilir.
-// Onceden HER kullanici hedefi tcp443'e gidiyordu, yani kullanici duz HTTP'de
-// acilmayan bir adresi test edemiyordu -- tcp80 bolumu icin kendi hedefini
-// ekleyemedigi gibi, verdigi adres yanlis bolumde olculuyordu.
+// --target hangi bölüme yazılacak: varsayılan tcp443, --section ile değiştirilir.
+// Önceden HER kullanıcı hedefi tcp443'e gidiyordu, yani kullanıcı düz HTTP'de
+// açılmayan bir adresi test edemiyordu: tcp80 bölümü için kendi hedefini
+// ekleyemediği gibi, verdiği adres yanlış bölümde ölçülüyordu.
 var extraSection = StrategySection.Tcp443;
 if (options.Section is { } extraSectionName
     && !StrategySectionExtensions.TryParseJsonName(extraSectionName, out extraSection))
@@ -813,8 +813,8 @@ foreach (var extra in options.ExtraTargets)
     var parsed = ProbeTargetStore.TryParseUserTarget(extra, extraSection);
     if (parsed is null)
     {
-        // Sebebi de soyleniyor: "cozumlenemedi" tek basina kullaniciya ne
-        // yapacagini soylemiyor, virgul kullandiysa hic soylemiyor.
+        // Sebebi de söyleniyor: "çözümlenemedi" tek başına kullanıcıya ne
+        // yapacağını söylemiyor, virgül kullandıysa hiç söylemiyor.
         Console.Error.WriteLine(
             HostlistStore.DescribeUnusableTarget(extra) ?? $"Hedef çözümlenemedi: {extra}");
         Console.Error.WriteLine($"Atlanıyor: {extra}");
@@ -827,9 +827,9 @@ foreach (var extra in options.ExtraTargets)
 
 Console.WriteLine();
 
-// --- Ne paylasilacagi konusunda seffaflik -----------------------------------
-// Bu arac baska birinin makinesinde calisacak. Ne kaydettigini calismadan ONCE
-// soylemek, sonradan aciklamaktan farkli bir sey.
+// --- Ne paylaşılacağı konusunda şeffaflık -----------------------------------
+// Bu araç başka birinin makinesinde çalışacak. Ne kaydettiğini çalışmadan ÖNCE
+// söylemek, sonradan açıklamaktan farklı bir şey.
 if (options.OutputPath is not null)
 {
     Console.WriteLine("Bu test sırasında olacaklar:");
@@ -852,19 +852,19 @@ if (options.OutputPath is not null)
 
     if (!options.AssumeYes)
     {
-        // "(e/H)": buyuk harf VARSAYILANI gosterir ve varsayilan "hayir".
+        // "(e/H)": büyük harf VARSAYILANI gösterir ve varsayılan "hayır".
         //
-        // Eskiden "(E/h)" yaziyordu -- yani Enter "evet" gibi okunuyordu, kod ise
-        // tam tersini yapiyordu. Gercek kullanici (issue #1, 2026-09-16) Enter'a
-        // basti, test hic baslamadi ve TESTI-BASLAT.bat yine "Test bitti. Sonuc
+        // Eskiden "(E/h)" yazıyordu; yani Enter "evet" gibi okunuyordu, kod ise
+        // tam tersini yapıyordu. Gerçek kullanıcı (issue #1, 2026-09-16) Enter'a
+        // bastı, test hiç başlamadı ve TESTI-BASLAT.bat yine "Test bitti. Sonuc
         // dosyasi: zapret-tr-rapor.json" dedi; dosya yoktu.
         Console.WriteLine("Devam etmek için E yazıp Enter'a basın. Boş bırakmak testi iptal eder.");
         Console.Write("Devam edilsin mi? (e/H): ");
         var answer = Console.ReadLine()?.Trim();
 
-        // Bos cevap (dogrudan Enter) onay SAYILMAZ. Baskasinin makinesinde
-        // calisan ve cekirdek surucusu yukleyen bir arac icin varsayilan "hayir"
-        // olmali; kullanici bilerek "evet" demeli.
+        // Boş cevap (doğrudan Enter) onay SAYILMAZ. Başkasının makinesinde
+        // çalışan ve çekirdek sürücüsü yükleyen bir araç için varsayılan "hayır"
+        // olmalı; kullanıcı bilerek "evet" demeli.
         var accepted = answer is not null
                        && (answer.Equals("e", StringComparison.OrdinalIgnoreCase)
                            || answer.Equals("evet", StringComparison.OrdinalIgnoreCase)
@@ -876,10 +876,10 @@ if (options.OutputPath is not null)
             Console.WriteLine();
             Console.WriteLine("İptal edildi. Hiçbir değişiklik yapılmadı, rapor yazılmadı.");
 
-            // 0 DEGIL. 0 "test bitti, rapor yazildi" demek; saha paketinin
-            // baslatma betigi cikis koduna bakarak kullaniciya "dosyayi gonderin"
-            // ya da "rapor olusmadi" diyor. Iptal, Ctrl+C yoluyla ayni kodu
-            // (130) donduruyor.
+            // 0 DEĞİL. 0 "test bitti, rapor yazıldı" demek; saha paketinin
+            // başlatma betiği çıkış koduna bakarak kullanıcıya "dosyayı gönderin"
+            // ya da "rapor oluşmadı" diyor. İptal, Ctrl+C yoluyla aynı kodu
+            // (130) döndürüyor.
             return 130;
         }
     }
@@ -900,13 +900,13 @@ var prober = new StrategyProber(vendor, profiles, targets, options.UseSecureDns)
 
 try
 {
-    // --- Koruma zaten acik mi ----------------------------------------------
+    // --- Koruma zaten açık mı ----------------------------------------------
     //
-    // Aciksa bu olcum YANILTICI olur: hedefler zaten aciliyor, arac da "engel
-    // yok" diyor. Gercek bir kullanicida tam olarak bu oldu -- makinesinde
-    // ZapretTR servisi calisirken saha testini kosturdu, 11 hedefin 11'i
-    // "aciliyor" cikti ve sonuc "DPI ile engellenen hedef yok" oldu. Olcum
-    // dogruydu, yalnizca olculen sey engelleme degil KENDI KORUMAMIZDI.
+    // Açıksa bu ölçüm YANILTICI olur: hedefler zaten açılıyor, araç da "engel
+    // yok" diyor. Gerçek bir kullanıcıda tam olarak bu oldu: makinesinde
+    // ZapretTR servisi çalışırken saha testini koşturdu, 11 hedefin 11'i
+    // "açılıyor" çıktı ve sonuç "DPI ile engellenen hedef yok" oldu. Ölçüm
+    // doğruydu, yalnızca ölçülen şey engelleme değil KENDİ KORUMAMIZDI.
     var korumaSurecleri = System.Diagnostics.Process.GetProcessesByName("winws");
     if (korumaSurecleri.Length > 0)
     {
@@ -929,7 +929,7 @@ try
         Console.WriteLine();
     }
 
-    // --- Mevcut durum taramasi ---------------------------------------------
+    // --- Mevcut durum taraması ---------------------------------------------
     Console.WriteLine("[1/2] Mevcut durum taranıyor (winws kapalı)...");
     var baseline = await prober.RunBaselineAsync(cancellationToken: cancellation.Token);
 
@@ -945,9 +945,9 @@ try
         Console.WriteLine($"   {mark} {item.Target.Label,-24} {item.Detail}");
     }
 
-    // Kontrol hedefi engellenmemesi BEKLENEN bir adres. Erisilemiyorsa sorun
-    // DPI'da degil olcum yolumuzda ya da baglantida demektir; bu durumda tum
-    // baseline sonuclari supheli ve strateji aramasi anlamsiz olur.
+    // Kontrol hedefi engellenmemesi BEKLENEN bir adres. Erişilemiyorsa sorun
+    // DPI'da değil ölçüm yolumuzda ya da bağlantıda demektir; bu durumda tüm
+    // baseline sonuçları şüpheli ve strateji araması anlamsız olur.
     var failedControls = baseline
         .Where(b => b.Target.Category == StrategyProber.ControlCategory
                     && b.Status != BaselineStatus.Accessible)
@@ -974,9 +974,9 @@ try
     Console.WriteLine($"   {blockedCount} hedef DPI ile engelli, {redirectedCount} hedef DNS ile yönlendirilmiş.");
     Console.WriteLine();
 
-    // DNS yonlendirmesi zapret'in cozebilecegi bir sey degil ve bunu soylememek
-    // kullaniciyi bosuna bekletmek olur: strateji aramasi yuzlerce aday deneyip
-    // hicbiri calismadigi icin "bulunamadi" derdi.
+    // DNS yönlendirmesi zapret'in çözebileceği bir şey değil ve bunu söylememek
+    // kullanıcıyı boşuna bekletmek olur: strateji araması yüzlerce aday deneyip
+    // hiçbiri çalışmadığı için "bulunamadı" derdi.
     if (redirectedCount > 0)
     {
         Console.WriteLine("DİKKAT: DNS yönlendirmesi tespit edildi.");
@@ -995,12 +995,12 @@ try
         Console.WriteLine("DPI ile engellenen hedef yok; strateji testi anlamsız olurdu.");
         Console.WriteLine("Sizde açılmayan bir adresi --target ile verip tekrar çalıştırın.");
 
-        // "Engel yok" DA bir sonuctur ve rapor edilmeli. Eskiden bu yolda
-        // hicbir dosya yazilmadan cikiliyordu: kullanici testi calistiriyor,
-        // ekranda dolu dolu cikti goruyor, sonra klasorde JSON bulamiyordu.
-        // Gercek bir kullanicida tam olarak bu yasandi -- ustelik o kosum bize
-        // "bu hatta su an engel yok" bilgisini veriyordu, ki toplamak
-        // istedigimiz seyin ta kendisi.
+        // "Engel yok" DA bir sonuçtur ve rapor edilmeli. Eskiden bu yolda
+        // hiçbir dosya yazılmadan çıkılıyordu: kullanıcı testi çalıştırıyor,
+        // ekranda dolu dolu çıktı görüyor, sonra klasörde JSON bulamıyordu.
+        // Gerçek bir kullanıcıda tam olarak bu yaşandı; üstelik o koşum bize
+        // "bu hatta şu an engel yok" bilgisini veriyordu, ki toplamak
+        // istediğimiz şeyin ta kendisi.
         WriteBaselineReport(options.OutputPath, baseline, profile, "engel-yok");
         return 0;
     }
@@ -1011,7 +1011,7 @@ try
         return 0;
     }
 
-    // --- Strateji aramasi ---------------------------------------------------
+    // --- Strateji araması ---------------------------------------------------
     Console.WriteLine("[2/2] Strateji aranıyor (winws başlatılacak, WinDivert sürücüsü yüklenecek)...");
     Console.WriteLine();
 
@@ -1032,14 +1032,14 @@ try
     var report = await prober.RunAsync(
         profile,
         progress,
-        // Normalde ilk calisan adayda durulur; kullaniciyi bekletmemek icin dogru
-        // davranis bu. --exhaustive ise bunun tersini ister: amac calisan BIR
-        // strateji bulmak degil, o hatta hangi adaylarin calistigini haritalamak.
-        // Profillerin siralamasi ancak bu veriyle duzeltilebiliyor.
+        // Normalde ilk çalışan adayda durulur; kullanıcıyı bekletmemek için doğru
+        // davranış bu. --exhaustive ise bunun tersini ister: amaç çalışan BİR
+        // strateji bulmak değil, o hatta hangi adayların çalıştığını haritalamak.
+        // Profillerin sıralaması ancak bu veriyle düzeltilebiliyor.
         stopAtFirstSuccess: !options.Exhaustive,
         maxCandidatesPerSection: options.MaxCandidates,
-        // Yukarida zaten tarandi; tekrar taramak hem bir dakikadan fazla surer
-        // hem de farkli siniflandirma uretip yanlis bolumlerde arama baslatir.
+        // Yukarıda zaten tarandı; tekrar taramak hem bir dakikadan fazla sürer
+        // hem de farklı sınıflandırma üretip yanlış bölümlerde arama başlatır.
         knownBaseline: baseline,
         cancellationToken: cancellation.Token);
 
@@ -1078,11 +1078,11 @@ try
         Console.WriteLine("   " + WinwsCommandBuilder.ToDisplayString(builder.BuildRuntimeCommand(report.ToWinnerMap())));
     }
 
-    // --- Calisan HER aday --------------------------------------------------
-    // Kazanan tek adaydir; ama profil siralamasini duzeltmek ve adaylari
-    // "verified"e cekmek icin gereken sey calisan adaylarin TAMAMI. Bu liste
-    // ancak --exhaustive ile anlamli doluyor, cunku normal koşumda arama ilk
-    // basaridan sonra duruyor.
+    // --- Çalışan HER aday --------------------------------------------------
+    // Kazanan tek adaydır; ama profil sıralamasını düzeltmek ve adayları
+    // "verified"e çekmek için gereken şey çalışan adayların TAMAMI. Bu liste
+    // ancak --exhaustive ile anlamlı doluyor, çünkü normal koşumda arama ilk
+    // başarıdan sonra duruyor.
     var verifiedCandidates = report.Attempts
         .Where(a => a.Succeeded)
         .GroupBy(a => (a.Section, a.CandidateId, a.Args))
@@ -1123,11 +1123,11 @@ try
         }
     }
 
-    // --- Ogrenilenleri kalici hale getir ------------------------------------
-    // Arayuz bunu kendi test akisinda zaten yapiyordu; CLI yapmiyordu. Yani bu
-    // araci calistirip calisan strateji bulan biri, arayuzu actiginda bulunanin
-    // hicbirini gormuyordu. Bayrakla opsiyonel: bu arac baskasinin makinesinde de
-    // calisiyor ve oradaki soz "sonuclar yalnizca rapor dosyasina yazilir".
+    // --- Öğrenilenleri kalıcı hâle getir ------------------------------------
+    // Arayüz bunu kendi test akışında zaten yapıyordu; CLI yapmıyordu. Yani bu
+    // aracı çalıştırıp çalışan strateji bulan biri, arayüzü açtığında bulunanın
+    // hiçbirini görmüyordu. Bayrakla isteğe bağlı: bu araç başkasının makinesinde de
+    // çalışıyor ve oradaki söz "sonuçlar yalnızca rapor dosyasına yazılır".
     if (options.SaveLearned)
     {
         Console.WriteLine();
@@ -1176,11 +1176,11 @@ catch (Exception ex)
     Console.Error.WriteLine("Test sırasında hata: " + ex.Message);
     Console.Error.WriteLine(ex.StackTrace);
 
-    // Hata raporu da bir rapordur. Eskiden bu yolda HICBIR dosya
-    // yazilmiyordu: test patlayinca kullanicinin elinde gonderecek bir sey
-    // kalmiyor, "test yaptim ama json olusmadi" diyordu -- ve neyin
-    // patladigini kimse ogrenemiyordu. Saha paketinin tek isi veri
-    // toplamak; en cok da is ters gittiginde veri gerekiyor.
+    // Hata raporu da bir rapordur. Eskiden bu yolda HİÇBİR dosya
+    // yazılmıyordu: test patlayınca kullanıcının elinde gönderecek bir şey
+    // kalmıyor, "test yaptım ama json oluşmadı" diyordu ve neyin
+    // patladığını kimse öğrenemiyordu. Saha paketinin tek işi veri
+    // toplamak; en çok da iş ters gittiğinde veri gerekiyor.
     if (options.OutputPath is not null)
     {
         WriteFailureReport(options.OutputPath, ex);
@@ -1189,11 +1189,11 @@ catch (Exception ex)
     return 5;
 }
 
-/// <summary>Strateji aranmadan cikildiginda mevcut durumu dosyaya yazar.</summary>
+/// <summary>Strateji aranmadan çıkıldığında mevcut durumu dosyaya yazar.</summary>
 /// <remarks>
-/// Strateji bulunmamis olmasi raporu degersiz yapmiyor: hangi hedefin acildigi,
-/// hangisinin engellendigi ve DNS'in yonlendirilip yonlendirilmedigi tek basina
-/// bir olcum. Saha paketinin isi zaten bu veriyi toplamak.
+/// Strateji bulunmamış olması raporu değersiz yapmıyor: hangi hedefin açıldığı,
+/// hangisinin engellendiği ve DNS'in yönlendirilip yönlendirilmediği tek başına
+/// bir ölçüm. Saha paketinin işi zaten bu veriyi toplamak.
 /// </remarks>
 static void WriteBaselineReport(
     string? path, IReadOnlyList<BaselineResult> baseline, IspProfile? profile, string sonuc)
@@ -1241,7 +1241,7 @@ static void WriteBaselineReport(
     }
 }
 
-/// <summary>Test patladiginda ne olduguna dair bir dosya birakir.</summary>
+/// <summary>Test patladığında ne olduğuna dair bir dosya bırakır.</summary>
 static void WriteFailureReport(string path, Exception ex)
 {
     try
@@ -1267,11 +1267,11 @@ static void WriteFailureReport(string path, Exception ex)
     }
 }
 
-/// <summary>Bir dizgiyi JSON degeri olarak guvenli hale getirir.</summary>
+/// <summary>Bir dizgiyi JSON değeri olarak güvenli hâle getirir.</summary>
 /// <remarks>
-/// JsonSerializer yerine elle: serializer yansima gerektiriyor ve kirpma
-/// analizoru bunu hakli olarak reddediyor (paket kirpilmis yayinlaniyor).
-/// Tek bir hata mesajini kacirmak icin o makineye gerek yok.
+/// JsonSerializer yerine elle: serializer yansıma gerektiriyor ve kırpma
+/// çözümleyicisi bunu haklı olarak reddediyor (paket kırpılmış yayınlanıyor).
+/// Tek bir hata mesajını kaçışlamak için o makineye gerek yok.
 /// </remarks>
 static string JsonKacir(string metin)
     => metin
@@ -1279,22 +1279,22 @@ static string JsonKacir(string metin)
         .Replace("\"", "\\\"", StringComparison.Ordinal)
         .ReplaceLineEndings(" ");
 
-/// <summary>Goreli yolu mutlaklastirir.</summary>
+/// <summary>Göreli yolu mutlaklaştırır.</summary>
 /// <remarks>
-/// Kullaniciya HANGI dosyayi gonderecegini soylemek icin tam yol sart:
-/// "zapret-tr-rapor.json" yazmak, dosyanin nerede olustugunu bilmeyen bir
-/// kisiye hicbir sey anlatmiyor.
+/// Kullanıcıya HANGİ dosyayı göndereceğini söylemek için tam yol şart:
+/// "zapret-tr-rapor.json" yazmak, dosyanın nerede oluştuğunu bilmeyen bir
+/// kişiye hiçbir şey anlatmıyor.
 /// </remarks>
 static string MutlakYol(string path)
     => Path.IsPathRooted(path) ? path : Path.GetFullPath(path);
 
 static void WriteReport(string path, ProbeReport report, IspProfile? profile)
 {
-    // Kasitli olarak dar: kisiyi tanimlayabilecek hicbir alan yok.
-    // IP adresi (ResolvedIp dahil), makine adi, kullanici adi disarida.
+    // Kasıtlı olarak dar: kişiyi tanımlayabilecek hiçbir alan yok.
+    // IP adresi (ResolvedIp dahil), makine adı, kullanıcı adı dışarıda.
     //
-    // Anonim tip DEGIL, gercek DTO: anonim tipler kaynak uretimiyle ele alinamiyor
-    // ve bu yol kirpilmis yayinda calisan tek yansima yolu olarak kalirdi.
+    // Anonim tip DEĞİL, gerçek DTO: anonim tipler kaynak üretimiyle ele alınamıyor
+    // ve bu yol kırpılmış yayında çalışan tek yansıma yolu olarak kalırdı.
     var document = new ReportDocument
     {
         CreatedAt = report.StartedAt.ToString("O"),
@@ -1388,10 +1388,10 @@ internal sealed record CliOptions(
                     extras.Add(args[++i]);
                     break;
                 case "--out" when i + 1 < args.Length:
-                    // Goreli yol verilirse EXE'nin yanina yaziyoruz. Yukseltilmis bir
-                    // surecin calisma dizini C:\Windows\System32 oluyor; goreli yolu
-                    // oldugu gibi kullanmak raporu oraya dusuruyordu ve kullanici
-                    // dosyayi bulamiyordu.
+                    // Göreli yol verilirse EXE'nin yanına yazıyoruz. Yükseltilmiş bir
+                    // sürecin çalışma dizini C:\Windows\System32 oluyor; göreli yolu
+                    // olduğu gibi kullanmak raporu oraya düşürüyordu ve kullanıcı
+                    // dosyayı bulamıyordu.
                     var requested = args[++i];
                     output = Path.IsPathRooted(requested)
                         ? requested

@@ -7,20 +7,20 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Saha testi paketinin "rapor olustu" demesi yalnizca rapor olustuysa.
+/// Saha testi paketinin "rapor oluştu" demesi yalnızca rapor oluştuysa.
 /// </summary>
 /// <remarks>
-/// OLCULDU (issue #1, KeremKuyucu, 2026-09-16): kullanici onay sorusunu bos gecti.
-/// zapret-tr-test.exe bunu (bilerek) "hayir" saydi ve rapor yazmadan cikti, ama
+/// ÖLÇÜLDÜ (issue #1, KeremKuyucu, 2026-09-16): kullanıcı onay sorusunu boş geçti.
+/// zapret-tr-test.exe bunu (bilerek) "hayır" saydı ve rapor yazmadan çıktı, ama
 /// TESTI-BASLAT.bat her durumda "Test bitti. Sonuc dosyasi: zapret-tr-rapor.json /
-/// Bu klasorde olusan bu dosyayi geri gonderin" yaziyordu. Dosya yoktu. Soru da
-/// "(E/h)" diye soruluyordu: buyuk harf varsayilan demek, yani Enter "evet" gibi
+/// Bu klasorde olusan bu dosyayi geri gonderin" yazıyordu. Dosya yoktu. Soru da
+/// "(E/h)" diye soruluyordu: büyük harf varsayılan demek, yani Enter "evet" gibi
 /// okunuyordu.
 ///
-/// Betik davranisi burada GERCEKTEN kosuluyor: betik build-field-package.ps1'den
-/// cikariliyor, yalnizca iki satiri degistiriliyor (yetki denetimi ve exe cagrisi)
-/// ve cmd.exe ile calistiriliyor. Exe yerine istenen kodla cikan bir taklit var.
-/// Karar mantigi -- hangi kodda ne yazildigi -- dagitilan betigin birebir aynisi.
+/// Betik davranışı burada GERÇEKTEN koşuluyor: betik build-field-package.ps1'den
+/// çıkarılıyor, yalnızca iki satırı değiştiriliyor (yetki denetimi ve exe çağrısı)
+/// ve cmd.exe ile çalıştırılıyor. Exe yerine istenen kodla çıkan bir taklit var.
+/// Karar mantığı, yani hangi kodda ne yazıldığı, dağıtılan betiğin birebir aynısı.
 /// </remarks>
 public sealed class SahaPaketiTests
 {
@@ -41,8 +41,8 @@ public sealed class SahaPaketiTests
     {
         var betik = BaslatmaBetigi();
 
-        // Degistirilen satirlar ONCE var olmali; yoksa test sessizce baska bir
-        // seyi sinar.
+        // Değiştirilen satırlar ÖNCE var olmalı; yoksa test sessizce başka bir
+        // şeyi sınar.
         Assert.Contains(ExeSatiri, betik, StringComparison.Ordinal);
         Assert.Contains("net session >nul 2>&1", betik, StringComparison.Ordinal);
 
@@ -50,7 +50,7 @@ public sealed class SahaPaketiTests
             .Replace("net session >nul 2>&1", "ver >nul", StringComparison.Ordinal)
             .Replace(ExeSatiri, "call \"%~dp0taklit.cmd\"", StringComparison.Ordinal);
 
-        // build-field-package.ps1 betigi CRLF'ye cevirerek yaziyor; ayni donusum.
+        // build-field-package.ps1 betiği CRLF'ye çevirerek yazıyor; aynı dönüşüm.
         betik = Regex.Replace(betik, "\r?\n", "\r\n");
 
         var dizin = IoPath.Combine(IoPath.GetTempPath(), "zapret-tr-saha-" + Guid.NewGuid().ToString("N"));
@@ -68,7 +68,7 @@ public sealed class SahaPaketiTests
                 File.WriteAllText(IoPath.Combine(dizin, "zapret-tr-rapor.json"), "{\"eski\":true}");
             }
 
-            // Tam yol: bazi ortamlarda cmd mevcut dizinde aramiyor
+            // Tam yol: bazı ortamlarda cmd mevcut dizinde aramıyor
             // (NoDefaultCurrentDirectoryInExePath).
             var psi = new ProcessStartInfo("cmd.exe", "/d /c \"" + IoPath.Combine(dizin, "TESTI-BASLAT.bat") + "\"")
             {
@@ -109,8 +109,8 @@ public sealed class SahaPaketiTests
     [Fact]
     public void Iptalde_Eski_Rapor_Bu_Teste_Aitmis_Gibi_Gosterilmiyor()
     {
-        // Klasorde onceki bir testten kalan dosya varsa "dosya var" demek yetmez;
-        // kullanici eski raporu yeni sanip gonderirdi.
+        // Klasörde önceki bir testten kalan dosya varsa "dosya var" demek yetmez;
+        // kullanıcı eski raporu yeni sanıp gönderirdi.
         var (_, cikti) = Kos(exeKodu: 130, raporYaz: false, eskiRaporVar: true);
 
         Assert.DoesNotContain("Test bitti", cikti, StringComparison.Ordinal);
@@ -119,7 +119,7 @@ public sealed class SahaPaketiTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(1)] // strateji bulunamadi -- rapor yine yazildi ve degerli
+    [InlineData(1)] // strateji bulunamadı; rapor yine yazıldı ve değerli
     public void Rapor_Yazildiysa_Gonderin_Diyor(int kod)
     {
         var (_, cikti) = Kos(exeKodu: kod, raporYaz: true);
@@ -159,10 +159,10 @@ public sealed class SahaPaketiTests
         Assert.Contains("rapor OLUSMADI", cikti, StringComparison.Ordinal);
     }
 
-    // --- Cift tiklama (argumansiz calistirma) -------------------------------------
+    // --- Çift tıklama (argümansız çalıştırma) -------------------------------------
     //
-    // OLCULDU (2026-09-16): kullanici dogrudan zapret-tr-test.exe'ye cift tikladi;
-    // hat tespiti ve sifreli DNS yoktu, rapor yazilmadi, pencere kapandi.
+    // ÖLÇÜLDÜ (2026-09-16): kullanıcı doğrudan zapret-tr-test.exe'ye çift tıkladı;
+    // hat tespiti ve şifreli DNS yoktu, rapor yazılmadı, pencere kapandı.
 
     [Fact]
     public void Argumansiz_Calistirma_Saha_Moduna_Gidiyor()
@@ -179,7 +179,7 @@ public sealed class SahaPaketiTests
     [Fact]
     public void Cift_Tiklama_Betikle_AYNI_Ayarlarla_Calisiyor()
     {
-        // Iki giris noktasi farkli olcerse iki rapor karsilastirilamaz.
+        // İki giriş noktası farklı ölçerse iki rapor karşılaştırılamaz.
         Assert.Equal(
             ExeSatiri,
             "zapret-tr-test.exe " + string.Join(' ', SahaModu.Argumanlar.Select(a => a.Contains('.') ? $"\"{a}\"" : a)));
@@ -197,7 +197,7 @@ public sealed class SahaPaketiTests
     }
 
     [Theory]
-    [InlineData(0)]   // basari kodu ama dosya yok
+    [InlineData(0)]   // başarı kodu ama dosya yok
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
@@ -228,7 +228,7 @@ public sealed class SahaPaketiTests
         Assert.Contains("hata raporu yazıldı", mesaj, StringComparison.Ordinal);
     }
 
-    // --- Test araci ---------------------------------------------------------------
+    // --- Test aracı ---------------------------------------------------------------
 
     private static string CliKaynagi => File.ReadAllText(
         IoPath.Combine(XmlCommentTests.RepoRoot, "src", "ZapretTr.Prober.Cli", "Program.cs"));
@@ -236,8 +236,8 @@ public sealed class SahaPaketiTests
     [Fact]
     public void Onay_Sorusu_Varsayilani_Dogru_Gosteriyor()
     {
-        // Buyuk harf varsayilani gosterir; bos cevap "hayir" sayiliyor. Yorumlarda
-        // eski "(E/h)" gecebilir, o yuzden kullaniciya yazilan satira bakiliyor.
+        // Büyük harf varsayılanı gösterir; boş cevap "hayır" sayılıyor. Yorumlarda
+        // eski "(E/h)" geçebilir, o yüzden kullanıcıya yazılan satıra bakılıyor.
         Assert.Contains("Console.Write(\"Devam edilsin mi? (e/H): \");", CliKaynagi, StringComparison.Ordinal);
         Assert.DoesNotContain("Console.Write(\"Devam edilsin mi? (E/h): \");", CliKaynagi, StringComparison.Ordinal);
     }
@@ -245,7 +245,7 @@ public sealed class SahaPaketiTests
     [Fact]
     public void Onay_Reddedilince_Sifir_Donmuyor()
     {
-        // 0, betige "rapor yazildi" der. Reddetme iptal kodunu (130) donmeli.
+        // 0, betiğe "rapor yazıldı" der. Reddetme iptal kodunu (130) dönmeli.
         var m = Regex.Match(
             CliKaynagi,
             @"if \(!accepted\)\s*\{(?<govde>.*?)\n    \}",

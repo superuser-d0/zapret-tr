@@ -4,15 +4,15 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Kullanicinin kendi dogruladiklarinin dagitim profilleri uzerine bindirilmesi.
+/// Kullanıcının kendi doğruladıklarının dağıtım profilleri üzerine bindirilmesi.
 /// </summary>
 /// <remarks>
-/// Bu katman olmadan uygulama her acilista sifirdan basliyordu: parametre testi
-/// 2-3 dakika kosup calisan bir strateji buluyor, uygulama kapaninca kayboluyordu.
+/// Bu katman olmadan uygulama her açılışta sıfırdan başlıyordu: parametre testi
+/// 2-3 dakika koşup çalışan bir strateji buluyor, uygulama kapanınca kayboluyordu.
 ///
-/// Ogrenilenler dagitimla gelen profillerin ICINE yazilmiyor; o dosyalar depo
-/// dosyalari ve uretecin ciktisi. Ayri durup yuklemede bindirilmeleri, upstream
-/// profil guncellemesinin kullanicinin kendi dogrulamalarini silmemesini sagliyor.
+/// Öğrenilenler dağıtımla gelen profillerin İÇİNE yazılmıyor; o dosyalar depo
+/// dosyaları ve üretecin çıktısı. Ayrı durup yüklemede bindirilmeleri, upstream
+/// profil güncellemesinin kullanıcının kendi doğrulamalarını silmemesini sağlıyor.
 /// </remarks>
 public sealed class LearnedOverlayTests
 {
@@ -64,7 +64,7 @@ public sealed class LearnedOverlayTests
         Assert.Equal(["discord"], match.VerifiedFor);
         Assert.Equal("2026-09-06", match.LastVerified);
 
-        // Aday sayisi artmamali: var olan degistirildi, yenisi eklenmedi.
+        // Aday sayısı artmamalı: var olan değiştirildi, yenisi eklenmedi.
         Assert.Equal(2, profile.Candidates.Count);
     }
 
@@ -81,8 +81,8 @@ public sealed class LearnedOverlayTests
     [Fact]
     public void DogrulanmisAday_Listenin_Basina_Gecer()
     {
-        // "Bu makinede gercekten calisti", toplulukta bildirilmis ya da
-        // mekanizmadan turetilmis her seyden daha guclu bir kanit.
+        // "Bu makinede gerçekten çalıştı", toplulukta bildirilmiş ya da
+        // mekanizmadan türetilmiş her şeyden daha güçlü bir kanıt.
         var profile = SampleProfile().WithLearned([Learned("--dpi-desync=multisplit")]);
 
         var first = profile.CandidatesFor(StrategySection.Tcp443).First();
@@ -94,8 +94,8 @@ public sealed class LearnedOverlayTests
     [Fact]
     public void BaskaIssinDogrulamasi_Sizmaz()
     {
-        // Kullanici baska bir baglantida test yaptiysa o sonuc bu profile
-        // uygulanmamali: strateji ISS'e bagli.
+        // Kullanıcı başka bir bağlantıda test yaptıysa o sonuç bu profile
+        // uygulanmamalı: strateji İSS'e bağlı.
         var profile = SampleProfile()
             .WithLearned([Learned("--dpi-desync=fakedsplit", isp: "baska-isp")]);
 
@@ -106,8 +106,8 @@ public sealed class LearnedOverlayTests
     [Fact]
     public void BozukBolumAdi_Sessizce_Atlanir()
     {
-        // Eski bir surumden kalan ya da elle bozulmus bir kayit yuzunden
-        // uygulamanin acilmamasi kabul edilemez.
+        // Eski bir sürümden kalan ya da elle bozulmuş bir kayıt yüzünden
+        // uygulamanın açılmaması kabul edilemez.
         var profile = SampleProfile()
             .WithLearned([Learned("--dpi-desync=fake", section: "boyle-bir-bolum-yok")]);
 
@@ -126,7 +126,7 @@ public sealed class LearnedOverlayTests
     [Fact]
     public void FarkliBolumdeAyniArguman_AyriAday_Sayilir()
     {
-        // Ayni arguman iki bolumde gecerli olabilir; birbirinin yerine gecmemeli.
+        // Aynı argüman iki bölümde geçerli olabilir; birbirinin yerine geçmemeli.
         var profile = SampleProfile()
             .WithLearned([Learned("--dpi-desync=fake --dpi-desync-ttl=4", section: "tcp80")]);
 

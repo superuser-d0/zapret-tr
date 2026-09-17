@@ -4,18 +4,18 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// DNS yonlendirmesinin hangi arayuzlere uygulanacagi.
+/// DNS yönlendirmesinin hangi arayüzlere uygulanacağı.
 /// </summary>
 /// <remarks>
-/// Bu secim bir kez yanlis yapildi ve belirtisi olmayan bir hataya donustu:
-/// yalnizca "calisan + ag gecidi olan" arayuzler aliniyordu, dolayisiyla kablo
-/// takiliyken kurulum yapan kullanicida WiFi atlaniyordu. Kullanici sonra WiFi'ye
-/// gectiginde o arayuzun DNS'i ISS'in sunucusunda kaliyor, DNS engellemesi geri
-/// geliyor, ama arayuz hala "KORUMA AKTIF" gosteriyordu -- cunku winws gercekten
-/// calisiyordu, devrede olmayan sey sifreli DNS'ti.
+/// Bu seçim bir kez yanlış yapıldı ve belirtisi olmayan bir hataya dönüştü:
+/// yalnızca "çalışan + ağ geçidi olan" arayüzler alınıyordu, dolayısıyla kablo
+/// takılıyken kurulum yapan kullanıcıda WiFi atlanıyordu. Kullanıcı sonra WiFi'ye
+/// geçtiğinde o arayüzün DNS'i İSS'in sunucusunda kalıyor, DNS engellemesi geri
+/// geliyor, ama arayüz hâlâ "KORUMA AKTİF" gösteriyordu; çünkü winws gerçekten
+/// çalışıyordu, devrede olmayan şey şifreli DNS'ti.
 ///
-/// Gercek arayuz listesi isletim sisteminden geldigi ve testte uretilemedigi icin
-/// KARAR saf bir fonksiyona ayrildi; test edilen o.
+/// Gerçek arayüz listesi işletim sisteminden geldiği ve testte üretilemediği için
+/// KARAR saf bir fonksiyona ayrıldı; test edilen o.
 /// </remarks>
 public class DnsInterfaceSelectionTests
 {
@@ -25,15 +25,15 @@ public class DnsInterfaceSelectionTests
     [InlineData(NetworkInterfaceType.GigabitEthernet)]
     public void BagliOlmayanFizikselKart_hedefe_dahil(NetworkInterfaceType type)
     {
-        // Tam da atlanip hataya yol acan durum: kart var, su an bagli degil.
+        // Tam da atlanıp hataya yol açan durum: kart var, şu an bağlı değil.
         Assert.True(SystemDnsManager.IsOfflinePhysical(OperationalStatus.Down, type));
     }
 
     [Fact]
     public void CalisanKart_bu_yoldan_gelmez()
     {
-        // Calisan kartlar ag gecidi sartiyla ayrica secildigi icin buradan
-        // gelmemeli; gelseydi ag gecidi olmayan sanal adaptorler de girerdi.
+        // Çalışan kartlar ağ geçidi şartıyla ayrıca seçildiği için buradan
+        // gelmemeli; gelseydi ağ geçidi olmayan sanal bağdaştırıcılar da girerdi.
         Assert.False(SystemDnsManager.IsOfflinePhysical(
             OperationalStatus.Up, NetworkInterfaceType.Wireless80211));
     }
@@ -44,17 +44,17 @@ public class DnsInterfaceSelectionTests
     [InlineData(NetworkInterfaceType.Ppp)]
     public void TunelVeLoopback_hedef_degil(NetworkInterfaceType type)
     {
-        // VPN tuneli ve loopback kullanicinin internete ciktigi kart degil;
-        // bunlarin DNS'ini degistirmek kazanc saglamaz, bozma ihtimali vardir.
+        // VPN tüneli ve loopback kullanıcının internete çıktığı kart değil;
+        // bunların DNS'ini değiştirmek kazanç sağlamaz, bozma ihtimali vardır.
         Assert.False(SystemDnsManager.IsOfflinePhysical(OperationalStatus.Down, type));
     }
 
     // --- Sanal kartlar -----------------------------------------------------------
     //
-    // Tur suzgeci sanal kartlari ayiramiyor: Wi-Fi Direct kartlari kendini
-    // Wireless80211 olarak bildiriyor. Gercek bir kullanici raporunda iki tanesinin
-    // DNS'i 127.0.0.1'e cevrilmisti. Aciklamalar o makinedeki Get-NetAdapter
-    // ciktisindan alindi.
+    // Tür süzgeci sanal kartları ayıramıyor: Wi-Fi Direct kartları kendini
+    // Wireless80211 olarak bildiriyor. Gerçek bir kullanıcı raporunda iki tanesinin
+    // DNS'i 127.0.0.1'e çevrilmişti. Açıklamalar o makinedeki Get-NetAdapter
+    // çıktısından alındı.
 
     [Theory]
     [InlineData("Microsoft Wi-Fi Direct Virtual Adapter")]
@@ -73,9 +73,9 @@ public class DnsInterfaceSelectionTests
     [InlineData(null)]
     public void FizikselKart_ve_BluetoothPAN_sanal_sayilmaz(string? description)
     {
-        // Bluetooth PAN kasitli: telefondan baglanti paylasan kullanici o kartla
-        // internete cikiyor ve orada da korunmali. Windows onu "Virtual" bayragiyla
-        // bildirse de aciklamasinda o kelime yok.
+        // Bluetooth PAN kasıtlı: telefondan bağlantı paylaşan kullanıcı o kartla
+        // internete çıkıyor ve orada da korunmalı. Windows onu "Virtual" bayrağıyla
+        // bildirse de açıklamasında o kelime yok.
         Assert.False(SystemDnsManager.IsVirtualAdapterDescription(description));
     }
 }

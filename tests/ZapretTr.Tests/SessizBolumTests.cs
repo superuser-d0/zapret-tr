@@ -3,25 +3,25 @@ using ZapretTr.Prober;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Tamamen cevapsiz bir bolumun birakilmasi.
+/// Tamamen cevapsız bir bölümün bırakılması.
 /// </summary>
 /// <remarks>
-/// Olculdu (issue #1, Vodafone Net, 2026-09-15): QUIC bolumunde 25 adayin HEPSI
-/// zaman asimina ugradi, her biri ~11.7 sn -- toplam 293 sn. Sonucu bastan belli
-/// bir arama icin ~5 dakika. (Once "29 aday" yazilmisti: 29, o kosumdaki TOPLAM
-/// deneme sayisiydi.) Ayni kosumda tcp443 kazanani 1.5 sn'de bulunmustu.
+/// Ölçüldü (issue #1, Vodafone Net, 2026-09-15): QUIC bölümünde 25 adayın HEPSİ
+/// zaman aşımına uğradı, her biri ~11.7 sn; toplam 293 sn. Sonucu baştan belli
+/// bir arama için ~5 dakika. (Önce "29 aday" yazılmıştı: 29, o koşumdaki TOPLAM
+/// deneme sayısıydı.) Aynı koşumda tcp443 kazananı 1.5 sn'de bulunmuştu.
 ///
-/// Bu testler esiklerin KEYFI olmadigini sabitliyor: yontem cesitliligi tukenmeden
-/// vazgecilmiyor.
+/// Bu testler eşiklerin KEYFÎ olmadığını sabitliyor: yöntem çeşitliliği tükenmeden
+/// vazgeçilmiyor.
 /// </remarks>
 public sealed class SessizBolumTests
 {
-    // --- Esik davranisi ---------------------------------------------------------
+    // --- Eşik davranışı ---------------------------------------------------------
 
     [Fact]
     public void Yontem_Cesitliligi_Yetmezse_Vazgecilmiyor()
     {
-        // Ayni yontemin 50 varyasyonu "her seyi denedik" demek degil.
+        // Aynı yöntemin 50 varyasyonu "her şeyi denedik" demek değil.
         Assert.False(StrategyProber.BolumCevapsiz(ardisikSessiz: 50, farkliYontem: 1));
         Assert.False(StrategyProber.BolumCevapsiz(ardisikSessiz: 50, farkliYontem: 3));
     }
@@ -29,7 +29,7 @@ public sealed class SessizBolumTests
     [Fact]
     public void Az_Sayida_Deneme_Sonrasi_Vazgecilmiyor()
     {
-        // Dort farkli yontem denenmis olsa bile birkac aday yeterli kanit degil.
+        // Dört farklı yöntem denenmiş olsa bile birkaç aday yeterli kanıt değil.
         Assert.False(StrategyProber.BolumCevapsiz(ardisikSessiz: 4, farkliYontem: 4));
         Assert.False(StrategyProber.BolumCevapsiz(
             ardisikSessiz: StrategyProber.SessizlikEsigi - 1,
@@ -45,9 +45,9 @@ public sealed class SessizBolumTests
     [Fact]
     public void Issue1_Kosumunda_12nci_Adayda_Vazgecilirdi()
     {
-        // issue #1'deki QUIC bolumunun GERCEK sirasi. 12. adaya gelindiginde dort
-        // farkli yontem denenmis oluyor; kalan 17 deneme ayni ailelerin parametre
-        // varyasyonlari. Bu test, esiklerin o veriye uydugunu sabitliyor.
+        // issue #1'deki QUIC bölümünün GERÇEK sırası. 12. adaya gelindiğinde dört
+        // farklı yöntem denenmiş oluyor; kalan 17 deneme aynı ailelerin parametre
+        // varyasyonları. Bu test, eşiklerin o veriye uyduğunu sabitliyor.
         string[] gercekSira =
         [
             "--dpi-desync=fake --dpi-desync-repeats=11 --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
@@ -81,7 +81,7 @@ public sealed class SessizBolumTests
 
         Assert.Equal(12, vazgecilenAday);
 
-        // Vazgecmeden once dort ailenin de denenmis olmasi SART.
+        // Vazgeçmeden önce dört ailenin de denenmiş olması ŞART.
         Assert.Contains("fake", yontemler);
         Assert.Contains("udplen", yontemler);
         Assert.Contains("fake,udplen", yontemler);
@@ -91,12 +91,12 @@ public sealed class SessizBolumTests
     [Fact]
     public void Kazanilan_Sure_Kayda_Deger()
     {
-        // Ayni hatta iki GERCEK kosumun rapor dosyalarindan (issue #1): QUIC bolumu
+        // Aynı hatta iki GERÇEK koşumun rapor dosyalarından (issue #1): QUIC bölümü
         // 0.2.2'de 25 aday / 293.1 sn, 0.2.3'te 12 aday / 141.0 sn.
         //
-        // Bu test once hesapla yaziliydi: "(29 - 12) * 11.7 > 180". 29 yanlisti -- o
-        // kosumdaki TOPLAM deneme sayisiydi, QUIC 25'ti -- ve test yanlis veriyle
-        // geciyordu. Olculen degerlerle kazanc 3 dakika degil, ~2.5 dakika.
+        // Bu test önce hesapla yazılıydı: "(29 - 12) * 11.7 > 180". 29 yanlıştı; o
+        // koşumdaki TOPLAM deneme sayısıydı, QUIC 25'ti. Test yanlış veriyle
+        // geçiyordu. Ölçülen değerlerle kazanç 3 dakika değil, ~2.5 dakika.
         const double onceki = 293.1;
         const double sonraki = 141.0;
         var kazanc = onceki - sonraki;
@@ -104,7 +104,7 @@ public sealed class SessizBolumTests
         Assert.True(kazanc > 120, $"Beklenen kazanc en az 2 dakika, olculen {kazanc:F0} sn.");
     }
 
-    // --- Yontem ayristirma ------------------------------------------------------
+    // --- Yöntem ayrıştırma ------------------------------------------------------
 
     [Theory]
     [InlineData("--dpi-desync=fake --dpi-desync-repeats=11", "fake")]
@@ -125,9 +125,9 @@ public sealed class SessizBolumTests
     [Fact]
     public void Fake_Ile_Fake_Udplen_AYRI_Yontem_Sayiliyor()
     {
-        // Ikisi paketi baska turlu bicimlendiriyor; ayni sayilsalardi cesitlilik
-        // esigi olduğundan erken dolar ve gercekten farkli bir hile denenmeden
-        // vazgecilirdi.
+        // İkisi paketi başka türlü biçimlendiriyor; aynı sayılsalardı çeşitlilik
+        // eşiği olduğundan erken dolar ve gerçekten farklı bir hile denenmeden
+        // vazgeçilirdi.
         Assert.NotEqual(
             StrategyProber.DesyncYontemi("--dpi-desync=fake"),
             StrategyProber.DesyncYontemi("--dpi-desync=fake,udplen"));

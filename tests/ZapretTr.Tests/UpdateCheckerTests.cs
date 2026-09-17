@@ -3,14 +3,14 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Surum karsilastirmasi.
+/// Sürüm karşılaştırması.
 /// </summary>
 /// <remarks>
-/// Buradaki tehlike sessiz olani: metin karsilastirmasi kullanilsaydi "0.1.9"
-/// ile "0.1.14" karsilastirildiginda metin sirasi 0.1.9'u SONRAYA koyar ve
-/// guncelleme bildirimi hic gorunmezdi. Hicbir hata da vermezdi -- ozellik
-/// calisiyor gibi durur, yalnizca ise yaramazdi. Bu proje 0.1.9'u da 0.1.14'u
-/// de gordugu icin senaryo varsayimsal degil.
+/// Buradaki tehlike sessiz olanı: metin karşılaştırması kullanılsaydı "0.1.9"
+/// ile "0.1.14" karşılaştırıldığında metin sırası 0.1.9'u SONRAYA koyar ve
+/// güncelleme bildirimi hiç görünmezdi. Hiçbir hata da vermezdi; özellik
+/// çalışıyor gibi durur, yalnızca işe yaramazdı. Bu proje 0.1.9'u da 0.1.14'ü
+/// de gördüğü için senaryo varsayımsal değil.
 /// </remarks>
 public sealed class UpdateCheckerTests
 {
@@ -28,7 +28,7 @@ public sealed class UpdateCheckerTests
     }
 
     [Theory]
-    // Sinir dolmadan gelen 403 (ornegin baska bir erisim sorunu) sinir diye anlatilmamali.
+    // Sınır dolmadan gelen 403 (örneğin başka bir erişim sorunu) sınır diye anlatılmamalı.
     [InlineData(403, "12")]
     [InlineData(500, null)]
     public void Sinir_disindaki_hatalar_sinir_diye_anlatilmiyor(int kod, string? kalan)
@@ -50,7 +50,7 @@ public sealed class UpdateCheckerTests
     }
 
     [Theory]
-    [InlineData("0.1.14", "0.1.9")]    // iki haneli yama, metin sirasiyla TERS
+    [InlineData("0.1.14", "0.1.9")]    // iki haneli yama, metin sırasıyla TERS
     [InlineData("0.2.0", "0.1.14")]
     [InlineData("1.0.0", "0.9.9")]
     [InlineData("0.1.15", "0.1.14")]
@@ -71,9 +71,9 @@ public sealed class UpdateCheckerTests
     [Fact]
     public void Commit_damgali_surum_dogru_okunuyor()
     {
-        // Kurulu surum "0.1.14+2bac773..." biciminde geliyor; damga
-        // ayiklanmazsa Version.TryParse basarisiz olur ve bildirim HIC
-        // gorunmez.
+        // Kurulu sürüm "0.1.14+2bac773..." biçiminde geliyor; damga
+        // ayıklanmazsa Version.TryParse başarısız olur ve bildirim HİÇ
+        // görünmez.
         Assert.True(UpdateChecker.IsNewer("0.1.15", "0.1.14+2bac773be673ef7d"));
         Assert.False(UpdateChecker.IsNewer("0.1.14", "0.1.14+2bac773be673ef7d"));
     }
@@ -85,8 +85,8 @@ public sealed class UpdateCheckerTests
     [InlineData("bilinmiyor", "0.1.14")]
     public void Eksik_ya_da_bozuk_deger_bildirim_uretmiyor(string? latest, string? current)
     {
-        // Ag hatasinda null donuyor. Yanlis bir bildirim gostermek, hic
-        // gostermemekten kotu: kullanici olmayan bir surumu aramaya cikar.
+        // Ağ hatasında null dönüyor. Yanlış bir bildirim göstermek, hiç
+        // göstermemekten kötü: kullanıcı olmayan bir sürümü aramaya çıkar.
         Assert.False(UpdateChecker.IsNewer(latest, current));
     }
 }

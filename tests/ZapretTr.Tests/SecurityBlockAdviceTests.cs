@@ -7,17 +7,17 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Windows bir ikiliyi guvenlik gerekcesiyle calistirmadiginda kullaniciya ne
-/// oldugunun ve ne yapilacaginin soylenmesi.
+/// Windows bir ikiliyi güvenlik gerekçesiyle çalıştırmadığında kullanıcıya ne
+/// olduğunun ve ne yapılacağının söylenmesi.
 /// </summary>
 /// <remarks>
-/// 2026-09: "Windows guncellemesinden sonra Defender ZapretTR'i siliyor" duyumu.
-/// Eskiden bu durumda gunlukte yalnizca Windows'un cumlesi kaliyordu; hangi
-/// korumanin engelledigi yazmiyordu. Gerekcesi SecurityBlockAdvice'ta.
+/// 2026-09: "Windows güncellemesinden sonra Defender ZapretTR'yi siliyor" duyumu.
+/// Eskiden bu durumda günlükte yalnızca Windows'un cümlesi kalıyordu; hangi
+/// korumanın engellediği yazmıyordu. Gerekçesi SecurityBlockAdvice'ta.
 ///
-/// Gercek bir 4551 uretmek icin Akilli Uygulama Denetimi'ni acmak gerekiyor, bu
-/// yuzden testler hata kodundan gidiyor. Kodlarin anlamlari gelistirici makinesinde
-/// Win32Exception ile dogrulandi.
+/// Gerçek bir 4551 üretmek için Akıllı Uygulama Denetimi'ni açmak gerekiyor, bu
+/// yüzden testler hata kodundan gidiyor. Kodların anlamları geliştirici makinesinde
+/// Win32Exception ile doğrulandı.
 /// </remarks>
 public sealed class SecurityBlockAdviceTests
 {
@@ -34,11 +34,11 @@ public sealed class SecurityBlockAdviceTests
         => Assert.Equal(beklenen, SecurityBlockAdvice.Classify(kod));
 
     [Theory]
-    [InlineData(2)]    // dosya yok: KURULUM DOSYALARI EKSIK'in isi
-    [InlineData(5)]    // erisim engellendi: yonetici yetkisi, guvenlik engeli degil
-    [InlineData(193)]  // gecersiz Win32 uygulamasi
-    [InlineData(1053)] // servis zamaninda cevap vermedi
-    [InlineData(4552)] // ilke GECERSIZ: dosya engellenmedi
+    [InlineData(2)]    // dosya yok: KURULUM DOSYALARI EKSİK'in işi
+    [InlineData(5)]    // erişim engellendi: yönetici yetkisi, güvenlik engeli değil
+    [InlineData(193)]  // geçersiz Win32 uygulaması
+    [InlineData(1053)] // servis zamanında cevap vermedi
+    [InlineData(4552)] // ilke GEÇERSİZ: dosya engellenmedi
     public void Baska_hatalar_guvenlik_engeli_sayilmiyor(int kod)
     {
         Assert.Null(SecurityBlockAdvice.Classify(kod));
@@ -101,15 +101,15 @@ public sealed class SecurityBlockAdviceTests
         var winws = ServiceManager.StartFailureDetail(ServiceManager.WinwsServiceName, cikti);
         Assert.Contains("winws.exe", winws);
 
-        // Engel degilse ayrinti eskisi gibi yalnizca sc ciktisi.
+        // Engel değilse ayrıntı eskisi gibi yalnızca sc çıktısı.
         Assert.Equal("[SC] StartService FAILED 1053:", ServiceManager.StartFailureDetail(ServiceManager.WinwsServiceName, "[SC] StartService FAILED 1053:\r\n"));
     }
 
     [Fact]
     public void Motor_ve_dns_baslatma_yollari_engeli_taniyor()
     {
-        // Process.Start'in etrafindaki siniflandirma kaldirilirsa kullanici yine
-        // yalnizca Windows'un cumlesini gorur. Iki yol da kaynakta sabitleniyor.
+        // Process.Start'ın etrafındaki sınıflandırma kaldırılırsa kullanıcı yine
+        // yalnızca Windows'un cümlesini görür. İki yol da kaynakta sabitleniyor.
         var motor = IoPath.Combine(XmlCommentTests.RepoRoot, "src", "ZapretTr.Core", "Engine");
 
         Assert.Contains("SecurityBlockAdvice.Describe(ex, \"winws.exe\")",
@@ -129,7 +129,7 @@ public sealed class SecurityBlockAdviceTests
     [InlineData(unchecked((int)0xC0000364), 1260, SecurityBlockKind.GroupPolicy)]
     public void Yukleyici_cikis_kodu_engeli_adiyla_soyluyor(int cikisKodu, int win32, SecurityBlockKind tur)
     {
-        // Eslemeyi Windows'un kendisine soruyoruz: bir kod yanlis ezberlenmisse test duser.
+        // Eşlemeyi Windows'un kendisine soruyoruz: bir kod yanlış ezberlenmişse test düşer.
         Assert.Equal(win32, RtlNtStatusToDosError(cikisKodu));
 
         var metin = SecurityBlockAdvice.DescribeExitCode(cikisKodu, "winws.exe");
@@ -139,7 +139,7 @@ public sealed class SecurityBlockAdviceTests
         Assert.Contains($"0x{unchecked((uint)cikisKodu):X8}", metin);
         if (tur != SecurityBlockKind.GroupPolicy)
         {
-            // Grup ilkesi rehbere yollamiyor: cozum BT yoneticisinde.
+            // Grup ilkesi rehbere yollamıyor: çözüm BT yöneticisinde.
             Assert.Contains("Windows engelliyor", metin);
         }
 
@@ -152,9 +152,9 @@ public sealed class SecurityBlockAdviceTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(1)]                               // winws zaten calisiyor
-    [InlineData(unchecked((int)0xC0000135))]      // DLL bulunamadi: dosya eksik, engel degil
-    [InlineData(unchecked((int)0xC0000005))]      // erisim ihlali: cokme
+    [InlineData(1)]                               // winws zaten çalışıyor
+    [InlineData(unchecked((int)0xC0000135))]      // DLL bulunamadı: dosya eksik, engel değil
+    [InlineData(unchecked((int)0xC0000005))]      // erişim ihlali: çökme
     [InlineData(unchecked((int)0xC000013A))]      // Ctrl+C ile durduruldu
     public void Baska_cikis_kodlari_guvenlik_engeli_sayilmiyor(int cikisKodu)
         => Assert.Null(SecurityBlockAdvice.DescribeExitCode(cikisKodu, "winws.exe"));
@@ -162,8 +162,8 @@ public sealed class SecurityBlockAdviceTests
     [Fact]
     public void Winws_erken_olumu_ve_dogrulama_engeli_taniyor()
     {
-        // Dogrulama yolu engeli metin olarak donerse test motoru her adayi "gecersiz
-        // parametre" diye eler. Iki cagri da kaynakta sabitleniyor.
+        // Doğrulama yolu engeli metin olarak dönerse test motoru her adayı "geçersiz
+        // parametre" diye eler. İki çağrı da kaynakta sabitleniyor.
         var kaynak = File.ReadAllText(IoPath.Combine(
             XmlCommentTests.RepoRoot, "src", "ZapretTr.Core", "Engine", "WinwsRunner.cs"));
 
@@ -183,8 +183,8 @@ public sealed class SecurityBlockAdviceTests
     [Fact]
     public void Belgelerde_olculmemis_Defender_guvencesi_kalmadi()
     {
-        // "Defender bu paketi isaretlemiyor (olctuk)" 0.1.x'te bir olcumdu; bulut
-        // kararlari degistigi icin artik bir soz. Geri gelmesin.
+        // "Defender bu paketi işaretlemiyor (ölçtük)" 0.1.x'te bir ölçümdü; bulut
+        // kararları değiştiği için artık bir söz. Geri gelmesin.
         foreach (var dosya in new[] { "README.md", "README-DETAYLI.md", IoPath.Combine("docs", "SORUN-GIDERME.md") })
         {
             var metin = File.ReadAllText(IoPath.Combine(XmlCommentTests.RepoRoot, dosya));

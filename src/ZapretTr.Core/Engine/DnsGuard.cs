@@ -5,35 +5,35 @@ using System.Text;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Bekcinin bir turda yapacagi is.</summary>
+/// <summary>Bekçinin bir turda yapacağı iş.</summary>
 public enum DnsGuardAction
 {
-    /// <summary>Her sey yerinde ya da karar baskasinin.</summary>
+    /// <summary>Her şey yerinde ya da karar başkasının.</summary>
     None,
 
-    /// <summary>Servis ayakta: yonlendirmede eksik kalan kartlari tamamla.</summary>
+    /// <summary>Servis ayakta: yönlendirmede eksik kalan kartları tamamla.</summary>
     Reapply,
 
-    /// <summary>Yonlendirmenin arkasinda cozumleyici yok ve gelmeyecek: geri al.</summary>
+    /// <summary>Yönlendirmenin arkasında çözümleyici yok ve gelmeyecek: geri al.</summary>
     Restore,
 
-    /// <summary>Servis kurulu ama cevap vermiyor: geri al, servis donunce yeniden yonlendir.</summary>
+    /// <summary>Servis kurulu ama cevap vermiyor: geri al, servis dönünce yeniden yönlendir.</summary>
     RestoreAndSuspend,
 
-    /// <summary>Askidaki yonlendirmenin servisi geri geldi: yeniden yonlendir.</summary>
+    /// <summary>Askıdaki yönlendirmenin servisi geri geldi: yeniden yönlendir.</summary>
     Resume,
 
-    /// <summary>Askida isareti var ama servis artik yok: isareti kaldir.</summary>
+    /// <summary>Askıda işareti var ama servis artık yok: işareti kaldır.</summary>
     ClearSuspension,
 }
 
-/// <summary>Bekcinin karar verirken baktigi olculmus durum.</summary>
-/// <param name="HasBackup">DNS yedegi var mi, yani sistem DNS'i bize cevrilmis mi.</param>
-/// <param name="Owner">Yedegin sahibi (<see cref="DnsBackupOwner"/>).</param>
-/// <param name="IsSuspended">Servis yonlendirmesi askida mi.</param>
+/// <summary>Bekçinin karar verirken baktığı ölçülmüş durum.</summary>
+/// <param name="HasBackup">DNS yedeği var mı, yani sistem DNS'i bize çevrilmiş mi.</param>
+/// <param name="Owner">Yedeğin sahibi (<see cref="DnsBackupOwner"/>).</param>
+/// <param name="IsSuspended">Servis yönlendirmesi askıda mı.</param>
 /// <param name="DnsServiceInstalled"><c>ZapretTR-DNS</c> servisi kurulu mu.</param>
 /// <param name="DnsServiceBinaryExists">Servisin dnscrypt-proxy.exe'si diskte mi.</param>
-/// <param name="AppInstanceRunning">ZapretTR arayuzu acik mi.</param>
+/// <param name="AppInstanceRunning">ZapretTR arayüzü açık mı.</param>
 /// <param name="ResolverResponding">127.0.0.1:53 cevap veriyor mu.</param>
 public sealed record DnsGuardFacts(
     bool HasBackup,
@@ -45,36 +45,36 @@ public sealed record DnsGuardFacts(
     bool ResolverResponding);
 
 /// <summary>
-/// Sistem DNS'i ile onu tasiyan cozumleyicinin birbirinden kopmadigini denetler.
+/// Sistem DNS'i ile onu taşıyan çözümleyicinin birbirinden kopmadığını denetler.
 /// </summary>
 /// <remarks>
-/// SERVIS MODUNDA ARKADA IZLEYEN KIMSE YOKTU. Servisler winws.exe ve
-/// dnscrypt-proxy.exe'yi dogrudan calistiriyor; DNS yonlendirmesi kurulum aninda
-/// BIR KEZ yapiliyor ve uygulama acilmadikca hicbir sey ona bir daha bakmiyordu.
-/// Uc gercek sonucu vardi:
+/// SERVİS MODUNDA ARKADA İZLEYEN KİMSE YOKTU. Servisler winws.exe ve
+/// dnscrypt-proxy.exe'yi doğrudan çalıştırıyor; DNS yönlendirmesi kurulum anında
+/// BİR KEZ yapılıyor ve uygulama açılmadıkça hiçbir şey ona bir daha bakmıyordu.
+/// Üç gerçek sonucu vardı:
 ///
-///   1. Kurulumdan sonra takilan kart (telefonla USB paylasim, USB WiFi) ISS'in
-///      DNS'inde kaliyordu. O kart tek baglantiysa DNS engellemesi tamamen geri
+///   1. Kurulumdan sonra takılan kart (telefonla USB paylaşım, USB WiFi) İSS'in
+///      DNS'inde kalıyordu. O kart tek bağlantıysa DNS engellemesi tamamen geri
 ///      geliyordu.
-///   2. dnscrypt-proxy kalici olarak olurse (virusten koruma karantinaya aldi,
-///      klasor silindi, servis devre disi birakildi) sistem DNS'i 127.0.0.1'de
-///      kaliyor ve makine HICBIR adi cozemiyordu -- uygulama acilana kadar.
-///   3. Uygulama modunda (servissiz) uygulama cokerse ya da elektrik kesilirse
-///      ayni tablo acilistan sonra da suruyordu.
+///   2. dnscrypt-proxy kalıcı olarak ölürse (virüsten koruma karantinaya aldı,
+///      klasör silindi, servis devre dışı bırakıldı) sistem DNS'i 127.0.0.1'de
+///      kalıyor ve makine, uygulama açılana kadar HİÇBİR adı çözemiyordu.
+///   3. Uygulama modunda (servissiz) uygulama çökerse ya da elektrik kesilirse
+///      aynı tablo açılıştan sonra da sürüyordu.
 ///
-/// Bekci SYSTEM olarak calisan bir zamanlanmis gorev (<see cref="DnsGuardTask"/>):
-/// acilista, her ag baglantisinda ve belirli araliklarla <c>ZapretTR.exe
-/// --dns-guard</c> kosar, bir karar verir ve cikar. Kalici bir surec degil.
+/// Bekçi SYSTEM olarak çalışan bir zamanlanmış görev (<see cref="DnsGuardTask"/>):
+/// açılışta, her ağ bağlantısında ve belirli aralıklarla <c>ZapretTR.exe
+/// --dns-guard</c> koşar, bir karar verir ve çıkar. Kalıcı bir süreç değil.
 ///
-/// Kararin ozu: KORUMA KESILEBILIR, INTERNET KESILMEMELI. Cozumleyici uzun sure
-/// cevap vermiyorsa yonlendirme geri aliniyor (engeller geri gelir ama makine
-/// calisir) ve servis dondugunde yeniden yapiliyor.
+/// Kararın özü: KORUMA KESİLEBİLİR, İNTERNET KESİLMEMELİ. Çözümleyici uzun süre
+/// cevap vermiyorsa yönlendirme geri alınıyor (engeller geri gelir ama makine
+/// çalışır) ve servis döndüğünde yeniden yapılıyor.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class DnsGuard
 {
     /// <summary>
-    /// Olculmus duruma gore yapilacak isi secer. Yan etkisi yok.
+    /// Ölçülmüş duruma göre yapılacak işi seçer. Yan etkisi yok.
     /// </summary>
     public static DnsGuardAction Decide(DnsGuardFacts facts)
     {
@@ -97,29 +97,29 @@ public static class DnsGuard
 
         if (!string.Equals(facts.Owner, DnsBackupOwner.Service, StringComparison.Ordinal))
         {
-            // Uygulamanin yonlendirmesi. Uygulama aciksa karar onun: kendi
-            // dnscrypt'ini yonetiyor, cokmesini kendisi goruyor. Kapaliysa ve
-            // cozumleyici cevap vermiyorsa bu onceki bir oturumun kalintisi.
+            // Uygulamanın yönlendirmesi. Uygulama açıksa karar onun: kendi
+            // dnscrypt'ini yönetiyor, çökmesini kendisi görüyor. Kapalıysa ve
+            // çözümleyici cevap vermiyorsa bu önceki bir oturumun kalıntısı.
             //
-            // Cevap VERIYORSA dokunulmuyor: uygulama oldurulmus ama dnscrypt
-            // sureci sag kalmis olabilir. O sure boyunca ad cozumu calisiyor ve
-            // sifreli; sureci en gec yeniden baslatma bitirir, bekci de o zaman
-            // geri alir.
+            // Cevap VERİYORSA dokunulmuyor: uygulama öldürülmüş ama dnscrypt
+            // süreci sağ kalmış olabilir. O süre boyunca ad çözümü çalışıyor ve
+            // şifreli; süreci en geç yeniden başlatma bitirir, bekçi de o zaman
+            // geri alır.
             return facts.AppInstanceRunning || facts.ResolverResponding
                 ? DnsGuardAction.None
                 : DnsGuardAction.Restore;
         }
 
-        // Servisin yonlendirmesi, ama servis yok: bir daha hic cevap vermeyecek,
-        // beklemenin ve askiya almanin anlami yok.
+        // Servisin yönlendirmesi, ama servis yok: bir daha hiç cevap vermeyecek,
+        // beklemenin ve askıya almanın anlamı yok.
         if (!facts.DnsServiceInstalled)
         {
             return DnsGuardAction.Restore;
         }
 
-        // Ikilisi yoksa (karantina, silinmis klasor) de cevap veremez; ama servis
-        // kaydi duruyor ve dosya geri gelebilir (virusten koruma istisnasi, onarim
-        // kurulumu). Askiya aliniyor ki dondugunde yonlendirme de donsun.
+        // İkilisi yoksa (karantina, silinmiş klasör) de cevap veremez; ama servis
+        // kaydı duruyor ve dosya geri gelebilir (virüsten koruma istisnası, onarım
+        // kurulumu). Askıya alınıyor ki döndüğünde yönlendirme de dönsün.
         if (!facts.DnsServiceBinaryExists)
         {
             return DnsGuardAction.RestoreAndSuspend;
@@ -129,13 +129,13 @@ public static class DnsGuard
     }
 
     /// <summary>
-    /// Karari vermeden once cozumleyiciyi beklemek gerekiyor mu.
+    /// Kararı vermeden önce çözümleyiciyi beklemek gerekiyor mu.
     /// </summary>
     /// <remarks>
-    /// Yalnizca "cevap vermiyor" yuzunden geri alinacaksa. Acilista servis agdan
-    /// once kalkiyor ve dnscrypt once agi, sonra cozumleyici listesini bekliyor;
-    /// ilk bakista "olu" gorunmesi normal. Servisin yoklugu yuzunden verilen geri
-    /// alma karari ise beklemez.
+    /// Yalnızca "cevap vermiyor" yüzünden geri alınacaksa. Açılışta servis ağdan
+    /// önce kalkıyor ve dnscrypt önce ağı, sonra çözümleyici listesini bekliyor;
+    /// ilk bakışta "ölü" görünmesi normal. Servisin yokluğu yüzünden verilen geri
+    /// alma kararı ise beklemez.
     /// </remarks>
     public static bool NeedsResolverWait(DnsGuardFacts facts, DnsGuardAction action)
         => !facts.ResolverResponding
@@ -144,10 +144,10 @@ public static class DnsGuard
                    && !string.Equals(facts.Owner, DnsBackupOwner.Service, StringComparison.Ordinal)));
 
     /// <summary>
-    /// Bir bekci turu kosar ve yapilanlari satir satir doner. Hicbir sey
-    /// yapilmadiysa liste bos.
+    /// Bir bekçi turu koşar ve yapılanları satır satır döner. Hiçbir şey
+    /// yapılmadıysa liste boş.
     /// </summary>
-    /// <param name="resolverWait">Cozumleyicinin geri gelmesi icin taninan en uzun sure.</param>
+    /// <param name="resolverWait">Çözümleyicinin geri gelmesi için tanınan en uzun süre.</param>
     public static async Task<IReadOnlyList<string>> RunAsync(
         TimeSpan resolverWait, CancellationToken cancellationToken = default)
     {
@@ -179,9 +179,9 @@ public static class DnsGuard
 
         using (SystemDnsManager.AcquireLock())
         {
-            // Kilit beklenirken arayuz ya da kaldirici durumu degistirmis olabilir;
-            // karar kilidin ICINDE, taze olcumle yeniden veriliyor. Bekleme burada
-            // tekrarlanmiyor: kilidi dakikalarca tutmak arayuzu kilitlerdi.
+            // Kilit beklenirken arayüz ya da kaldırıcı durumu değiştirmiş olabilir;
+            // karar kilidin İÇİNDE, taze ölçümle yeniden veriliyor. Bekleme burada
+            // tekrarlanmıyor: kilidi dakikalarca tutmak arayüzü kilitlerdi.
             facts = await GatherAsync(cancellationToken).ConfigureAwait(false);
             action = Decide(facts);
 
@@ -194,8 +194,8 @@ public static class DnsGuard
                         var changed = await SystemDnsManager
                             .RedirectCoreAsync(DnsBackupOwner.Service, cancellationToken).ConfigureAwait(false);
 
-                        // Degisen yoksa gunluge yazilmiyor: bekci her ag olayinda
-                        // ve periyodik calisiyor, bos satirlar asil olaylari gomer.
+                        // Değişen yoksa günlüğe yazılmıyor: bekçi her ağ olayında
+                        // ve periyodik çalışıyor, boş satırlar asıl olayları gömer.
                         if (changed.Count > 0)
                         {
                             log.Add("Yonlendirmede eksik kalan kartlar tamamlandi: " + string.Join(", ", changed));
@@ -217,8 +217,8 @@ public static class DnsGuard
                     {
                         var restored = await SystemDnsManager.RestoreCoreAsync(cancellationToken).ConfigureAwait(false);
 
-                        // Isaret geri alma BASARILI olduktan sonra yaziliyor: basarisizsa
-                        // yedek duruyor ve bir sonraki tur ayni karari yeniden verir.
+                        // İşaret, geri alma BAŞARILI olduktan sonra yazılıyor: başarısızsa
+                        // yedek duruyor ve bir sonraki tur aynı kararı yeniden verir.
                         SystemDnsManager.MarkSuspended();
                         log.Add((facts.DnsServiceBinaryExists
                                     ? $"Sifreli DNS servisi {resolverWait.TotalSeconds:F0} sn cevap vermedi"
@@ -246,8 +246,8 @@ public static class DnsGuard
             }
             catch (Exception ex)
             {
-                // Bekci bir sonraki turda yeniden deniyor; hatayi gunluge yazmak
-                // yeterli. En olasi sebep o an internete cikan kart olmamasi.
+                // Bekçi bir sonraki turda yeniden deniyor; hatayı günlüğe yazmak
+                // yeterli. En olası sebep o an internete çıkan kart olmaması.
                 log.Add($"{action} yapilamadi: {ex.Message}");
             }
         }
@@ -282,13 +282,13 @@ public static class DnsGuard
     }
 
     /// <summary>
-    /// Arayuzun tek ornek kilidinin adi. <c>App.xaml.cs</c> ayni adi kullaniyor;
-    /// ayrisirsa bekci acik bir arayuzun yonlendirmesini geri alir.
+    /// Arayüzün tek örnek kilidinin adı. <c>App.xaml.cs</c> aynı adı kullanıyor;
+    /// ayrışırsa bekçi açık bir arayüzün yönlendirmesini geri alır.
     /// </summary>
     public const string AppInstanceMutexName = @"Global\ZapretTR-tek-ornek";
 
     /// <summary>
-    /// Arayuz acik mi. Surec adina bakilmiyor: bekcinin kendisi de ZapretTR.exe.
+    /// Arayüz açık mı. Süreç adına bakılmıyor: bekçinin kendisi de ZapretTR.exe.
     /// </summary>
     private static bool IsAppInstanceRunning()
     {
@@ -304,21 +304,21 @@ public static class DnsGuard
         }
         catch (UnauthorizedAccessException)
         {
-            // Nesne var ama acmaya yetkimiz yok: yine de var demektir.
+            // Nesne var ama açmaya yetkimiz yok: yine de var demektir.
             return true;
         }
         catch (Exception)
         {
-            // Bilemiyorsak acik sayiyoruz: yanlis tarafa dusmek gerekirse, acik bir
-            // arayuzun yonlendirmesini sokmektense bir tur beklemek yeglenir.
+            // Bilemiyorsak açık sayıyoruz: yanlış tarafa düşmek gerekirse, açık bir
+            // arayüzün yönlendirmesini sökmektense bir tur beklemek yeğlenir.
             return true;
         }
     }
 
-    /// <summary>Bekci gunlugunun yolu.</summary>
+    /// <summary>Bekçi günlüğünün yolu.</summary>
     public static string LogPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "dns-bekci.log");
 
-    /// <summary>Satirlari tarih damgasiyla gunluge ekler; dosyayi son 300 satirda tutar.</summary>
+    /// <summary>Satırları tarih damgasıyla günlüğe ekler; dosyayı son 300 satırda tutar.</summary>
     public static void AppendLog(IReadOnlyList<string> lines)
     {
         if (lines.Count == 0)
@@ -333,9 +333,9 @@ public static class DnsGuard
             var mevcut = File.Exists(LogPath) ? File.ReadAllLines(LogPath).ToList() : [];
             var damga = DateTimeOffset.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
-            // Ayni satir art arda yazilmiyor: internete bagli olmayan bir makinede
-            // bekci her 10 dakikada ayni "yapilamadi" satirini uretir ve 300 satirlik
-            // pencere birkac gunde tek bir mesajla dolardi.
+            // Aynı satır art arda yazılmıyor: internete bağlı olmayan bir makinede
+            // bekçi her 10 dakikada aynı "yapılamadı" satırını üretir ve 300 satırlık
+            // pencere birkaç günde tek bir mesajla dolardı.
             var sonMesaj = mevcut.Count == 0 ? null : StripTimestamp(mevcut[^1]);
             var yeni = lines.Where(l => l != sonMesaj).ToList();
             if (yeni.Count == 0)
@@ -349,7 +349,7 @@ public static class DnsGuard
         }
         catch (Exception)
         {
-            // Gunluk yazilamamasi bekcinin isini gecersiz kilmaz.
+            // Günlüğün yazılamaması bekçinin işini geçersiz kılmaz.
         }
     }
 
@@ -360,7 +360,7 @@ public static class DnsGuard
         return line.Length > prefix ? line[prefix..] : line;
     }
 
-    /// <summary>Gunlugun son satiri; yoksa null.</summary>
+    /// <summary>Günlüğün son satırı; yoksa null.</summary>
     public static string? LastLogLine()
     {
         try
@@ -375,39 +375,39 @@ public static class DnsGuard
 }
 
 /// <summary>
-/// DNS bekcisini calistiran zamanlanmis gorevi kurar ve kaldirir.
+/// DNS bekçisini çalıştıran zamanlanmış görevi kurar ve kaldırır.
 /// </summary>
 /// <remarks>
-/// Neden bir Windows servisi degil de gorev: bekcinin isi saniyeler suruyor ve
-/// yalnizca belirli anlarda gerekiyor. Surekli ayakta duran bir surec hem bir
-/// servis ana makinesi yazmayi hem de onun cokmesini izleyecek ikinci bir
-/// mekanizmayi gerektirirdi. Gorev Zamanlayicisi bu tetikleyicileri zaten
-/// sagliyor.
+/// Neden bir Windows servisi değil de görev: bekçinin işi saniyeler sürüyor ve
+/// yalnızca belirli anlarda gerekiyor. Sürekli ayakta duran bir süreç hem bir
+/// servis ana makinesi yazmayı hem de onun çökmesini izleyecek ikinci bir
+/// mekanizmayı gerektirirdi. Görev Zamanlayıcı bu tetikleyicileri zaten
+/// sağlıyor.
 ///
-/// Gorevi kurulum paketi kuruyor (<c>--register-dns-guard</c>) ve kaldirici
-/// siliyor. Yonlendirmeden bagimsiz olarak hep kurulu duruyor: uygulama modunda
-/// cokme sonrasi kurtarma, gorevin CIKMEDEN once var olmasini gerektiriyor.
+/// Görevi kurulum paketi kuruyor (<c>--register-dns-guard</c>) ve kaldırıcı
+/// siliyor. Yönlendirmeden bağımsız olarak hep kurulu duruyor: uygulama modunda
+/// çökme sonrası kurtarma, görevin ÇÖKMEDEN önce var olmasını gerektiriyor.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class DnsGuardTask
 {
-    /// <summary>Gorevin adi.</summary>
+    /// <summary>Görevin adı.</summary>
     public const string TaskName = "ZapretTR DNS Bekcisi";
 
-    /// <summary>Bekciyi calistiran komut satiri bayragi.</summary>
+    /// <summary>Bekçiyi çalıştıran komut satırı bayrağı.</summary>
     public const string GuardFlag = "--dns-guard";
 
     /// <summary>
-    /// Gorev tanimini uretir. Saf fonksiyon: test edilen o.
+    /// Görev tanımını üretir. Saf fonksiyon: test edilen o.
     /// </summary>
     /// <remarks>
     /// Tetikleyiciler:
-    ///   * Acilis (1 dk gecikmeyle): uygulama modunda cokmeden kalan yonlendirme
-    ///     burada yakalaniyor.
-    ///   * Ag baglandi (NetworkProfile 10000): yeni kart, uykudan uyanma, WiFi
-    ///     degisikligi.
-    ///   * 10 dakikada bir: askiya alinmis yonlendirmeyi servis dondugunde geri
-    ///     getirmek icin; bunun bir ag olayi yok.
+    ///   * Açılış (1 dk gecikmeyle): uygulama modunda çökmeden kalan yönlendirme
+    ///     burada yakalanıyor.
+    ///   * Ağ bağlandı (NetworkProfile 10000): yeni kart, uykudan uyanma, WiFi
+    ///     değişikliği.
+    ///   * 10 dakikada bir: askıya alınmış yönlendirmeyi servis döndüğünde geri
+    ///     getirmek için; bunun bir ağ olayı yok.
     /// </remarks>
     public static string BuildTaskXml(string exePath)
     {
@@ -481,7 +481,7 @@ public static class DnsGuardTask
             """;
     }
 
-    /// <summary>Gorevi kurar ya da gunceller. Basariliysa true.</summary>
+    /// <summary>Görevi kurar ya da günceller. Başarılıysa true.</summary>
     public static async Task<(bool Succeeded, string Output)> RegisterAsync(
         string exePath, CancellationToken cancellationToken = default)
     {
@@ -490,8 +490,8 @@ public static class DnsGuardTask
         var xmlPath = Path.Combine(Path.GetTempPath(), $"zapret-tr-dns-bekci-{Guid.NewGuid():N}.xml");
         try
         {
-            // schtasks, bildirimde UTF-16 yazan bir dosyayi baska kodlamayla
-            // okumaya calisirsa "XML bicimi hatali" diyor.
+            // schtasks, bildirimde UTF-16 yazan bir dosyayı başka kodlamayla
+            // okumaya çalışırsa "XML biçimi hatalı" diyor.
             await File.WriteAllTextAsync(xmlPath, BuildTaskXml(exePath), Encoding.Unicode, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -508,12 +508,12 @@ public static class DnsGuardTask
             }
             catch (Exception)
             {
-                // Gecici dosya; kalmasi zararsiz.
+                // Geçici dosya; kalması zararsız.
             }
         }
     }
 
-    /// <summary>Gorevi siler. Zaten yoksa da basarili sayilir.</summary>
+    /// <summary>Görevi siler. Zaten yoksa da başarılı sayılır.</summary>
     public static async Task<bool> UnregisterAsync(CancellationToken cancellationToken = default)
     {
         ElevationGuard.EnsureElevated();
@@ -528,7 +528,7 @@ public static class DnsGuardTask
         return exitCode == 0;
     }
 
-    /// <summary>Gorev kurulu mu.</summary>
+    /// <summary>Görev kurulu mu.</summary>
     public static async Task<bool> IsRegisteredAsync(CancellationToken cancellationToken = default)
     {
         var (exitCode, _) = await RunSchtasksAsync(["/Query", "/TN", TaskName], cancellationToken)

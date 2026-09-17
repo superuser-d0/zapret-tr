@@ -6,11 +6,11 @@ using System.Security.Authentication;
 
 namespace ZapretTr.Prober;
 
-/// <summary>Tek bir erisim denemesinin sonucu.</summary>
+/// <summary>Tek bir erişim denemesinin sonucu.</summary>
 /// <param name="IsBlockPage">
-/// Erisilen sunucu bir engel sayfasi dondurdu. Bu, DPI engellemesinden FARKLI bir
-/// durum: baglanti kuruldu ama yanlis sunucuya. Cogunlukla DNS yonlendirmesi demek
-/// ve zapret bunu cozemez.
+/// Erişilen sunucu bir engel sayfası döndürdü. Bu, DPI engellemesinden FARKLI bir
+/// durum: bağlantı kuruldu ama yanlış sunucuya. Çoğunlukla DNS yönlendirmesi demek
+/// ve zapret bunu çözemez.
 /// </param>
 public sealed record ProbeOutcome(
     bool Succeeded,
@@ -20,53 +20,53 @@ public sealed record ProbeOutcome(
     bool IsBlockPage = false);
 
 /// <summary>
-/// Bir hedefe erisilip erisilemedigini olcer.
+/// Bir hedefe erişilip erişilemediğini ölçer.
 /// </summary>
 /// <remarks>
-/// blockcheck.sh'in curl ile yaptigi isin native karsiligi. Uc onemli fark var:
+/// blockcheck.sh'ın curl ile yaptığı işin yerel karşılığı. Üç önemli fark var:
 ///
-/// 1. Baglanti cozumlenmis IP'ye SABITLENIR. Hem her denemenin ayni sunucuya gitmesini
-///    garanti eder (CDN'lerde bu onemsiz degil), hem de winws'e verecegimiz
-///    --ipset-ip degerini elde etmis oluruz.
+/// 1. Bağlantı çözümlenmiş IP'ye SABİTLENİR. Hem her denemenin aynı sunucuya gitmesini
+///    garanti eder (CDN'lerde bu önemsiz değil), hem de winws'e vereceğimiz
+///    --ipset-ip değerini elde etmiş oluruz.
 ///
-/// 2. TLS surumu acikca zorlanir. TLS 1.2'de sertifika DPI'a acik gorunur, TLS 1.3'te
-///    ServerHello sifreli -- DPI'in gorebildigi sey degistigi icin ikisi farkli
-///    strateji gerektirebilir ve ayri puanlanmalari gerekir.
+/// 2. TLS sürümü açıkça zorlanır. TLS 1.2'de sertifika DPI'a açık görünür, TLS 1.3'te
+///    ServerHello şifreli; DPI'ın görebildiği şey değiştiği için ikisi farklı
+///    strateji gerektirebilir ve ayrı puanlanmaları gerekir.
 ///
-/// 3. Turkiye'ye ozel engel sayfasi tespiti var: BTK engellemesi cogu zaman baglantiyi
-///    kesmez, 200 ile bir bilgilendirme sayfasi dondurur. Yalnizca durum koduna bakan
-///    bir kontrol bunu "calisiyor" sanar.
+/// 3. Türkiye'ye özel engel sayfası tespiti var: BTK engellemesi çoğu zaman bağlantıyı
+///    kesmez, 200 ile bir bilgilendirme sayfası döndürür. Yalnızca durum koduna bakan
+///    bir kontrol bunu "çalışıyor" sanar.
 /// </remarks>
 public sealed class HttpProbeClient : IDisposable
 {
     /// <summary>
-    /// BTK/erisim engeli sayfalarinda gecen ifadeler. Sayfa 200 dondurdugu icin
-    /// durum kodu yetmiyor, icerige bakmak gerekiyor.
+    /// BTK/erişim engeli sayfalarında geçen ifadeler. Sayfa 200 döndürdüğü için
+    /// durum kodu yetmiyor, içeriğe bakmak gerekiyor.
     /// </summary>
     /// <summary>
-    /// Tek basina engel sayfasi kaniti sayilan ifadeler. Normal bir sayfada
-    /// bulunmalari pratikte imkansiz: sinif adlari ve kurum alan adlari.
+    /// Tek başına engel sayfası kanıtı sayılan ifadeler. Normal bir sayfada
+    /// bulunmaları pratikte imkânsız: sınıf adları ve kurum alan adları.
     /// </summary>
     private static readonly string[] StrongBlockMarkers =
     [
-        // Turk Telekom / TTNET engel sayfasindan DOGRUDAN alindi (--diagnose ile
-        // 195.175.254.2 uzerinden gozlemlendi). Onceki listede bu ifade "erisime
-        // engellenmi" olarak, yani BOSLUKLA yaziliydi ve gercek sayfadaki alt
-        // cizgili sinif adiyla hic eslesmiyordu.
+        // Türk Telekom / TTNET engel sayfasından DOĞRUDAN alındı (--diagnose ile
+        // 195.175.254.2 üzerinden gözlemlendi). Önceki listede bu ifade "erisime
+        // engellenmi" olarak, yani BOŞLUKLA yazılıydı ve gerçek sayfadaki alt
+        // çizgili sınıf adıyla hiç eşleşmiyordu.
         "erisime_engellenmis",
         "btk.gov.tr",
         "tib.gov.tr",
     ];
 
     /// <summary>
-    /// Engel sayfalarinda sik gecen ama normal iceriklerde de gecebilen ifadeler.
+    /// Engel sayfalarında sık geçen ama normal içeriklerde de geçebilen ifadeler.
     /// </summary>
     /// <remarks>
-    /// Bunlar TEK BASINA yeterli sayilmaz. "koruma tedbiri" ya da "5651 say" gibi
-    /// ifadeler sansuru anlatan bir haber sayfasinda da gecer; tek eslesmeyi kanit
-    /// saymak, acilan bir siteyi engelli gostermek demek olur. Bu yanlis yon daha
-    /// tehlikeli: hedefi DNS yonlendirmesi sanip strateji aramasindan cikaririz ve
-    /// gercekten asilabilir bir engeli hic denemeyiz. En az iki eslesme aranir.
+    /// Bunlar TEK BAŞINA yeterli sayılmaz. "koruma tedbiri" ya da "5651 say" gibi
+    /// ifadeler sansürü anlatan bir haber sayfasında da geçer; tek eşleşmeyi kanıt
+    /// saymak, açılan bir siteyi engelli göstermek demek olur. Bu yanlış yön daha
+    /// tehlikeli: hedefi DNS yönlendirmesi sanıp strateji aramasından çıkarırız ve
+    /// gerçekten aşılabilir bir engeli hiç denemeyiz. En az iki eşleşme aranır.
     /// </remarks>
     private static readonly string[] WeakBlockMarkers =
     [
@@ -82,16 +82,16 @@ public sealed class HttpProbeClient : IDisposable
         => _timeout = timeout ?? TimeSpan.FromSeconds(6);
 
     /// <summary>
-    /// Hedefe erisilip erisilemedigini dener.
+    /// Hedefe erişilip erişilemediğini dener.
     /// </summary>
-    /// <param name="host">Alan adi.</param>
+    /// <param name="host">Alan adı.</param>
     /// <param name="mode">
-    /// Hangi protokolle denenecegi. Bolume gore secilir; duz HTTP hedefine HTTPS ile
-    /// gitmek ya da QUIC hedefini TCP uzerinden olcmek yanlis sonuc uretir.
+    /// Hangi protokolle deneneceği. Bölüme göre seçilir; düz HTTP hedefine HTTPS ile
+    /// gitmek ya da QUIC hedefini TCP üzerinden ölçmek yanlış sonuç üretir.
     /// </param>
     /// <param name="pinnedIp">
-    /// Baglanilacak IP. null verilirse cozumleme burada yapilir. Ayni testin farkli
-    /// adaylarinda ayni IP'yi kullanmak icin cagiran taraf bunu sabitler.
+    /// Bağlanılacak IP. null verilirse çözümleme burada yapılır. Aynı testin farklı
+    /// adaylarında aynı IP'yi kullanmak için çağıran taraf bunu sabitler.
     /// </param>
     public async Task<ProbeOutcome> TryReachAsync(
         string host,
@@ -124,15 +124,15 @@ public sealed class HttpProbeClient : IDisposable
 
             if (mode == ProbeMode.Http3)
             {
-                // QUIC'i gercekten olcmek icin HTTP/3 zorunlu. RequestVersionExact
-                // olmadan .NET sessizce HTTP/2'ye duser ve QUIC hic test edilmemis
-                // olur -- olculdugu sanilan ama olculmeyen bir sey, hic olcmemekten
-                // daha kotu.
+                // QUIC'i gerçekten ölçmek için HTTP/3 zorunlu. RequestVersionExact
+                // olmadan .NET sessizce HTTP/2'ye düşer ve QUIC hiç test edilmemiş
+                // olur; ölçüldüğü sanılan ama ölçülmeyen bir şey, hiç ölçmemekten
+                // daha kötü.
                 request.Version = HttpVersion.Version30;
                 request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
             }
-            // Kimlik dogrulama gerektirmeyen, cerezsiz, sade bir istek: amac icerik
-            // almak degil, DPI'in TLS el sikismasina karisip karismadigini olcmek.
+            // Kimlik doğrulama gerektirmeyen, çerezsiz, sade bir istek: amaç içerik
+            // almak değil, DPI'ın TLS el sıkışmasına karışıp karışmadığını ölçmek.
             request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
             request.Headers.AcceptEncoding.ParseAdd("identity");
 
@@ -147,7 +147,7 @@ public sealed class HttpProbeClient : IDisposable
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // Zaman asimi engellemenin en yaygin belirtisi: DPI paketi sessizce dusuruyor.
+            // Zaman aşımı engellemenin en yaygın belirtisi: DPI paketi sessizce düşürüyor.
             return new ProbeOutcome(false, "zaman asimi", resolvedIp);
         }
         catch (Exception ex)
@@ -157,14 +157,14 @@ public sealed class HttpProbeClient : IDisposable
     }
 
     /// <summary>
-    /// Istisna zincirinden anlamli bir sebep cikarir.
+    /// İstisna zincirinden anlamlı bir sebep çıkarır.
     /// </summary>
     /// <remarks>
-    /// Tek seviye bakmak yetmiyor: .NET'te TLS hatalari
+    /// Tek seviye bakmak yetmiyor: .NET'te TLS hataları
     /// HttpRequestException -> IOException -> AuthenticationException -> Win32Exception
-    /// seklinde sarmalanip disariya "see inner exception" gibi hicbir sey anlatmayan
-    /// bir mesaj birakiyor. Bu metin kullanicinin gunlukte gorecegi sey ve saha
-    /// raporunda bize geri donecek tek ipucu, dolayisiyla zinciri sonuna kadar geziyoruz.
+    /// şeklinde sarmalanıp dışarıya "see inner exception" gibi hiçbir şey anlatmayan
+    /// bir mesaj bırakıyor. Bu metin kullanıcının günlükte göreceği şey ve saha
+    /// raporunda bize geri dönecek tek ipucu, dolayısıyla zinciri sonuna kadar geziyoruz.
     /// </remarks>
     private static string DescribeFailure(Exception exception)
     {
@@ -178,14 +178,14 @@ public sealed class HttpProbeClient : IDisposable
                         : $"soket hatasi: {socket.SocketErrorCode}";
 
                 case AuthenticationException:
-                    // Strateji uygulanirken bu, sahte paketin gercek baglantiyi da
-                    // bozdugu anlamina gelir -- md5sig'in yanlis sunucuda
-                    // kullanilmasinin tipik belirtisi.
+                    // Strateji uygulanırken bu, sahte paketin gerçek bağlantıyı da
+                    // bozduğu anlamına gelir; md5sig'in yanlış sunucuda
+                    // kullanılmasının tipik belirtisi.
                     return "TLS el sikismasi basarisiz";
             }
         }
 
-        // Zincirin en icindeki mesaj, en distekinden neredeyse her zaman daha bilgilendirici.
+        // Zincirin en içindeki mesaj, en dıştakinden neredeyse her zaman daha bilgilendirici.
         var innermost = exception;
         while (innermost.InnerException is not null)
         {
@@ -198,38 +198,38 @@ public sealed class HttpProbeClient : IDisposable
     }
 
     /// <summary>
-    /// Gelen cevabin "gercek sunucuya ulastik" anlamina gelip gelmedigine karar verir.
+    /// Gelen cevabın "gerçek sunucuya ulaştık" anlamına gelip gelmediğine karar verir.
     /// </summary>
     /// <remarks>
-    /// Olctugumuz sey sayfanin ICERIGI degil, DPI'in baglantiyi oldurup oldurmedigi.
-    /// Bu ayrimi kacirmak pahaliya mal oldu: ilk surumde yalnizca 2xx basari
-    /// sayiliyordu ve gercek bir kosumda su sonuclar "basarisiz" yazildi --
+    /// Ölçtüğümüz şey sayfanın İÇERİĞİ değil, DPI'ın bağlantıyı öldürüp öldürmediği.
+    /// Bu ayrımı kaçırmak pahalıya mal oldu: ilk sürümde yalnızca 2xx başarı
+    /// sayılıyordu ve gerçek bir koşumda şu sonuçlar "başarısız" yazıldı:
     ///
     ///   xvideos.com        HTTP 301 -> https://www.xvideos.com/
     ///   pornhub.com        HTTP 301 -> https://www.pornhub.com/
     ///   gateway.discord.gg HTTP 404
     ///
-    /// Ucu de aslinda calisiyordu: ilk ikisi siradan bir www yonlendirmesi, ucuncusu
-    /// o adresin duz GET'e verdigi normal cevap. Strateji dordunu de acmisti ama arac
-    /// yalnizca birini saydi ve daha iyi bir aday aramaya devam etti.
+    /// Üçü de aslında çalışıyordu: ilk ikisi sıradan bir www yönlendirmesi, üçüncüsü
+    /// o adresin düz GET'e verdiği normal cevap. Strateji dördünü de açmıştı ama araç
+    /// yalnızca birini saydı ve daha iyi bir aday aramaya devam etti.
     ///
-    /// Dogru olcut: sunucudan HERHANGI bir gecerli HTTP cevabi geldiyse TLS el
-    /// sikismasi tamamlanmis ve DPI baglantiyi oldurmemis demektir. Iki istisna var:
-    /// engel sayfasi (yanlis sunucuya ulastik) ve HTTP 400 (sunucu bozuk istek aldi,
-    /// yani stratejinin kendisi paketi bozmus).
+    /// Doğru ölçüt: sunucudan HERHANGİ bir geçerli HTTP cevabı geldiyse TLS el
+    /// sıkışması tamamlanmış ve DPI bağlantıyı öldürmemiş demektir. İki istisna var:
+    /// engel sayfası (yanlış sunucuya ulaştık) ve HTTP 400 (sunucu bozuk istek aldı,
+    /// yani stratejinin kendisi paketi bozmuş).
     /// </remarks>
     private async Task<ProbeOutcome> EvaluateResponseAsync(
         HttpResponseMessage response, string resolvedIp, CancellationToken cancellationToken)
     {
         var status = (int)response.StatusCode;
 
-        // 400: sunucu bozuk paket aldi. Strateji baglantiyi bozmus demektir.
+        // 400: sunucu bozuk paket aldı. Strateji bağlantıyı bozmuş demektir.
         if (status == 400)
         {
             return new ProbeOutcome(false, "HTTP 400 -- sunucu bozuk istek aldi", resolvedIp);
         }
 
-        // Yonlendirme hedefi engel sayfasiysa, ulastigimiz yer gercek sunucu degil.
+        // Yönlendirme hedefi engel sayfasıysa, ulaştığımız yer gerçek sunucu değil.
         if (status is >= 300 and < 400)
         {
             var location = response.Headers.Location?.ToString() ?? string.Empty;
@@ -243,7 +243,7 @@ public sealed class HttpProbeClient : IDisposable
             return new ProbeOutcome(true, $"HTTP {status} -> {location}", resolvedIp);
         }
 
-        // Govde engel sayfasi mi? 200 de donebilecegi icin durum koduna guvenilmez.
+        // Gövde engel sayfası mı? 200 de dönebileceği için durum koduna güvenilmez.
         var body = await ReadPrefixAsync(response, cancellationToken).ConfigureAwait(false);
         var marker = FindBlockMarker(body);
         if (marker is not null)
@@ -251,12 +251,12 @@ public sealed class HttpProbeClient : IDisposable
             return new ProbeOutcome(false, $"engel sayfasi ({marker})", resolvedIp, Preview(body), IsBlockPage: true);
         }
 
-        // Buraya gelen her cevap gercek sunucudan geldi: 200 de, 403 de, 404 de.
-        // Hepsi ayni seyi kanitliyor -- DPI baglantiyi kesmedi.
+        // Buraya gelen her cevap gerçek sunucudan geldi: 200 de, 403 de, 404 de.
+        // Hepsi aynı şeyi kanıtlıyor: DPI bağlantıyı kesmedi.
         return new ProbeOutcome(true, $"HTTP {status}", resolvedIp, Preview(body));
     }
 
-    /// <summary>Govdenin basindan bir parca okur. Tamamini indirmek gereksiz ve yavas.</summary>
+    /// <summary>Gövdenin başından bir parça okur. Tamamını indirmek gereksiz ve yavaş.</summary>
     private static async Task<string> ReadPrefixAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         try
@@ -268,12 +268,12 @@ public sealed class HttpProbeClient : IDisposable
         }
         catch
         {
-            // Govde okunamamasi engel tespiti icin belirleyici degil; durum koduyla devam.
+            // Gövdenin okunamaması engel tespiti için belirleyici değil; durum koduyla devam.
             return string.Empty;
         }
     }
 
-    /// <summary>Govdenin tek satirlik, kisaltilmis hali. Yalnizca teshis ciktisi icin.</summary>
+    /// <summary>Gövdenin tek satırlık, kısaltılmış hâli. Yalnızca teşhis çıktısı için.</summary>
     private static string? Preview(string body)
     {
         if (string.IsNullOrWhiteSpace(body))
@@ -286,9 +286,9 @@ public sealed class HttpProbeClient : IDisposable
     }
 
     /// <summary>
-    /// Metnin engel sayfasi olup olmadigina karar verir; eslesen isareti dondurur.
+    /// Metnin engel sayfası olup olmadığına karar verir; eşleşen işareti döndürür.
     /// </summary>
-    /// <returns>Eslesen isaret, yoksa null.</returns>
+    /// <returns>Eşleşen işaret, yoksa null.</returns>
     public static string? FindBlockMarker(string text)
     {
         if (string.IsNullOrEmpty(text))
@@ -309,14 +309,14 @@ public sealed class HttpProbeClient : IDisposable
     }
 
     /// <summary>
-    /// Baglantiyi belirli bir IP'ye sabitleyen ve TLS surumunu zorlayan handler kurar.
+    /// Bağlantıyı belirli bir IP'ye sabitleyen ve TLS sürümünü zorlayan işleyici kurar.
     /// </summary>
     private SocketsHttpHandler CreateHandler(string pinnedIp, ProbeMode mode)
     {
         var tlsProtocol = mode switch
         {
-            // TLS 1.2 kasitli: sertifika DPI'a acik gorunur, yani DPI'in en cok
-            // mudahale ettigi durum.
+            // TLS 1.2 kasıtlı: sertifika DPI'a açık görünür, yani DPI'ın en çok
+            // müdahale ettiği durum.
             ProbeMode.Tls12 => SslProtocols.Tls12,
             ProbeMode.Tls13 => SslProtocols.Tls13,
             _ => SslProtocols.None,
@@ -324,8 +324,8 @@ public sealed class HttpProbeClient : IDisposable
 
         var handler = new SocketsHttpHandler
         {
-            // Yonlendirmeyi elle degerlendiriyoruz: engel sayfasina yonlendirme
-            // otomatik takip edilirse tespit edilemez hale gelir.
+            // Yönlendirmeyi elle değerlendiriyoruz: engel sayfasına yönlendirme
+            // otomatik takip edilirse tespit edilemez hâle gelir.
             AllowAutoRedirect = false,
             UseCookies = false,
             UseProxy = false,
@@ -334,23 +334,23 @@ public sealed class HttpProbeClient : IDisposable
             SslOptions = new SslClientAuthenticationOptions
             {
                 EnabledSslProtocols = tlsProtocol,
-                // Sertifika gecerliligi bizim olctugumuz sey degil; DPI mudahalesi
-                // sertifikayi bozabilir ve bu da olcmek istedigimiz sinyalin parcasi.
-                // Guvenli bir kanal kurmuyoruz, bir davranisi olcuyoruz.
+                // Sertifika geçerliliği bizim ölçtüğümüz şey değil; DPI müdahalesi
+                // sertifikayı bozabilir ve bu da ölçmek istediğimiz sinyalin parçası.
+                // Güvenli bir kanal kurmuyoruz, bir davranışı ölçüyoruz.
                 RemoteCertificateValidationCallback = static (_, _, _, _) => true,
             },
         };
 
-        // ConnectCallback yalnizca TCP tabanli baglantilarda cagriliyor; HTTP/3
-        // kendi QUIC yolunu kullandigi icin orada IP sabitleme YAPILAMIYOR. QUIC
-        // testlerinde hedef IP yine de ayrica cozumleniyor -- winws'e verilecek
-        // --ipset-ip degeri icin gerekli.
+        // ConnectCallback yalnızca TCP tabanlı bağlantılarda çağrılıyor; HTTP/3
+        // kendi QUIC yolunu kullandığı için orada IP sabitleme YAPILAMIYOR. QUIC
+        // testlerinde hedef IP yine de ayrıca çözümleniyor; winws'e verilecek
+        // --ipset-ip değeri için gerekli.
         handler.ConnectCallback = async (context, cancellationToken) =>
         {
-            // Soketi cozumlenmis adresin ailesiyle aciyoruz. Parametresiz kurucu
-            // cift yiginli (IPv6 + eslenmis IPv4) bir soket uretir; IPv4 hedefe
-            // giderken bu gereksiz ve bu makinede baglantinin sessizce zaman
-            // asimina ugramasina yol aciyordu.
+            // Soketi çözümlenmiş adresin ailesiyle açıyoruz. Parametresiz kurucu
+            // çift yığınlı (IPv6 + eşlenmiş IPv4) bir soket üretir; IPv4 hedefe
+            // giderken bu gereksiz ve bu makinede bağlantının sessizce zaman
+            // aşımına uğramasına yol açıyordu.
             var address = IPAddress.Parse(pinnedIp);
             var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
             {
@@ -376,8 +376,8 @@ public sealed class HttpProbeClient : IDisposable
 
     public void Dispose()
     {
-        // Handler ve client her denemede yeniden kuruluyor (baglanti havuzunun
-        // onceki stratejinin acik baglantisini yeniden kullanmasi sonuclari
-        // kirletirdi), bu yuzden burada tutulan bir kaynak yok.
+        // İşleyici ve istemci her denemede yeniden kuruluyor (bağlantı havuzunun
+        // önceki stratejinin açık bağlantısını yeniden kullanması sonuçları
+        // kirletirdi), bu yüzden burada tutulan bir kaynak yok.
     }
 }

@@ -5,11 +5,11 @@ using System.Windows.Controls;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Liste kutusunu her yeni satirda alta kaydirir.
+/// Liste kutusunu her yeni satırda alta kaydırır.
 /// </summary>
 /// <remarks>
-/// Canli gunlukte son satir gorunmuyorsa gunlugun bir faydasi kalmiyor; kullanici
-/// test surerken her satirda elle asagi kaydirmak zorunda kalirdi.
+/// Canlı günlükte son satır görünmüyorsa günlüğün bir faydası kalmıyor; kullanıcı
+/// test sürerken her satırda elle aşağı kaydırmak zorunda kalırdı.
 /// </remarks>
 public static class AutoScrollBehavior
 {
@@ -53,8 +53,8 @@ public static class AutoScrollBehavior
     {
         if (sender is ListBox { ItemsSource: INotifyCollectionChanged collection } listBox)
         {
-            // Once cikar, sonra ekle: Loaded birden fazla kez tetiklenebilir ve
-            // ayni isleyicinin iki kez bagli olmasi her satirda iki kaydirma demek.
+            // Önce çıkar, sonra ekle: Loaded birden fazla kez tetiklenebilir ve
+            // aynı işleyicinin iki kez bağlı olması her satırda iki kaydırma demek.
             collection.CollectionChanged -= listBox.ScrollToLast;
             collection.CollectionChanged += listBox.ScrollToLast;
         }

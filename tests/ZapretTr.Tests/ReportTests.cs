@@ -4,17 +4,17 @@ using ZapretTr.App.ViewModels;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// "Raporu Kaydet" dugmesinin urettigi metin.
+/// "Raporu Kaydet" düğmesinin ürettiği metin.
 /// </summary>
 /// <remarks>
-/// Bu dugme bir kolaylik degil, eksik bir kanaldi. Turksat Kablonet kullanicisi
-/// 0.1.6'nin calistigini bildirdi ama profil hala dogrulanmamis durumda: hangi
-/// adayin kazandigini bilmiyoruz, cunku gunlugu bize ulastirmanin tek yolu
-/// pencereden metni elle secip kopyalamakti. Bildirim geldi, veri gelmedi.
+/// Bu düğme bir kolaylık değil, eksik bir kanaldı. Türksat Kablonet kullanıcısı
+/// 0.1.6'nın çalıştığını bildirdi ama profil hâlâ doğrulanmamış durumda: hangi
+/// adayın kazandığını bilmiyoruz, çünkü günlüğü bize ulaştırmanın tek yolu
+/// pencereden metni elle seçip kopyalamaktı. Bildirim geldi, veri gelmedi.
 ///
-/// Rapor bu yuzden gunlugun yaninda ORTAM OZETINI de tasimak zorunda: "su aday
-/// calisti" satirini okuyup hangi profil ve hangi surumle oldugunu bilmeden
-/// profile isleyemiyoruz. Test tam da o alanlarin kaybolmadigini bekliyor.
+/// Rapor bu yüzden günlüğün yanında ORTAM ÖZETİNİ de taşımak zorunda: "şu aday
+/// çalıştı" satırını okuyup hangi profil ve hangi sürümle olduğunu bilmeden
+/// profile işleyemiyoruz. Test tam da o alanların kaybolmadığını bekliyor.
 /// </remarks>
 public sealed class ReportTests
 {
@@ -24,8 +24,8 @@ public sealed class ReportTests
         string? rapor = null;
         Exception? hata = null;
 
-        // MainViewModel WPF baglamina bagli (ObservableCollection, Dispatcher),
-        // bu yuzden STA is parcaciginda kuruluyor.
+        // MainViewModel WPF bağlamına bağlı (ObservableCollection, Dispatcher),
+        // bu yüzden STA iş parçacığında kuruluyor.
         var thread = new Thread(() =>
         {
             try
@@ -46,13 +46,13 @@ public sealed class ReportTests
         Assert.Null(hata);
         Assert.NotNull(rapor);
 
-        // Paylasim uyarisi: kullanici dosyayi foruma koymadan once icinde ne
-        // oldugunu bilmeli. Kaybolursa rapor sessizce bir gizlilik sorunu olur.
+        // Paylaşım uyarısı: kullanıcı dosyayı foruma koymadan önce içinde ne
+        // olduğunu bilmeli. Kaybolursa rapor sessizce bir gizlilik sorunu olur.
         Assert.Contains("hicbir yere gonderilmedi", rapor, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Paylasmadan once", rapor, StringComparison.OrdinalIgnoreCase);
 
-        // Teshis icin gereken alanlar. Biri eksikse gelen rapor yine
-        // "calisti/calismadi"dan ibaret kalir ve profile islenemez.
+        // Teşhis için gereken alanlar. Biri eksikse gelen rapor yine
+        // "çalıştı/çalışmadı"dan ibaret kalır ve profile işlenemez.
         foreach (var alan in new[]
                  {
                      "Tarih", "ZapretTR", "Motor", "Windows",
@@ -63,16 +63,16 @@ public sealed class ReportTests
             Assert.Contains(alan, rapor, StringComparison.Ordinal);
         }
 
-        // MAKINENIN OLCULEN DURUMU.
+        // MAKİNENİN ÖLÇÜLEN DURUMU.
         //
-        // Yukaridaki alanlarin hepsi gorunum modelinin kendi BILDIGI seyler ve
-        // "olmadi" bildirimlerinin cogunda hicbiri yanlis degil. Yanlis olan sey
-        // gorunum modelinin bakmadigi yerde duruyor: yonetici yetkisi yok, dosya
-        // eksik, servis kurulu ama durmus, sistem DNS'i bizde asili kalmis.
+        // Yukarıdaki alanların hepsi görünüm modelinin kendi BİLDİĞİ şeyler ve
+        // "olmadı" bildirimlerinin çoğunda hiçbiri yanlış değil. Yanlış olan şey
+        // görünüm modelinin bakmadığı yerde duruyor: yönetici yetkisi yok, dosya
+        // eksik, servis kurulu ama durmuş, sistem DNS'i bizde asılı kalmış.
         //
-        // Ozellikle onemli olan durum: kullanici bilgisayari yeniden baslatip
-        // uygulamayi YENI actiysa gunluk neredeyse bos oluyor ve raporun geri
-        // kalani "calismadi" cumlesine hicbir sey eklemiyordu.
+        // Özellikle önemli olan durum: kullanıcı bilgisayarı yeniden başlatıp
+        // uygulamayı YENİ açtıysa günlük neredeyse boş oluyor ve raporun geri
+        // kalanı "çalışmadı" cümlesine hiçbir şey eklemiyordu.
         foreach (var bolum in new[]
                  {
                      "Makine durumu", "Yonetici yetkisi", "Kurulum dosyalari",

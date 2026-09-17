@@ -4,35 +4,35 @@ using System.Text.Json.Serialization;
 namespace ZapretTr.Core.Profiles;
 
 /// <summary>
-/// winws komutunun bagimsiz bolumleri. Her bolum kendi <c>--filter-*</c> ifadesine
-/// sahiptir ve nihai komutta <c>--new</c> ile ayrilir.
+/// winws komutunun bağımsız bölümleri. Her bölüm kendi <c>--filter-*</c> ifadesine
+/// sahiptir ve nihai komutta <c>--new</c> ile ayrılır.
 /// </summary>
 /// <remarks>
-/// Bolumlerin ayri olmasi kozmetik degil: calisan strateji hem ISP'nin hem hedef
-/// sunucunun fonksiyonu. Ornegin <c>--dpi-desync-fooling=md5sig</c> yalnizca sunucu
-/// TCP MD5 secenegini reddettiginde ise yarar, yani ayni ISP'de bir hedefte calisip
-/// digerinde calismayabilir. Bu yuzden her bolum bagimsiz test edilir ve bagimsiz
-/// kazanani olur.
+/// Bölümlerin ayrı olması kozmetik değil: çalışan strateji hem İSS'nin hem hedef
+/// sunucunun işlevi. Örneğin <c>--dpi-desync-fooling=md5sig</c> yalnızca sunucu
+/// TCP MD5 seçeneğini reddettiğinde işe yarar, yani aynı İSS'de bir hedefte çalışıp
+/// diğerinde çalışmayabilir. Bu yüzden her bölüm bağımsız test edilir ve bağımsız
+/// kazananı olur.
 /// </remarks>
 [JsonConverter(typeof(StrategySectionJsonConverter))]
 public enum StrategySection
 {
-    /// <summary>Duz HTTP. SNI yok, Host basligi acikta -- 443'ten farkli strateji gerektirir.</summary>
+    /// <summary>Düz HTTP. SNI yok, Host başlığı açıkta; 443'ten farklı strateji gerektirir.</summary>
     Tcp80,
 
-    /// <summary>TLS uzerinden HTTPS. Asil savas alani.</summary>
+    /// <summary>TLS üzerinden HTTPS. Asıl savaş alanı.</summary>
     Tcp443,
 
-    /// <summary>QUIC / HTTP3. UDP tasima katmaninda parcalanamaz, bu yuzden secenekler dar.</summary>
+    /// <summary>QUIC / HTTP3. UDP taşıma katmanında parçalanamaz, bu yüzden seçenekler dar.</summary>
     Quic,
 
-    /// <summary>Discord sesli gorusme (discord + STUN). TCP tarafindan tamamen bagimsiz.</summary>
+    /// <summary>Discord sesli görüşme (discord + STUN). TCP tarafından tamamen bağımsız.</summary>
     DiscordVoice,
 }
 
 public static class StrategySectionExtensions
 {
-    /// <summary>JSON profillerinde kullanilan kanonik ad.</summary>
+    /// <summary>JSON profillerinde kullanılan kanonik ad.</summary>
     public static string ToJsonName(this StrategySection section) => section switch
     {
         StrategySection.Tcp80 => "tcp80",
@@ -43,8 +43,8 @@ public static class StrategySectionExtensions
     };
 
     /// <summary>
-    /// Bu bolumun winws komutundaki filtre ifadesi. Nihai komutta stratejinin
-    /// hemen onune yazilir.
+    /// Bu bölümün winws komutundaki filtre ifadesi. Nihai komutta stratejinin
+    /// hemen önüne yazılır.
     /// </summary>
     public static string ToWinwsFilter(this StrategySection section) => section switch
     {
@@ -69,8 +69,8 @@ public static class StrategySectionExtensions
 }
 
 /// <summary>
-/// Bolum adlarini JSON'daki kanonik hallerine baglar. Varsayilan enum
-/// donusturucusu "discord-voice" gibi tireli adlari karsilayamadigi icin elle yazildi.
+/// Bölüm adlarını JSON'daki kanonik hâllerine bağlar. Varsayılan enum
+/// dönüştürücüsü "discord-voice" gibi tireli adları karşılayamadığı için elle yazıldı.
 /// </summary>
 public sealed class StrategySectionJsonConverter : JsonConverter<StrategySection>
 {

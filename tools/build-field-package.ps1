@@ -1,26 +1,26 @@
-<#
+﻿<#
 .SYNOPSIS
-    Saha testi paketini uretir: baskasinin makinesinde hicbir sey kurmadan
-    calisacak, kendi kendine yeten bir klasor ve zip.
+    Saha testi paketini üretir: başkasının makinesinde hiçbir şey kurmadan
+    çalışacak, kendi kendine yeten bir klasör ve zip.
 
 .DESCRIPTION
-    Paket duzeni kasitli. Uygulama calisma dosyalarini once KENDI YANINDA arar
-    (VendorPaths ve ProfileStore boyle yaziliyor), depo agacinda degil. Yani:
+    Paket düzeni kasıtlı. Uygulama çalışma dosyalarını önce KENDİ YANINDA arar
+    (VendorPaths ve ProfileStore böyle yazılıyor), depo ağacında değil. Yani:
 
         zapret-tr-test.exe
-        profiles/          <- ISS profilleri, merdiven, hedefler
-        zapret-winws/      <- winws.exe ve bagimliliklari
+        profiles/          <- İSS profilleri, merdiven, hedefler
+        zapret-winws/      <- winws.exe ve bağımlılıkları
 
-    zapret-winws adi onemli: VendorPaths tam olarak bu klasor adina bakiyor.
+    zapret-winws adı önemli: VendorPaths tam olarak bu klasör adına bakıyor.
 
-    Pakete .pdb dosyalari girmez; hata ayiklama sembollerini ucuncu bir kisiye
-    gondermenin bir anlami yok.
+    Pakete .pdb dosyaları girmez; hata ayıklama sembollerini üçüncü bir kişiye
+    göndermenin bir anlamı yok.
 
 .PARAMETER OutputDirectory
-    Paketin uretilecegi dizin. Varsayilan: depo kokunde 'dist'.
+    Paketin üretileceği dizin. Varsayılan: depo kökünde 'dist'.
 
 .PARAMETER SkipPublish
-    dotnet publish adimini atlar (zaten yayinlanmis bir cikti varsa).
+    dotnet publish adımını atlar (zaten yayımlanmış bir çıktı varsa).
 #>
 [CmdletBinding()]
 param(
@@ -44,7 +44,7 @@ Write-Host ''
 Write-Host 'ZapretTR - saha testi paketi' -ForegroundColor Cyan
 Write-Host ''
 
-# --- Onkosullar ---------------------------------------------------------------
+# --- Ön koşullar --------------------------------------------------------------
 if (-not (Test-Path (Join-Path $VendorDir 'winws.exe'))) {
     throw "vendor/zapret-winws/winws.exe yok. Once tools/fetch-upstream.ps1 calistirin."
 }
@@ -57,7 +57,7 @@ if (-not (Test-Path (Join-Path $DnsCryptDir 'dnscrypt-proxy.exe'))) {
     throw "vendor/dnscrypt-proxy/dnscrypt-proxy.exe yok. tools/fetch-upstream.ps1 calistirin."
 }
 
-# --- Yayinla ------------------------------------------------------------------
+# --- Yayımla ------------------------------------------------------------------
 if (-not $SkipPublish) {
     Write-Host '  yayinlaniyor (tek dosya, kendi kendine yeten)...'
     $projectPath = Join-Path $RepoRoot 'src/ZapretTr.Prober.Cli'
@@ -68,10 +68,10 @@ if (-not $SkipPublish) {
 $exePath = Join-Path $PublishDir 'zapret-tr-test.exe'
 if (-not (Test-Path $exePath)) { throw "Yayin ciktisi bulunamadi: $exePath" }
 
-# msquic.dll exe'nin YANINDA gitmek ZORUNDA. Tek dosya paketine gomuldugunde
-# calisma aninda bulunamiyor ve QuicConnection.IsSupported false donuyor; belirti
-# "QUIC bu makinede desteklenmiyor (msquic yok)" ve QUIC bolumu sessizce
-# olculemiyor. Bu paket bir kez bu sekilde dagitildi ve QUIC verisi hic gelmedi.
+# msquic.dll exe'nin YANINDA gitmek ZORUNDA. Tek dosya paketine gömüldüğünde
+# çalışma anında bulunamıyor ve QuicConnection.IsSupported false dönüyor; belirti
+# "QUIC bu makinede desteklenmiyor (msquic yok)" ve QUIC bölümü sessizce
+# ölçülemiyor. Bu paket bir kez bu şekilde dağıtıldı ve QUIC verisi hiç gelmedi.
 $msQuicPath = Join-Path $PublishDir 'msquic.dll'
 if (-not (Test-Path $msQuicPath)) {
     throw "msquic.dll yayin ciktisinda yok: $msQuicPath`nBu dosya olmadan paket QUIC bolumunu olcemez. Directory.Build.targets icindeki MsQuicTekDosyaDisindaKalsin hedefi calismamis olabilir."
@@ -85,24 +85,24 @@ Write-Host '  dosyalar kopyalaniyor...'
 Copy-Item $exePath (Join-Path $PackageDir 'zapret-tr-test.exe')
 Copy-Item $msQuicPath (Join-Path $PackageDir 'msquic.dll')
 
-# profiles/ ve zapret-winws/ uygulamanin YANINDA olmali.
+# profiles/ ve zapret-winws/ uygulamanın YANINDA olmalı.
 Copy-Item $ProfilesDir (Join-Path $PackageDir 'profiles') -Recurse
 Copy-Item $VendorDir (Join-Path $PackageDir 'zapret-winws') -Recurse
 
-# dnscrypt-proxy zapret-winws'in KARDESI dizinde olmali; VendorPaths onu boyle
-# ariyor. Ic ice koymak sessizce bulunamamasina yol acardi.
+# dnscrypt-proxy, zapret-winws'in KARDEŞ dizininde olmalı; VendorPaths onu böyle
+# arıyor. İç içe koymak sessizce bulunamamasına yol açardı.
 Copy-Item $DnsCryptDir (Join-Path $PackageDir 'dnscrypt-proxy') -Recurse
 
-# --- Calistirma kisayollari ---------------------------------------------------
-# Exe'nin manifesti requireAdministrator; cmd bunu dogrudan calistiramadigi icin
-# .bat kendini once yukseltiyor. Aksi halde kullanici "erisim engellendi" gorur.
+# --- Çalıştırma kısayolları ---------------------------------------------------
+# Exe'nin manifesti requireAdministrator; cmd bunu doğrudan çalıştıramadığı için
+# .bat kendini önce yükseltiyor. Aksi hâlde kullanıcı "erişim engellendi" görür.
 #
-# SONUC MESAJI CIKIS KODUNA BAKIYOR. Eskiden betik testten sonra HER DURUMDA
-# "Test bitti. Sonuc dosyasi: zapret-tr-rapor.json" yaziyordu. Gercek kullanici
-# (issue #1, 2026-09-16) onay sorusunu bos gecti, test hic baslamadi, betik yine
-# "dosyayi gonderin" dedi ve dosya yoktu. Ctrl+C ile iptalde de aynisiydi.
-# zapret-tr-test.exe'nin kodlari: 0 ve 1 rapor yazildi, 5 hata raporu yazildi;
-# 2 (yetki), 3 (paket eksik), 4 (arguman), 130 (iptal) rapor YOK.
+# SONUÇ MESAJI ÇIKIŞ KODUNA BAKIYOR. Eskiden betik testten sonra HER DURUMDA
+# "Test bitti. Sonuc dosyasi: zapret-tr-rapor.json" yazıyordu. Gerçek kullanıcı
+# (issue #1, 2026-09-16) onay sorusunu boş geçti, test hiç başlamadı, betik yine
+# "dosyayi gonderin" dedi ve dosya yoktu. Ctrl+C ile iptalde de aynısıydı.
+# zapret-tr-test.exe'nin kodları: 0 ve 1 rapor yazıldı, 5 hata raporu yazıldı;
+# 2 (yetki), 3 (paket eksik), 4 (argüman), 130 (iptal) rapor YOK.
 $startBat = @'
 @echo off
 chcp 65001 >nul
@@ -154,9 +154,9 @@ echo ============================================================
 echo.
 pause
 '@
-# CRLF ZORUNLU. Here-string'in satir sonlari bu .ps1 dosyasininkinden geliyor ve
-# depoda LF (yerel calisma kopyasi da LF olabiliyor). cmd, LF satir sonlu betiklerde
-# goto/etiket aramasini guvenilir yapmiyor; bu betik ise sonuc mesajini goto ile seciyor.
+# CRLF ZORUNLU. Here-string'in satır sonları bu .ps1 dosyasınınkinden geliyor ve
+# depoda LF (yerel çalışma kopyası da LF olabiliyor). cmd, LF satır sonlu betiklerde
+# goto/etiket aramasını güvenilir yapmıyor; bu betik ise sonuç mesajını goto ile seçiyor.
 Set-Content (Join-Path $PackageDir 'TESTI-BASLAT.bat') ($startBat -replace "`r?`n", "`r`n") -Encoding ascii
 
 $cleanBat = @'
@@ -179,7 +179,7 @@ pause
 '@
 Set-Content (Join-Path $PackageDir 'TEMIZLIK.bat') ($cleanBat -replace "`r?`n", "`r`n") -Encoding ascii
 
-# --- Okuma dosyasi ------------------------------------------------------------
+# --- Okuma dosyası ------------------------------------------------------------
 $readmeSource = Join-Path $PSScriptRoot 'field-package-readme.txt'
 if (-not (Test-Path $readmeSource)) { throw "Aciklama dosyasi yok: $readmeSource" }
 Copy-Item $readmeSource (Join-Path $PackageDir 'OKU-BENI.txt')

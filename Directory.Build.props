@@ -1,12 +1,12 @@
 <Project>
 
   <!--
-    Surum TEK yerde. Onceden yalnizca installer/setup.iss biliyordu; uretilen
-    exe'lerin uzerinde hicbir surum bilgisi yoktu, dolayisiyla kullanicinin
-    "hangi surumu calistiriyorum" sorusunun makinede cevabi yoktu.
+    Sürüm TEK yerde. Önceden yalnızca installer/setup.iss biliyordu; üretilen
+    exe'lerin üzerinde hiçbir sürüm bilgisi yoktu, dolayısıyla kullanıcının
+    "hangi sürümü çalıştırıyorum" sorusunun makinede cevabı yoktu.
 
-    Yayin akisi bunu tag'den geciyor: dotnet'e -p:Version=, ISCC'ye /DAppVersion=.
-    Ikisi de verilmezse buradaki deger kullanilir.
+    Yayın akışı bunu etiketten geçiriyor: dotnet'e -p:Version=, ISCC'ye /DAppVersion=.
+    İkisi de verilmezse buradaki değer kullanılır.
   -->
   <PropertyGroup>
     <Version Condition="'$(Version)' == ''">0.2.7</Version>

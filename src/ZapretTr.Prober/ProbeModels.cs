@@ -2,72 +2,72 @@ using ZapretTr.Core.Profiles;
 
 namespace ZapretTr.Prober;
 
-/// <summary>Bir hedefin hangi protokolle sinanacagi.</summary>
+/// <summary>Bir hedefin hangi protokolle sınanacağı.</summary>
 /// <remarks>
-/// Bolume gore secilir. Yanlis secim sessizce yanlis sonuc uretir: duz HTTP sunan
-/// bir hedefe HTTPS ile gitmek onu "engelli" gosterir, QUIC hedefini TCP uzerinden
-/// olcmek ise QUIC'i hic olcmemis olur.
+/// Bölüme göre seçilir. Yanlış seçim sessizce yanlış sonuç üretir: düz HTTP sunan
+/// bir hedefe HTTPS ile gitmek onu "engelli" gösterir, QUIC hedefini TCP üzerinden
+/// ölçmek ise QUIC'i hiç ölçmemiş olur.
 /// </remarks>
 public enum ProbeMode
 {
-    /// <summary>Duz HTTP, 80 portu.</summary>
+    /// <summary>Düz HTTP, 80 portu.</summary>
     PlainHttp,
 
-    /// <summary>TLS 1.2 zorlanir. Sertifika DPI'a acik gorunur; en cok mudahale edilen durum.</summary>
+    /// <summary>TLS 1.2 zorlanır. Sertifika DPI'a açık görünür; en çok müdahale edilen durum.</summary>
     Tls12,
 
-    /// <summary>TLS 1.3 zorlanir. ServerHello sifreli oldugu icin DPI'in gordugu sey farkli.</summary>
+    /// <summary>TLS 1.3 zorlanır. ServerHello şifreli olduğu için DPI'ın gördüğü şey farklı.</summary>
     Tls13,
 
-    /// <summary>HTTP/3 zorlanir. QUIC'i gercekten olcmenin tek yolu.</summary>
+    /// <summary>HTTP/3 zorlanır. QUIC'i gerçekten ölçmenin tek yolu.</summary>
     Http3,
 }
 
 /// <summary>Test edilecek hedef.</summary>
-/// <param name="Host">Alan adi.</param>
-/// <param name="Label">Kullaniciya gosterilen ad.</param>
-/// <param name="Category">Hedef sinifi: genel-web, youtube, discord, discord-voice.</param>
-/// <param name="Section">Bu hedefin hangi bolumu test ettigi.</param>
+/// <param name="Host">Alan adı.</param>
+/// <param name="Label">Kullanıcıya gösterilen ad.</param>
+/// <param name="Category">Hedef sınıfı: genel-web, youtube, discord, discord-voice.</param>
+/// <param name="Section">Bu hedefin hangi bölümü test ettiği.</param>
 /// <param name="Port">
-/// Yalnizca <see cref="StrategySection.DiscordVoice"/> bolumunde anlamli: STUN
-/// sunucusunun portu. Verilmezse Google'in kullandigi 19302 varsayilir. Alan
-/// gerekli oldu cunku discord-voice bolumune KONTROL hedefi eklenebilmesi icin
-/// baska bir isletmecinin sunucusu gerekiyordu ve Google disindaki STUN
-/// sunuculari 3478'i kullaniyor. tcp80/tcp443/quic bolumlerinde port zaten
-/// bolumun kendisinden belli.
+/// Yalnızca <see cref="StrategySection.DiscordVoice"/> bölümünde anlamlı: STUN
+/// sunucusunun portu. Verilmezse Google'ın kullandığı 19302 varsayılır. Alan
+/// gerekli oldu, çünkü discord-voice bölümüne KONTROL hedefi eklenebilmesi için
+/// başka bir işletmecinin sunucusu gerekiyordu ve Google dışındaki STUN
+/// sunucuları 3478'i kullanıyor. tcp80/tcp443/quic bölümlerinde port zaten
+/// bölümün kendisinden belli.
 /// </param>
 public sealed record ProbeTarget(
     string Host, string Label, string Category, StrategySection Section, int? Port = null);
 
-/// <summary>Bir hedefin winws kapaliyken erisilebilirlik durumu.</summary>
+/// <summary>Bir hedefin winws kapalıyken erişilebilirlik durumu.</summary>
 public enum BaselineStatus
 {
-    /// <summary>Zaten aciliyor -- strateji testinde kullanilamaz.</summary>
+    /// <summary>Zaten açılıyor; strateji testinde kullanılamaz.</summary>
     Accessible,
 
-    /// <summary>Engelli. Test icin anlamli hedef.</summary>
+    /// <summary>Engelli. Test için anlamlı hedef.</summary>
     Blocked,
 
     /// <summary>
-    /// Baglanti kuruldu ama karsi taraf engel sayfasi dondurdu.
+    /// Bağlantı kuruldu ama karşı taraf engel sayfası döndürdü.
     /// </summary>
     /// <remarks>
-    /// Bu DPI engellemesi DEGIL: trafik zaten dogru sunucuya gitmiyor, cogunlukla
-    /// DNS yonlendirmesi yuzunden engel sunucusuna gidiyor. zapret paketleri
-    /// kurcalayarak bunu cozemez -- cozum DNS tarafinda (DoH/DoT). Bu hedefler
-    /// strateji aramasindan CIKARILIR, yoksa hicbiri calismayacak yuzlerce aday
-    /// bosuna denenir.
+    /// Bu DPI engellemesi DEĞİL: trafik zaten doğru sunucuya gitmiyor, çoğunlukla
+    /// DNS yönlendirmesi yüzünden engel sunucusuna gidiyor. zapret paketleri
+    /// kurcalayarak bunu çözemez; çözüm DNS tarafında (DoH/DoT). Bu hedefler
+    /// strateji aramasından ÇIKARILIR, yoksa hiçbiri çalışmayacak yüzlerce aday
+    /// boşuna denenir.
     /// </remarks>
     DnsRedirected,
 
-    /// <summary>Cozumlenemedi ya da baska bir sebeple karar verilemedi.</summary>
+    /// <summary>Çözümlenemedi ya da başka bir sebeple karar verilemedi.</summary>
     Inconclusive,
 }
 
-/// <summary>Baseline taramasinin tek bir hedef icin sonucu.</summary>
+/// <summary>Baseline taramasının tek bir hedef için sonucu.</summary>
 public sealed record BaselineResult(ProbeTarget Target, BaselineStatus Status, string? Detail, string? ResolvedIp);
 
-/// <summary>Tek bir adayin tek bir hedefteki sonucu.</summary>
+/// <summary>Tek bir adayın tek bir hedefteki sonucu.</summary>
 public sealed record CandidateResult(
     string CandidateId,
     string Args,
@@ -78,30 +78,30 @@ public sealed record CandidateResult(
     string? Detail,
     TimeSpan Duration);
 
-/// <summary>Bir bolumun kazanani.</summary>
+/// <summary>Bir bölümün kazananı.</summary>
 public sealed record SectionWinner(
     StrategySection Section,
     string CandidateId,
     string Args,
     IReadOnlyList<string> VerifiedCategories);
 
-/// <summary>Aramanin hangi asamada oldugu.</summary>
+/// <summary>Aramanın hangi aşamada olduğu.</summary>
 public enum ProbeTier
 {
-    /// <summary>winws kapaliyken hangi hedeflerin gercekten engelli oldugunu belirleme.</summary>
+    /// <summary>winws kapalıyken hangi hedeflerin gerçekten engelli olduğunu belirleme.</summary>
     Baseline,
 
-    /// <summary>Secilen ISP'nin kendi profili.</summary>
+    /// <summary>Seçilen İSS'nin kendi profili.</summary>
     IspProfile,
 
-    /// <summary>Komsu TR profilleri.</summary>
+    /// <summary>Komşu TR profilleri.</summary>
     Neighbours,
 
     /// <summary>Genel kombinatoryal arama.</summary>
     GenericLadder,
 }
 
-/// <summary>Arayuzun ilerleme cubugunu besleyen olay.</summary>
+/// <summary>Arayüzün ilerleme çubuğunu besleyen olay.</summary>
 public sealed record ProbeProgress(
     ProbeTier Tier,
     string TierLabel,
@@ -112,7 +112,7 @@ public sealed record ProbeProgress(
     public double Fraction => Total <= 0 ? 0 : Math.Clamp((double)Completed / Total, 0, 1);
 }
 
-/// <summary>Testin tamaminin sonucu.</summary>
+/// <summary>Testin tamamının sonucu.</summary>
 public sealed record ProbeReport(
     DateTimeOffset StartedAt,
     TimeSpan Duration,
@@ -123,10 +123,10 @@ public sealed record ProbeReport(
     IReadOnlyList<CandidateResult> Attempts,
     IReadOnlyList<SectionWinner> Winners)
 {
-    /// <summary>Hicbir bolumde kazanan bulunamadiysa true.</summary>
+    /// <summary>Hiçbir bölümde kazanan bulunamadıysa true.</summary>
     public bool IsEmpty => Winners.Count == 0;
 
-    /// <summary>Kazananlari winws komut kurucusunun bekledigi sozluge cevirir.</summary>
+    /// <summary>Kazananları winws komut kurucusunun beklediği sözlüğe çevirir.</summary>
     public IReadOnlyDictionary<StrategySection, string> ToWinnerMap()
         => Winners.ToDictionary(w => w.Section, w => w.Args);
 }

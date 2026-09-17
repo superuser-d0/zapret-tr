@@ -7,11 +7,11 @@ namespace ZapretTr.Core.Engine;
 /// <param name="WinwsInstalled">winws servisi kurulu mu.</param>
 /// <param name="DnsInstalled">dnscrypt-proxy servisi kurulu mu.</param>
 /// <param name="WinwsRunning">
-/// Servis su anda CALISIYOR mu. Kurulu olmak calisiyor olmak demek degil.
+/// Servis şu anda ÇALIŞIYOR mu. Kurulu olmak çalışıyor olmak demek değil.
 /// </param>
 /// <param name="WinwsPaused">
-/// Servis kullanici tarafindan DURAKLATILDI mi: kurulu, acilista baslamayacak
-/// sekilde ayarli ve calismiyor. Bkz. <see cref="ServiceManager.PauseAsync"/>.
+/// Servis kullanıcı tarafından DURAKLATILDI mı: kurulu, açılışta başlamayacak
+/// şekilde ayarlı ve çalışmıyor. Bkz. <see cref="ServiceManager.PauseAsync"/>.
 /// </param>
 public sealed record ServiceStatus(
     bool WinwsInstalled, bool DnsInstalled, bool WinwsRunning = false, bool WinwsPaused = false)
@@ -19,51 +19,51 @@ public sealed record ServiceStatus(
     public bool AnyInstalled => WinwsInstalled || DnsInstalled;
 
     /// <summary>
-    /// Servis kurulu ama CALISMIYOR: koruma yok, ve kullanicinin haberi olmali.
+    /// Servis kurulu ama ÇALIŞMIYOR: koruma yok ve kullanıcının haberi olmalı.
     /// </summary>
     /// <remarks>
-    /// En tehlikeli durum bu. "Kurulu" ile "calisiyor" ayni sey sayildiginda
-    /// arayuz "servis modu aktif" deyip Baslat dugmesini kapatiyordu; koruma
-    /// yoktu ve kullanicinin yapabilecegi bir sey de yoktu. Gercek bir
-    /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+    /// En tehlikeli durum bu. "Kurulu" ile "çalışıyor" aynı şey sayıldığında
+    /// arayüz "SERVİS MODU AKTİF" deyip Başlat düğmesini kapatıyordu; koruma
+    /// yoktu ve kullanıcının yapabileceği bir şey de yoktu. Gerçek bir
+    /// kullanıcıda 0.1.9'dan 0.1.15'e yükseltmeden sonra yaşandı.
     ///
-    /// Kullanicinin kendi duraklattigi servis bu sayilmaz: orada koruma BILEREK
-    /// kapali ve "servis durmus" uyarisi yanlis alarm olurdu.
+    /// Kullanıcının kendi duraklattığı servis bu sayılmaz: orada koruma BİLEREK
+    /// kapalı ve "servis durmuş" uyarısı yanlış alarm olurdu.
     /// </remarks>
     public bool InstalledButStopped => WinwsInstalled && !WinwsRunning && !WinwsPaused;
 }
 
 /// <summary>
-/// ZapretTR'yi Windows servisi olarak kurar ve kaldirir.
+/// ZapretTR'yi Windows servisi olarak kurar ve kaldırır.
 /// </summary>
 /// <remarks>
-/// Servisler winws.exe ve dnscrypt-proxy.exe'yi DOGRUDAN calistirir; araya
-/// ZapretTR uygulamasi girmez. Boylece koruma, arayuz hic acilmasa da acilista
-/// devrede oluyor -- kullanicinin istedigi sey de bu: "bir kere ayarla, unut".
+/// Servisler winws.exe ve dnscrypt-proxy.exe'yi DOĞRUDAN çalıştırır; araya
+/// ZapretTR uygulaması girmez. Böylece koruma, arayüz hiç açılmasa da açılışta
+/// devrede oluyor; kullanıcının istediği şey de bu: "bir kere ayarla, unut".
 ///
-/// DNS yonlendirmesi servis kuruldugunda <see cref="DnsBackupOwner.Service"/>
-/// sahipligiyle yapiliyor. Bu ayrim onemli: uygulama kapanirken kendi yaptigi
-/// yonlendirmeyi geri alir ama servisinkine dokunmaz. Dokunsaydi kullanici
-/// "otomatik baslatmayi kurdum" der, uygulamayi kapatir ve DNS eski haline
-/// donerdi.
+/// DNS yönlendirmesi servis kurulduğunda <see cref="DnsBackupOwner.Service"/>
+/// sahipliğiyle yapılıyor. Bu ayrım önemli: uygulama kapanırken kendi yaptığı
+/// yönlendirmeyi geri alır ama servisinkine dokunmaz. Dokunsaydı kullanıcı
+/// "otomatik başlatmayı kurdum" der, uygulamayı kapatır ve DNS eski hâline
+/// dönerdi.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class ServiceManager
 {
-    /// <summary>winws'i calistiran servisin adi.</summary>
+    /// <summary>winws'i çalıştıran servisin adı.</summary>
     public const string WinwsServiceName = "ZapretTR";
 
-    /// <summary>dnscrypt-proxy'yi calistiran servisin adi.</summary>
+    /// <summary>dnscrypt-proxy'yi çalıştıran servisin adı.</summary>
     public const string DnsServiceName = "ZapretTR-DNS";
 
-    /// <summary>Servislerin kurulu VE calisir olup olmadigini doner.</summary>
+    /// <summary>Servislerin kurulu VE çalışır olup olmadığını döner.</summary>
     /// <remarks>
-    /// "Kurulu" ile "calisiyor" ayri sorular ve ikisini birbirine karistirmak
-    /// kullaniciyi kilitliyordu: yukseltmede servis geri kuruluyor ama
-    /// <c>sc start</c> basarisiz olursa servis VAR ama DURMUS kaliyor. Arayuz
-    /// bunu "servis modu aktif" diye okuyup Baslat dugmesini kapatiyordu --
-    /// koruma yok, kullanicinin yapabilecegi de bir sey yok. Gercek bir
-    /// kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+    /// "Kurulu" ile "çalışıyor" ayrı sorular ve ikisini birbirine karıştırmak
+    /// kullanıcıyı kilitliyordu: yükseltmede servis geri kuruluyor ama
+    /// <c>sc start</c> başarısız olursa servis VAR ama DURMUŞ kalıyor. Arayüz
+    /// bunu "SERVİS MODU AKTİF" diye okuyup Başlat düğmesini kapatıyordu;
+    /// koruma yok, kullanıcının yapabileceği de bir şey yok. Gerçek bir
+    /// kullanıcıda 0.1.9'dan 0.1.15'e yükseltmeden sonra yaşandı.
     /// </remarks>
     public static async Task<ServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default)
     {
@@ -77,31 +77,31 @@ public static class ServiceManager
             WinwsPaused: winwsInstalled && !running && IsDemandStartQcOutput(winwsQc));
     }
 
-    /// <summary><c>sc qc</c> ciktisi servisin acilista KENDILIGINDEN baslamayacagini mi soyluyor.</summary>
+    /// <summary><c>sc qc</c> çıktısı servisin açılışta KENDİLİĞİNDEN başlamayacağını mı söylüyor.</summary>
     /// <remarks>
-    /// Duraklatmanin diskteki izi bu: <see cref="PauseAsync"/> servisi "demand"
-    /// baslangicina ceviriyor. Durum ayri bir dosyada tutulmuyor, cunku servisin
-    /// kendi ayari zaten gercegin ta kendisi -- dosya ile servis ayrisabilirdi.
+    /// Duraklatmanın diskteki izi bu: <see cref="PauseAsync"/> servisi "demand"
+    /// başlangıcına çeviriyor. Durum ayrı bir dosyada tutulmuyor, çünkü servisin
+    /// kendi ayarı zaten gerçeğin ta kendisi; dosya ile servis ayrışabilirdi.
     /// </remarks>
     public static bool IsDemandStartQcOutput(string scQcOutput)
         => scQcOutput.Contains("DEMAND_START", StringComparison.Ordinal);
 
     /// <summary>
-    /// Servisleri kurar ve baslatir.
+    /// Servisleri kurar ve başlatır.
     /// </summary>
-    /// <param name="vendor">Ikililerin yeri.</param>
-    /// <param name="winwsArguments">winws'e verilecek argumanlar.</param>
-    /// <param name="includeDns">Sifreli DNS servisi de kurulsun mu.</param>
+    /// <param name="vendor">İkililerin yeri.</param>
+    /// <param name="winwsArguments">winws'e verilecek argümanlar.</param>
+    /// <param name="includeDns">Şifreli DNS servisi de kurulsun mu.</param>
     /// <param name="startPaused">
-    /// Servisler DURAKLATILMIS olarak kurulsun mu: kayit yazilir ama hicbiri
-    /// baslatilmaz ve sistem DNS'ine dokunulmaz. Yukseltme bunu kullaniyor --
-    /// kullanici VPN icin duraklattiysa guncelleme korumayi habersizce geri
-    /// acmamali.
+    /// Servisler DURAKLATILMIŞ olarak kurulsun mu: kayıt yazılır ama hiçbiri
+    /// başlatılmaz ve sistem DNS'ine dokunulmaz. Yükseltme bunu kullanıyor;
+    /// kullanıcı VPN için duraklattıysa güncelleme korumayı habersizce geri
+    /// açmamalı.
     /// </param>
     /// <remarks>
-    /// Once varsa eskiler kaldirilir: ayni adla ikinci kez kurmaya calismak
-    /// hata verir ve kullanici "ayari degistirdim ama eskisi calisiyor" durumunda
-    /// kalirdi.
+    /// Önce varsa eskiler kaldırılır: aynı adla ikinci kez kurmaya çalışmak
+    /// hata verir ve kullanıcı "ayarı değiştirdim ama eskisi çalışıyor" durumunda
+    /// kalırdı.
     /// </remarks>
     public static async Task<IReadOnlyList<CleanupStep>> InstallAsync(
         VendorPaths vendor,
@@ -124,17 +124,17 @@ public static class ServiceManager
         var dnsYonlendirildi = false;
         var dnsServisiAyakta = false;
 
-        // Ayni adla ikinci kurulum hata verir; once temizle.
+        // Aynı adla ikinci kurulum hata verir; önce temizle.
         //
-        // DNS burada BILEREK geri alinmiyor: yeniden kurulumda yonlendirme yerinde
-        // kalir ve yeni servis ayaga kalkinca devam eder, arada kullanicinin
-        // engellenen adlari yeniden ISS'e sormasina gerek yok. Ama bunun bedeli
-        // metodun SONUNDA odeniyor -- asagidaki "yetim yonlendirme" bloguna bak.
+        // DNS burada BİLEREK geri alınmıyor: yeniden kurulumda yönlendirme yerinde
+        // kalır ve yeni servis ayağa kalkınca devam eder, arada kullanıcının
+        // engellenen adları yeniden İSS'e sormasına gerek yok. Ama bunun bedeli
+        // metodun SONUNDA ödeniyor; aşağıdaki "yetim yönlendirme" bloğuna bak.
         await UninstallAsync(restoreDns: false, cancellationToken).ConfigureAwait(false);
 
         // --- winws servisi ---
-        // sc, binPath icindeki tirnaklari kendi ayristirdigi icin ic tirnaklar
-        // kacisli yaziliyor; upstream'in service_create.cmd dosyasi da boyle yapiyor.
+        // sc, binPath içindeki tırnakları kendi ayrıştırdığı için iç tırnaklar
+        // kaçışlı yazılıyor; upstream'in service_create.cmd dosyası da böyle yapıyor.
         var winwsBin = $"\"{vendor.WinwsExe}\" {string.Join(' ', winwsArguments.Select(QuoteIfNeeded))}";
         var winwsStep = await CreateServiceAsync(
             WinwsServiceName, winwsBin, "ZapretTR DPI atlatma", start: !startPaused, cancellationToken)
@@ -178,22 +178,22 @@ public static class ServiceManager
 
                 steps.Add(dnsStep);
 
-                // SISTEM DNS'I, COZUMLEYICININ GERCEKTEN CEVAP VERDIGI
-                // DOGRULANMADAN CEVRILMEZ.
+                // SİSTEM DNS'İ, ÇÖZÜMLEYİCİNİN GERÇEKTEN CEVAP VERDİĞİ
+                // DOĞRULANMADAN ÇEVRİLMEZ.
                 //
-                // Bu kontrol uygulamanin kendi yolunda (DnsCryptRunner.StartAsync)
-                // bastan beri vardi, servis yolunda YOKTU: servis kurulur kurulmaz
-                // DNS 127.0.0.1'e ceviriliyordu -- "sc start" dusse bile. Sonuc,
-                // projedeki en kotu tablo: 127.0.0.1'i dinleyen kimse yok, makine
-                // hicbir adi cozemiyor, yani kullaniciya gore internet tamamen
-                // gitti. Ustelik bu yol acilistan acilista kalici: uygulama
-                // acilmadigi surece kurtarma (RecoverDnsIfNeeded) hic kosmuyor,
-                // dolayisiyla kullanici bilgisayari yeniden baslatinca durum
-                // duzelmiyor, PEKISIYOR.
+                // Bu kontrol uygulamanın kendi yolunda (DnsCryptRunner.StartAsync)
+                // baştan beri vardı, servis yolunda YOKTU: servis kurulur kurulmaz
+                // DNS 127.0.0.1'e çevriliyordu; "sc start" düşse bile. Sonuç,
+                // projedeki en kötü tablo: 127.0.0.1'i dinleyen kimse yok, makine
+                // hiçbir adı çözemiyor, yani kullanıcıya göre internet tamamen
+                // gitti. Üstelik bu yol açılıştan açılışa kalıcı: uygulama
+                // açılmadığı sürece kurtarma (RecoverDnsIfNeeded) hiç koşmuyor,
+                // dolayısıyla kullanıcı bilgisayarı yeniden başlatınca durum
+                // düzelmiyor, PEKİŞİYOR.
                 //
-                // Cevap gelmiyorsa servis geri sokuluyor: acilista her seferinde
-                // ayaga kalkip DNS'i kapmaya calisan olu bir servis birakmak,
-                // hic kurmamaktan kotu.
+                // Cevap gelmiyorsa servis geri sökülüyor: açılışta her seferinde
+                // ayağa kalkıp DNS'i kapmaya çalışan ölü bir servis bırakmak,
+                // hiç kurmamaktan kötü.
                 if (!dnsStep.Succeeded)
                 {
                     await RunScAsync(["delete", DnsServiceName], cancellationToken).ConfigureAwait(false);
@@ -203,9 +203,9 @@ public static class ServiceManager
                 }
                 else if (startPaused)
                 {
-                    // Duraklatilmis kurulum: cozumleyici calismiyor, DNS'e dokunulmaz.
-                    // Asagidaki yetim yonlendirme blogu onceki servisin yonlendirmesini
-                    // de geri aliyor.
+                    // Duraklatılmış kurulum: çözümleyici çalışmıyor, DNS'e dokunulmaz.
+                    // Aşağıdaki yetim yönlendirme bloğu önceki servisin yönlendirmesini
+                    // de geri alıyor.
                 }
                 else if (!await WaitForLocalResolverAsync(
                              LocalResolverStartupTimeout, cancellationToken).ConfigureAwait(false))
@@ -222,8 +222,8 @@ public static class ServiceManager
                 {
                     dnsServisiAyakta = true;
 
-                    // Servis DNS'i devraliyor: sahiplik "service" olarak
-                    // isaretleniyor ki uygulama kapanirken geri almasin.
+                    // Servis DNS'i devralıyor: sahiplik "service" olarak
+                    // işaretleniyor ki uygulama kapanırken geri almasın.
                     try
                     {
                         var changed = await SystemDnsManager
@@ -241,16 +241,16 @@ public static class ServiceManager
             }
         }
 
-        // YETIM YONLENDIRME: ONCEKI SERVISIN DNS'I, YENI SERVIS OLMADAN.
+        // YETİM YÖNLENDİRME: ÖNCEKİ SERVİSİN DNS'İ, YENİ SERVİS OLMADAN.
         //
-        // Yukaridaki temizlik eski ZapretTR-DNS servisini sildi ama yonlendirmeyi
-        // yerinde birakti. Yeni kurulum DNS'i yeniden devralmadiysa -- sifreli DNS
-        // bu sefer kapali secildi, yapilandirma dosyasi yok, servis baslamadi ya
-        // da cevap vermedi -- sistem DNS'i 127.0.0.1'i gosteriyor ve orada dinleyen
-        // KIMSE YOK. Eskiden bu durumda "Sistem DNS'ine DOKUNULMADI" yaziliyordu;
-        // cumle dogruydu ama makine hicbir adi cozemiyordu ve durum acilistan
-        // acilisa kaliciydi. Tetikleyen yol sik: servis kurulu ama durmussa arayuz
-        // "Servis Olarak Yukle"yi yeniden gosteriyor ve kullanici ona basiyor.
+        // Yukarıdaki temizlik eski ZapretTR-DNS servisini sildi ama yönlendirmeyi
+        // yerinde bıraktı. Yeni kurulum DNS'i yeniden devralmadıysa (şifreli DNS
+        // bu sefer kapalı seçildi, yapılandırma dosyası yok, servis başlamadı ya
+        // da cevap vermedi) sistem DNS'i 127.0.0.1'i gösteriyor ve orada dinleyen
+        // KİMSE YOK. Eskiden bu durumda "Sistem DNS'ine DOKUNULMADI" yazılıyordu;
+        // cümle doğruydu ama makine hiçbir adı çözemiyordu ve durum açılıştan
+        // açılışa kalıcıydı. Tetikleyen yol sık: servis kurulu ama durmuşsa arayüz
+        // "Servis Olarak Yükle"yi yeniden gösteriyor ve kullanıcı ona basıyor.
         if (!dnsYonlendirildi && SystemDnsManager.IsOwnedByService)
         {
             try
@@ -265,10 +265,10 @@ public static class ServiceManager
             }
         }
 
-        // Servis cevap veriyor ama yonlendirme yapilamadiysa (en olasi sebep: o an
-        // internete cikan bir kart yoktu) is DNS bekcisine birakiliyor. "Askida"
-        // isareti olmadan bekci yedek gormedigi icin hicbir sey yapmaz ve servis
-        // kurulu oldugu halde DNS hic yonlendirilmemis kalirdi.
+        // Servis cevap veriyor ama yönlendirme yapılamadıysa (en olası sebep: o an
+        // internete çıkan bir kart yoktu) iş DNS bekçisine bırakılıyor. "Askıda"
+        // işareti olmadan bekçi yedek görmediği için hiçbir şey yapmaz ve servis
+        // kurulu olduğu hâlde DNS hiç yönlendirilmemiş kalırdı.
         if (!dnsYonlendirildi)
         {
             if (dnsServisiAyakta)
@@ -285,23 +285,23 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// Baslatma istegi basarili donen winws servisinin gercekten CALISIR kaldigini dogrular;
-    /// kalmadiysa surucuyu bosaltip bir kez yeniden dener.
+    /// Başlatma isteği başarılı dönen winws servisinin gerçekten ÇALIŞIR kaldığını doğrular;
+    /// kalmadıysa sürücüyü boşaltıp bir kez yeniden dener.
     /// </summary>
-    /// <param name="startStep">Baslatma isteginin sonucu.</param>
-    /// <param name="basariEylemi">Basarida adimda yazacak eylem, ornegin "kuruldu ve baslatildi".</param>
-    /// <param name="basarisizlikEylemi">Basarisizlikta adimda yazacak eylem.</param>
+    /// <param name="startStep">Başlatma isteğinin sonucu.</param>
+    /// <param name="basariEylemi">Başarıda adımda yazacak eylem, örneğin "kuruldu ve başlatıldı".</param>
+    /// <param name="basarisizlikEylemi">Başarısızlıkta adımda yazacak eylem.</param>
     /// <remarks>
-    /// "BASLATILDI" DEMEK "CALISIYOR" DEMEK DEGIL.
+    /// "BAŞLATILDI" DEMEK "ÇALIŞIYOR" DEMEK DEĞİL.
     ///
-    /// sc start, surec baslar baslamaz basari donuyor. winws ardindan WinDivert
-    /// surucusunu acamayip olurse servis birkac saniye sonra STOPPED oluyor --
-    /// yukseltmeden hemen sonra tam olarak bu oluyordu, cunku onceki surumun
-    /// surucusu cekirdekte yarim birakilmis bir durdurmada kalmisti. Servisin
-    /// kurtarma tanimi ise ise yaramiyor: ayni surucuye ayni sekilde carpiyor.
-    /// Kullanicinin gordugu sey "kurulu ama durmus" ve yeniden baslatinca
-    /// duzelen bir koruma. Surucu burada bosaltilip servis bir kez yeniden
-    /// baslatiliyor.
+    /// sc start, süreç başlar başlamaz başarı dönüyor. winws ardından WinDivert
+    /// sürücüsünü açamayıp ölürse servis birkaç saniye sonra STOPPED oluyor;
+    /// yükseltmeden hemen sonra tam olarak bu oluyordu, çünkü önceki sürümün
+    /// sürücüsü çekirdekte yarım bırakılmış bir durdurmada kalmıştı. Servisin
+    /// kurtarma tanımı ise işe yaramıyor: aynı sürücüye aynı şekilde çarpıyor.
+    /// Kullanıcının gördüğü şey "kurulu ama durmuş" ve yeniden başlatınca
+    /// düzelen bir koruma. Sürücü burada boşaltılıp servis bir kez yeniden
+    /// başlatılıyor.
     /// </remarks>
     private static async Task<CleanupStep> EnsureWinwsRunningAsync(
         CleanupStep startStep, string basariEylemi, string basarisizlikEylemi, CancellationToken cancellationToken)
@@ -329,12 +329,12 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// Servis birkac saniye boyunca CALISIR kaliyor mu.
+    /// Servis birkaç saniye boyunca ÇALIŞIR kalıyor mu.
     /// </summary>
     /// <remarks>
-    /// Tek bakis yetmiyor: winws surucu hatasiyla oldugunde servis bir an RUNNING
-    /// gorunup sonra STOPPED'a dusuyor. Ust uste iki olumlu olcum, aralarinda
-    /// winws'in surucuyu acmasina yetecek bir sure ariyoruz.
+    /// Tek bakış yetmiyor: winws sürücü hatasıyla öldüğünde servis bir an RUNNING
+    /// görünüp sonra STOPPED'a düşüyor. Üst üste iki olumlu ölçüm, aralarında
+    /// winws'in sürücüyü açmasına yetecek bir süre arıyoruz.
     /// </remarks>
     private static async Task<bool> WaitUntilRunningStableAsync(string name, CancellationToken cancellationToken)
     {
@@ -367,17 +367,17 @@ public static class ServiceManager
         return arkaArkaya > 0;
     }
 
-    /// <summary>Sifreli DNS servisinin durumu.</summary>
-    /// <param name="Installed">Servis kaydi var mi.</param>
-    /// <param name="Running">Servis su an calisiyor mu.</param>
+    /// <summary>Şifreli DNS servisinin durumu.</summary>
+    /// <param name="Installed">Servis kaydı var mı.</param>
+    /// <param name="Running">Servis şu an çalışıyor mu.</param>
     /// <param name="BinaryExists">
-    /// Kayittaki dnscrypt-proxy.exe diskte duruyor mu. Kaydi olup ikilisi olmayan
-    /// servis (virusten koruma karantinaya aldi, klasor elle silindi) bir daha
-    /// hic calismaz; yonlendirme onu beklememeli.
+    /// Kayıttaki dnscrypt-proxy.exe diskte duruyor mu. Kaydı olup ikilisi olmayan
+    /// servis (virüsten koruma karantinaya aldı, klasör elle silindi) bir daha
+    /// hiç çalışmaz; yönlendirme onu beklememeli.
     /// </param>
     public sealed record DnsServiceState(bool Installed, bool Running, bool BinaryExists);
 
-    /// <summary>Sifreli DNS servisinin kurulu, calisir ve ikilisinin yerinde olup olmadigini doner.</summary>
+    /// <summary>Şifreli DNS servisinin kurulu, çalışır ve ikilisinin yerinde olup olmadığını döner.</summary>
     public static async Task<DnsServiceState> GetDnsServiceStateAsync(CancellationToken cancellationToken = default)
     {
         var installed = await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
@@ -397,8 +397,8 @@ public static class ServiceManager
             using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey($@"SYSTEM\CurrentControlSet\Services\{name}");
             var imagePath = ConflictScanner.ExtractExecutablePath(key?.GetValue("ImagePath") as string);
 
-            // Okunamiyorsa var sayiyoruz: yanlis tarafa dusmek gerekirse, calisan
-            // bir kurulumun yonlendirmesini sokmektense beklemek yeglenir.
+            // Okunamıyorsa var sayıyoruz: yanlış tarafa düşmek gerekirse, çalışan
+            // bir kurulumun yönlendirmesini sökmektense beklemek yeğlenir.
             return imagePath is null || File.Exists(Environment.ExpandEnvironmentVariables(imagePath));
         }
         catch (Exception)
@@ -411,8 +411,8 @@ public static class ServiceManager
     /// Servisleri durdurur ve siler.
     /// </summary>
     /// <param name="restoreDns">
-    /// Servisin yaptigi DNS yonlendirmesi de geri alinsin mi. Yeniden kurulum
-    /// oncesi temizlikte false verilir; kullanici otomatik baslatmayi kapattiginda
+    /// Servisin yaptığı DNS yönlendirmesi de geri alınsın mı. Yeniden kurulum
+    /// öncesi temizlikte false verilir; kullanıcı otomatik başlatmayı kapattığında
     /// true.
     /// </param>
     public static async Task<IReadOnlyList<CleanupStep>> UninstallAsync(
@@ -422,20 +422,20 @@ public static class ServiceManager
 
         var steps = new List<CleanupStep>();
 
-        // DNS, COZUMLEYICI SILINMEDEN ONCE GERI ALINIR.
+        // DNS, ÇÖZÜMLEYİCİ SİLİNMEDEN ÖNCE GERİ ALINIR.
         //
-        // Sira eskiden tersti: once iki servis de siliniyor, sonra DNS geri
-        // aliniyordu. Geri alma basarisiz olursa (netsh hatasi, bozuk yedek)
-        // sistem DNS'i 127.0.0.1'de kaliyor ve orada dinleyen servis az once
-        // silinmis oluyordu -- kaldirmanin birakabilecegi en kotu tablo. Simdi
-        // geri alma basarisizsa sifreli DNS servisi YERINDE birakiliyor: koruma
-        // kapanmamis olur ama internet de gitmez, ve bir sonraki deneme ayni
-        // yedekle yeniden yapilabilir.
+        // Sıra eskiden tersti: önce iki servis de siliniyor, sonra DNS geri
+        // alınıyordu. Geri alma başarısız olursa (netsh hatası, bozuk yedek)
+        // sistem DNS'i 127.0.0.1'de kalıyor ve orada dinleyen servis az önce
+        // silinmiş oluyordu; kaldırmanın bırakabileceği en kötü tablo. Şimdi
+        // geri alma başarısızsa şifreli DNS servisi YERİNDE bırakılıyor: koruma
+        // kapanmamış olur ama internet de gitmez ve bir sonraki deneme aynı
+        // yedekle yeniden yapılabilir.
         var dnsServisiniBirak = false;
 
-        // Sahibi okunamayan (bozuk) yedek de geri aliniyor: servis silindikten
-        // sonra onu geri alacak kimse kalmaz. Yalnizca ACIKCA uygulamaya ait
-        // yonlendirmeye dokunulmuyor -- o calisan uygulamanin kendi isi.
+        // Sahibi okunamayan (bozuk) yedek de geri alınıyor: servis silindikten
+        // sonra onu geri alacak kimse kalmaz. Yalnızca AÇIKÇA uygulamaya ait
+        // yönlendirmeye dokunulmuyor; o, çalışan uygulamanın kendi işi.
         if (restoreDns
             && SystemDnsManager.HasBackup
             && !string.Equals(SystemDnsManager.BackupOwner, DnsBackupOwner.App, StringComparison.Ordinal))
@@ -483,23 +483,23 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// winws servisini GECICI olarak durdurur; servis kaydina dokunmaz.
+    /// winws servisini GEÇİCİ olarak durdurur; servis kaydına dokunmaz.
     /// </summary>
     /// <returns>
-    /// Servis durdu ve ortalikta winws sureci kalmadiysa true. Sure dolduysa false:
-    /// cagiran taraf olcumun kirlenebilecegini kullaniciya soylemeli.
+    /// Servis durdu ve ortalıkta winws süreci kalmadıysa true. Süre dolduysa false:
+    /// çağıran taraf ölçümün kirlenebileceğini kullanıcıya söylemeli.
     /// </returns>
     /// <remarks>
-    /// Parametre testi winws'i aday aday kendisi baslatiyor. Servisin winws'i
-    /// arkada calisirken bu iki sekilde bozuluyordu: mevcut durum taramasi
-    /// engeli servisin stratejisi ACIKKEN olcuyor ve "engel yok" goruyor, adaylar
-    /// ise ayni filtreyle ikinci ornek olarak baslatilamiyor. Uygulama kendi
-    /// baslattigi winws'i testten once durduruyordu, servisinkini durdurmuyordu.
+    /// Parametre testi winws'i aday aday kendisi başlatıyor. Servisin winws'i
+    /// arkada çalışırken bu iki şekilde bozuluyordu: mevcut durum taraması
+    /// engeli servisin stratejisi AÇIKKEN ölçüyor ve "engel yok" görüyor, adaylar
+    /// ise aynı filtreyle ikinci örnek olarak başlatılamıyor. Uygulama kendi
+    /// başlattığı winws'i testten önce durduruyordu, servisinkini durdurmuyordu.
     ///
-    /// <c>sc stop</c> yalnizca istegi iletir ve hemen doner; servisin gercekten
-    /// STOPPED olmasi ve surecin surucuyu birakmasi ayrica bekleniyor. Temiz bir
-    /// durdurma servis kurtarma tanimini (<c>sc failure</c>) tetiklemez, yani
-    /// servis test sirasinda kendiliginden geri gelmez.
+    /// <c>sc stop</c> yalnızca isteği iletir ve hemen döner; servisin gerçekten
+    /// STOPPED olması ve sürecin sürücüyü bırakması ayrıca bekleniyor. Temiz bir
+    /// durdurma servis kurtarma tanımını (<c>sc failure</c>) tetiklemez, yani
+    /// servis test sırasında kendiliğinden geri gelmez.
     /// </remarks>
     public static async Task<bool> StopWinwsServiceAsync(
         TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -529,7 +529,7 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// <see cref="StopWinwsServiceAsync"/> ile durdurulan winws servisini yeniden baslatir.
+    /// <see cref="StopWinwsServiceAsync"/> ile durdurulan winws servisini yeniden başlatır.
     /// </summary>
     public static async Task<CleanupStep> StartWinwsServiceAsync(CancellationToken cancellationToken = default)
     {
@@ -544,34 +544,34 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// Otomatik baslatmayi KALDIRMADAN korumayi tamamen kapatir: winws durur, surucu
-    /// bosaltilir, sistem DNS'i geri alinir, sifreli DNS durur ve servisler
-    /// acilista kendiliginden baslamaz.
+    /// Otomatik başlatmayı KALDIRMADAN korumayı tamamen kapatır: winws durur, sürücü
+    /// boşaltılır, sistem DNS'i geri alınır, şifreli DNS durur ve servisler
+    /// açılışta kendiliğinden başlamaz.
     /// </summary>
     /// <remarks>
-    /// VPN'LE YAN YANA KULLANIM ICIN VAR.
+    /// VPN'LE YAN YANA KULLANIM İÇİN VAR.
     ///
-    /// Servis modunda korumayi gecici olarak kapatmanin hicbir yolu yoktu:
-    /// "Duraklat" yalnizca uygulamanin kendi baslattigi winws'i durduruyordu,
+    /// Servis modunda korumayı geçici olarak kapatmanın hiçbir yolu yoktu:
+    /// "Duraklat" yalnızca uygulamanın kendi başlattığı winws'i durduruyordu,
     /// pencereyi kapatmak servise dokunmuyordu. Geriye "Otomatik Başlatmayı
-    /// Kaldır" ve "Tüm Ayarları Sıfırla" kaliyordu -- ikisi de ayari siliyor.
-    /// Gercek bir kullanicida olculdu (2026-09-13): servis calisirken Proton VPN
-    /// (WireGuard, TCP 443 uzerinden TLS) her denemede <c>dial tcp ...:443: i/o
-    /// timeout</c> verdi; sifirlama winws'i durdurup WinDivert surucusu
-    /// cekirdekten dustukten BIR SANIYE sonra baglandi. Proton sunucu adini her
-    /// seferinde sorunsuz cozmustu: engel DNS degil, paket yolundaki winws.
+    /// Kaldır" ve "Tüm Ayarları Sıfırla" kalıyordu; ikisi de ayarı siliyor.
+    /// Gerçek bir kullanıcıda ölçüldü (2026-09-13): servis çalışırken Proton VPN
+    /// (WireGuard, TCP 443 üzerinden TLS) her denemede <c>dial tcp ...:443: i/o
+    /// timeout</c> verdi; sıfırlama winws'i durdurup WinDivert sürücüsü
+    /// çekirdekten düştükten BİR SANİYE sonra bağlandı. Proton sunucu adını her
+    /// seferinde sorunsuz çözmüştü: engel DNS değil, paket yolundaki winws.
     ///
-    /// Sira onemli:
+    /// Sıra önemli:
     ///
-    ///   * Once winws, cunku VPN'i bozan o.
-    ///   * DNS, cozumleyici DURMADAN ONCE geri alinir; ters sira sistem DNS'ini
-    ///     dinleyeni olmayan 127.0.0.1'de birakirdi (<see cref="UninstallAsync"/>
-    ///     ile ayni gerekce). Geri alma basarisizsa sifreli DNS servisi calisir
-    ///     ve acilista baslar halde BIRAKILIR: koruma kismen acik kalir ama
+    ///   * Önce winws, çünkü VPN'i bozan o.
+    ///   * DNS, çözümleyici DURMADAN ÖNCE geri alınır; ters sıra sistem DNS'ini
+    ///     dinleyeni olmayan 127.0.0.1'de bırakırdı (<see cref="UninstallAsync"/>
+    ///     ile aynı gerekçe). Geri alma başarısızsa şifreli DNS servisi çalışır
+    ///     ve açılışta başlar hâlde BIRAKILIR: koruma kısmen açık kalır ama
     ///     internet gitmez.
     ///
-    /// Duraklatmanin izi servislerin baslangic turu ("demand"); yeniden
-    /// baslatmada da duraklatilmis kalir. Bkz. <see cref="ResumeAsync"/>.
+    /// Duraklatmanın izi servislerin başlangıç türü ("demand"); yeniden
+    /// başlatmada da duraklatılmış kalır. Bkz. <see cref="ResumeAsync"/>.
     /// </remarks>
     public static async Task<IReadOnlyList<CleanupStep>> PauseAsync(CancellationToken cancellationToken = default)
     {
@@ -581,8 +581,8 @@ public static class ServiceManager
 
         if (await ExistsAsync(WinwsServiceName, cancellationToken).ConfigureAwait(false))
         {
-            // Baslangic turu DURDURMADAN ONCE degisiyor: durdurma yarida kalip
-            // bilgisayar yeniden baslatilirsa servis geri gelmesin.
+            // Başlangıç türü DURDURMADAN ÖNCE değişiyor: durdurma yarıda kalıp
+            // bilgisayar yeniden başlatılırsa servis geri gelmesin.
             if (await SetStartTypeAsync(WinwsServiceName, "demand", cancellationToken).ConfigureAwait(false) is { } hata)
             {
                 steps.Add(hata);
@@ -590,9 +590,9 @@ public static class ServiceManager
 
             if (await StopWinwsServiceAsync(TimeSpan.FromSeconds(15), cancellationToken).ConfigureAwait(false))
             {
-                // Servis durunca winws surucuyu birakiyor; surucunun cekirdekten
-                // gercekten dustugunu de bekliyoruz ki "duraklatildi" dendiginde
-                // paket yolunda hicbir sey kalmamis olsun.
+                // Servis durunca winws sürücüyü bırakıyor; sürücünün çekirdekten
+                // gerçekten düştüğünü de bekliyoruz ki "duraklatıldı" dendiğinde
+                // paket yolunda hiçbir şey kalmamış olsun.
                 var unload = await WinDivertDriver
                     .TryUnloadIdleAsync(TimeSpan.FromSeconds(10), cancellationToken).ConfigureAwait(false);
                 steps.Add(new CleanupStep($"{WinwsServiceName} servisi durduruldu", true,
@@ -626,11 +626,11 @@ public static class ServiceManager
 
         var dnsServisiVar = await ExistsAsync(DnsServiceName, cancellationToken).ConfigureAwait(false);
 
-        // Geri alma basarisiz olsa da acilista BASLAMASIN. Su an calismaya devam
-        // ediyor (internet kesilmesin), ama yeniden baslatmada kalkarsa DNS bekcisi
-        // yedegi ve cevap veren cozumleyiciyi gorup yonlendirmeyi yeniden yapardi --
-        // duraklatilmis bir korumanin yarisi geri gelirdi. Kalkmazsa bekci
-        // yonlendirmeyi geri alir.
+        // Geri alma başarısız olsa da açılışta BAŞLAMASIN. Şu an çalışmaya devam
+        // ediyor (internet kesilmesin), ama yeniden başlatmada kalkarsa DNS bekçisi
+        // yedeği ve cevap veren çözümleyiciyi görüp yönlendirmeyi yeniden yapardı;
+        // duraklatılmış bir korumanın yarısı geri gelirdi. Kalkmazsa bekçi
+        // yönlendirmeyi geri alır.
         if (dnsServisiVar
             && await SetStartTypeAsync(DnsServiceName, "demand", cancellationToken).ConfigureAwait(false) is { } baslangicHatasi)
         {
@@ -646,7 +646,7 @@ public static class ServiceManager
                 var (exitCode, output) = await RunScAsync(["stop", DnsServiceName], cancellationToken)
                     .ConfigureAwait(false);
 
-                // 1062 = "servis baslatilmamis": zaten durmus, amac gerceklesmis.
+                // 1062 = "servis başlatılmamış": zaten durmuş, amaç gerçekleşmiş.
                 steps.Add(exitCode == 0 || output.Contains("1062", StringComparison.Ordinal)
                     ? new CleanupStep($"{DnsServiceName} servisi durduruldu", true)
                     : new CleanupStep($"{DnsServiceName} servisi durdurulamadi", false, output.Trim()));
@@ -657,17 +657,17 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// <see cref="PauseAsync"/> ile duraklatilan servisleri KAYITLI AYARLARIYLA geri acar.
+    /// <see cref="PauseAsync"/> ile duraklatılan servisleri KAYITLI AYARLARIYLA geri açar.
     /// </summary>
     /// <remarks>
-    /// Yeniden kurulum yapilmiyor: servisin komutu kayit defterinde duruyor ve
-    /// kullanicinin duraklattigi sey tam olarak o. "Kaldigi yerden devam" bu.
+    /// Yeniden kurulum yapılmıyor: servisin komutu kayıt defterinde duruyor ve
+    /// kullanıcının duraklattığı şey tam olarak o. "Kaldığı yerden devam" bu.
     ///
-    /// Sira baslatmadaki gibi: once sifreli DNS, cunku winws engel sunucusuna
-    /// giden trafigi kurcalarsa hicbir sey kazanilmaz. Sistem DNS'i yine ANCAK
-    /// cozumleyici cevap verdikten sonra cevriliyor. Vermezse DNS'e dokunulmuyor
-    /// ve "askida" isareti birakiliyor: DNS bekcisi cozumleyici ayaga kalkinca
-    /// yonlendirmeyi kendisi yapar.
+    /// Sıra başlatmadaki gibi: önce şifreli DNS, çünkü winws engel sunucusuna
+    /// giden trafiği kurcalarsa hiçbir şey kazanılmaz. Sistem DNS'i yine ANCAK
+    /// çözümleyici cevap verdikten sonra çevriliyor. Vermezse DNS'e dokunulmuyor
+    /// ve "askıda" işareti bırakılıyor: DNS bekçisi çözümleyici ayağa kalkınca
+    /// yönlendirmeyi kendisi yapar.
     /// </remarks>
     public static async Task<IReadOnlyList<CleanupStep>> ResumeAsync(CancellationToken cancellationToken = default)
     {
@@ -734,7 +734,7 @@ public static class ServiceManager
         return steps;
     }
 
-    /// <summary>Servisin baslangic turunu degistirir. Basariliysa null, degilse hata adimi doner.</summary>
+    /// <summary>Servisin başlangıç türünü değiştirir. Başarılıysa null, değilse hata adımı döner.</summary>
     private static async Task<CleanupStep?> SetStartTypeAsync(
         string name, string startType, CancellationToken cancellationToken)
     {
@@ -746,7 +746,7 @@ public static class ServiceManager
             : new CleanupStep($"{name} servisinin baslangic turu '{startType}' yapilamadi", false, output.Trim());
     }
 
-    /// <summary>Kurulu bir servisi baslatir; zaten calisiyorsa (1056) basarili sayar.</summary>
+    /// <summary>Kurulu bir servisi başlatır; zaten çalışıyorsa (1056) başarılı sayar.</summary>
     private static async Task<CleanupStep> StartExistingServiceAsync(string name, CancellationToken cancellationToken)
     {
         var (exitCode, output) = await RunScAsync(["start", name], cancellationToken).ConfigureAwait(false);
@@ -757,12 +757,12 @@ public static class ServiceManager
     }
 
     /// <summary>
-    /// <c>sc start</c> hatasinin ayrintisi; engel Defender ya da Akilli Uygulama
-    /// Denetimi'yse ne yapilacagini da ekler.
+    /// <c>sc start</c> hatasının ayrıntısı; engel Defender ya da Akıllı Uygulama
+    /// Denetimi'yse ne yapılacağını da ekler.
     /// </summary>
     /// <remarks>
-    /// Servis ikiliyi LocalSystem olarak baslatiyor ama engel ayni: imzasiz winws.exe
-    /// ve dnscrypt-proxy.exe. Gerekcesi <see cref="SecurityBlockAdvice"/>'ta.
+    /// Servis ikiliyi LocalSystem olarak başlatıyor ama engel aynı: imzasız winws.exe
+    /// ve dnscrypt-proxy.exe. Gerekçesi <see cref="SecurityBlockAdvice"/>'ta.
     /// </remarks>
     public static string StartFailureDetail(string serviceName, string scOutput)
     {
@@ -776,10 +776,10 @@ public static class ServiceManager
             : ayrinti;
     }
 
-    /// <summary><c>sc query</c> ciktisi servisin durmus oldugunu mu soyluyor.</summary>
+    /// <summary><c>sc query</c> çıktısı servisin durmuş olduğunu mu söylüyor.</summary>
     /// <remarks>
-    /// STOP_PENDING durmus SAYILMAZ: o anda surec hala surucuyu tutuyor olabilir.
-    /// Servis hic yoksa (1060) da durmus sayilir -- beklenecek bir sey kalmamistir.
+    /// STOP_PENDING durmuş SAYILMAZ: o anda süreç hâlâ sürücüyü tutuyor olabilir.
+    /// Servis hiç yoksa (1060) da durmuş sayılır; beklenecek bir şey kalmamıştır.
     /// </remarks>
     public static bool IsStoppedQueryOutput(string scQueryOutput)
         => scQueryOutput.Contains("STOPPED", StringComparison.Ordinal)
@@ -793,22 +793,22 @@ public static class ServiceManager
         }
         catch (Exception)
         {
-            // Surec listesi okunamiyorsa servis durumuna guveniyoruz.
+            // Süreç listesi okunamıyorsa servis durumuna güveniyoruz.
             return false;
         }
     }
 
     /// <summary>
-    /// Sifreli DNS servisinin cevap vermesi icin taninan sure.
+    /// Şifreli DNS servisinin cevap vermesi için tanınan süre.
     /// </summary>
     /// <remarks>
-    /// Uygulamanin kendi yolundan (15 sn) daha uzun tutuldu: servis LocalSystem
-    /// olarak, kullanici oturumundan bagimsiz aciliyor ve dnscrypt-proxy once
-    /// cozumleyici listesini cekmek zorunda kalabiliyor.
+    /// Uygulamanın kendi yolundan (15 sn) daha uzun tutuldu: servis LocalSystem
+    /// olarak, kullanıcı oturumundan bağımsız açılıyor ve dnscrypt-proxy önce
+    /// çözümleyici listesini çekmek zorunda kalabiliyor.
     /// </remarks>
     private static readonly TimeSpan LocalResolverStartupTimeout = TimeSpan.FromSeconds(30);
 
-    /// <summary>127.0.0.1:53 cevap verene kadar bekler; sure dolarsa false.</summary>
+    /// <summary>127.0.0.1:53 cevap verene kadar bekler; süre dolarsa false.</summary>
     private static async Task<bool> WaitForLocalResolverAsync(
         TimeSpan timeout, CancellationToken cancellationToken)
     {
@@ -832,7 +832,7 @@ public static class ServiceManager
     private static async Task<CleanupStep> CreateServiceAsync(
         string name, string binPath, string displayName, bool start, CancellationToken cancellationToken)
     {
-        // sc'nin bicimi katidir: "binPath=" ile degerin ARASINDA bosluk olmali.
+        // sc'nin biçimi katıdır: "binPath=" ile değerin ARASINDA boşluk olmalı.
         var (createCode, createOutput) = await RunScAsync(
             ["create", name, "binPath=", binPath, "DisplayName=", displayName, "start=", start ? "auto" : "demand"],
             cancellationToken).ConfigureAwait(false);
@@ -842,17 +842,17 @@ public static class ServiceManager
             return new CleanupStep($"{name} servisi kurulamadi", false, createOutput.Trim());
         }
 
-        // OLURSE KENDILIGINDEN GERI GELSIN.
+        // ÖLÜRSE KENDİLİĞİNDEN GERİ GELSİN.
         //
-        // Acilista servisler agdan once ayaga kalkabiliyor; winws surucuyu
-        // acamayip ya da dnscrypt ag bulamayip hemen olurse, kurtarma tanimi
-        // olmadan bir daha HIC baslamiyor. Kullanicinin gordugu sey tam olarak
-        // "kurdum, yeniden baslattim, calismiyor" oluyor -- servis listede
-        // duruyor ama durmus. Uc kademeli yeniden deneme bu pencereyi kapatiyor.
+        // Açılışta servisler ağdan önce ayağa kalkabiliyor; winws sürücüyü
+        // açamayıp ya da dnscrypt ağ bulamayıp hemen ölürse, kurtarma tanımı
+        // olmadan bir daha HİÇ başlamıyor. Kullanıcının gördüğü şey tam olarak
+        // "kurdum, yeniden başlattım, çalışmıyor" oluyor; servis listede
+        // duruyor ama durmuş. Üç kademeli yeniden deneme bu pencereyi kapatıyor.
         //
-        // En iyi cabayla: basarisiz olursa adim listesine yazilmiyor. Kurulumun
-        // kendisi basarili ve bu yalnizca dayaniklilik; burada bir hata
-        // dondurmek kurulum sonunda gereksiz bir uyari penceresi acardi.
+        // En iyi çabayla: başarısız olursa adım listesine yazılmıyor. Kurulumun
+        // kendisi başarılı ve bu yalnızca dayanıklılık; burada bir hata
+        // döndürmek kurulum sonunda gereksiz bir uyarı penceresi açardı.
         await RunScAsync(
             ["failure", name, "reset=", "86400", "actions=", "restart/5000/restart/15000/restart/60000"],
             cancellationToken).ConfigureAwait(false);
@@ -870,11 +870,11 @@ public static class ServiceManager
             : new CleanupStep($"{name} servisi kuruldu ama baslatilamadi", false, StartFailureDetail(name, startOutput));
     }
 
-    /// <summary>Servis su anda CALISIYOR mu.</summary>
+    /// <summary>Servis şu anda ÇALIŞIYOR mu.</summary>
     /// <remarks>
-    /// <c>sc query</c> ciktisindaki STATE satirina bakiliyor. Kurulu olmak
-    /// calisiyor olmak demek degil: servis durdurulmus, baslatilamamis ya da
-    /// coktukten sonra yeniden baslatilmamis olabilir.
+    /// <c>sc query</c> çıktısındaki STATE satırına bakılıyor. Kurulu olmak
+    /// çalışıyor olmak demek değil: servis durdurulmuş, başlatılamamış ya da
+    /// çöktükten sonra yeniden başlatılmamış olabilir.
     /// </remarks>
     private static async Task<bool> IsRunningAsync(string name, CancellationToken cancellationToken)
     {
@@ -888,17 +888,17 @@ public static class ServiceManager
     private static async Task<bool> ExistsAsync(string name, CancellationToken cancellationToken)
         => (await QueryConfigAsync(name, cancellationToken).ConfigureAwait(false)).Exists;
 
-    /// <summary>Servis kurulu mu, ve kuruluysa <c>sc qc</c> ciktisi.</summary>
+    /// <summary>Servis kurulu mu ve kuruluysa <c>sc qc</c> çıktısı.</summary>
     private static async Task<(bool Exists, string Output)> QueryConfigAsync(
         string name, CancellationToken cancellationToken)
     {
         var (exitCode, output) = await RunScAsync(["qc", name], cancellationToken).ConfigureAwait(false);
 
-        // 1060 = "belirtilen servis yuklu degil".
+        // 1060 = "belirtilen servis yüklü değil".
         return (exitCode == 0 && !output.Contains("1060", StringComparison.Ordinal), output);
     }
 
-    /// <summary>Icinde bosluk olan argumani tirnaklar; digerlerine dokunmaz.</summary>
+    /// <summary>İçinde boşluk olan argümanı tırnaklar; diğerlerine dokunmaz.</summary>
     private static string QuoteIfNeeded(string argument)
         => argument.Contains(' ', StringComparison.Ordinal) ? $"\"{argument}\"" : argument;
 

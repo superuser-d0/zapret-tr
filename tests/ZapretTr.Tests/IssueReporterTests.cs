@@ -2,11 +2,11 @@ using ZapretTr.Core.Engine;
 
 namespace ZapretTr.Tests;
 
-/// <summary>Hata bildirimi formunun icerigini sinar.</summary>
+/// <summary>Hata bildirimi formunun içeriğini sınar.</summary>
 /// <remarks>
-/// Bu testlerin hepsi TEK bir soruya bakiyor: kullaniciya gosterilmeden once
-/// forma NE kondu. Uretilen metin bir kere gonderildikten sonra geri alinamaz;
-/// bu yuzden icerigin kurallari kodda degil, burada sabitleniyor.
+/// Bu testlerin hepsi TEK bir soruya bakıyor: kullanıcıya gösterilmeden önce
+/// forma NE kondu. Üretilen metin bir kere gönderildikten sonra geri alınamaz;
+/// bu yüzden içeriğin kuralları kodda değil, burada sabitleniyor.
 /// </remarks>
 public class IssueReporterTests
 {
@@ -27,8 +27,8 @@ public class IssueReporterTests
     {
         var govde = IssueReporter.BuildBody(Ornek());
 
-        // Bunlarin biri eksikse bildirim gelse bile ise yaramiyor: hangi surumde,
-        // hangi hatta, hangi parametreyle oldugunu bilmeden hicbir sey yapamiyoruz.
+        // Bunların biri eksikse bildirim gelse bile işe yaramıyor: hangi sürümde,
+        // hangi hatta, hangi parametreyle olduğunu bilmeden hiçbir şey yapamıyoruz.
         Assert.Contains("0.1.18", govde, StringComparison.Ordinal);
         Assert.Contains("winws v72.13", govde, StringComparison.Ordinal);
         Assert.Contains("Turkcell Superonline", govde, StringComparison.Ordinal);
@@ -40,10 +40,10 @@ public class IssueReporterTests
     [Fact]
     public void Kullanicinin_kendi_yazdigi_adres_forma_girmiyor()
     {
-        // ASIL KONTROL. Gunlukteki oteki satirlar bizim listemiz -- denenen
-        // parametreler, varsayilan hedefler. Ama "kendi hedefiniz" satirindaki
-        // adresi kullanici arayuze KENDI yazdi; bir genel forma kendiliginden
-        // dusmemeli. Kullanici isterse elle ekler, bu onun karari.
+        // ASIL KONTROL. Günlükteki öteki satırlar bizim listemiz: denenen
+        // parametreler, varsayılan hedefler. Ama "kendi hedefiniz" satırındaki
+        // adresi kullanıcı arayüze KENDİ yazdı; bir genel forma kendiliğinden
+        // düşmemeli. Kullanıcı isterse elle ekler, bu onun kararı.
         var govde = IssueReporter.BuildBody(Ornek([
             "motor basladi",
             "Kendi hedefiniz eklendi: sirket-ic-portal.ornek.tr",
@@ -57,13 +57,13 @@ public class IssueReporterTests
     [Fact]
     public void Uzun_gunluk_adresi_sinirin_ustune_cikarmiyor()
     {
-        // Uzun adres sunucudan 414 donuyor ve kullanici bos bir sayfa goruyor --
-        // yani "hata bildir" dugmesi tam da hata cok konustugunda calismiyor.
+        // Uzun adres sunucudan 414 dönüyor ve kullanıcı boş bir sayfa görüyor;
+        // yani "hata bildir" düğmesi tam da hata çok konuştuğunda çalışmıyor.
         //
-        // Satirlar KASITLI olarak hem cok hem uzun. Ilk yazdigimda 400 KISA satir
-        // vermistim: son 25 satir zaten sinirin altinda kaldigi icin kisaltma
-        // dongusu hic calismiyordu ve testi bozdugumda hala geciyordu. Yani test
-        // sinamak istedigi seyi sinamiyordu.
+        // Satırlar KASITLI olarak hem çok hem uzun. İlk yazdığımda 400 KISA satır
+        // vermiştim: son 25 satır zaten sınırın altında kaldığı için kısaltma
+        // döngüsü hiç çalışmıyordu ve testi bozduğumda hâlâ geçiyordu. Yani test
+        // sınamak istediği şeyi sınamıyordu.
         var uzun = Enumerable.Range(0, 400)
             .Select(i => $"[{i:D3}] aday denendi: " + new string('x', 600));
 
@@ -73,8 +73,8 @@ public class IssueReporterTests
             adres.Length <= IssueReporter.MaxUrlLength,
             $"adres {adres.Length} karakter, sinir {IssueReporter.MaxUrlLength}");
 
-        // Kisaltma teshisin CEKIRDEGINI yemis olmamali: ortam tablosu her
-        // durumda kalmali, atilacak sey gunluk satiri.
+        // Kısaltma teşhisin ÇEKİRDEĞİNİ yemiş olmamalı: ortam tablosu her
+        // durumda kalmalı, atılacak şey günlük satırı.
         var govde = IssueReporter.BuildBody(Ornek(uzun), logLineBudget: 0);
         Assert.Contains("Turkcell Superonline", govde, StringComparison.Ordinal);
         Assert.Contains("0.1.18", govde, StringComparison.Ordinal);
@@ -83,7 +83,7 @@ public class IssueReporterTests
     [Fact]
     public void Tek_satir_da_kisaltiliyor()
     {
-        // Satir SAYISI sinirlamak yetmiyor: tek bir satir tam bir komut satiri
+        // Satır SAYISINI sınırlamak yetmiyor: tek bir satır tam bir komut satırı
         // ya da uzun bir istisna metni olabiliyor.
         var govde = IssueReporter.BuildBody(Ornek([new string('y', 5000)]));
 
@@ -100,8 +100,8 @@ public class IssueReporterTests
         Assert.Equal("github.com", uri!.Host);
         Assert.StartsWith("/superuser-d0/zapret-tr/issues/new", uri.AbsolutePath, StringComparison.Ordinal);
 
-        // Baslik ve govde kacirilmis olarak gitmezse "&" ya da "#" gecen bir
-        // parametre adresi ortadan bolerdi.
+        // Başlık ve gövde kaçışlanmış olarak gitmezse "&" ya da "#" geçen bir
+        // parametre adresi ortadan bölerdi.
         Assert.DoesNotContain(" ", adres, StringComparison.Ordinal);
         Assert.Contains("title=", adres, StringComparison.Ordinal);
         Assert.Contains("body=", adres, StringComparison.Ordinal);
@@ -110,15 +110,15 @@ public class IssueReporterTests
     [Fact]
     public void Baslik_surumu_ve_durumu_tasiyor()
     {
-        // Konu listesinde basliga bakip "bu hangi surum" diyebilmek gerekiyor:
-        // ayni belirti farkli surumlerde farkli sebeplerden cikabiliyor.
+        // Konu listesinde başlığa bakıp "bu hangi sürüm" diyebilmek gerekiyor:
+        // aynı belirti farklı sürümlerde farklı sebeplerden çıkabiliyor.
         var baslik = IssueReporter.BuildTitle(Ornek());
 
         Assert.Contains("v0.1.18", baslik, StringComparison.Ordinal);
         Assert.Contains("ÇALIŞIYOR", baslik, StringComparison.Ordinal);
         Assert.Contains("Turkcell", baslik, StringComparison.Ordinal);
 
-        // Ayrac, durum metninin KENDI uzun tiresiyle karismamali: gercek ciktida
+        // Ayraç, durum metninin KENDİ uzun tiresiyle karışmamalı: gerçek çıktıda
         // "[hata] ÇALIŞIYOR — AMA AÇMIYOR — Turkcell ..." okunmuyordu.
         Assert.DoesNotContain("] ÇALIŞIYOR", baslik, StringComparison.Ordinal);
         Assert.Equal(2, baslik.Split(" · ").Length - 1);
@@ -127,24 +127,24 @@ public class IssueReporterTests
     [Fact]
     public void Basliktaki_surum_yapinin_karmasini_tasimiyor()
     {
-        // Gercek kosumda goruldu: uygulamanin surum metni
-        // "0.1.18+a8a66ca13a4b..." seklinde geliyor ve baslik 93 karakterin
-        // yarisi karma olan bir seye donusuyordu. Karma ortam tablosunda tam
-        // haliyle duruyor; baslikta isi yok.
+        // Gerçek koşumda görüldü: uygulamanın sürüm metni
+        // "0.1.18+a8a66ca13a4b..." şeklinde geliyor ve başlık 93 karakterin
+        // yarısı karma olan bir şeye dönüşüyordu. Karma ortam tablosunda tam
+        // hâliyle duruyor; başlıkta işi yok.
         var d = Ornek() with { AppVersion = "0.1.18+a8a66ca13a4b2675ea2f8b6fe217a3ba9fd3bad8" };
 
         Assert.Contains("v0.1.18 ·", IssueReporter.BuildTitle(d), StringComparison.Ordinal);
         Assert.DoesNotContain("a8a66ca", IssueReporter.BuildTitle(d), StringComparison.Ordinal);
 
-        // Govdede ise KALMALI: hangi yapinin bildirimi oldugu kaybolmasin.
+        // Gövdede ise KALMALI: hangi yapının bildirimi olduğu kaybolmasın.
         Assert.Contains("a8a66ca", IssueReporter.BuildBody(d), StringComparison.Ordinal);
     }
 
     [Fact]
     public void Secim_yapilmamisken_de_form_kuruluyor()
     {
-        // Hatanin en sik goruldugu an ilk acilis: henuz ISS de strateji de
-        // secilmemis. Bildirim tam o anda kurulamiyorsa dugmenin anlami kalmaz.
+        // Hatanın en sık görüldüğü an ilk açılış: henüz İSS de strateji de
+        // seçilmemiş. Bildirim tam o anda kurulamıyorsa düğmenin anlamı kalmaz.
         var bos = new IssueDetails(
             "0.1.18", "bilinmiyor", "10.0.26200",
             Isp: string.Empty, Strategy: string.Empty, StrategyArgs: string.Empty,

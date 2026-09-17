@@ -5,13 +5,13 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Guncelleme klasorundeki eski kurulum paketlerinin temizligi.
+/// Güncelleme klasöründeki eski kurulum paketlerinin temizliği.
 /// </summary>
 /// <remarks>
-/// Guncelleme indirdigi paketi hic silmiyordu; gercek bir makinede
-/// <c>%TEMP%\ZapretTR-guncelleme</c> icinde alti paket (yaklasik 330 MB) birikmisti.
-/// Silme kodunun asil tehlikesi ters yonde: yanlis dosyayi silmek. Bu yuzden
-/// testlerin cogu neyin SILINMEDIGINE bakiyor.
+/// Güncelleme, indirdiği paketi hiç silmiyordu; gerçek bir makinede
+/// <c>%TEMP%\ZapretTR-guncelleme</c> içinde altı paket (yaklaşık 330 MB) birikmişti.
+/// Silme kodunun asıl tehlikesi ters yönde: yanlış dosyayı silmek. Bu yüzden
+/// testlerin çoğu neyin SİLİNMEDİĞİNE bakıyor.
 /// </remarks>
 public sealed class UpdateCleanupTests : IDisposable
 {
@@ -49,7 +49,7 @@ public sealed class UpdateCleanupTests : IDisposable
     public void Desene_uymayan_dosyalara_dokunulmuyor()
     {
         Yaz("ZapretTR-Setup-0.1.22.exe", 10);
-        Yaz("ZapretTR-Setup-0.1.22.exe_", 10);   // Win32'nin eski "*.exe" deseni buna uyardi
+        Yaz("ZapretTR-Setup-0.1.22.exe_", 10);   // Win32'nin eski "*.exe" deseni buna uyardı
         Yaz("ZapretTR-Setup-0.1.22.txt", 10);
         Yaz("baska-bir-kurulum.exe", 10);
         Directory.CreateDirectory(IoPath.Combine(_klasor, "alt"));
@@ -68,7 +68,7 @@ public sealed class UpdateCleanupTests : IDisposable
     [Fact]
     public void Kullanimdaki_paket_atlaniyor_ve_digerleri_yine_siliniyor()
     {
-        // Calisan kurulum kendi dosyasini boyle kilitli tutuyor.
+        // Çalışan kurulum kendi dosyasını böyle kilitli tutuyor.
         Yaz("ZapretTR-Setup-0.1.21.exe", 10);
         Yaz("ZapretTR-Setup-0.1.22.exe", 10);
 

@@ -5,28 +5,28 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Her komut satiri yolunun sonucunu cikis koduyla BILDIRMESI.
+/// Her komut satırı yolunun sonucunu çıkış koduyla BİLDİRMESİ.
 /// </summary>
 /// <remarks>
-/// Kurulum paketi ve CI bu yollari cikis koduyla denetliyor. Bir yol kod
-/// dondurmezse cagiran taraf her zaman 0 gorur, yani basarisizlik gorunmez olur.
-/// En pahalisi <c>--uninstall-services</c>: basarisiz olursa kullanicinin sistem
-/// DNS'i 127.0.0.1'de, cozumleyicisiz kalabilir -- projenin en kotu senaryosu.
-/// O yol <c>void</c> oldugu icin tam da bunu yapiyordu.
+/// Kurulum paketi ve CI bu yolları çıkış koduyla denetliyor. Bir yol kod
+/// döndürmezse çağıran taraf her zaman 0 görür, yani başarısızlık görünmez olur.
+/// En pahalısı <c>--uninstall-services</c>: başarısız olursa kullanıcının sistem
+/// DNS'i 127.0.0.1'de, çözümleyicisiz kalabilir; projenin en kötü senaryosu.
+/// O yol <c>void</c> olduğu için tam da bunu yapıyordu.
 ///
-/// NE OLCULDU, NE OLCULMEDI. Cikis kodunun bu yapida (StartupUri yok, pencere yok,
-/// karar OnStartup'ta, uretilen Main void) dogru donduğu tek kullanimlik bir WPF
-/// uygulamasiyla olculdu: <c>Shutdown(42)</c> 42, <c>Environment.ExitCode = 43;
-/// Shutdown();</c> 43. IKISI DE CALISIYOR; <c>Shutdown(kod)</c> yalnizca bicim
-/// tercihi ve bu testler o tercihi DAYATMIYOR -- dayatilan sey, kod donduren bir
-/// yolun sonucunun yutulmamasi.
+/// NE ÖLÇÜLDÜ, NE ÖLÇÜLMEDİ. Çıkış kodunun bu yapıda (StartupUri yok, pencere yok,
+/// karar OnStartup'ta, üretilen Main void) doğru döndüğü tek kullanımlık bir WPF
+/// uygulamasıyla ölçüldü: <c>Shutdown(42)</c> 42, <c>Environment.ExitCode = 43;
+/// Shutdown();</c> 43. İKİSİ DE ÇALIŞIYOR; <c>Shutdown(kod)</c> yalnızca biçim
+/// tercihi ve bu testler o tercihi DAYATMIYOR. Dayatılan şey, kod döndüren bir
+/// yolun sonucunun yutulmaması.
 /// </remarks>
 public sealed class CikisKoduTests
 {
     private static string AppXamlCs => File.ReadAllText(
         IoPath.Combine(XmlCommentTests.RepoRoot, "src", "ZapretTr.App", "App.xaml.cs"));
 
-    // Cikis kodu donduren komut satiri yollari.
+    // Çıkış kodu döndüren komut satırı yolları.
     [Theory]
     [InlineData("RunServiceCleanup")]
     [InlineData("RunServiceInstall")]
@@ -35,7 +35,7 @@ public sealed class CikisKoduTests
     [InlineData("RunUnregisterDnsGuard")]
     public void Yol_Kod_Donduruyor(string yol)
     {
-        // int donmeyen bir yol, cagirana hicbir sey soyleyemez.
+        // int dönmeyen bir yol, çağırana hiçbir şey söyleyemez.
         Assert.Matches(
             new Regex($@"private\s+static\s+int\s+{yol}\s*\("),
             AppXamlCs);
@@ -49,9 +49,9 @@ public sealed class CikisKoduTests
     [InlineData("RunUnregisterDnsGuard")]
     public void Yolun_Sonucu_Yutulmuyor(string yol)
     {
-        // Cagri ya Shutdown'a parametre olarak ya da Environment.ExitCode'a
-        // gitmeli. "RunX();" tek basina cagrilirsa donen kod sessizce kaybolur --
-        // RunServiceCleanup void iken aynen boyleydi.
+        // Çağrı ya Shutdown'a parametre olarak ya da Environment.ExitCode'a
+        // gitmeli. "RunX();" tek başına çağrılırsa dönen kod sessizce kaybolur;
+        // RunServiceCleanup void iken aynen böyleydi.
         var kaynak = AppXamlCs;
 
         var yutuldu = Regex.IsMatch(kaynak, $@"^\s*{yol}\(\)\s*;", RegexOptions.Multiline);
@@ -65,18 +65,18 @@ public sealed class CikisKoduTests
     [Fact]
     public void Parametresiz_Shutdown_Yalnizca_Ikinci_Ornek_Yolunda()
     {
-        // Geriye IKI mesru parametresiz Shutdown() kaliyor ve ikisi de "ikinci
-        // ornek" yolunda: pencere one getirildi ya da "zaten calisiyor" mesaji
-        // gosterildi. Orada dogru cevap zaten 0.
+        // Geriye İKİ meşru parametresiz Shutdown() kalıyor ve ikisi de "ikinci
+        // örnek" yolunda: pencere öne getirildi ya da "zaten çalışıyor" mesajı
+        // gösterildi. Orada doğru cevap zaten 0.
         //
-        // Sayi artarsa yeni bir komut satiri yolu cikis kodunu kaybediyor olabilir.
-        // Bu testi ilk yazdigimda siniri 2 sanmistim ve 3 cikti; ucuncusu
-        // --uninstall-services yoluydu ve gercekten kod dondurmuyordu.
+        // Sayı artarsa yeni bir komut satırı yolu çıkış kodunu kaybediyor olabilir.
+        // Bu testi ilk yazdığımda sınırı 2 sanmıştım ve 3 çıktı; üçüncüsü
+        // --uninstall-services yoluydu ve gerçekten kod döndürmüyordu.
         //
-        // YORUM SATIRLARI ELENIYOR: bir XML belge yorumunda gecen ornek kod
-        // ("Environment.ExitCode = 43; Shutdown();") sayima giriyor ve testi
-        // haksiz yere dusuruyordu. Once bu regex'e bir lookbehind koymustum;
-        // yetmedi, cunku o yalnizca onceki iki karaktere bakiyor.
+        // YORUM SATIRLARI ELENİYOR: bir XML belge yorumunda geçen örnek kod
+        // ("Environment.ExitCode = 43; Shutdown();") sayıma giriyor ve testi
+        // haksız yere düşürüyordu. Önce bu regex'e bir lookbehind koymuştum;
+        // yetmedi, çünkü o yalnızca önceki iki karaktere bakıyor.
         var kodSatirlari = AppXamlCs
             .Split('\n')
             .Where(satir => !satir.TrimStart().StartsWith("//", StringComparison.Ordinal));

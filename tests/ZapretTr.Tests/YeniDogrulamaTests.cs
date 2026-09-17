@@ -7,14 +7,14 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Testte yeni dogrulanan bir kategori, uygulama yeniden acilmadan korumaya yansimali.
+/// Testte yeni doğrulanan bir kategori, uygulama yeniden açılmadan korumaya yansımalı.
 /// </summary>
 /// <remarks>
-/// OLCULDU (2026-09-16, 0.2.6, Turk Telekom): test "acilan: discord-guncelleme, discord,
-/// roblox" dedi, hemen ardindan Baslat "yalnizca su adreslere (6): discord..." dedi --
-/// roblox.com listede yoktu ve baslatma sonrasi dogrulama "Acilmayanlar: www.roblox.com"
-/// diye uyardi. Dogrulama diske yaziliyordu, bellekteki profil ise acilistaki haliyle
-/// kaliyordu.
+/// ÖLÇÜLDÜ (2026-09-16, 0.2.6, Türk Telekom): test "açılan: discord-guncelleme, discord,
+/// roblox" dedi, hemen ardından Başlat "yalnızca şu adreslere uygulanacak (6): discord…"
+/// dedi; roblox.com listede yoktu ve başlatma sonrası doğrulama "Açılmayanlar:
+/// www.roblox.com" diye uyardı. Doğrulama diske yazılıyordu, bellekteki profil ise
+/// açılıştaki hâliyle kalıyordu.
 /// </remarks>
 public sealed class YeniDogrulamaTests
 {
@@ -36,7 +36,7 @@ public sealed class YeniDogrulamaTests
     [Fact]
     public void Yeniden_Yuklenen_Profil_Yeni_Kategoriyi_Adres_Listesine_Tasiyor()
     {
-        // Zincirin veri tarafi: ogrenilen roblox -> dogrulanmis kategori -> roblox.com.
+        // Zincirin veri tarafı: öğrenilen roblox -> doğrulanmış kategori -> roblox.com.
         var winners = new Dictionary<StrategySection, string>
         {
             [StrategySection.Tcp443] = "--dpi-desync=fake --dpi-desync-ttl=4",

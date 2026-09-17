@@ -3,33 +3,33 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Core.Engine;
 
 /// <summary>
-/// winws.exe icin arguman listesi uretir.
+/// winws.exe için argüman listesi üretir.
 /// </summary>
 /// <remarks>
-/// Argumanlar tek bir dizgi degil, <see cref="IReadOnlyList{T}"/> olarak uretilir ve
-/// cagiran taraf bunu <c>ProcessStartInfo.ArgumentList</c>'e verir. Boylece kabuk
-/// tirnaklama kurallarini elle taklit etmek gerekmez -- icinde bosluk olan kullanici
-/// yollari (C:\Users\Ali Veli\...) bu yuzden sorun cikarmaz.
+/// Argümanlar tek bir dizgi değil, <see cref="IReadOnlyList{T}"/> olarak üretilir ve
+/// çağıran taraf bunu <c>ProcessStartInfo.ArgumentList</c>'e verir. Böylece kabuk
+/// tırnaklama kurallarını elle taklit etmek gerekmez; içinde boşluk olan kullanıcı
+/// yolları (C:\Users\Ali Veli\...) bu yüzden sorun çıkarmaz.
 ///
-/// Uretilen yapinin kaynagi upstream'in kendi preset1_example.cmd dosyasi:
-///   global WinDivert filtresi, ardindan --new ile ayrilmis bolumler.
+/// Üretilen yapının kaynağı upstream'in kendi preset1_example.cmd dosyası:
+///   global WinDivert filtresi, ardından --new ile ayrılmış bölümler.
 /// </remarks>
 public sealed class WinwsCommandBuilder(VendorPaths vendor)
 {
     private readonly VendorPaths _vendor = vendor;
 
     /// <summary>
-    /// Gunluk kullanim komutu: her bolumun kazanan stratejisini tek bir winws
-    /// ornegi altinda birlestirir.
+    /// Günlük kullanım komutu: her bölümün kazanan stratejisini tek bir winws
+    /// örneği altında birleştirir.
     /// </summary>
     /// <param name="winners">
-    /// Bolum -> o bolumun kazanan arguman dizgisi. Kazanani olmayan bolumler
-    /// komuta hic girmez; gereksiz trafik yakalamak yalnizca CPU harcar ve
-    /// baglantiyi yavaslatir.
+    /// Bölüm -> o bölümün kazanan argüman dizgisi. Kazananı olmayan bölümler
+    /// komuta hiç girmez; gereksiz trafik yakalamak yalnızca CPU harcar ve
+    /// bağlantıyı yavaşlatır.
     /// </param>
     /// <param name="hostlistDomains">
-    /// Stratejinin UYGULANACAGI alan adlari. Bos ya da null verilirse bayrak hic
-    /// eklenmez ve strateji butun trafige uygulanir (0.2.1 ve oncesinin davranisi).
+    /// Stratejinin UYGULANACAĞI alan adları. Boş ya da null verilirse bayrak hiç
+    /// eklenmez ve strateji bütün trafiğe uygulanır (0.2.1 ve öncesinin davranışı).
     /// </param>
     public IReadOnlyList<string> BuildRuntimeCommand(
         IReadOnlyDictionary<StrategySection, string> winners,
@@ -64,10 +64,10 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
             first = false;
             args.Add(section.ToWinwsFilter());
 
-            // Bolum bazinda: winws hostlist'i profil basina denetliyor ("hostlist
-            // check for profile %d"), dolayisiyla bayrak her --new bolumune ayri
-            // ayri girmek zorunda. Bir kez, en basta yazmak yalnizca ilk bolumu
-            // daraltirdi ve kalan bolumler yine butun trafige dokunurdu.
+            // Bölüm bazında: winws hostlist'i profil başına denetliyor ("hostlist
+            // check for profile %d"), dolayısıyla bayrak her --new bölümüne ayrı
+            // ayrı girmek zorunda. Bir kez, en başta yazmak yalnızca ilk bölümü
+            // daraltırdı ve kalan bölümler yine bütün trafiğe dokunurdu.
             if (domains is not null && SupportsHostlist(section))
             {
                 args.Add($"--hostlist-domains={domains}");
@@ -80,55 +80,55 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
     }
 
     /// <summary>
-    /// Bolumde ana bilgisayar adi GORUNUYOR mu; yani hostlist ile daraltilabilir mi.
+    /// Bölümde ana bilgisayar adı GÖRÜNÜYOR mu; yani hostlist ile daraltılabilir mi.
     /// </summary>
     /// <remarks>
-    /// <see cref="StrategySection.DiscordVoice"/> HARIC tutuluyor ve bu, dogru olmasi
-    /// zorunlu bir ayrinti. O bolum STUN/UDP medya trafigi (<c>--filter-l7=discord,stun</c>)
-    /// ve iceriginde alan adi YOK. Hostlist eklenirse winws o profil icin ad esleismesi
-    /// arar, hicbir pakette bulamaz ve bolum hic devreye girmez -- yani Discord sesi
-    /// sessizce korumasiz kalirdi. Digerlerinde ad var: tcp80 Host basligi, tcp443 TLS
+    /// <see cref="StrategySection.DiscordVoice"/> HARİÇ tutuluyor ve bu, doğru olması
+    /// zorunlu bir ayrıntı. O bölüm STUN/UDP medya trafiği (<c>--filter-l7=discord,stun</c>)
+    /// ve içeriğinde alan adı YOK. Hostlist eklenirse winws o profil için ad eşleşmesi
+    /// arar, hiçbir pakette bulamaz ve bölüm hiç devreye girmez; yani Discord sesi
+    /// sessizce korumasız kalırdı. Diğerlerinde ad var: tcp80 Host başlığı, tcp443 TLS
     /// SNI, quic ise QUIC ClientHello SNI.
     /// </remarks>
     private static bool SupportsHostlist(StrategySection section)
         => section != StrategySection.DiscordVoice;
 
     /// <summary>
-    /// Test komutu: tek bir bolum, tek bir strateji, tek bir hedef IP.
+    /// Test komutu: tek bir bölüm, tek bir strateji, tek bir hedef IP.
     /// </summary>
     /// <remarks>
-    /// <paramref name="targetIp"/> icin <c>--ipset-ip</c> kullanilmasi paralel testin
-    /// temeli. winws WinDivert'e global bir filtreyle baglanir, yani ayni anda calisan
-    /// iki ornek ayni paketi gorur. Ama strateji yalnizca kendi hedef IP'sine
-    /// uygulandigi icin, eslesmeyen paketler dokunulmadan gecer. Bu sayede N test
-    /// isçisi ayrik hedeflerle birbirine karismadan calisabilir.
+    /// <paramref name="targetIp"/> için <c>--ipset-ip</c> kullanılması paralel testin
+    /// temeli. winws WinDivert'e global bir filtreyle bağlanır, yani aynı anda çalışan
+    /// iki örnek aynı paketi görür. Ama strateji yalnızca kendi hedef IP'sine
+    /// uygulandığı için eşleşmeyen paketler dokunulmadan geçer. Bu sayede N test
+    /// işçisi ayrık hedeflerle birbirine karışmadan çalışabilir.
     ///
-    /// Bu varsayim ampirik olarak dogrulanmali (Adim 5 spike). Tutmazsa test motoru
-    /// sirali moda duser; ISP kisayolu sayesinde ozellik yine hizli kalir.
+    /// Bu varsayım deneysel olarak doğrulanmalı (Adım 5 spike). Tutmazsa test motoru
+    /// sıralı moda düşer; İSS kısayolu sayesinde özellik yine hızlı kalır.
     /// </remarks>
     public IReadOnlyList<string> BuildProbeCommand(StrategySection section, string strategyArgs, string targetIp)
         => BuildProbeCommand(section, strategyArgs, [targetIp]);
 
     /// <summary>
-    /// Test komutu: tek bir bolum, tek bir strateji, BIRDEN COK hedef IP.
+    /// Test komutu: tek bir bölüm, tek bir strateji, BİRDEN ÇOK hedef IP.
     /// </summary>
     /// <remarks>
-    /// Cok hedefli hal, paralel sinamanin dogru yolu. Once her hedef icin AYRI bir
-    /// winws ornegi baslatiliyordu; winws bunu reddediyor:
+    /// Çok hedefli hâl, paralel sınamanın doğru yolu. Önce her hedef için AYRI bir
+    /// winws örneği başlatılıyordu; winws bunu reddediyor:
     ///
     ///   "A copy of winws is already running with the same filter"
     ///
-    /// --ipset-ip GLOBAL WinDivert FILTRESINE GIRMIYOR -- yalnizca surec icindeki
-    /// profil eslesmesinde kullaniliyor. Dolayisiyla ayni bolumun iki isçisi birebir
-    /// ayni filtreyi kuruyor ve ikincisi hemen 1 koduyla oluyordu. Sonuc sessizdi:
-    /// aday, hedeflerin yalnizca birinde olculuyor, digerinde "calistirilamadi"
-    /// yaziliyordu. Ayni strateji bir kosumda basarisiz bir kosumda basarili
-    /// gorunuyordu -- olculen sey aslinda hangi isçinin once basladigiydi.
+    /// --ipset-ip GLOBAL WinDivert FİLTRESİNE GİRMİYOR; yalnızca süreç içindeki
+    /// profil eşleşmesinde kullanılıyor. Dolayısıyla aynı bölümün iki işçisi birebir
+    /// aynı filtreyi kuruyor ve ikincisi hemen 1 koduyla ölüyordu. Sonuç sessizdi:
+    /// aday, hedeflerin yalnızca birinde ölçülüyor, diğerinde "calistirilamadi"
+    /// yazılıyordu. Aynı strateji bir koşumda başarısız, bir koşumda başarılı
+    /// görünüyordu; ölçülen şey aslında hangi işçinin önce başladığıydı.
     ///
-    /// Dogru cozum tek ornek: ayni ADAY zaten butun hedeflere ayni stratejiyi
-    /// uyguluyor, dolayisiyla hedefleri tek bir ipset'te toplamak anlam olarak
-    /// ayni sey. Bolumun "ayni hedefe iki strateji birden uygulanamaz" kurali
-    /// bozulmuyor: burada tek strateji, cok hedef var.
+    /// Doğru çözüm tek örnek: aynı ADAY zaten bütün hedeflere aynı stratejiyi
+    /// uyguluyor, dolayısıyla hedefleri tek bir ipset'te toplamak anlam olarak
+    /// aynı şey. Bölümün "aynı hedefe iki strateji birden uygulanamaz" kuralı
+    /// bozulmuyor: burada tek strateji, çok hedef var.
     /// </remarks>
     public IReadOnlyList<string> BuildProbeCommand(
         StrategySection section, string strategyArgs, IReadOnlyList<string> targetIps)
@@ -148,7 +148,7 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
 
         args.Add(section.ToWinwsFilter());
 
-        // --ipset-ip liste aliyor (<ip_list>), tekrarli bayrak degil.
+        // --ipset-ip liste alıyor (<ip_list>), tekrarlı bayrak değil.
         args.Add($"--ipset-ip={string.Join(',', targetIps)}");
         args.AddRange(SplitAndResolve(strategyArgs));
 
@@ -156,17 +156,17 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
     }
 
     /// <summary>
-    /// Komutu insan tarafindan okunabilir tek satira cevirir. Yalnizca gunluge yazmak
-    /// ve kullaniciya gostermek icin -- sureci baslatmak icin ASLA kullanilmamali,
-    /// cunku burada yapilan tirnaklama kabuk kurallariyla birebir ayni degil.
+    /// Komutu insan tarafından okunabilir tek satıra çevirir. Yalnızca günlüğe yazmak
+    /// ve kullanıcıya göstermek için; süreci başlatmak için ASLA kullanılmamalı,
+    /// çünkü burada yapılan tırnaklama kabuk kurallarıyla birebir aynı değil.
     /// </summary>
     public static string ToDisplayString(IReadOnlyList<string> args)
         => string.Join(' ', args.Select(a => a.Contains(' ', StringComparison.Ordinal) ? $"\"{a}\"" : a));
 
     /// <summary>
-    /// Bolumleri komuttaki kanonik sirasina koyar: once TCP, sonra UDP tabanli olanlar.
-    /// Sira davranisi degistirmez ama uretilen komutu deterministik yapar, bu da
-    /// gunluklerin ve testlerin karsilastirilabilir olmasi demek.
+    /// Bölümleri komuttaki kanonik sırasına koyar: önce TCP, sonra UDP tabanlı olanlar.
+    /// Sıra davranışı değiştirmez ama üretilen komutu deterministik yapar, bu da
+    /// günlüklerin ve testlerin karşılaştırılabilir olması demek.
     /// </summary>
     private static List<StrategySection> OrderSections(IEnumerable<StrategySection> sections)
     {
@@ -182,8 +182,8 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
     }
 
     /// <summary>
-    /// Global WinDivert filtresini yazar: hangi trafigin cekirdekten kullanici alanina
-    /// aktarilacagi. Filtre gereken en dar hali olmali -- fazlasi yalnizca CPU harcar.
+    /// Global WinDivert filtresini yazar: hangi trafiğin çekirdekten kullanıcı alanına
+    /// aktarılacağı. Filtre gereken en dar hâli olmalı; fazlası yalnızca CPU harcar.
     /// </summary>
     private void AddGlobalFilters(List<string> args, IReadOnlyCollection<StrategySection> sections)
     {
@@ -206,22 +206,22 @@ public sealed class WinwsCommandBuilder(VendorPaths vendor)
         if (sections.Contains(StrategySection.Quic))
         {
             args.Add("--wf-udp=443");
-            // QUIC Initial paketlerini ayirt eden hazir filtre parcasi.
+            // QUIC Initial paketlerini ayırt eden hazır filtre parçası.
             args.Add($"--wf-raw-part=@{_vendor.QuicInitialFilter}");
         }
 
         if (sections.Contains(StrategySection.DiscordVoice))
         {
-            // Discord ses trafigi sabit bir porta oturmaz; upstream'in hazir
-            // filtre parcalari olmadan bu trafigi yakalamak mumkun degil.
+            // Discord ses trafiği sabit bir porta oturmaz; upstream'in hazır
+            // filtre parçaları olmadan bu trafiği yakalamak mümkün değil.
             args.Add($"--wf-raw-part=@{_vendor.DiscordMediaFilter}");
             args.Add($"--wf-raw-part=@{_vendor.StunFilter}");
         }
     }
 
     /// <summary>
-    /// Arguman dizgisini once bosluklardan boler, sonra her parcadaki yer tutuculari cozer.
-    /// Sira onemli: ters yapilsaydi icinde bosluk olan bir dosya yolu iki argumana bolunurdu.
+    /// Argüman dizgisini önce boşluklardan böler, sonra her parçadaki yer tutucuları çözer.
+    /// Sıra önemli: ters yapılsaydı içinde boşluk olan bir dosya yolu iki argümana bölünürdü.
     /// </summary>
     private IEnumerable<string> SplitAndResolve(string strategyArgs)
         => strategyArgs

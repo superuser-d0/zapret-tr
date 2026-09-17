@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>winws surecinin durumu.</summary>
+/// <summary>winws sürecinin durumu.</summary>
 public enum WinwsState
 {
     Stopped,
@@ -14,20 +14,20 @@ public enum WinwsState
     Faulted,
 }
 
-/// <summary>winws'in stdout/stderr satiri.</summary>
+/// <summary>winws'in stdout/stderr satırı.</summary>
 public sealed record WinwsLogLine(DateTimeOffset Timestamp, string Text, bool IsError);
 
 /// <summary>
-/// winws.exe surecini baslatir, durdurur ve ciktisini yayinlar.
+/// winws.exe sürecini başlatır, durdurur ve çıktısını yayınlar.
 /// </summary>
 /// <remarks>
-/// Tek bir ornegi yonetir. Test motoru ayni anda birden fazla winws calistiracagi icin
-/// her isci kendi <see cref="WinwsRunner"/> ornegini tutar.
+/// Tek bir örneği yönetir. Test motoru aynı anda birden fazla winws çalıştıracağı için
+/// her işçi kendi <see cref="WinwsRunner"/> örneğini tutar.
 ///
-/// Onemli: surec duzgun sonlandirilmazsa WinDivert surucusu yuklu kalir. Durdurma
-/// yolunda bu yuzden once nazik kapatma denenir, olmazsa oldurulur; surucu temizligi
-/// ayri bir isle (<see cref="WinDivertCleanup"/>) yapilir cunku ayni surucuyu baska
-/// bir winws ornegi hala kullaniyor olabilir.
+/// Önemli: süreç düzgün sonlandırılmazsa WinDivert sürücüsü yüklü kalır. Durdurma
+/// yolunda bu yüzden önce nazik kapatma denenir, olmazsa öldürülür; sürücü temizliği
+/// ayrı bir işle (<see cref="WinDivertCleanup"/>) yapılır, çünkü aynı sürücüyü başka
+/// bir winws örneği hâlâ kullanıyor olabilir.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class WinwsRunner : IAsyncDisposable
@@ -38,33 +38,33 @@ public sealed class WinwsRunner : IAsyncDisposable
 
     public WinwsRunner(VendorPaths vendor) => _vendor = vendor;
 
-    /// <summary>winws bir satir yazdiginda tetiklenir. Arayuzdeki canli gunluk bunu dinler.</summary>
+    /// <summary>winws bir satır yazdığında tetiklenir. Arayüzdeki canlı günlük bunu dinler.</summary>
     public event Action<WinwsLogLine>? LogLineReceived;
 
-    /// <summary>Durum degistiginde tetiklenir.</summary>
+    /// <summary>Durum değiştiğinde tetiklenir.</summary>
     public event Action<WinwsState>? StateChanged;
 
     public WinwsState State { get; private set; } = WinwsState.Stopped;
 
-    /// <summary>Su an calisan komutun argumanlari. Durmusken null.</summary>
+    /// <summary>Şu an çalışan komutun argümanları. Durmuşken null.</summary>
     public IReadOnlyList<string>? CurrentArguments { get; private set; }
 
     /// <summary>
-    /// winws'in KENDI bildirdigi surum ("v72.12"). Hic calismadiysa null.
+    /// winws'in KENDİ bildirdiği sürüm ("v72.12"). Hiç çalışmadıysa null.
     /// </summary>
     /// <remarks>
-    /// Sabit bir metin yerine ikilinin kendi soyledigi tutuluyor, cunku ikisi
-    /// AYRISMIS durumdaydi: arayuz "winws v72.13" yaziyordu ama gercek bir
-    /// kullanicinin gunlugunde motor "github version v72.12" diyordu.
+    /// Sabit bir metin yerine ikilinin kendi söylediği tutuluyor, çünkü ikisi
+    /// AYRIŞMIŞ durumdaydı: arayüz "winws v72.13" yazıyordu ama gerçek bir
+    /// kullanıcının günlüğünde motor "github version v72.12" diyordu.
     ///
     /// Sebebi tedarik zincirinde: <c>winws.exe</c> <c>zapret-win-bundle</c>
-    /// deposundan bir COMMIT ile sabitleniyor (o depoda tag yok), yalnizca sahte
-    /// yuk dosyalari ve filtre parcalari <c>zapret</c> deposunun v72.13
-    /// tag'inden geliyor. Yani "v72.13" hicbir zaman winws'in surumu degildi.
+    /// deposundan bir COMMIT ile sabitleniyor (o depoda etiket yok), yalnızca sahte
+    /// yük dosyaları ve filtre parçaları <c>zapret</c> deposunun v72.13
+    /// etiketinden geliyor. Yani "v72.13" hiçbir zaman winws'in sürümü değildi.
     ///
-    /// Yanlis surum bildirmek teshisi dogrudan bozar: gelen bir hata
-    /// bildiriminde hangi ikilinin kostugu bilinmezse, bir secenegin var olup
-    /// olmadigi bile tartisilamaz.
+    /// Yanlış sürüm bildirmek teşhisi doğrudan bozar: gelen bir hata
+    /// bildiriminde hangi ikilinin koştuğu bilinmezse, bir seçeneğin var olup
+    /// olmadığı bile tartışılamaz.
     /// </remarks>
     public string? ReportedVersion { get; private set; }
 
@@ -80,11 +80,11 @@ public sealed class WinwsRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// winws'i verilen argumanlarla baslatir.
+    /// winws'i verilen argümanlarla başlatır.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Zaten calisiyorsa.</exception>
+    /// <exception cref="InvalidOperationException">Zaten çalışıyorsa.</exception>
     /// <exception cref="FileNotFoundException">winws.exe yoksa.</exception>
-    /// <exception cref="UnauthorizedAccessException">Yonetici yetkisi yoksa.</exception>
+    /// <exception cref="UnauthorizedAccessException">Yönetici yetkisi yoksa.</exception>
     public void Start(IReadOnlyList<string> arguments)
     {
         ArgumentNullException.ThrowIfNull(arguments);
@@ -95,10 +95,10 @@ public sealed class WinwsRunner : IAsyncDisposable
 
         ElevationGuard.EnsureElevated();
 
-        // Eksik dosyalari BASLATMADAN once yakala. Eksik bir DLL ile winws.exe
-        // baslatilirsa Windows modal bir hata penceresi acar; surec olmedigi icin
-        // biz de hata almayiz, sonsuza kadar bekleriz. Bu tam olarak yasandi:
-        // cygwin1.dll indirme listesinden cikarilmisti.
+        // Eksik dosyaları BAŞLATMADAN önce yakala. Eksik bir DLL ile winws.exe
+        // başlatılırsa Windows kalıcı (modal) bir hata penceresi açar; süreç ölmediği
+        // için biz de hata almayız, sonsuza kadar bekleriz. Bu tam olarak yaşandı:
+        // cygwin1.dll indirme listesinden çıkarılmıştı.
         var missing = _vendor.FindMissingFiles();
         if (missing.Count > 0)
         {
@@ -108,9 +108,9 @@ public sealed class WinwsRunner : IAsyncDisposable
                 missing[0]);
         }
 
-        // Cocuk surec ana surecin hata modunu miras alir. SEM_FAILCRITICALERRORS
-        // ile eksik DLL gibi yukleyici hatalarinda pencere acilmaz, surec dogrudan
-        // duser -- yani hata bize gorunur bir bicimde ulasir.
+        // Çocuk süreç ana sürecin hata modunu miras alır. SEM_FAILCRITICALERRORS
+        // ile eksik DLL gibi yükleyici hatalarında pencere açılmaz, süreç doğrudan
+        // düşer; yani hata bize görünür bir biçimde ulaşır.
         SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
 
         lock (_gate)
@@ -130,8 +130,8 @@ public sealed class WinwsRunner : IAsyncDisposable
                 RedirectStandardError = true,
             };
 
-            // ArgumentList kullaniyoruz: her arguman ayri gecer, kabuk tirnaklama
-            // kurallarini elle taklit etmemiz gerekmez.
+            // ArgumentList kullanıyoruz: her argüman ayrı geçer, kabuk tırnaklama
+            // kurallarını elle taklit etmemiz gerekmez.
             foreach (var argument in arguments)
             {
                 startInfo.ArgumentList.Add(argument);
@@ -139,12 +139,12 @@ public sealed class WinwsRunner : IAsyncDisposable
 
             var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
-            // winws'in kendi soyledikleri. Erken olumde hata mesajina bunlar
-            // konuyor: eskiden yalnizca cikis kodu vardi ve "34 koduyla kapandi,
-            // ayrintilar icin gunluge bakin" deniyordu -- ama gunlukte ayrinti
-            // YOKTU. Gercek bir kullanicida 304 aday bu mesajla dustu ve
-            // sebebini kimse ogrenemedi. Motorun soyledigi sey teshisin
-            // kendisiydi ve biz onu atiyorduk.
+            // winws'in kendi söyledikleri. Erken ölümde hata mesajına bunlar
+            // konuyor: eskiden yalnızca çıkış kodu vardı ve "34 koduyla kapandı,
+            // ayrıntılar için günlüğe bakın" deniyordu; ama günlükte ayrıntı
+            // YOKTU. Gerçek bir kullanıcıda 304 aday bu mesajla düştü ve
+            // sebebini kimse öğrenemedi. Motorun söylediği şey teşhisin
+            // kendisiydi ve biz onu atıyorduk.
             var ilkSatirlar = new List<string>();
             _startupLines = ilkSatirlar;
             var yakalama = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -169,9 +169,9 @@ public sealed class WinwsRunner : IAsyncDisposable
 
                 lock (ilkSatirlar)
                 {
-                    // Ilk birkac satir yetiyor: winws sebebi hemen basta
-                    // yaziyor, sonrasi paket gunlugu. Surucu hatasi satirlari
-                    // sinirdan bagimsiz tutuluyor: teshis onlarin icinde.
+                    // İlk birkaç satır yetiyor: winws sebebi hemen başta
+                    // yazıyor, sonrası paket günlüğü. Sürücü hatası satırları
+                    // sınırdan bağımsız tutuluyor: teşhis onların içinde.
                     if (ilkSatirlar.Count < 5 || WinDivertDriver.IsOpenFailure([satir]))
                     {
                         ilkSatirlar.Add(satir.Trim());
@@ -179,7 +179,7 @@ public sealed class WinwsRunner : IAsyncDisposable
                 }
             }
 
-            // Akislarin sonu (e.Data == null). Erken olumde son satirlari beklemek icin.
+            // Akışların sonu (e.Data == null). Erken ölümde son satırları beklemek için.
             var ciktiBitti = new ManualResetEventSlim();
             var hataBitti = new ManualResetEventSlim();
 
@@ -208,12 +208,12 @@ public sealed class WinwsRunner : IAsyncDisposable
             };
             process.Exited += (_, _) =>
             {
-                // Beklenmedik cikis: kullanici durdurmadiysa bu bir hatadir ve
-                // arayuzde yesil gozukmeye devam etmesi kabul edilemez.
-                // Baslatma penceresindeki olum ise StartAsync'in isi: orada
-                // siniflandirilip (gerekirse surucu bosaltilip) yeniden deneniyor.
-                // Burada da "Faulted" yayinlamak arayuzde bir anlik "BEKLENMEDIK
-                // DURUS" gosterirdi, sonra her sey duzelmis olurdu.
+                // Beklenmedik çıkış: kullanıcı durdurmadıysa bu bir hatadır ve
+                // arayüzde yeşil gözükmeye devam etmesi kabul edilemez.
+                // Başlatma penceresindeki ölüm ise StartAsync'in işi: orada
+                // sınıflandırılıp (gerekirse sürücü boşaltılıp) yeniden deneniyor.
+                // Burada da "Faulted" yayınlamak arayüzde bir anlık "BEKLENMEDİK
+                // DURUŞ" gösterirdi, sonra her şey düzelmiş olurdu.
                 if (State == WinwsState.Running && !_starting)
                 {
                     SetState(WinwsState.Faulted);
@@ -227,9 +227,9 @@ public sealed class WinwsRunner : IAsyncDisposable
             catch (System.ComponentModel.Win32Exception ex)
                 when (SecurityBlockAdvice.Describe(ex, "winws.exe") is { } engel)
             {
-                // Defender ya da Akilli Uygulama Denetimi winws.exe'yi calistirmadi.
-                // Windows'un tek basina cumlesi ("Bir Uygulama Denetimi ilkesi bu
-                // dosyayi engelledi") kimin engelledigini ve ne yapilacagini soylemiyor.
+                // Defender ya da Akıllı Uygulama Denetimi winws.exe'yi çalıştırmadı.
+                // Windows'un tek başına cümlesi ("Bir Uygulama Denetimi ilkesi bu
+                // dosyayı engelledi") kimin engellediğini ve ne yapılacağını söylemiyor.
                 process.Dispose();
                 throw new InvalidOperationException(engel, ex);
             }
@@ -237,9 +237,9 @@ public sealed class WinwsRunner : IAsyncDisposable
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            // Erken olum kontrolu: winws gecersiz bir arguman aldiginda ya da
-            // surucuyu acamadiginda hemen cikiyor. Bunu burada yakalamazsak
-            // arayuz "calisiyor" gosterir ve kullanici korundugunu saniir.
+            // Erken ölüm kontrolü: winws geçersiz bir argüman aldığında ya da
+            // sürücüyü açamadığında hemen çıkıyor. Bunu burada yakalamazsak
+            // arayüz "çalışıyor" gösterir ve kullanıcı korunduğunu sanır.
             if (WaitForEarlyExit(process, StartupGraceMilliseconds, ciktiBitti.WaitHandle, hataBitti.WaitHandle))
             {
                 var exitCode = process.ExitCode;
@@ -254,27 +254,27 @@ public sealed class WinwsRunner : IAsyncDisposable
         SetState(WinwsState.Running);
     }
 
-    /// <summary>Son satirlar icin akislarin kapanmasi en fazla bu kadar beklenir.</summary>
+    /// <summary>Son satırlar için akışların kapanması en fazla bu kadar beklenir.</summary>
     private static readonly TimeSpan OutputDrainLimit = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// Surec baslangic penceresinde oldu mu. Olduyse ciktisinin son satirlarini
-    /// SINIRLI bir sure bekler.
+    /// Süreç başlangıç penceresinde öldü mü. Öldüyse çıktısının son satırlarını
+    /// SINIRLI bir süre bekler.
     /// </summary>
     /// <remarks>
-    /// KILITLENME. Burada once parametresiz <c>process.WaitForExit()</c> vardi. O
-    /// cagri yonlendirilmis cikti akislarinin sonunu bekliyor; akislari okuyan geri
-    /// cagrilar ise satiri <see cref="LogLineReceived"/> ile arayuze gonderiyor ve
-    /// arayuz satiri <c>Dispatcher.Invoke</c> ile yaziyordu. Start arayuzun
-    /// "Baslat"indan ARAYUZ IS PARCACIGINDA cagriliyor. winws 250 ms icinde olunce
-    /// (ornegin cokmus bir onceki ornekten sahipsiz bir winws kalmissa) iki taraf
-    /// birbirini sonsuza kadar bekliyordu: pencere donuyor, Windows "yanit vermiyor"
-    /// deyip kapatiyordu. Gercek bir kullanicida 2026-09-14'te iki kez olculdu (olay
-    /// gunlugunde AppHang) ve ayri bir denemede yeniden uretildi.
+    /// KİLİTLENME. Burada önce parametresiz <c>process.WaitForExit()</c> vardı. O
+    /// çağrı yönlendirilmiş çıktı akışlarının sonunu bekliyor; akışları okuyan geri
+    /// çağrılar ise satırı <see cref="LogLineReceived"/> ile arayüze gönderiyor ve
+    /// arayüz satırı <c>Dispatcher.Invoke</c> ile yazıyordu. Start arayüzün
+    /// "Başlat"ından ARAYÜZ İŞ PARÇACIĞINDA çağrılıyor. winws 250 ms içinde ölünce
+    /// (örneğin çökmüş bir önceki örnekten sahipsiz bir winws kalmışsa) iki taraf
+    /// birbirini sonsuza kadar bekliyordu: pencere donuyor, Windows "yanıt vermiyor"
+    /// deyip kapatıyordu. Gerçek bir kullanıcıda 2026-09-14'te iki kez ölçüldü (olay
+    /// günlüğünde AppHang) ve ayrı bir denemede yeniden üretildi.
     ///
-    /// Bekleme artik akislarin kapandigi olaylarla ve bir ust sinirla yapiliyor.
-    /// Arayuz tarafi da satiri beklemeden gonderiyor (MainViewModel.Append); ikisi
-    /// birlikte hem kilitlenmeyi hem de son satirlarin kaybolmasini onluyor.
+    /// Bekleme artık akışların kapandığı olaylarla ve bir üst sınırla yapılıyor.
+    /// Arayüz tarafı da satırı beklemeden gönderiyor (MainViewModel.Append); ikisi
+    /// birlikte hem kilitlenmeyi hem de son satırların kaybolmasını önlüyor.
     /// </remarks>
     public static bool WaitForEarlyExit(Process process, int graceMilliseconds, WaitHandle stdoutClosed, WaitHandle stderrClosed)
     {
@@ -285,10 +285,10 @@ public sealed class WinwsRunner : IAsyncDisposable
             return false;
         }
 
-        // Sirayla ve ortak bir sureyle. WaitHandle.WaitAll STA is parcaciginda
-        // desteklenmiyor (NotSupportedException) ve Start tam da WPF'in STA arayuz
-        // is parcaciginda cagriliyor: ilk duzeltme denemesi donmayi COKMEYE ceviriyordu,
-        // EarlyExitDeadlockTests yakaladi.
+        // Sırayla ve ortak bir süreyle. WaitHandle.WaitAll STA iş parçacığında
+        // desteklenmiyor (NotSupportedException) ve Start tam da WPF'in STA arayüz
+        // iş parçacığında çağrılıyor: ilk düzeltme denemesi donmayı ÇÖKMEYE çeviriyordu,
+        // EarlyExitDeadlockTests yakaladı.
         var sure = Stopwatch.StartNew();
         stdoutClosed.WaitOne(OutputDrainLimit);
         var kalan = OutputDrainLimit - sure.Elapsed;
@@ -299,31 +299,31 @@ public sealed class WinwsRunner : IAsyncDisposable
     private List<string> _startupLines = [];
     private TaskCompletionSource _captureStarted = new();
 
-    /// <summary>winws'in yakalamayi baslattiginda yazdigi satir.</summary>
+    /// <summary>winws'in yakalamayı başlattığında yazdığı satır.</summary>
     private const string CaptureStartedLine = "capture is started";
 
     /// <summary>
-    /// Surucu acma hatasinin gorunebilecegi en uzun pencere.
+    /// Sürücü açma hatasının görünebileceği en uzun pencere.
     /// </summary>
     /// <remarks>
-    /// <see cref="Start"/> yalnizca ilk 250 ms'deki olumu yakaliyor. Surucu
-    /// yuklemesi yavas bir makinede (virusten koruma surucuyu tararken) daha uzun
-    /// surebiliyor ve o zaman winws "calisiyor" sayilip birkac yuz milisaniye sonra
-    /// sessizce oluyordu: parametre testi aday adina zaman asimi yaziyor, yani
-    /// motor hatasi DPI engeli gibi gorunuyordu. Normalde bekleme winws
-    /// "capture is started" dedigi anda bitiyor.
+    /// <see cref="Start"/> yalnızca ilk 250 ms'deki ölümü yakalıyor. Sürücü
+    /// yüklemesi yavaş bir makinede (virüsten koruma sürücüyü tararken) daha uzun
+    /// sürebiliyor ve o zaman winws "çalışıyor" sayılıp birkaç yüz milisaniye sonra
+    /// sessizce ölüyordu: parametre testi aday adına zaman aşımı yazıyor, yani
+    /// motor hatası DPI engeli gibi görünüyordu. Normalde bekleme winws
+    /// "capture is started" dediği anda bitiyor.
     /// </remarks>
     private static readonly TimeSpan CaptureWindow = TimeSpan.FromMilliseconds(1500);
 
     /// <summary>
-    /// winws'i baslatir; surucu cekirdekte takili kaldigi icin acilamazsa surucuyu
-    /// bosaltip BIR KEZ yeniden dener.
+    /// winws'i başlatır; sürücü çekirdekte takılı kaldığı için açılamazsa sürücüyü
+    /// boşaltıp BİR KEZ yeniden dener.
     /// </summary>
     /// <remarks>
-    /// Butun baslatma yollari (arayuzun "Baslat"i, parametre testi, CLI) bunu
-    /// cagirmali. Gerekcesi <see cref="WinDivertDriver"/>'da: eskiden bu durumda
-    /// her aday ayni hatayla dusuyor ve tek cikis yolu bilgisayari yeniden
-    /// baslatmakti.
+    /// Bütün başlatma yolları (arayüzün "Başlat"ı, parametre testi, CLI) bunu
+    /// çağırmalı. Gerekçesi <see cref="WinDivertDriver"/>'da: eskiden bu durumda
+    /// her aday aynı hatayla düşüyor ve tek çıkış yolu bilgisayarı yeniden
+    /// başlatmaktı.
     /// </remarks>
     public async Task StartAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
     {
@@ -386,8 +386,8 @@ public sealed class WinwsRunner : IAsyncDisposable
 
         if (done != exited)
         {
-            // Pencere kapandiktan hemen sonra olmusse Exited olayi "Faulted"i
-            // kacirmis olabilir; normal yola birak.
+            // Pencere kapandıktan hemen sonra ölmüşse Exited olayı "Faulted"ı
+            // kaçırmış olabilir; normal yola bırak.
             try
             {
                 if (process.HasExited && State == WinwsState.Running)
@@ -397,7 +397,7 @@ public sealed class WinwsRunner : IAsyncDisposable
             }
             catch (InvalidOperationException)
             {
-                // Bu arada StopAsync sureci birakti.
+                // Bu arada StopAsync süreci bıraktı.
             }
 
             return;
@@ -407,7 +407,7 @@ public sealed class WinwsRunner : IAsyncDisposable
         {
             if (!ReferenceEquals(_process, process))
             {
-                // Bu arada biri durdurdu; hata degil.
+                // Bu arada biri durdurdu; hata değil.
                 return;
             }
 
@@ -421,7 +421,7 @@ public sealed class WinwsRunner : IAsyncDisposable
         throw BuildEarlyExitException(exitCode, _startupLines);
     }
 
-    /// <summary>winws'in erken olumunu, soylediklerine gore siniflandirilmis bir hataya cevirir.</summary>
+    /// <summary>winws'in erken ölümünü, söylediklerine göre sınıflandırılmış bir hataya çevirir.</summary>
     private static InvalidOperationException BuildEarlyExitException(int exitCode, List<string> lines)
     {
         List<string> kopya;
@@ -434,9 +434,9 @@ public sealed class WinwsRunner : IAsyncDisposable
             ? " winws: " + string.Join(" | ", kopya)
             : " (winws hicbir sey yazmadan cikti)";
 
-        // winws.exe'ye izin verilip yukledigi imzasiz cygwin1.dll ya da WinDivert.dll
-        // engellenirse surec yukleyicinin NTSTATUS koduyla oluyor. Ciplak
-        // "-1073740760 koduyla kapandi" kullaniciya hicbir sey soylemiyordu.
+        // winws.exe'ye izin verilip yüklediği imzasız cygwin1.dll ya da WinDivert.dll
+        // engellenirse süreç yükleyicinin NTSTATUS koduyla ölüyor. Çıplak
+        // "-1073740760 koduyla kapandı" kullanıcıya hiçbir şey söylemiyordu.
         if (SecurityBlockAdvice.DescribeExitCode(exitCode, "winws.exe") is { } engel)
         {
             return new InvalidOperationException(engel + soyledigi);
@@ -451,12 +451,12 @@ public sealed class WinwsRunner : IAsyncDisposable
                 WinDivertDriver.IsRecoverable(kod));
         }
 
-        // "1" neredeyse her zaman TEK bir seyi anlatiyor: winws ayni
-        // filtreyle zaten calisiyor ve ikinci ornegi reddediyor
+        // "1" neredeyse her zaman TEK bir şeyi anlatıyor: winws aynı
+        // filtreyle zaten çalışıyor ve ikinci örneği reddediyor
         // ("A copy of winws is already running with the same filter").
-        // En sik sebebi otomatik baslatma servisinin acik olmasi.
-        // Ciplak "1 koduyla kapandi" mesaji kullaniciya hicbir sey
-        // soylemiyordu; gercek bir kullanici bu duvara tosladi.
+        // En sık sebebi otomatik başlatma servisinin açık olması.
+        // Çıplak "1 koduyla kapandı" mesajı kullanıcıya hiçbir şey
+        // söylemiyordu; gerçek bir kullanıcı bu duvara tosladı.
         var ipucu = exitCode == 1
             ? " En olasi sebep: winws zaten calisiyor (otomatik baslatma servisi acik" +
               " olabilir ya da onceki bir kosum surmus olabilir). Ayni filtreyle ikinci" +
@@ -468,17 +468,17 @@ public sealed class WinwsRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Argumanlari winws'in kendisine dogrulatir; surucuye DOKUNMAZ.
+    /// Argümanları winws'in kendisine doğrulatır; sürücüye DOKUNMAZ.
     /// </summary>
     /// <returns>
-    /// Gecerliyse null, degilse winws'in yazdigi hata metni.
+    /// Geçerliyse null, değilse winws'in yazdığı hata metni.
     /// </returns>
     /// <remarks>
-    /// winws'in <c>--dry-run</c> secenegi "parametreleri dogrula ve basariliysa 0
-    /// ile cik" diyor. Test motoru icin bu buyuk kazanc: gecersiz bir aday tam
-    /// baslatma + ag zaman asimi (~7 sn) yerine bir surec baslatma (~50 ms)
-    /// maliyetiyle eleniyor, ustelik "zaman asimi" gibi bilgisiz bir sonuc yerine
-    /// winws'in kendi hata mesajini aliyoruz.
+    /// winws'in <c>--dry-run</c> seçeneği "parametreleri doğrula ve başarılıysa 0
+    /// ile çık" diyor. Test motoru için bu büyük kazanç: geçersiz bir aday tam
+    /// başlatma + ağ zaman aşımı (~7 sn) yerine bir süreç başlatma (~50 ms)
+    /// maliyetiyle eleniyor; üstelik "zaman aşımı" gibi bilgisiz bir sonuç yerine
+    /// winws'in kendi hata mesajını alıyoruz.
     /// </remarks>
     public async Task<string?> ValidateAsync(
         IReadOnlyList<string> arguments, CancellationToken cancellationToken = default)
@@ -516,16 +516,16 @@ public sealed class WinwsRunner : IAsyncDisposable
             return null;
         }
 
-        // Guvenlik engeli bir parametre hatasi DEGIL. Metin olarak donseydi test motoru
-        // her adayi "gecersiz parametre" diye eler, kullanici da yalnizca "hicbir
-        // strateji calismadi" gorurdu. Istisna, adayin sonucuna engelin adiyla yaziliyor.
+        // Güvenlik engeli bir parametre hatası DEĞİL. Metin olarak dönseydi test motoru
+        // her adayı "geçersiz parametre" diye eler, kullanıcı da yalnızca "hiçbir
+        // strateji çalışmadı" görürdü. İstisna, adayın sonucuna engelin adıyla yazılıyor.
         if (SecurityBlockAdvice.DescribeExitCode(process.ExitCode, "winws.exe") is { } engel)
         {
             throw new InvalidOperationException(engel);
         }
 
-        // Hem \r hem \n ayraci: winws ciktisi CRLF kullaniyor ve yalnizca \n ile
-        // bolmek her satirin sonunda gorunmez bir \r birakirdi.
+        // Hem \r hem \n ayracı: winws çıktısı CRLF kullanıyor ve yalnızca \n ile
+        // bölmek her satırın sonunda görünmez bir \r bırakırdı.
         var message = (stderr + stdout)
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .LastOrDefault(line => !line.StartsWith("github version", StringComparison.OrdinalIgnoreCase));
@@ -536,11 +536,11 @@ public sealed class WinwsRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// winws'in acilista yazdigi surum satirindan surumu cikarir.
+    /// winws'in açılışta yazdığı sürüm satırından sürümü çıkarır.
     /// </summary>
     /// <remarks>
-    /// Satir su bicimde geliyor: <c>github version v72.12 (5cc46a98...)</c>.
-    /// Eslesmezse null doner -- tahmin etmektense bilmemek daha iyi.
+    /// Satır şu biçimde geliyor: <c>github version v72.12 (5cc46a98...)</c>.
+    /// Eşleşmezse null döner; tahmin etmektense bilmemek daha iyi.
     /// </remarks>
     public static string? ParseVersion(string? line)
     {
@@ -565,20 +565,20 @@ public sealed class WinwsRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// winws.exe'nin icine gomulu surumu, motoru CALISTIRMADAN okur. Bulunamazsa null.
+    /// winws.exe'nin içine gömülü sürümü, motoru ÇALIŞTIRMADAN okur. Bulunamazsa null.
     /// </summary>
     /// <remarks>
-    /// <see cref="ReportedVersion"/> ancak motor calisip surum satirini yazdiktan
-    /// sonra dolu. Alt bilgi bu yuzden duruma gore degisiyordu (0.1.21, kullanici
-    /// bildirdi): hic baslatilmamisken ve duraklatilmisken "winws (zapret-win-bundle)",
-    /// DEVAM ET'ten sonra "winws v72.12". Ilk Baslat'ta da cogu zaman eski metin
-    /// kaliyordu: alt bilgi "calisiyor" bildiriminde tazeleniyor, surum satiri ise
-    /// ciktiyi okuyan ayri is parcaciginda ondan SONRA gelebiliyor.
+    /// <see cref="ReportedVersion"/> ancak motor çalışıp sürüm satırını yazdıktan
+    /// sonra dolu. Alt bilgi bu yüzden duruma göre değişiyordu (0.1.21, kullanıcı
+    /// bildirdi): hiç başlatılmamışken ve duraklatılmışken "winws (zapret-win-bundle)",
+    /// DEVAM ET'ten sonra "winws v72.12". İlk Başlat'ta da çoğu zaman eski metin
+    /// kalıyordu: alt bilgi "çalışıyor" bildiriminde tazeleniyor, sürüm satırı ise
+    /// çıktıyı okuyan ayrı iş parçacığında ondan SONRA gelebiliyor.
     ///
-    /// Surum yine ikilinin kendisinden geliyor, sabit bir metinden degil: winws
-    /// "github version %s (%s)" bicim metnini surum ve commit dizgeleriyle
-    /// dolduruyor ve derleyici bu dizgeleri yan yana yaziyor. v72.12'de dosyada
-    /// sira soyle: commit, NUL, "v72.12", NUL, bicim metni.
+    /// Sürüm yine ikilinin kendisinden geliyor, sabit bir metinden değil: winws
+    /// "github version %s (%s)" biçim metnini sürüm ve commit dizgeleriyle
+    /// dolduruyor ve derleyici bu dizgeleri yan yana yazıyor. v72.12'de dosyada
+    /// sıra şöyle: commit, NUL, "v72.12", NUL, biçim metni.
     /// </remarks>
     public static string? ReadEmbeddedVersion(string exePath)
     {
@@ -593,12 +593,12 @@ public sealed class WinwsRunner : IAsyncDisposable
     }
 
     /// <summary>
-    /// Ikili icinde, surum bicim metninden hemen onceki dizge surum gibi gorunuyorsa onu dondurur.
+    /// İkili içinde, sürüm biçim metninden hemen önceki dizge sürüm gibi görünüyorsa onu döndürür.
     /// </summary>
     /// <remarks>
-    /// Kati: yalnizca "v72.12" bicimi kabul ediliyor. Derleyici dizge sirasini
-    /// degistirirse null donuyor ve arayuz eskisi gibi motorun bildirecegini
-    /// bekliyor -- yanlis bir surum yazmaktansa bilmemek.
+    /// Katı: yalnızca "v72.12" biçimi kabul ediliyor. Derleyici dizge sırasını
+    /// değiştirirse null dönüyor ve arayüz eskisi gibi motorun bildireceğini
+    /// bekliyor; yanlış bir sürüm yazmaktansa bilmemek.
     /// </remarks>
     public static string? FindEmbeddedVersion(ReadOnlySpan<byte> image)
     {
@@ -608,7 +608,7 @@ public sealed class WinwsRunner : IAsyncDisposable
             return null;
         }
 
-        // Hizalama icin birden fazla NUL olabilir.
+        // Hizalama için birden fazla NUL olabilir.
         var son = bicim;
         while (son > 0 && image[son - 1] == 0)
         {
@@ -633,11 +633,11 @@ public sealed class WinwsRunner : IAsyncDisposable
     private static readonly Regex SurumBicimi = new(@"^v\d+(\.\d+)+$", RegexOptions.CultureInvariant);
 
     /// <summary>
-    /// Baslatmadan sonra erken olumu yakalamak icin beklenen sure.
+    /// Başlatmadan sonra erken ölümü yakalamak için beklenen süre.
     /// </summary>
     /// <remarks>
-    /// Kisa tutuldu: test motoru her aday icin bir winws baslatiyor, dolayisiyla
-    /// buradaki her milisaniye aday sayisiyla carpiliyor.
+    /// Kısa tutuldu: test motoru her aday için bir winws başlatıyor, dolayısıyla
+    /// buradaki her milisaniye aday sayısıyla çarpılıyor.
     /// </remarks>
     private const int StartupGraceMilliseconds = 250;
 
@@ -648,12 +648,12 @@ public sealed class WinwsRunner : IAsyncDisposable
     private static extern uint SetErrorMode(uint uMode);
 
     /// <summary>
-    /// winws'i durdurur. Zaten durmussa sessizce doner.
+    /// winws'i durdurur. Zaten durmuşsa sessizce döner.
     /// </summary>
     /// <param name="gracePeriod">
-    /// Nazik kapatma icin taninan sure. Dolarsa surec oldurulur -- winws'in asili
-    /// kalmasi WinDivert surucusunun da asili kalmasi demek, bu yuzden beklemeyi
-    /// suresiz birakmiyoruz.
+    /// Nazik kapatma için tanınan süre. Dolarsa süreç öldürülür; winws'in asılı
+    /// kalması WinDivert sürücüsünün de asılı kalması demek, bu yüzden beklemeyi
+    /// süresiz bırakmıyoruz.
     /// </param>
     public async Task StopAsync(TimeSpan? gracePeriod = null, CancellationToken cancellationToken = default)
     {
@@ -670,7 +670,7 @@ public sealed class WinwsRunner : IAsyncDisposable
             return;
         }
 
-        // Durumu once degistiriyoruz ki Exited olayi bunu hata sanmasin.
+        // Durumu önce değiştiriyoruz ki Exited olayı bunu hata sanmasın.
         SetState(WinwsState.Stopped);
         CurrentArguments = null;
 
@@ -690,7 +690,7 @@ public sealed class WinwsRunner : IAsyncDisposable
                 }
                 catch (OperationCanceledException)
                 {
-                    // Nazik yol tutmadi. Konsol uygulamasi oldugu icin bu beklenen durum.
+                    // Nazik yol tutmadı. Konsol uygulaması olduğu için bu beklenen durum.
                     process.Kill(entireProcessTree: true);
                     await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
                 }
@@ -698,7 +698,7 @@ public sealed class WinwsRunner : IAsyncDisposable
         }
         catch (InvalidOperationException)
         {
-            // Surec zaten olmus; yapacak bir sey yok.
+            // Süreç zaten ölmüş; yapacak bir şey yok.
         }
         finally
         {

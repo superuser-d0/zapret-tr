@@ -1,8 +1,8 @@
 name: yayin
 
-# Tag itildiginde kurulum paketini ve saha testi paketini uretip GitHub Release
-# olarak yayinlar. Elle uretim birakildi cunku elle uretilen bir pakette hangi
-# commit'ten, hangi upstream surumunden ve hangi ayarlarla ciktigi kaybolabiliyor.
+# Etiket itildiğinde kurulum paketini ve saha testi paketini üretip GitHub Release
+# olarak yayınlar. Elle üretim bırakıldı, çünkü elle üretilen bir pakette hangi
+# commit'ten, hangi upstream sürümünden ve hangi ayarlarla çıktığı kaybolabiliyor.
 on:
   push:
     tags: ['v*']
@@ -19,9 +19,9 @@ jobs:
   release:
     runs-on: windows-latest
 
-    # Gerekcesi installer-test.yml'de. Yayin akisinda asili kalmak ayrica kotu:
-    # etiket atilmis, taslak yok ve sebebi gorunmuyor.
-    # 30 dk, olculen sureden (~7 dk 30 sn) yaklasik 4 kat buyuk.
+    # Gerekçesi installer-test.yml'de. Yayın akışında asılı kalmak ayrıca kötü:
+    # etiket atılmış, taslak yok ve sebebi görünmüyor.
+    # 30 dk, ölçülen süreden (~7 dk 30 sn) yaklaşık 4 kat büyük.
     timeout-minutes: 30
 
     steps:
@@ -31,8 +31,8 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Surum TEK kaynaktan: tag. Hem exe'nin surum bilgisine hem kurulum
-      # paketine ayni deger giriyor, boylece uretilen dosyayla tag ayrisamiyor.
+      # Sürüm TEK kaynaktan: etiket. Hem exe'nin sürüm bilgisine hem kurulum
+      # paketine aynı değer giriyor, böylece üretilen dosyayla etiket ayrışamıyor.
       - name: surumu belirle
         id: surum
         shell: pwsh
@@ -47,8 +47,8 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
           Write-Host "Surum: $v"
 
-      # Yayin notu CHANGELOG'dan uretiliyor. Paketlemeden ONCE, cunku surum notu
-      # yazilmadiysa on dakikalik uretimi bosa harcamanin anlami yok.
+      # Yayın notu CHANGELOG'dan üretiliyor. Paketlemeden ÖNCE, çünkü sürüm notu
+      # yazılmadıysa on dakikalık üretimi boşa harcamanın anlamı yok.
       - name: yayin notunu uret
         shell: pwsh
         run: >
@@ -59,8 +59,8 @@ jobs:
       - name: upstream ikililerini indir
         run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
 
-      # Yayinlanan pakette test edilmemis kod olmasin. CI ayrica kosuyor ama
-      # yayin kendi basina ayakta durmali: tag dogrudan da itilebiliyor.
+      # Yayınlanan pakette test edilmemiş kod olmasın. CI ayrıca koşuyor ama
+      # yayın kendi başına ayakta durmalı: etiket doğrudan da itilebiliyor.
       - name: test
         run: dotnet test tests/ZapretTr.Tests -c Release --nologo
 
@@ -70,7 +70,7 @@ jobs:
           -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:DebugType=none
           -p:Version=${{ steps.surum.outputs.version }} --nologo
 
-      # QUIC olcumu msquic.dll'e bagli ve yoklugu SESSIZ bir hataya donusuyor.
+      # QUIC ölçümü msquic.dll'e bağlı ve yokluğu SESSİZ bir hataya dönüşüyor.
       - name: msquic yayin ciktisinda mi
         shell: pwsh
         run: |
@@ -78,9 +78,9 @@ jobs:
             throw "msquic.dll yayin ciktisinda yok. QUIC olcumu sessizce calismaz."
           }
 
-      # Akilli Uygulama Denetimi imzasiz DLL'i ayri ayri engelliyor (0.2.0:
-      # "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll"). Yayin tek dosya;
-      # imzasiz tek PE dosyasi exe olmali. Gerekcesi ZapretTr.App.csproj'da.
+      # Akıllı Uygulama Denetimi imzasız DLL'i ayrı ayrı engelliyor (0.2.0:
+      # "Bu uygulamanın bir kısmı engellendi ... ZapretTR.dll"). Yayın tek dosya;
+      # imzasız tek PE dosyası exe olmalı. Gerekçesi ZapretTr.App.csproj'da.
       - name: yayinda imzasiz DLL yok
         shell: pwsh
         run: |
@@ -94,8 +94,8 @@ jobs:
       - name: kurulum paketini uret
         shell: pwsh
         run: |
-          # Parantezli ortam degiskeni ${env:...} ile yazilmali; $env:ProgramFiles(x86)
-          # PowerShell'de "$env:ProgramFiles" + "(x86)" olarak ayrisir ve yol bozulur.
+          # Parantezli ortam değişkeni ${env:...} ile yazılmalı; $env:ProgramFiles(x86)
+          # PowerShell'de "$env:ProgramFiles" + "(x86)" olarak ayrışır ve yol bozulur.
           $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
           if (-not (Test-Path $iscc)) { throw "ISCC bulunamadi: $iscc" }
           & $iscc "/DAppVersion=${{ steps.surum.outputs.version }}" installer\setup.iss
@@ -104,8 +104,8 @@ jobs:
       - name: saha testi paketini uret
         run: powershell -ExecutionPolicy Bypass -File tools/build-field-package.ps1
 
-      # Imzasiz dagitim yapiyoruz (kod imzalama sertifikamiz yok), dolayisiyla
-      # kullanicinin indirdigi dosyayi dogrulayabilmesinin TEK yolu bu ozetler.
+      # İmzasız dağıtım yapıyoruz (kod imzalama sertifikamız yok), dolayısıyla
+      # kullanıcının indirdiği dosyayı doğrulayabilmesinin TEK yolu bu özetler.
       - name: SHA256 ozetleri
         shell: pwsh
         run: |
@@ -118,9 +118,9 @@ jobs:
           $lines | Tee-Object -Variable shown | Out-File SHA256SUMS.txt -Encoding utf8
           $shown
 
-      # Ucuncu taraf action yerine onceden kurulu gh: bu is ikili yayinliyor,
-      # dolayisiyla guvendigimiz kod miktarini kucuk tutmak bedava bir kazanc.
-      # Yayin TASLAK aciliyor -- imzasiz ikili dagitiliyor, son bir goz kasitli.
+      # Üçüncü taraf action yerine önceden kurulu gh: bu iş ikili yayınlıyor,
+      # dolayısıyla güvendiğimiz kod miktarını küçük tutmak bedava bir kazanç.
+      # Yayın TASLAK açılıyor: imzasız ikili dağıtılıyor, son bir göz kasıtlı.
       - name: taslak yayin olustur
         shell: pwsh
         env:

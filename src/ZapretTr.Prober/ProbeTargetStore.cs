@@ -5,12 +5,12 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// Test hedeflerini profiles/probe-targets.json dosyasindan yukler.
+/// Test hedeflerini profiles/probe-targets.json dosyasından yükler.
 /// </summary>
 /// <remarks>
-/// Hedefler kodda degil veride: kimin neye erisemedigi zamanla ve kisiye gore
-/// degisiyor, dolayisiyla bunu degistirmek icin yeniden derleme gerekmemeli.
-/// Kullanici arayuzden kendi hedefini de ekleyebilir.
+/// Hedefler kodda değil veride: kimin neye erişemediği zamanla ve kişiye göre
+/// değişiyor, dolayısıyla bunu değiştirmek için yeniden derleme gerekmemeli.
+/// Kullanıcı arayüzden kendi hedefini de ekleyebilir.
 /// </remarks>
 public static class ProbeTargetStore
 {
@@ -31,11 +31,11 @@ public static class ProbeTargetStore
     }
 
     /// <summary>
-    /// Kullanicinin elle girdigi bir alan adini hedefe cevirir.
+    /// Kullanıcının elle girdiği bir alan adını hedefe çevirir.
     /// </summary>
     /// <remarks>
-    /// Kullanicilar adres cubugundan kopyalayip yapistiriyor, yani "https://site.com/yol"
-    /// gelmesi normal. Alan adini ayiklamak arayuzun degil burasinin isi.
+    /// Kullanıcılar adres çubuğundan kopyalayıp yapıştırıyor, yani "https://site.com/yol"
+    /// gelmesi normal. Alan adını ayıklamak arayüzün değil burasının işi.
     /// </remarks>
     public static ProbeTarget? TryParseUserTarget(string input, StrategySection section = StrategySection.Tcp443)
     {
@@ -79,7 +79,7 @@ public static class ProbeTargetStore
         [JsonPropertyName("section")]
         public StrategySection Section { get; init; }
 
-        /// <summary>Yalnizca discord-voice bolumunde anlamli; verilmezse 19302 varsayilir.</summary>
+        /// <summary>Yalnızca discord-voice bölümünde anlamlı; verilmezse 19302 varsayılır.</summary>
         [JsonPropertyName("port")]
         public int? Port { get; init; }
     }

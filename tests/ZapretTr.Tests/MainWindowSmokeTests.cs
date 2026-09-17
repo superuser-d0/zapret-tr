@@ -7,15 +7,15 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Arayuzun gercekten kurulabildigini dogrular.
+/// Arayüzün gerçekten kurulabildiğini doğrular.
 /// </summary>
 /// <remarks>
-/// Derlemenin gecmesi XAML'in calistigi anlamina gelmiyor: eksik bir kaynak anahtari,
-/// yanlis yazilmis bir baglama yolu ya da cozulemeyen bir donusturucu ancak pencere
-/// gercekten kurulup yerlesim hesaplanirken patlar. Bu test tam olarak o ani
-/// yakaliyor -- yoksa hatayi ilk goren kullanici olurdu.
+/// Derlemenin geçmesi XAML'ın çalıştığı anlamına gelmiyor: eksik bir kaynak anahtarı,
+/// yanlış yazılmış bir bağlama yolu ya da çözülemeyen bir dönüştürücü ancak pencere
+/// gerçekten kurulup yerleşim hesaplanırken patlar. Bu test tam olarak o anı
+/// yakalıyor; yoksa hatayı ilk gören kullanıcı olurdu.
 ///
-/// WPF STA is parcacigi gerektirdigi icin test kendi is parcacigini aciyor.
+/// WPF STA iş parçacığı gerektirdiği için test kendi iş parçacığını açıyor.
 /// </remarks>
 public sealed class MainWindowSmokeTests
 {
@@ -24,23 +24,23 @@ public sealed class MainWindowSmokeTests
     {
         var error = RunOnStaThread(() =>
         {
-            // App.xaml'deki kaynak sozlugu yuklensin: pencere StaticResource ile
-            // oradaki fircalara ve stillere basvuruyor.
+            // App.xaml'deki kaynak sözlüğü yüklensin: pencere StaticResource ile
+            // oradaki fırçalara ve stillere başvuruyor.
             var app = new global::ZapretTr.App.App();
             app.InitializeComponent();
 
             var window = new MainWindow();
 
-            // Yerlesimi zorlamak sart: baglamalar ancak burada degerlendiriliyor.
+            // Yerleşimi zorlamak şart: bağlamalar ancak burada değerlendiriliyor.
             window.Measure(new Size(440, 720));
             window.Arrange(new Rect(0, 0, 440, 720));
             window.UpdateLayout();
 
-            // Ust kisim kayabilen panelde olmali. Duz Grid'e donulurse varsayilan
-            // pencerede "Çıkış", "Ayrıntılar" ve alt bilgi yine ekrandan tasar
-            // (0.1.21'de gercek kurulumda olculdu). Panelin davranisi
-            // SigdirmaPaneliTests'te; burada XAML'in onu kullandigi sabitleniyor.
-            // Gunluk, tema dugmesiyle birlikte bir Grid'in icinde.
+            // Üst kısım kayabilen panelde olmalı. Düz Grid'e dönülürse varsayılan
+            // pencerede "Çıkış", "Ayrıntılar" ve alt bilgi yine ekrandan taşar
+            // (0.1.21'de gerçek kurulumda ölçüldü). Panelin davranışı
+            // SigdirmaPaneliTests'te; burada XAML'ın onu kullandığı sabitleniyor.
+            // Günlük, tema düğmesiyle birlikte bir Grid'in içinde.
             if (window.Content is not SigdirmaPaneli panel
                 || panel.Children.Count != 3
                 || panel.Children[0] is not ScrollViewer
@@ -51,9 +51,9 @@ public sealed class MainWindowSmokeTests
                     "Pencerenin kok yerlesimi SigdirmaPaneli [ScrollViewer, Grid(Expander, tema), alt bilgi] degil.");
             }
 
-            // KOYU TEMA DA KURULABILMELI. Tema sozlugunde eksik bir anahtar ya da
-            // bozuk bir sablon ancak tema uygulanip yerlesim yeniden hesaplanirken
-            // patlar -- derleme de acik temadaki kosum da bunu gormez.
+            // KOYU TEMA DA KURULABİLMELİ. Tema sözlüğünde eksik bir anahtar ya da
+            // bozuk bir şablon ancak tema uygulanıp yerleşim yeniden hesaplanırken
+            // patlar; ne derleme ne de açık temadaki koşum bunu görür.
             ThemeManager.Apply(AppTheme.Dark);
             window.UpdateLayout();
             window.Measure(new Size(440, 720));
@@ -72,9 +72,9 @@ public sealed class MainWindowSmokeTests
                 throw new InvalidOperationException("Acik temaya geri donulmedi.");
             }
 
-            // Dugmeler AYNI pencerede sinaniyor: bir surecte yalnizca tek bir WPF
-            // Application olabildigi icin her kontrole ayri test sinifi acmak
-            // kosumu kilitliyordu.
+            // Düğmeler AYNI pencerede sınanıyor: bir süreçte yalnızca tek bir WPF
+            // Application olabildiği için her kontrole ayrı test sınıfı açmak
+            // koşumu kilitliyordu.
             foreach (var etiket in new[] { "Raporu Kaydet", "Hata Bildir", "Tüm Ayarları Sıfırla", "Çıkış", "tema" })
             {
                 var dugme = DugmeyiBul(window, etiket)
@@ -87,11 +87,11 @@ public sealed class MainWindowSmokeTests
                         $"\"{etiket}\" gorunur degil: " + dugme.Visibility);
                 }
 
-                // ASIL KONTROL. "Raporu Kaydet" once kapali bir Expander'in
-                // icindeydi ve agacta GORUNUYORDU -- yani yukaridaki iki kontrol
-                // de geciyordu. Kullanici icin ise dugme yoktu: paneli acmadan
-                // goremiyordu ve gercek bir kurulumda tam olarak bunu bildirdi
-                // (0.1.10). Ayni tuzaga bir daha dusmeyelim diye her yeni dugme
+                // ASIL KONTROL. "Raporu Kaydet" önce kapalı bir Expander'ın
+                // içindeydi ve ağaçta GÖRÜNÜYORDU; yani yukarıdaki iki kontrol
+                // de geçiyordu. Kullanıcı için ise düğme yoktu: paneli açmadan
+                // göremiyordu ve gerçek bir kurulumda tam olarak bunu bildirdi
+                // (0.1.10). Aynı tuzağa bir daha düşmeyelim diye her yeni düğme
                 // bu listeye ekleniyor.
                 if (ExpanderAltinda(dugme))
                 {
@@ -115,21 +115,21 @@ public sealed class MainWindowSmokeTests
         {
             var viewModel = new MainViewModel();
 
-            // "Bilmiyorum" + en az bir gercek profil.
+            // "Bilmiyorum" + en az bir gerçek profil.
             Assert.True(viewModel.IspChoices.Count > 1, "ISS listesi bos geldi.");
             Assert.Contains(viewModel.IspChoices, c => c.Profile is null);
             Assert.Contains(viewModel.IspChoices, c => c.Profile?.Id == "superonline");
 
-            // ILK ACILIS: tespit edilmemis bir saglayici secilmis gibi GOSTERILMEZ.
+            // İLK AÇILIŞ: tespit edilmemiş bir sağlayıcı seçilmiş gibi GÖSTERİLMEZ.
             //
-            // Kurulum paketiyle gercek bir makinede goruldu: Turk Telekom hattinda
-            // uygulama "Turkcell Superonline" secili aciliyordu, cunku liste ilk
-            // gercek profili seciyordu. Kullanicinin Baslat'a basmasi, kendi hattinda
-            // hic denenmemis bir stratejiyi trafige uygulamasi demekti.
+            // Kurulum paketiyle gerçek bir makinede görüldü: Türk Telekom hattında
+            // uygulama "Turkcell Superonline" seçili açılıyordu, çünkü liste ilk
+            // gerçek profili seçiyordu. Kullanıcının Başlat'a basması, kendi hattında
+            // hiç denenmemiş bir stratejiyi trafiğe uygulaması demekti.
             //
-            // ConfigStore statik ve %ProgramData%'dan okuyor; kayitli secimi olan bir
-            // makinede geri yukleme dogru sekilde devreye girer ve bu iddia gecersiz
-            // olur. O durumda atliyoruz -- sessizce yanlis dogrulamaktansa.
+            // ConfigStore statik ve %ProgramData%'dan okuyor; kayıtlı seçimi olan bir
+            // makinede geri yükleme doğru şekilde devreye girer ve bu iddia geçersiz
+            // olur. O durumda atlıyoruz; sessizce yanlış doğrulamaktansa.
             if (ConfigStore.Load().SelectedIspId is null)
             {
                 Assert.NotNull(viewModel.SelectedIsp);
@@ -139,33 +139,33 @@ public sealed class MainWindowSmokeTests
                 Assert.False(viewModel.CanStart, "Saglayici bilinmeden Baslat acik olmamali.");
             }
 
-            // Bir ISS SECILDIGINDE strateji listesi dolmali.
+            // Bir İSS SEÇİLDİĞİNDE strateji listesi dolmalı.
             viewModel.SelectedIsp = viewModel.IspChoices.First(c => c.Profile?.Id == "turk-telekom");
             Assert.NotEmpty(viewModel.StrategyChoices);
             Assert.NotNull(viewModel.SelectedStrategy);
             Assert.True(viewModel.CanStart);
 
-            // DURUM BANDI, STRATEJI YOKKEN "HAZIR" DEMEMELI.
+            // DURUM BANDI, STRATEJİ YOKKEN "HAZIR" DEMEMELİ.
             //
-            // Yeni kurulmus makinede tablo suydu: strateji secilmemis, Baslat
-            // kapali, winws calismiyor, koruma yok -- ve ekranin en ustunde, en
-            // buyuk puntoyla "SİSTEM HAZIR". Teknik olmayan kullanici bunu
-            // "kuruldu, calisiyor" diye okuyup pencereyi kapatiyordu. Sahadan
-            // gelen "kurdum, olmadi" bildiriminin en ucuz aciklamasi buydu.
+            // Yeni kurulmuş makinede tablo şuydu: strateji seçilmemiş, Başlat
+            // kapalı, winws çalışmıyor, koruma yok; ve ekranın en üstünde, en
+            // büyük puntoyla "SİSTEM HAZIR". Teknik olmayan kullanıcı bunu
+            // "kuruldu, çalışıyor" diye okuyup pencereyi kapatıyordu. Sahadan
+            // gelen "kurdum, olmadı" bildiriminin en ucuz açıklaması buydu.
             //
-            // Iddia KOSULSUZ olarak burada: ilk acilis durumuna yukaridaki
-            // `if` icinde bakmak, kayitli yapilandirmasi olan bir makinede
-            // testin sessizce hic kosmamasi demekti -- yani her zaman yesil
-            // ama hicbir seyi sinamayan bir iddia. Onun yerine "Bilmiyorum"a
-            // ELLE donuluyor; bu, makinenin durumundan bagimsiz olarak
-            // stratejisiz hali kuruyor.
+            // İddia KOŞULSUZ olarak burada: ilk açılış durumuna yukarıdaki
+            // `if` içinde bakmak, kayıtlı yapılandırması olan bir makinede
+            // testin sessizce hiç koşmaması demekti; yani her zaman yeşil
+            // ama hiçbir şeyi sınamayan bir iddia. Onun yerine "Bilmiyorum"a
+            // ELLE dönülüyor; bu, makinenin durumundan bağımsız olarak
+            // stratejisiz hâli kuruyor.
             viewModel.SelectedIsp = viewModel.IspChoices.First(c => c.Profile is null);
             Assert.Null(viewModel.SelectedStrategy);
             Assert.False(viewModel.CanStart);
 
-            // Iki sey birden bekleniyor: yanlis cumle GITMIS olmali ve yerine
-            // SIRADAKI ADIM yazilmis olmali. Yalnizca birincisini sinamak,
-            // basligi bosaltan bir degisiklige de yesil verirdi.
+            // İki şey birden bekleniyor: yanlış cümle GİTMİŞ olmalı ve yerine
+            // SIRADAKİ ADIM yazılmış olmalı. Yalnızca birincisini sınamak,
+            // başlığı boşaltan bir değişikliğe de yeşil verirdi.
             Assert.DoesNotContain("HAZIR", viewModel.StatusHeadline, StringComparison.Ordinal);
             Assert.Contains("PARAMETRE TESTİ", viewModel.StatusDetail, StringComparison.Ordinal);
         });
@@ -176,9 +176,9 @@ public sealed class MainWindowSmokeTests
     [Fact]
     public void Superonline_Secildiginde_DogrulanmadiRozeti_Gorunur()
     {
-        // Baslangicta hicbir aday dogrulanmis degil, dolayisiyla rozet gorunmeli.
-        // Bu, kullaniciya "denenmeye deger" ile "calisiyor" arasindaki farki
-        // gosteren tek isaret.
+        // Başlangıçta hiçbir aday doğrulanmış değil, dolayısıyla rozet görünmeli.
+        // Bu, kullanıcıya "denenmeye değer" ile "çalışıyor" arasındaki farkı
+        // gösteren tek işaret.
         var error = RunOnStaThread(() =>
         {
             var viewModel = new MainViewModel();
@@ -194,7 +194,7 @@ public sealed class MainWindowSmokeTests
         Assert.Null(error);
     }
 
-    /// <summary>Verilen isi STA is parcaciginda calistirir; yakalanan hatayi dondurur.</summary>
+    /// <summary>Verilen işi STA iş parçacığında çalıştırır; yakalanan hatayı döndürür.</summary>
     private static Exception? RunOnStaThread(Action action)
     {
         Exception? captured = null;
@@ -214,7 +214,7 @@ public sealed class MainWindowSmokeTests
         thread.SetApartmentState(ApartmentState.STA);
         thread.Start();
 
-        // Askida kalan bir WPF is parcacigi test kosumunu sonsuza kadar bekletir.
+        // Askıda kalan bir WPF iş parçacığı test koşumunu sonsuza kadar bekletir.
         if (!thread.Join(TimeSpan.FromSeconds(30)))
         {
             return new TimeoutException("STA is parcacigi 30 saniyede bitmedi.");
@@ -223,7 +223,7 @@ public sealed class MainWindowSmokeTests
         return captured;
     }
 
-    /// <summary>Dugmenin atalari arasinda bir Expander var mi.</summary>
+    /// <summary>Düğmenin ataları arasında bir Expander var mı.</summary>
     private static bool ExpanderAltinda(DependencyObject el)
     {
         for (var p = LogicalTreeHelper.GetParent(el); p is not null;
@@ -238,12 +238,12 @@ public sealed class MainWindowSmokeTests
         return false;
     }
 
-    /// <summary>Mantiksal agacta icerigi verilen etiketi tasiyan dugmeyi arar.</summary>
+    /// <summary>Mantıksal ağaçta içeriği verilen etiketi taşıyan düğmeyi arar.</summary>
     /// <remarks>
-    /// GORSEL agac degil: pencere hic gosterilmediginde sablonlar uygulanmadigi
-    /// icin gorsel agac eksik kaliyor ve var olan dugmeler de bulunamiyor.
-    /// Mantiksal agac XAML'de yazdigimiz yapiyi yansitiyor -- sorulan soru da bu:
-    /// dugme pencereye KONULMUS mu.
+    /// GÖRSEL ağaç değil: pencere hiç gösterilmediğinde şablonlar uygulanmadığı
+    /// için görsel ağaç eksik kalıyor ve var olan düğmeler de bulunamıyor.
+    /// Mantıksal ağaç XAML'da yazdığımız yapıyı yansıtıyor; sorulan soru da bu:
+    /// düğme pencereye KONULMUŞ mu.
     /// </remarks>
     private static Button? DugmeyiBul(DependencyObject kok, string etiket)
     {

@@ -4,21 +4,21 @@ using ZapretTr.Prober;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Gercek servislerin gercek cevaplariyla profil eslesmesi.
+/// Gerçek servislerin gerçek cevaplarıyla profil eşleşmesi.
 /// </summary>
 /// <remarks>
-/// Dizgiler 2026-09-15'te olculdu: ipinfo.io'nun "org" alani ve ip-api.com'un "as" ve
-/// "isp" alanlari, her saglayicinin duyurdugu oneklerden secilen adresler icin. ASN
-/// sahipleri RIPEstat as-overview ile dogrulandi.
+/// Dizgiler 2026-09-15'te ölçüldü: ipinfo.io'nun "org" alanı ve ip-api.com'un "as" ve
+/// "isp" alanları, her sağlayıcının duyurduğu öneklerden seçilen adresler için. ASN
+/// sahipleri RIPEstat as-overview ile doğrulandı.
 ///
-/// Neden: 0.2.0 tespitte once ipinfo.io'ya soruyor ve o, Turk Telekom sabit hattin adini
+/// Neden: 0.2.0 tespitte önce ipinfo.io'ya soruyor ve o, Türk Telekom sabit hattın adını
 /// her zaman "Turk Telekomunikasyon" diye veriyor. TT Mobil profilindeki "turk telekom"
-/// anahtar kelimesi bu adla da eslesiyordu; her TTNET kullanicisi test sirasinda "birden
-/// fazla profille eslesti" sorusunu goruyordu. Vodafone Mobil'in ASN'si yoktu ve priority
-/// sirasi yuzunden mobil kullaniciya Vodafone Net ONERILIYORDU.
+/// anahtar kelimesi bu adla da eşleşiyordu; her TTNET kullanıcısı test sırasında "birden
+/// fazla profille eşleşti" sorusunu görüyordu. Vodafone Mobil'in ASN'si yoktu ve priority
+/// sırası yüzünden mobil kullanıcıya Vodafone Net ÖNERİLİYORDU.
 ///
-/// Kural: tespitin onerdigi profil (BestMatch) baglantinin ASN'sine ait profil olmali;
-/// soru yalnizca bir ASN'de gercekten iki tur hizmet varsa (Vodafone) cikmali.
+/// Kural: tespitin önerdiği profil (BestMatch) bağlantının ASN'sine ait profil olmalı;
+/// soru yalnızca bir ASN'de gerçekten iki tür hizmet varsa (Vodafone) çıkmalı.
 /// </remarks>
 public sealed class IspMatchRealWorldTests
 {
@@ -26,9 +26,9 @@ public sealed class IspMatchRealWorldTests
 
     public static TheoryData<string, string, string, bool> Cevaplar => new()
     {
-        // kaynak dizgi (ASN'yi de iceren), ASN'nin yanindaki ad, beklenen oneri, soru cikmali mi
+        // kaynak dizgi (ASN'yi de içeren), ASN'nin yanındaki ad, beklenen öneri, soru çıkmalı mı
 
-        // Turk Telekom sabit: ipinfo ve ip-api'nin farkli yazimlari. Soru CIKMAMALI.
+        // Türk Telekom sabit: ipinfo ve ip-api'nin farklı yazımları. Soru ÇIKMAMALI.
         { "AS9121 Turk Telekomunikasyon Anonim Sirketi", "Turk Telekomunikasyon Anonim Sirketi", "turk-telekom", false },
         { "AS9121 Turk Telekomunikasyon Anonim Sirketi", "Turk Telekomunikasyon A.S", "turk-telekom", false },
         { "AS9121 Turk Telekomunikasyon Anonim Sirketi", "TurkTelekom", "turk-telekom", false },
@@ -41,14 +41,14 @@ public sealed class IspMatchRealWorldTests
         { "AS16135 Turkcell A.S.", "Turkcell Internet", "turkcell-mobil", false },
         { "AS34984 Superonline Iletisim Hizmetleri A.S.", "Superonline Iletisim Hizmetleri A.S.", "superonline", false },
 
-        // Vodafone: AS15897 karisik (cogu mobil, bir kismi FTTH), iki sabit ASN. Soru bilerek
-        // CIKIYOR ama ONERI ASN'ye gore dogru profil.
+        // Vodafone: AS15897 karışık (çoğu mobil, bir kısmı FTTH), iki sabit ASN. Soru bilerek
+        // ÇIKIYOR ama ÖNERİ ASN'ye göre doğru profil.
         { "AS15897 Vodafone Telekomunikasyon A.S.", "Vodafone Telekomunikasyon A.S.", "vodafone-mobil", true },
         { "AS15897 Vodafone Telekomunikasyon A.S.", "Vodafone Turkey 3G Pools", "vodafone-mobil", true },
         { "AS15924 Vodafone Net Iletisim Hizmetler AS", "Vodafone Net Iletisim Hizmetler", "vodafone-net", true },
         { "AS8386 Vodafone Net Iletisim Hizmetler AS", "Vodafone Net DSL - KADIKOY", "vodafone-net", true },
 
-        // Adinda baska saglayicinin anahtar kelimesi olmayanlar.
+        // Adında başka sağlayıcının anahtar kelimesi olmayanlar.
         { "AS12735 TurkNet Iletisim Hizmetleri A.S.", "TurkNet Iletisim Hizmetleri A.S.", "turknet", false },
         { "AS47524 Turksat Uydu Haberlesme Kablo TV ve Isletme A.S.", "Turksat Internet Services", "turksat", false },
         { "AS34296 Millenicom Telekomunikasyon Hizmetleri Anonim Sirketi", "Millenicom Telekomunikasyon Hizmetleri Anonim Sirketi", "millenicom", false },
@@ -70,7 +70,7 @@ public sealed class IspMatchRealWorldTests
     [Fact]
     public void Asn_bilinmezse_Turk_Telekom_adi_mobil_profille_eslesmiyor()
     {
-        // ASN'siz yedek yol: "Turk Telekom" sabit hattin adi. TT Mobil'in kendi adlari
+        // ASN'siz yedek yol: "Turk Telekom" sabit hattın adı. TT Mobil'in kendi adları
         // "TT Mobil" ve "Avea".
         var eslesenler = Store.Match(asn: null, orgName: "Turk Telekomunikasyon A.S");
 
@@ -80,8 +80,8 @@ public sealed class IspMatchRealWorldTests
     [Fact]
     public void Her_asn_tek_bir_profile_ait()
     {
-        // Ayni ASN iki profilde olursa ASN eslesmesi de soru cikarir ve oneri priority
-        // sirasina kalir -- tam da duzeltilen hata.
+        // Aynı ASN iki profilde olursa ASN eşleşmesi de soru çıkarır ve öneri priority
+        // sırasına kalır; tam da düzeltilen hata.
         var cakisan = Store.Profiles
             .SelectMany(p => p.Asns.Select(a => (Asn: a, p.Id)))
             .GroupBy(x => x.Asn)

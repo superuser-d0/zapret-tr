@@ -5,21 +5,21 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Core.Profiles;
 
 /// <summary>
-/// Kategori -> alan adi eslesmesi: stratejinin UYGULANACAGI adresler.
+/// Kategori -> alan adı eşleşmesi: stratejinin UYGULANACAĞI adresler.
 /// </summary>
 /// <remarks>
 /// <para>
-/// 0.2.1'e kadar kazanan strateji butun 80/443 trafigine uygulaniyordu. Bunun bedeli
-/// gercek bir kullanicida olculdu (issue #1, Vodafone Net, 2026-09-15): kazanan
-/// <c>--dpi-desync-fooling=badseq</c> stratejisi acikken GitHub calismiyordu.
-/// Engellenmemis bir siteye dokunmanin kazanci yok, riski var.
+/// 0.2.1'e kadar kazanan strateji bütün 80/443 trafiğine uygulanıyordu. Bunun bedeli
+/// gerçek bir kullanıcıda ölçüldü (issue #1, Vodafone Net, 2026-09-15): kazanan
+/// <c>--dpi-desync-fooling=badseq</c> stratejisi açıkken GitHub çalışmıyordu.
+/// Engellenmemiş bir siteye dokunmanın kazancı yok, riski var.
 /// </para>
 /// <para>
-/// winws bunu <c>--hostlist-domains=</c> ile cozuyor (bundle'daki v72.13'te var;
-/// yardim metni: "comma separated fixed domain list" ve "subdomains auto apply").
-/// Liste bos kalirsa bayrak HIC eklenmiyor ve davranis eskisi gibi genel oluyor:
-/// bu bilincli bir tercih, cunku bos listeyle bayragi eklemek korumayi SESSIZCE
-/// tamamen kapatirdi -- bozuk bir veri dosyasinin en kotu sonucu, korumasiz kalip
+/// winws bunu <c>--hostlist-domains=</c> ile çözüyor (bundle'daki v72.13'te var;
+/// yardım metni: "comma separated fixed domain list" ve "subdomains auto apply").
+/// Liste boş kalırsa bayrak HİÇ eklenmiyor ve davranış eskisi gibi genel oluyor:
+/// bu bilinçli bir tercih, çünkü boş listeyle bayrağı eklemek korumayı SESSİZCE
+/// tamamen kapatırdı. Bozuk bir veri dosyasının en kötü sonucu, korumasız kalıp
 /// bunu bilmemek olurdu.
 /// </para>
 /// </remarks>
@@ -30,19 +30,19 @@ public sealed class HostlistStore
     private HostlistStore(IReadOnlyDictionary<string, IReadOnlyList<string>> categories)
         => _categories = categories;
 
-    /// <summary>Hicbir alan adi tanimadan calisir; bayrak eklenmez (genel davranis).</summary>
+    /// <summary>Hiçbir alan adı tanımadan çalışır; bayrak eklenmez (genel davranış).</summary>
     public static HostlistStore Empty { get; } =
         new(new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase));
 
-    /// <summary>Taninan kategoriler.</summary>
+    /// <summary>Tanınan kategoriler.</summary>
     public IReadOnlyCollection<string> Categories => (IReadOnlyCollection<string>)_categories.Keys;
 
     /// <summary>
-    /// <paramref name="profilesRoot"/> icindeki <c>hostlist-domains.json</c> dosyasini okur.
+    /// <paramref name="profilesRoot"/> içindeki <c>hostlist-domains.json</c> dosyasını okur.
     /// </summary>
     /// <remarks>
-    /// Dosya yoksa ya da bozuksa FIRLATMAZ, <see cref="Empty"/> doner. Gerekce yukarida:
-    /// veri dosyasindaki bir sorun korumayi kapatmamali, yalnizca daraltmayi iptal etmeli.
+    /// Dosya yoksa ya da bozuksa FIRLATMAZ, <see cref="Empty"/> döner. Gerekçe yukarıda:
+    /// veri dosyasındaki bir sorun korumayı kapatmamalı, yalnızca daraltmayı iptal etmeli.
     /// </remarks>
     public static HostlistStore Load(string profilesRoot)
     {
@@ -84,20 +84,20 @@ public sealed class HostlistStore
     }
 
     /// <summary>
-    /// Verilen kategorilerin alan adlari, kullanicinin kendi hedefiyle birlikte.
+    /// Verilen kategorilerin alan adları, kullanıcının kendi hedefiyle birlikte.
     /// </summary>
     /// <param name="categories">
-    /// O baglantida ENGELLI oldugu olculmus kategoriler (kazanan adaylarin
-    /// <c>verifiedFor</c> degeri). Bos verilirse taninan butun kategoriler kullanilir:
-    /// olcum yoksa daraltmayi tamamen birakmak yerine, aracin hedefledigi adreslere
-    /// inmek daha az zararli. Bunun bedeli, o hatta engelli OLMAYAN bir hedefe de
-    /// dokunulmasi olabilir; bedeli olmayan secenek yok, cunku hangi kategorinin
-    /// engelli oldugu ancak parametre testiyle biliniyor.
+    /// O bağlantıda ENGELLİ olduğu ölçülmüş kategoriler (kazanan adayların
+    /// <c>verifiedFor</c> değeri). Boş verilirse tanınan bütün kategoriler kullanılır:
+    /// ölçüm yoksa daraltmayı tamamen bırakmak yerine, aracın hedeflediği adreslere
+    /// inmek daha az zararlı. Bunun bedeli, o hatta engelli OLMAYAN bir hedefe de
+    /// dokunulması olabilir; bedeli olmayan seçenek yok, çünkü hangi kategorinin
+    /// engelli olduğu ancak parametre testiyle biliniyor.
     /// </param>
     /// <param name="customTarget">
-    /// Arayuzdeki "Acilmayan site" girdisi. Ham metin verilebilir ("discord.com",
-    /// "https://x.com/abc"); alan adi cikarilir. Bu OLMAZSA kullanicinin kendi
-    /// ekledigi site test edilir, dogrulanir ama calisma zamaninda korunmaz.
+    /// Arayüzdeki "Açılmayan site" girdisi. Ham metin verilebilir ("discord.com",
+    /// "https://x.com/abc"); alan adı çıkarılır. Bu OLMAZSA kullanıcının kendi
+    /// eklediği site test edilir, doğrulanır ama çalışma zamanında korunmaz.
     /// </param>
     public IReadOnlyList<string> DomainsFor(
         IEnumerable<string>? categories = null, string? customTarget = null)
@@ -127,13 +127,13 @@ public sealed class HostlistStore
     }
 
     /// <summary>
-    /// Kullanicinin yazdigi metinden alan adini cikarir. Cikaramazsa null.
+    /// Kullanıcının yazdığı metinden alan adını çıkarır. Çıkaramazsa null.
     /// </summary>
     /// <remarks>
-    /// Kullanici "discord.com", "https://discord.com/app" ya da "discord.com/app"
-    /// yazabiliyor; uctunde de winws'e gitmesi gereken sey yalnizca ana bilgisayar adi.
-    /// Virgul BILEREK eleniyor: deger <c>--hostlist-domains=</c> listesine giriyor ve
-    /// virgul orada ayrac, yani tek bir girdinin listeye iki ad eklemesi anlamina gelirdi.
+    /// Kullanıcı "discord.com", "https://discord.com/app" ya da "discord.com/app"
+    /// yazabiliyor; üçünde de winws'e gitmesi gereken şey yalnızca ana bilgisayar adı.
+    /// Virgül BİLEREK eleniyor: değer <c>--hostlist-domains=</c> listesine giriyor ve
+    /// virgül orada ayraç, yani tek bir girdinin listeye iki ad eklemesi anlamına gelirdi.
     /// </remarks>
     public static string? TryParseDomain(string? input)
     {
@@ -159,24 +159,24 @@ public sealed class HostlistStore
     }
 
     /// <summary>
-    /// Kullanicinin girdisi kullanilamiyorsa SEBEBINI Turkce anlatir; kullanilabiliyorsa null.
+    /// Kullanıcının girdisi kullanılamıyorsa SEBEBİNİ Türkçe anlatır; kullanılabiliyorsa null.
     /// </summary>
     /// <remarks>
-    /// OLCULDU (issue #1, KeremKuyucu, 2026-09-15): kullanici "Acilmayan site" kutusuna
-    /// Roblox'u eklemeye calisti, olmayinca virgulle iki adres yazdi, yine olmadi ve
-    /// "ya calismiyor ya da bir seyi yanlis yapiyorum" dedi. Ikisi de dogru degildi:
-    /// girdisi <see cref="TryParseDomain"/> tarafindan REDDEDILIYORDU ve bunu ona
-    /// soyleyen hicbir sey yoktu. Basari yolunda "Kendi hedefiniz eklendi: ..." satiri
-    /// var, basarisizlik yolunda hicbir sey yoktu -- yani kullanici kendi girdisinin
-    /// yok sayildigini gorebilecek durumda degildi.
+    /// ÖLÇÜLDÜ (issue #1, KeremKuyucu, 2026-09-15): kullanıcı "Açılmayan site" kutusuna
+    /// Roblox'u eklemeye çalıştı, olmayınca virgülle iki adres yazdı, yine olmadı ve
+    /// "ya çalışmıyor ya da bir şeyi yanlış yapıyorum" dedi. İkisi de doğru değildi:
+    /// girdisi <see cref="TryParseDomain"/> tarafından REDDEDİLİYORDU ve bunu ona
+    /// söyleyen hiçbir şey yoktu. Başarı yolunda "Kendi hedefiniz eklendi: ..." satırı
+    /// var, başarısızlık yolunda hiçbir şey yoktu; yani kullanıcı kendi girdisinin
+    /// yok sayıldığını görebilecek durumda değildi.
     ///
-    /// Virgul .NET'in <see cref="Uri"/> ayristiricisi tarafindan zaten reddediliyor
-    /// (olculdu: "a.com,b.com" ve "a.com, b.com" icin TryCreate false donuyor), yani
-    /// burada yapilan is yalnizca SEBEBI soylemek.
+    /// Virgül .NET'in <see cref="Uri"/> ayrıştırıcısı tarafından zaten reddediliyor
+    /// (ölçüldü: "a.com,b.com" ve "a.com, b.com" için TryCreate false dönüyor), yani
+    /// burada yapılan iş yalnızca SEBEBİ söylemek.
     /// </remarks>
     public static string? DescribeUnusableTarget(string? input)
     {
-        // Bos birakmak gecerli bir secim: varsayilan hedefler kullanilir.
+        // Boş bırakmak geçerli bir seçim: varsayılan hedefler kullanılır.
         if (string.IsNullOrWhiteSpace(input))
         {
             return null;
@@ -189,8 +189,8 @@ public sealed class HostlistStore
 
         var text = input.Trim();
 
-        // Kullanicinin kendi bulacagi ilk care virgul; sebebi ayrica soylenmezse
-        // "yazdim, olmadi" dongusune giriyor.
+        // Kullanıcının kendi bulacağı ilk çare virgül; sebebi ayrıca söylenmezse
+        // "yazdım, olmadı" döngüsüne giriyor.
         if (text.Contains(',', StringComparison.Ordinal) || text.Contains(' ', StringComparison.Ordinal))
         {
             return $"\"{text}\" anlaşılamadı: bu kutuya TEK bir adres yazın (örnek: roblox.com). "
@@ -201,7 +201,7 @@ public sealed class HostlistStore
     }
 }
 
-/// <summary>hostlist-domains.json'un govdesi.</summary>
+/// <summary>hostlist-domains.json'un gövdesi.</summary>
 public sealed class HostlistDocument
 {
     [JsonPropertyName("categories")]

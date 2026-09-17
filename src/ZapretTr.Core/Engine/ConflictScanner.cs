@@ -50,12 +50,12 @@ public sealed record ConflictFinding(
 /// en yaygını GoodbyeDPI). Eski araç "kaldırıldı" sanılıyor ama geride bir
 /// <b>servis kaydı</b> kalıyor ve o servis açılışta ayağa kalkıp WinDivert
 /// sürücüsünü kapıyor. winws kendi sürücüsünü yükleyemiyor ve BÜTÜN adaylar
-/// aynı şekilde düşüyor -- dışarıdan görünen şey "hiçbir strateji çalışmadı".
+/// aynı şekilde düşüyor; dışarıdan görünen şey "hiçbir strateji çalışmadı".
 /// Bir kullanıcıda tam bu tablo ölçüldü: 176 aday, 1105 saniye, sonuç yok.
 /// </para>
 /// <para>
 /// Eskiden yalnızca <b>çalışan süreçlere</b> bakılıyordu. O kontrol, en sık
-/// karşılaşılan hâli -- kapalı ama kurulu kalıntıyı -- hiç görmüyordu: kullanıcı
+/// karşılaşılan hâli, yani kapalı ama kurulu kalıntıyı, hiç görmüyordu: kullanıcı
 /// eski aracı kapatıyor, bize "kapattım" diyor, servis yine de açılışta geri
 /// geliyor.
 /// </para>
@@ -146,7 +146,7 @@ public static class ConflictScanner
             }
             catch (Exception)
             {
-                // Surec listesi okunamiyorsa teshis ugruna akisi durdurmuyoruz.
+                // Süreç listesi okunamıyorsa teşhis uğruna akışı durdurmuyoruz.
             }
         }
 
@@ -173,12 +173,12 @@ public static class ConflictScanner
             var baslatma = ReadScField(output, "START_TYPE") ?? "?";
             var otomatik = baslatma.Contains("AUTO_START", StringComparison.OrdinalIgnoreCase);
 
-            // IKILI DISKTE YOKSA BU BIR KALINTI.
+            // İKİLİ DİSKTE YOKSA BU BİR KALINTI.
             //
-            // Arac kaldirilmis ama servis kaydi kalmis. Boyle bir servis
-            // acilista baslatilmaya calisiliyor; hicbir ise yaramiyor ama
-            // surucu kaydini ve WinDivert'i kurcalayabiliyor. Silmesi guvenli:
-            // arkasinda calisan bir urun yok.
+            // Araç kaldırılmış ama servis kaydı kalmış. Böyle bir servis
+            // açılışta başlatılmaya çalışılıyor; hiçbir işe yaramıyor ama
+            // sürücü kaydını ve WinDivert'i kurcalayabiliyor. Silmesi güvenli:
+            // arkasında çalışan bir ürün yok.
             if (yol is not null && !File.Exists(yol))
             {
                 bulgular.Add(new ConflictFinding(
@@ -191,7 +191,7 @@ public static class ConflictScanner
                 continue;
             }
 
-            // IKILI YERINDEYSE BU CALISAN BIR KURULUM. Silmek bizim isimiz degil.
+            // İKİLİ YERİNDEYSE BU ÇALIŞAN BİR KURULUM. Silmek bizim işimiz değil.
             bulgular.Add(new ConflictFinding(
                 ConflictKind.InstalledTool,
                 servis,
@@ -205,9 +205,9 @@ public static class ConflictScanner
     private static async Task AddDriverFindingsAsync(
         List<ConflictFinding> bulgular, bool baskaAracCalisiyor, CancellationToken cancellationToken)
     {
-        // WinDivert surucu servisi BIZIM de kullandigimiz sey: winws calisirken
-        // orada durmasi normal. Bu yuzden yalnizca ortalikta calisan bir DPI
-        // araci YOKKEN kalinti sayiliyor.
+        // WinDivert sürücü servisi BİZİM de kullandığımız şey: winws çalışırken
+        // orada durması normal. Bu yüzden yalnızca ortalıkta çalışan bir DPI
+        // aracı YOKKEN kalıntı sayılıyor.
         if (baskaAracCalisiyor || IsOurEngineRunning())
         {
             return;
@@ -223,17 +223,17 @@ public static class ConflictScanner
                 continue;
             }
 
-            // KAYIT BIZIM SURUCUMUZU GOSTERIYORSA KALINTI DEGIL.
+            // KAYIT BİZİM SÜRÜCÜMÜZÜ GÖSTERİYORSA KALINTI DEĞİL.
             //
-            // Olculdu (2026-09-16, gercek makine, 0.2.5): her parametre testinde
-            // "Sahipsiz ag surucusu kaydi: windivert" sorusu cikiyordu. Kayit
+            // Ölçüldü (2026-09-16, gerçek makine, 0.2.5): her parametre testinde
+            // "Sahipsiz ağ sürücüsü kaydı: windivert" sorusu çıkıyordu. Kayıt
             // "\??\C:\Program Files\ZapretTR\zapret-winws\WinDivert64.sys"
-            // gosteriyordu -- yani bir onceki testte KENDI winws'imizin yukledigi
-            // surucu. WinDivert kaydi surucu cekirdekten dusene kadar kaliyor;
-            // winws kapaliyken bakinca "sahipsiz" gorunuyor. Kullanici "evet"
-            // deyince siliniyor, bir sonraki test yeniden yukluyor ve soru her
-            // seferinde geri geliyordu. Ustelik ayni surumdeki kendi surucumuz
-            // winws'in acilmasini engellemiyor; bu kontrolun gerekcesi o degildi.
+            // gösteriyordu; yani bir önceki testte KENDİ winws'imizin yüklediği
+            // sürücü. WinDivert kaydı sürücü çekirdekten düşene kadar kalıyor;
+            // winws kapalıyken bakınca "sahipsiz" görünüyor. Kullanıcı "evet"
+            // deyince siliniyor, bir sonraki test yeniden yüklüyor ve soru her
+            // seferinde geri geliyordu. Üstelik aynı sürümdeki kendi sürücümüz
+            // winws'in açılmasını engellemiyor; bu kontrolün gerekçesi o değildi.
             if (IsOwnDriver(ExtractExecutablePath(ReadScField(output, "BINARY_PATH_NAME")), bizimSurucu))
             {
                 continue;
@@ -283,9 +283,9 @@ public static class ConflictScanner
         }
         catch (Exception)
         {
-            // Okuyamiyorsak calisiyor VARSAYIYORUZ: yanlis tarafa dusmek
-            // gerekiyorsa, kullanilan bir surucuyu silmeye kalkmaktansa
-            // kalintiyi bildirmemek yeglenir.
+            // Okuyamıyorsak çalışıyor VARSAYIYORUZ: yanlış tarafa düşmek
+            // gerekiyorsa, kullanılan bir sürücüyü silmeye kalkmaktansa
+            // kalıntıyı bildirmemek yeğlenir.
             return true;
         }
     }
@@ -293,18 +293,18 @@ public static class ConflictScanner
     private static async Task AddDnsFindingsAsync(
         List<ConflictFinding> bulgular, CancellationToken cancellationToken)
     {
-        // 127.0.0.1:53'U BASKA BIRI TUTUYORSA sifreli DNS hic acilamaz.
+        // 127.0.0.1:53'Ü BAŞKA BİRİ TUTUYORSA şifreli DNS hiç açılamaz.
         //
-        // Belirtisi teshis edilmesi zor bir sey: dnscrypt-proxy baslatiliyor,
-        // portu baglayamiyor, dogrulama sorgusu cevapsiz kaliyor ve kullanici
-        // yalnizca "sifreli DNS calismadi" goruyor. Baska DPI/DNS araclarinin
-        // bir kismi (GoodbyeDPI'in dns yonlendirmesi, yerel DNS onbellekleri)
-        // tam olarak o portu tutuyor. Tutanin ADINI soylemek, bu duvari bir
-        // cumleye indiriyor.
+        // Belirtisi teşhis edilmesi zor bir şey: dnscrypt-proxy başlatılıyor,
+        // portu bağlayamıyor, doğrulama sorgusu cevapsız kalıyor ve kullanıcı
+        // yalnızca "şifreli DNS çalışmadı" görüyor. Başka DPI/DNS araçlarının
+        // bir kısmı (GoodbyeDPI'ın DNS yönlendirmesi, yerel DNS önbellekleri)
+        // tam olarak o portu tutuyor. Tutanın ADINI söylemek, bu duvarı bir
+        // cümleye indiriyor.
         if (await DnsCryptRunner.IsLocalResolverRespondingAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false))
         {
-            // Cevap veren bizim dnscrypt'imiz olabilir; bu bir bulgu degil.
+            // Cevap veren bizim dnscrypt'imiz olabilir; bu bir bulgu değil.
             return;
         }
 
@@ -355,11 +355,11 @@ public static class ConflictScanner
         }
         catch (Exception)
         {
-            // hosts okunamadi. Teshis, asil akisi durdurmamali.
+            // hosts okunamadı. Teşhis, asıl akışı durdurmamalı.
         }
     }
 
-    // --- Ayristiricilar (saf, sinanabilir) --------------------------------------
+    // --- Ayrıştırıcılar (saf, sınanabilir) --------------------------------------
 
     /// <summary>
     /// hosts dosyasında ilgilendiğimiz adları yönlendiren satırları bulur.
@@ -448,8 +448,8 @@ public static class ConflictScanner
     /// </summary>
     /// <remarks>
     /// Üç biçim birden geliyor: sürücülerde <c>\??\C:\...\x.sys</c>, tırnaklı
-    /// yollar, ve tırnaksız "boşluklu yol + argüman" karışımı. Sonuncusu
-    /// tek başına ayrıştırılamaz -- <c>C:\Program Files\x\y.exe -5</c> ile
+    /// yollar ve tırnaksız "boşluklu yol + argüman" karışımı. Sonuncusu
+    /// tek başına ayrıştırılamaz: <c>C:\Program Files\x\y.exe -5</c> ile
     /// <c>C:\Program.exe Files\x</c> aynı görünür. Bu yüzden en uzun VAR OLAN
     /// önek aranıyor: diskin kendisi hakem.
     /// </remarks>
@@ -545,16 +545,16 @@ public static class ConflictScanner
         }
     }
 
-    // --- Kaldirma ----------------------------------------------------------------
+    // --- Kaldırma ----------------------------------------------------------------
 
     /// <summary>
     /// Yalnızca <see cref="ConflictFinding.Removable"/> olan bulguları kaldırır.
     /// </summary>
     /// <remarks>
     /// Silinebilir sayılan tek iki şey var ve ikisi de <b>kayıt</b>, dosya değil:
-    /// ikilisi diskte olmayan servis kayıtları, ve hiçbir araç çalışmıyorken
+    /// ikilisi diskte olmayan servis kayıtları ve hiçbir araç çalışmıyorken
     /// duran WinDivert sürücü kayıtları. Başka bir ürünün dosyalarını silmek
-    /// bu sınıfın işi değil -- bizi engelleyen şey kayıt, ve çalışan bir kurulumu
+    /// bu sınıfın işi değil; bizi engelleyen şey kayıt ve çalışan bir kurulumu
     /// bozmanın geri dönüşü yok.
     /// </remarks>
     public static async Task<IReadOnlyList<CleanupStep>> RemoveAsync(
@@ -572,9 +572,9 @@ public static class ConflictScanner
                 continue;
             }
 
-            // BIZIM SERVISLERIMIZE ASLA. Bulgu listesi disaridan geliyor ve bu
-            // metot silme yetkisiyle kosuyor; kendi ayagimiza sikmanin onune
-            // gecen tek sey bu kontrol.
+            // BİZİM SERVİSLERİMİZE ASLA. Bulgu listesi dışarıdan geliyor ve bu
+            // metot silme yetkisiyle koşuyor; kendi ayağımıza sıkmanın önüne
+            // geçen tek şey bu kontrol.
             if (OwnServices.Contains(bulgu.Name, StringComparer.OrdinalIgnoreCase))
             {
                 continue;
@@ -584,7 +584,7 @@ public static class ConflictScanner
             var (exitCode, output) = await RunScAsync(["delete", bulgu.Name], cancellationToken)
                 .ConfigureAwait(false);
 
-            // 1060 = "belirtilen servis yuklu degil". Kaldirma acisindan basari.
+            // 1060 = "belirtilen servis yüklü değil". Kaldırma açısından başarı.
             steps.Add(exitCode == 0 || output.Contains("1060", StringComparison.Ordinal)
                 ? new CleanupStep($"{bulgu.Name} kaydi kaldirildi", true)
                 : new CleanupStep($"{bulgu.Name} kaydi kaldirilamadi", false, output.Trim()));
@@ -593,7 +593,7 @@ public static class ConflictScanner
         return steps;
     }
 
-    // --- Surec calistirma ---------------------------------------------------------
+    // --- Süreç çalıştırma ---------------------------------------------------------
 
     private static Task<(int ExitCode, string Output)> RunScAsync(
         string[] arguments, CancellationToken cancellationToken)

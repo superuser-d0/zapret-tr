@@ -21,14 +21,14 @@
     <InvariantGlobalization>true</InvariantGlobalization>
 
     <!--
-      Kirpma. Bir kez denenip GERI ALINMISTI: JSON yansimayla calisiyordu ve kirpma,
-      DNS yedeginin geri yuklenmesi gibi guvenlik kritik yollari SESSIZCE bozabiliyordu.
-      Simdi guvenli, cunku butun JSON yollari kaynak uretimine tasindi (CoreJsonContext,
-      ProberJsonContext, ReportJsonContext) ve asagidaki iki bayrak bunu ZORLUYOR:
-      yeni bir yansima yolu eklenirse yayin uyari degil HATA verir.
+      Kırpma. Bir kez denenip GERİ ALINMIŞTI: JSON yansımayla çalışıyordu ve kırpma,
+      DNS yedeğinin geri yüklenmesi gibi güvenlik açısından kritik yolları SESSİZCE
+      bozabiliyordu. Şimdi güvenli, çünkü bütün JSON yolları kaynak üretimine taşındı
+      (CoreJsonContext, ProberJsonContext, ReportJsonContext) ve aşağıdaki iki bayrak
+      bunu ZORLUYOR: yeni bir yansıma yolu eklenirse yayın uyarı değil HATA verir.
 
-      Bu iki satiri kaldirmadan once bunu oku: kirpmanin guvenligi "dikkatli olduk"a
-      degil, TrimmerSingleWarn=false + WarningsAsErrors'a dayaniyor.
+      Bu iki satırı kaldırmadan önce bunu oku: kırpmanın güvenliği "dikkatli olduk"a
+      değil, TrimmerSingleWarn=false + WarningsAsErrors'a dayanıyor.
     -->
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>full</TrimMode>
@@ -37,7 +37,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL2104;IL3050</WarningsAsErrors>
   </PropertyGroup>
 
-  <!-- msquic.dll tek dosya paketinin DISINDA kaliyor: Directory.Build.targets. -->
+  <!-- msquic.dll tek dosya paketinin DIŞINDA kalıyor: Directory.Build.targets. -->
 
 </Project>
 

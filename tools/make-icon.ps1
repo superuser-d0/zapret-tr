@@ -1,22 +1,22 @@
-<#
+﻿<#
 .SYNOPSIS
-    Uygulama simgesini (.ico) ve kurulum sihirbazinin kucuk resmini uretir.
+    Uygulama simgesini (.ico) ve kurulum sihirbazının küçük resmini üretir.
 
 .DESCRIPTION
-    0.1.21'e kadar uygulamanin kendi simgesi yoktu: exe, gorev cubugu, bildirim
-    alani ve pencere basligi .NET'in varsayilan simgesini, kurulum sihirbazi da
-    Inno Setup'in varsayilan resmini gosteriyordu. Bildirim alaninda ZapretTR
-    baska bir .NET uygulamasindan ayirt edilemiyordu.
+    0.1.21'e kadar uygulamanın kendi simgesi yoktu: exe, görev çubuğu, bildirim
+    alanı ve pencere başlığı .NET'in varsayılan simgesini, kurulum sihirbazı da
+    Inno Setup'ın varsayılan resmini gösteriyordu. Bildirim alanında ZapretTR
+    başka bir .NET uygulamasından ayırt edilemiyordu.
 
-    Simge cizilerek degil KODLA uretiliyor: kaynak dosyasi (SVG, PSD) tutmaya ve
-    onu okuyacak bir arac kurmaya gerek kalmiyor, degisiklik bu betikte gorunuyor.
-    Cikti dosyalari depoda duruyor; derleme bu betigi CALISTIRMIYOR.
+    Simge çizilerek değil KODLA üretiliyor: kaynak dosyası (SVG, PSD) tutmaya ve
+    onu okuyacak bir araç kurmaya gerek kalmıyor, değişiklik bu betikte görünüyor.
+    Çıktı dosyaları depoda duruyor; derleme bu betiği ÇALIŞTIRMIYOR.
 
-    Her boyut ayri ciziliyor ve olculer piksele yuvarlaniyor. 256'dan kucultulmus
-    bir 16x16, Z'nin cizgilerini yarim piksele dusurup bulaniklastiriyordu.
+    Her boyut ayrı çiziliyor ve ölçüler piksele yuvarlanıyor. 256'dan küçültülmüş
+    bir 16x16, Z'nin çizgilerini yarım piksele düşürüp bulanıklaştırıyordu.
 
-    .ico icinde 256 PNG, digerleri 32 bit DIB olarak yaziliyor: PNG girdileri her
-    aracin (Inno Setup'in simge gomucusu dahil) okudugu bicim degil.
+    .ico içinde 256 PNG, diğerleri 32 bit DIB olarak yazılıyor: PNG girdileri her
+    aracın (Inno Setup'ın simge gömücüsü dahil) okuduğu biçim değil.
 
 .EXAMPLE
     powershell -NoProfile -File tools/make-icon.ps1
@@ -32,7 +32,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 Add-Type -AssemblyName System.Drawing
 
-# Uygulamanin vurgu rengi (App.xaml AccentBrush = #1F5FAF) etrafinda dikey gecis.
+# Uygulamanın vurgu rengi (App.xaml AccentBrush = #1F5FAF) etrafında dikey geçiş.
 $Ust = [System.Drawing.Color]::FromArgb(255, 0x2B, 0x72, 0xC9)
 $Alt = [System.Drawing.Color]::FromArgb(255, 0x18, 0x4B, 0x8E)
 
@@ -43,8 +43,8 @@ function New-IconBitmap([int]$Size) {
     $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::Half
     $g.Clear([System.Drawing.Color]::Transparent)
 
-    # Zemin: yuvarlatilmis kare. 16 ve 20'de kenar bosluksuz; buyuklerde Windows
-    # simgelerindeki gibi ince bir bosluk.
+    # Zemin: yuvarlatılmış kare. 16 ve 20'de kenar boşluksuz; büyüklerde Windows
+    # simgelerindeki gibi ince bir boşluk.
     $pad = if ($Size -le 20) { 0 } else { [math]::Round($Size * 0.04) }
     $side = $Size - 2 * $pad
     $r = [math]::Max(3, [math]::Round($side * 0.22))
@@ -58,19 +58,19 @@ function New-IconBitmap([int]$Size) {
     $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush $rect, $Ust, $Alt, 90.0
     $g.FillPath($brush, $path)
 
-    # Beyaz Z. Kalinlik en az 2 piksel: 16x16'da 1 piksellik cizgi okunmuyor.
+    # Beyaz Z. Kalınlık en az 2 piksel: 16x16'da 1 piksellik çizgi okunmuyor.
     $mx = [math]::Round($Size * 0.25)
     $my = [math]::Round($Size * 0.23)
     $t = [math]::Max(2, [math]::Round($Size * 0.12))
     $x0 = $mx; $x1 = $Size - $mx; $y0 = $my; $y1 = $Size - $my
 
-    # Caprazin yatay payi, dik kalinligi yatay cizgilerle ayni olacak sekilde
-    # acidan hesaplaniyor. Sabit bir katsayiyla capraz, yatay cizgiler kalin
-    # oldugunda yatiklasip 16 ve 20 pikselde neredeyse kayboluyordu.
+    # Çaprazın yatay payı, dik kalınlığı yatay çizgilerle aynı olacak şekilde
+    # açıdan hesaplanıyor. Sabit bir katsayıyla çapraz, yatay çizgiler kalın
+    # olduğunda yatıklaşıp 16 ve 20 pikselde neredeyse kayboluyordu.
     $yatay = $x1 - $x0
     $dikey = ($y1 - $t) - ($y0 + $t)
     $d = [math]::Round($t * [math]::Sqrt($yatay * $yatay + $dikey * $dikey) / [math]::Max(1, $dikey))
-    # Parantezler sart: PowerShell'de virgul toplamadan once baglaniyor.
+    # Parantezler şart: PowerShell'de virgül toplamadan önce bağlanıyor.
     $pts = @(
         @($x0, $y0), @($x1, $y0), @($x1, ($y0 + $t)),
         @(($x0 + $d), ($y1 - $t)), @($x1, ($y1 - $t)), @($x1, $y1),
@@ -87,18 +87,18 @@ function Get-DibBytes([System.Drawing.Bitmap]$Bmp) {
     $w = $Bmp.Width; $h = $Bmp.Height
     $ms = New-Object System.IO.MemoryStream
     $bw = New-Object System.IO.BinaryWriter $ms
-    # BITMAPINFOHEADER; yukseklik renk + maske icin iki kat.
+    # BITMAPINFOHEADER; yükseklik renk + maske için iki kat.
     $bw.Write([int]40); $bw.Write([int]$w); $bw.Write([int]($h * 2))
     $bw.Write([int16]1); $bw.Write([int16]32); $bw.Write([int]0)
     $bw.Write([int]0); $bw.Write([int]0); $bw.Write([int]0); $bw.Write([int]0); $bw.Write([int]0)
-    # Pikseller alttan uste, BGRA.
+    # Pikseller alttan üste, BGRA.
     for ($y = $h - 1; $y -ge 0; $y--) {
         for ($x = 0; $x -lt $w; $x++) {
             $c = $Bmp.GetPixel($x, $y)
             $bw.Write([byte]$c.B); $bw.Write([byte]$c.G); $bw.Write([byte]$c.R); $bw.Write([byte]$c.A)
         }
     }
-    # AND maskesi: alfa kanali varken hepsi sifir.
+    # AND maskesi: alfa kanalı varken hepsi sıfır.
     $maskRow = [int]([math]::Floor(($w + 31) / 32) * 4)
     $bw.Write((New-Object byte[] ($maskRow * $h)))
     $bw.Flush()
@@ -112,7 +112,7 @@ function Get-PngBytes([System.Drawing.Bitmap]$Bmp) {
 }
 
 # --- .ico ---------------------------------------------------------------------
-# 20/40: %125 ve %250 olcekte bildirim alani; 24/48: %150 ve %300.
+# 20/40: %125 ve %250 ölçekte bildirim alanı; 24/48: %150 ve %300.
 $sizes = 16, 20, 24, 32, 40, 48, 64, 256
 $images = foreach ($s in $sizes) {
     $bmp = New-IconBitmap $s
@@ -137,10 +137,10 @@ foreach ($img in $images) { $bw.Write([byte[]]$img.Bytes) }
 $bw.Dispose(); $fs.Dispose()
 Write-Host "Yazildi: $IcoPath ($((Get-Item $IcoFull).Length) bayt, boyutlar: $($sizes -join ', '))"
 
-# --- Kurulum sihirbazi kucuk resmi --------------------------------------------
-# Modern sihirbazin sag ust kosesi. Inno Setup ekran olcegine gore listeden en
-# yakinini seciyor; %100 icin 55, %200 icin 110. Beyaz zemine 24 bit BMP: bu
-# bicimi her Inno Setup 6 surumu okuyor.
+# --- Kurulum sihirbazı küçük resmi --------------------------------------------
+# Modern sihirbazın sağ üst köşesi. Inno Setup ekran ölçeğine göre listeden en
+# yakınını seçiyor; %100 için 55, %200 için 110. Beyaz zemine 24 bit BMP: bu
+# biçimi her Inno Setup 6 sürümü okuyor.
 $WizardFull = [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $WizardDir))
 foreach ($s in 55, 110) {
     $icon = New-IconBitmap ([math]::Round($s * 0.82))
@@ -156,7 +156,7 @@ foreach ($s in 55, 110) {
     Write-Host "Yazildi: $out"
 }
 
-# --- Istege bagli onizleme: her boyut 8 kat buyutulmus, yan yana --------------
+# --- İsteğe bağlı önizleme: her boyut 8 kat büyütülmüş, yan yana --------------
 if ($PreviewPath) {
     $scale = 8
     $width = [int]($sizes | Where-Object { $_ -le 64 } | ForEach-Object { $_ * $scale + 16 } | Measure-Object -Sum).Sum

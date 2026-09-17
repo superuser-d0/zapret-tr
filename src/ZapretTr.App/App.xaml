@@ -5,8 +5,8 @@
         <ResourceDictionary>
 
             <!-- Renkler temada: Themes/Light.xaml ve Themes/Dark.xaml. ThemeManager
-                 bu listedeki tema sozlugunu degistiriyor; buradaki stiller renklere
-                 DynamicResource ile baktigi icin pencere yeniden kurulmadan boyaniyor.
+                 bu listedeki tema sözlüğünü değiştiriyor; buradaki stiller renklere
+                 DynamicResource ile baktığı için pencere yeniden kurulmadan boyanıyor.
                  Bu dosyada ve MainWindow.xaml'da sabit renk YOK (ThemeDictionaryTests). -->
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Light.xaml" />
@@ -18,7 +18,7 @@
                 <Setter Property="Margin" Value="0,0,10,0" />
             </Style>
 
-            <!-- Ikincil islem dugmesi: liste halinde alt alta duran, esit agirlikta olanlar. -->
+            <!-- İkincil işlem düğmesi: liste hâlinde alt alta duran, eşit ağırlıkta olanlar. -->
             <Style x:Key="ActionButton" TargetType="Button">
                 <Setter Property="Height" Value="36" />
                 <Setter Property="Margin" Value="0,0,0,8" />
@@ -37,8 +37,8 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="4">
-                                <!-- Margin=Padding: onceden sablon Padding'i yok sayiyordu ve test
-                                     sirasindaki kucuk "İptal" dugmesinde yazi kenara yapisiyordu. -->
+                                <!-- Margin=Padding: önceden şablon Padding'i yok sayıyordu ve test
+                                     sırasındaki küçük "İptal" düğmesinde yazı kenara yapışıyordu. -->
                                 <ContentPresenter Margin="{TemplateBinding Padding}"
                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
@@ -56,7 +56,7 @@
                 </Setter>
             </Style>
 
-            <!-- Ana dugme: pencerede gorsel olarak baskin olmasi gereken tek eylem. -->
+            <!-- Ana düğme: pencerede görsel olarak baskın olması gereken tek eylem. -->
             <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
                 <Setter Property="Height" Value="52" />
                 <Setter Property="FontSize" Value="15" />
@@ -66,7 +66,7 @@
                 <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
             </Style>
 
-            <!-- Yikici islem: gorunusu kullaniciyi bir an durdurmali. -->
+            <!-- Yıkıcı işlem: görünüşü kullanıcıyı bir an durdurmalı. -->
             <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
                 <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />

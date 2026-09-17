@@ -7,18 +7,18 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Yayin notundaki baglantilar yayin sayfasindan tiklaninca calismali.
+/// Yayın notundaki bağlantılar yayın sayfasından tıklanınca çalışmalı.
 /// </summary>
 /// <remarks>
-/// OLCULDU (2026-09-16): yayin sayfasindaki "CHANGELOG.md" baglantisi
+/// ÖLÇÜLDÜ (2026-09-16): yayın sayfasındaki "CHANGELOG.md" bağlantısı
 /// "404 - Cannot find a valid ref in blob/main/CHANGELOG.md" veriyordu. Not
-/// ".../releases/tag/vX" adresinde gosteriliyor ve GitHub goreli baglantiyi oraya gore
-/// cozuyor; "../blob/main/CHANGELOG.md" gecersiz bir adrese gidiyordu. 29 yayinin
-/// hepsinde vardi. CHANGELOG'daki depo ici goreli baglantilar da notta ayni sekilde
+/// ".../releases/tag/vX" adresinde gösteriliyor ve GitHub göreli bağlantıyı oraya göre
+/// çözüyor; "../blob/main/CHANGELOG.md" geçersiz bir adrese gidiyordu. 29 yayının
+/// hepsinde vardı. CHANGELOG'daki depo içi göreli bağlantılar da notta aynı şekilde
 /// bozuluyordu.
 ///
-/// Uretici betik GERCEKTEN kosuluyor (powershell.exe); betigin yaptigi donusumun
-/// metnine bakmak, calistigini gostermez.
+/// Üretici betik GERÇEKTEN koşuluyor (powershell.exe); betiğin yaptığı dönüşümün
+/// metnine bakmak, çalıştığını göstermez.
 /// </remarks>
 public sealed class YayinNotuBaglantiTests
 {

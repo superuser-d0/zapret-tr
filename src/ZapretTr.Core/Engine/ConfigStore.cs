@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Kullanicinin secimleri. Uygulama kapanip acildiginda korunur.</summary>
+/// <summary>Kullanıcının seçimleri. Uygulama kapanıp açıldığında korunur.</summary>
 public sealed class AppConfig
 {
     [JsonPropertyName("selectedIspId")]
@@ -14,12 +14,12 @@ public sealed class AppConfig
     public string? SelectedStrategyId { get; set; }
 
     /// <summary>
-    /// Secili stratejinin argumanlari.
+    /// Seçili stratejinin argümanları.
     /// </summary>
     /// <remarks>
-    /// Id'nin yaninda argumanlar da saklaniyor: bir sonraki surumde aday id'leri
-    /// degisirse ya da aday listeden kalkarsa, kullanicinin calisan ayari id
-    /// eslesmedi diye kaybolmasin.
+    /// Kimliğin yanında argümanlar da saklanıyor: bir sonraki sürümde aday kimlikleri
+    /// değişirse ya da aday listeden kalkarsa, kullanıcının çalışan ayarı kimlik
+    /// eşleşmedi diye kaybolmasın.
     /// </remarks>
     [JsonPropertyName("selectedStrategyArgs")]
     public string? SelectedStrategyArgs { get; set; }
@@ -30,58 +30,58 @@ public sealed class AppConfig
     [JsonPropertyName("customTarget")]
     public string? CustomTarget { get; set; }
 
-    /// <summary>Acilista yeni surum var mi diye sorulsun mu.</summary>
+    /// <summary>Açılışta yeni sürüm var mı diye sorulsun mu.</summary>
     /// <remarks>
-    /// Uygulamanin disari istek yapan TEK yeri bu ve kapatilabilir olmasi sart:
-    /// engellemenin konu oldugu bir arac, kullanicinin haberi olmadan ag istegi
-    /// yapmamali. Varsayilan ACIK, cunku gunde birkac surum cikabiliyor ve
-    /// kullaniciya ulasmayan bir duzeltme ise yaramiyor -- ama ne gonderildigi
-    /// (yalnizca "en son surum ne" sorusu) README'de ve bu yorumda yazili.
+    /// Uygulamanın dışarı istek yapan TEK yeri bu ve kapatılabilir olması şart:
+    /// engellemenin konu olduğu bir araç, kullanıcının haberi olmadan ağ isteği
+    /// yapmamalı. Varsayılan AÇIK, çünkü günde birkaç sürüm çıkabiliyor ve
+    /// kullanıcıya ulaşmayan bir düzeltme işe yaramıyor; ama ne gönderildiği
+    /// (yalnızca "en son sürüm ne" sorusu) README'de ve bu yorumda yazılı.
     /// </remarks>
     [JsonPropertyName("updateCheckEnabled")]
     public bool UpdateCheckEnabled { get; set; } = true;
 
-    /// <summary>Bu yapilandirmayi en son yazan surum.</summary>
+    /// <summary>Bu yapılandırmayı en son yazan sürüm.</summary>
     /// <remarks>
-    /// Guncellemeden sonra kullaniciya "sürüm degisti, stratejiniz korundu"
-    /// diyebilmek icin. Strateji SILINMIYOR: surum degisikligi DPI'yi
-    /// degistirmiyor, dolayisiyla olcum hala gecerli. Yalnizca durum
-    /// bildiriliyor; parametrenin hala ise yarayip yaramadigini baslatmadan
-    /// sonraki dogrulama zaten olcuyor.
+    /// Güncellemeden sonra kullanıcıya "Sürüm değişti ... Kayıtlı stratejiniz korundu"
+    /// diyebilmek için. Strateji SİLİNMİYOR: sürüm değişikliği DPI'ı
+    /// değiştirmiyor, dolayısıyla ölçüm hâlâ geçerli. Yalnızca durum
+    /// bildiriliyor; parametrenin hâlâ işe yarayıp yaramadığını başlatmadan
+    /// sonraki doğrulama zaten ölçüyor.
     /// </remarks>
     [JsonPropertyName("lastRunVersion")]
     public string? LastRunVersion { get; set; }
 
-    /// <summary>Otomatik baslatma servisi kullanici tarafindan duraklatildi mi.</summary>
+    /// <summary>Otomatik başlatma servisi kullanıcı tarafından duraklatıldı mı.</summary>
     /// <remarks>
-    /// Gercegin kaynagi servisin kendi baslangic turu
-    /// (<see cref="ServiceManager.GetStatusAsync"/>); bu alan yalnizca YUKSELTMEDE
+    /// Gerçeğin kaynağı servisin kendi başlangıç türü
+    /// (<see cref="ServiceManager.GetStatusAsync"/>); bu alan yalnızca YÜKSELTMEDE
     /// gerekiyor. Kurulum paketi eski servisleri silip yeniden kuruyor ve silinen
-    /// servisle birlikte "duraklatildi" bilgisi de kayboluyordu -- VPN icin
-    /// korumayi kapatan kullanici, guncellemeden sonra VPN'inin yine
-    /// baglanmadigini gorurdu.
+    /// servisle birlikte "duraklatıldı" bilgisi de kayboluyordu; VPN için
+    /// korumayı kapatan kullanıcı, güncellemeden sonra VPN'inin yine
+    /// bağlanmadığını görürdü.
     /// </remarks>
     [JsonPropertyName("servicePaused")]
     public bool ServicePaused { get; set; }
 
-    /// <summary>Arayuz temasi: "dark", "light" ya da null (Windows'un ayarina uy).</summary>
+    /// <summary>Arayüz teması: "dark", "light" ya da null (Windows'un ayarına uy).</summary>
     /// <remarks>
-    /// Metin, bool degil: null "kullanici hic secmedi" demek ve o durumda uygulama
-    /// Windows'un acik/koyu ayarini izliyor. bool olsaydi eski yapilandirmalar
-    /// "acik temayi secmis" gibi okunurdu.
+    /// Metin, bool değil: null "kullanıcı hiç seçmedi" demek ve o durumda uygulama
+    /// Windows'un açık/koyu ayarını izliyor. bool olsaydı eski yapılandırmalar
+    /// "açık temayı seçmiş" gibi okunurdu.
     /// </remarks>
     [JsonPropertyName("theme")]
     public string? Theme { get; set; }
 }
 
 /// <summary>
-/// Parametre testinde BU BAGLANTIDA dogrulanmis bir aday.
+/// Parametre testinde BU BAĞLANTIDA doğrulanmış bir aday.
 /// </summary>
 /// <remarks>
-/// Dagitimla gelen profillere yazilmiyor; onlar depo dosyalari ve uretecin
-/// ciktisi. Kullaniciya ait olan bu bilgi ayri duruyor ve yuklemede uzerine
-/// bindiriliyor. Boylece upstream profil guncellemesi kullanicinin kendi
-/// dogrulamalarini silmiyor.
+/// Dağıtımla gelen profillere yazılmıyor; onlar depo dosyaları ve üretecin
+/// çıktısı. Kullanıcıya ait olan bu bilgi ayrı duruyor ve yüklemede üzerine
+/// bindiriliyor. Böylece upstream profil güncellemesi kullanıcının kendi
+/// doğrulamalarını silmiyor.
 /// </remarks>
 public sealed class LearnedCandidate
 {
@@ -105,17 +105,17 @@ public sealed class LearnedCandidate
 }
 
 /// <summary>
-/// Kullanici durumunu diske yazar ve okur.
+/// Kullanıcı durumunu diske yazar ve okur.
 /// </summary>
 /// <remarks>
-/// Bu sinif olmadan uygulama her acilista sifirdan basliyordu: kullanici
-/// parametre testini calistirip calisan bir strateji buluyor, uygulamayi
-/// kapatiyor ve bulunan her sey kayboluyordu. Testin 2-3 dakika surdugu
-/// dusunulurse bu, araci gunluk kullanim icin neredeyse kullanilamaz yapiyordu.
+/// Bu sınıf olmadan uygulama her açılışta sıfırdan başlıyordu: kullanıcı
+/// parametre testini çalıştırıp çalışan bir strateji buluyor, uygulamayı
+/// kapatıyor ve bulunan her şey kayboluyordu. Testin 2-3 dakika sürdüğü
+/// düşünülürse bu, aracı günlük kullanım için neredeyse kullanılamaz yapıyordu.
 ///
-/// Okuma yollari HICBIR ZAMAN firlatmaz. Bozuk ya da eski surumden kalma bir
-/// yapilandirma yuzunden uygulamanin acilmamasi kabul edilemez; boyle bir durumda
-/// varsayilanlara donulur.
+/// Okuma yolları HİÇBİR ZAMAN fırlatmaz. Bozuk ya da eski sürümden kalma bir
+/// yapılandırma yüzünden uygulamanın açılmaması kabul edilemez; böyle bir durumda
+/// varsayılanlara dönülür.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class ConfigStore
@@ -125,7 +125,7 @@ public static class ConfigStore
 
     public static string LearnedPath => Path.Combine(WinDivertCleanup.ConfigDirectory, "learned.json");
 
-    /// <summary>Kayitli yapilandirmayi okur. Yoksa ya da bozuksa varsayilanlari doner.</summary>
+    /// <summary>Kayıtlı yapılandırmayı okur. Yoksa ya da bozuksa varsayılanları döner.</summary>
     public static AppConfig Load()
     {
         try
@@ -140,7 +140,7 @@ public static class ConfigStore
         }
         catch (Exception)
         {
-            // Bozuk yapilandirma uygulamanin acilmasini engellememeli.
+            // Bozuk yapılandırma uygulamanın açılmasını engellememeli.
             return new AppConfig();
         }
     }
@@ -153,7 +153,7 @@ public static class ConfigStore
         File.WriteAllText(ConfigPath, JsonSerializer.Serialize(config, CoreJsonContext.Default.AppConfig));
     }
 
-    /// <summary>Ogrenilmis dogrulamalari okur. Yoksa ya da bozuksa bos liste doner.</summary>
+    /// <summary>Öğrenilmiş doğrulamaları okur. Yoksa ya da bozuksa boş liste döner.</summary>
     public static IReadOnlyList<LearnedCandidate> LoadLearned()
     {
         try
@@ -173,24 +173,24 @@ public static class ConfigStore
     }
 
     /// <summary>
-    /// Yeni dogrulamalari kaydeder; ayni ISS + BOLUM icin eskisinin yerine gecer.
+    /// Yeni doğrulamaları kaydeder; aynı İSS + BÖLÜM için eskisinin yerine geçer.
     /// </summary>
     /// <remarks>
-    /// Anahtar (ISS, bolum) -- arguman DEGIL. Calisma zamaninda bolum basina tek
-    /// kazanan kullaniliyor, dolayisiyla ayni bolum icin ikinci bir "dogrulandi"
-    /// kaydi hicbir sey eklemiyor; yalnizca hangisinin guncel oldugunu
-    /// belirsizlestiriyor.
+    /// Anahtar (İSS, bölüm); argüman DEĞİL. Çalışma zamanında bölüm başına tek
+    /// kazanan kullanılıyor, dolayısıyla aynı bölüm için ikinci bir "doğrulandı"
+    /// kaydı hiçbir şey eklemiyor; yalnızca hangisinin güncel olduğunu
+    /// belirsizleştiriyor.
     ///
-    /// "Eskiden calisiyordu" bir kanit degil: o olcum artik gecerli olmayan bir
-    /// ag durumuna aitti ve engelleme degistiginde yaniltici hale geliyor.
+    /// "Eskiden çalışıyordu" bir kanıt değil: o ölçüm artık geçerli olmayan bir
+    /// ağ durumuna aitti ve engelleme değiştiğinde yanıltıcı hâle geliyor.
     /// </remarks>
     /// <summary>
-    /// Yeni dogrulamalari mevcutlarla birlestirir. Diske DOKUNMAZ.
+    /// Yeni doğrulamaları mevcutlarla birleştirir. Diske DOKUNMAZ.
     /// </summary>
     /// <remarks>
-    /// Ayri durmasinin sebebi sinanabilirlik: kural <see cref="AddLearned"/>
-    /// icinde gomulu kaldiginda test onu ancak KOPYALAYARAK sinayabiliyordu,
-    /// ve kopyalayan bir test kod degistiginde sessizce yesil kalir.
+    /// Ayrı durmasının sebebi sınanabilirlik: kural <see cref="AddLearned"/>
+    /// içinde gömülü kaldığında test onu ancak KOPYALAYARAK sınayabiliyordu
+    /// ve kopyalayan bir test, kod değiştiğinde sessizce yeşil kalır.
     /// </remarks>
     public static List<LearnedCandidate> Merge(
         IEnumerable<LearnedCandidate> existing, IEnumerable<LearnedCandidate> incoming)
@@ -202,18 +202,18 @@ public static class ConfigStore
 
         foreach (var candidate in incoming)
         {
-            // Anahtar (ISS, BOLUM) -- arguman DEGIL.
+            // Anahtar (İSS, BÖLÜM); argüman DEĞİL.
             //
-            // Eskiden args de karsilastiriliyordu ve sonuc suydu: bir testte
-            // "fake+ttl4" dogrulanip kaydediliyor, engelleme degisip yeni testte
-            // "multisplit pos=2" kazaniyor, ve IKISI birden "bu baglantida
-            // dogrulandi" etiketiyle listede duruyordu. Calisma zamaninda bolum
-            // basina tek kazanan kullanildigi icin ikinci kayit hicbir sey
-            // eklemiyor; yalnizca hangisinin guncel oldugunu belirsizlestiriyor
-            // ve kayitli secim eskisini gosterebiliyordu.
+            // Eskiden args de karşılaştırılıyordu ve sonuç şuydu: bir testte
+            // "fake+ttl4" doğrulanıp kaydediliyor, engelleme değişip yeni testte
+            // "multisplit pos=2" kazanıyor ve İKİSİ birden "bu bağlantıda
+            // doğrulandı" etiketiyle listede duruyordu. Çalışma zamanında bölüm
+            // başına tek kazanan kullanıldığı için ikinci kayıt hiçbir şey
+            // eklemiyor; yalnızca hangisinin güncel olduğunu belirsizleştiriyor
+            // ve kayıtlı seçim eskisini gösterebiliyordu.
             //
-            // "Eskiden calisiyordu" bir kanit degil: o olcum artik gecerli
-            // olmayan bir ag durumuna aitti.
+            // "Eskiden çalışıyordu" bir kanıt değil: o ölçüm artık geçerli
+            // olmayan bir ağ durumuna aitti.
             merged.RemoveAll(mevcut =>
                 string.Equals(mevcut.IspId, candidate.IspId, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(mevcut.Section, candidate.Section, StringComparison.Ordinal));

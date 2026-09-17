@@ -5,9 +5,9 @@ namespace ZapretTr.Tests;
 
 public sealed class WinwsCommandBuilderTests
 {
-    // Icinde bosluk olan kasitli bir yol: kullanicilarin yarisi
-    // "C:\Users\Ali Veli\..." altinda calisacak ve arguman bolme hatalari
-    // tam olarak orada ortaya cikar.
+    // İçinde boşluk olan kasıtlı bir yol: kullanıcıların yarısı
+    // "C:\Users\Ali Veli\..." altında çalışacak ve argüman bölme hataları
+    // tam olarak orada ortaya çıkar.
     private static readonly VendorPaths Vendor = VendorPaths.ForRoot(@"C:\Program Files\ZapretTR\zapret-winws");
     private static readonly WinwsCommandBuilder Builder = new(Vendor);
 
@@ -34,7 +34,7 @@ public sealed class WinwsCommandBuilderTests
             [StrategySection.Quic] = "--dpi-desync=fake",
         });
 
-        // Uc bolum, aralarinda iki ayrac.
+        // Üç bölüm, aralarında iki ayraç.
         Assert.Equal(2, args.Count(a => a == "--new"));
         Assert.NotEqual("--new", args[^1]);
     }
@@ -42,8 +42,8 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void Bolumler_KanonikSirada_Yazilir()
     {
-        // Sozlukteki sira ne olursa olsun cikti deterministik olmali:
-        // gunlukler ve testler ancak boyle karsilastirilabilir.
+        // Sözlükteki sıra ne olursa olsun çıktı deterministik olmalı:
+        // günlükler ve testler ancak böyle karşılaştırılabilir.
         var args = Builder.BuildRuntimeCommand(new Dictionary<StrategySection, string>
         {
             [StrategySection.DiscordVoice] = "--dpi-desync=fake",
@@ -64,8 +64,8 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void GlobalFiltre_YalnizcaGerekenBolumleriKapsar()
     {
-        // Fazladan trafik yakalamak yalnizca CPU harcar ve baglantiyi yavaslatir;
-        // upstream belgesi de bunu acikca soyluyor.
+        // Fazladan trafik yakalamak yalnızca CPU harcar ve bağlantıyı yavaşlatır;
+        // upstream belgesi de bunu açıkça söylüyor.
         var args = Builder.BuildRuntimeCommand(new Dictionary<StrategySection, string>
         {
             [StrategySection.Tcp443] = "--dpi-desync=fake",
@@ -92,8 +92,8 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void DiscordSes_HamFiltreParcalarini_Ekler()
     {
-        // Discord ses trafigi sabit bir porta oturmaz; bu parcalar olmadan
-        // trafik cekirdekten hic gelmez ve strateji sessizce hicbir sey yapmaz.
+        // Discord ses trafiği sabit bir porta oturmaz; bu parçalar olmadan
+        // trafik çekirdekten hiç gelmez ve strateji sessizce hiçbir şey yapmaz.
         var args = Builder.BuildRuntimeCommand(new Dictionary<StrategySection, string>
         {
             [StrategySection.DiscordVoice] = "--dpi-desync=fake",
@@ -110,7 +110,7 @@ public sealed class WinwsCommandBuilderTests
             Builder.BuildRuntimeCommand(new Dictionary<StrategySection, string>()));
     }
 
-    // --- Yer tutucu cozumu ------------------------------------------------------
+    // --- Yer tutucu çözümü ------------------------------------------------------
 
     [Fact]
     public void YerTutucu_GercekYolaCevrilir()
@@ -127,9 +127,9 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void BosluklarIcerenYol_TekArgumanOlarakKalir()
     {
-        // Bu testin butun mesele: once bosluklardan bol, SONRA yer tutucuyu coz.
-        // Ters sirada yapilsaydi "C:\Program Files\..." iki argumana bolunurdu ve
-        // winws dosyayi bulamazdi -- uretimde tespiti zor bir hata.
+        // Bu testin bütün meselesi: önce boşluklardan böl, SONRA yer tutucuyu çöz.
+        // Ters sırada yapılsaydı "C:\Program Files\..." iki argümana bölünürdü ve
+        // winws dosyayı bulamazdı; üretimde tespiti zor bir hata.
         var args = Builder.BuildRuntimeCommand(new Dictionary<StrategySection, string>
         {
             [StrategySection.Quic] = "--dpi-desync=fake --dpi-desync-fake-quic={FAKE_QUIC_GOOGLE}",
@@ -145,8 +145,8 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void ProbeKomutu_HedefIpsetIni_Icerir()
     {
-        // Paralel testin izolasyon mekanizmasi: strateji yalnizca kendi hedef IP'sine
-        // uygulanir, diger paketler dokunulmadan gecer.
+        // Paralel testin yalıtım mekanizması: strateji yalnızca kendi hedef IP'sine
+        // uygulanır, diğer paketler dokunulmadan geçer.
         var args = Builder.BuildProbeCommand(StrategySection.Tcp443, "--dpi-desync=fake", "142.250.1.1");
 
         Assert.Contains("--ipset-ip=142.250.1.1", args);
@@ -189,25 +189,25 @@ public sealed class WinwsCommandBuilderTests
     [Fact]
     public void ProbeKomutu_CokHedefi_TekIpsetTe_Birlestirir()
     {
-        // Paralel sinamanin temeli. Hedef basina AYRI winws ornegi calismiyor:
-        // --ipset-ip global WinDivert filtresine girmedigi icin iki ornek birebir
-        // ayni filtreyi kuruyor ve winws ikincisini "A copy of winws is already
-        // running with the same filter" diyerek oldurur. Bu sessiz bir hataydi --
-        // aday hedeflerin yalnizca birinde olculuyordu.
+        // Paralel sınamanın temeli. Hedef başına AYRI winws örneği çalışmıyor:
+        // --ipset-ip global WinDivert filtresine girmediği için iki örnek birebir
+        // aynı filtreyi kuruyor ve winws ikincisini "A copy of winws is already
+        // running with the same filter" diyerek öldürür. Bu sessiz bir hataydı;
+        // aday, hedeflerin yalnızca birinde ölçülüyordu.
         var args = Builder.BuildProbeCommand(
             StrategySection.Quic, "--dpi-desync=fake", ["1.2.3.4", "5.6.7.8"]);
 
         Assert.Contains("--ipset-ip=1.2.3.4,5.6.7.8", args);
 
-        // Tekrarli bayrak DEGIL: winws --ipset-ip=<ip_list> bekliyor.
+        // Tekrarlı bayrak DEĞİL: winws --ipset-ip=<ip_list> bekliyor.
         Assert.Equal(1, args.Count(a => a.StartsWith("--ipset-ip=", StringComparison.Ordinal)));
     }
 
     [Fact]
     public void ProbeKomutu_HedefsizIpseti_Reddeder()
     {
-        // Bos ipset butun trafige dokunurdu; "sorunu olmayan bolume dokunma"
-        // kuralinin en sert ihlali.
+        // Boş ipset bütün trafiğe dokunurdu; "sorunu olmayan bölüme dokunma"
+        // kuralının en sert ihlali.
         Assert.Throws<ArgumentException>(() =>
             Builder.BuildProbeCommand(StrategySection.Quic, "--dpi-desync=fake", Array.Empty<string>()));
 

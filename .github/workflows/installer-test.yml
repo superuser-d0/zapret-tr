@@ -1,19 +1,19 @@
 name: kurulum testi
 
-# Kurulum paketini GERCEKTEN kurar, servisi kurdurur, uzerine yukseltme yapar ve
-# kaldirir. Birim testlerinin goremedigi katman bu: 0.1.7 ve 0.1.8'de bulunan iki
-# kullanici-etkileyen hatanin ikisi de burada yasiyordu ve 125 birim testinin
-# hicbiri yakalamadi --
+# Kurulum paketini GERÇEKTEN kurar, servisi kurdurur, üzerine yükseltme yapar ve
+# kaldırır. Birim testlerinin göremediği katman bu: 0.1.7 ve 0.1.8'de bulunan ve
+# kullanıcıyı etkileyen iki hatanın ikisi de burada yaşıyordu ve 125 birim testinin
+# hiçbiri yakalamadı:
 #
-#   * yukseltme, kurulu otomatik baslatma servisini sessizce siliyordu;
-#   * servis kuruluyken "Baslat" olumcul hata veriyordu.
+#   * yükseltme, kurulu otomatik başlatma servisini sessizce siliyordu;
+#   * servis kuruluyken "Başlat" ölümcül hata veriyordu.
 #
-# Ikisi de ancak gercek bir kurulum-yukseltme-kaldirma dizisinde ortaya cikiyor.
+# İkisi de ancak gerçek bir kurulum-yükseltme-kaldırma dizisinde ortaya çıkıyor.
 #
-# GUVENLIK: sifreli DNS KAPALI yapilandiriliyor (secureDnsEnabled=false).
-# Acik olsaydi servis kurulumu runner'in sistem DNS'ini 127.0.0.1'e cevirirdi;
-# dnscrypt orada cevap vermezse is ag erisimini kaybedip asili kalirdi. DNS
-# yolunun kendi testleri ayri.
+# GÜVENLİK: şifreli DNS KAPALI yapılandırılıyor (secureDnsEnabled=false).
+# Açık olsaydı servis kurulumu runner'ın sistem DNS'ini 127.0.0.1'e çevirirdi;
+# dnscrypt orada cevap vermezse iş ağ erişimini kaybedip asılı kalırdı. DNS
+# yolunun kendi testleri ayrı.
 on:
   push:
     branches: [main]
@@ -27,16 +27,16 @@ jobs:
   kurulum:
     runs-on: windows-latest
 
-    # OLCULDU (2026-09-15, kosum 35023485144): "uzerine yukseltme kur" adimi
-    # asili kaldi. Is akisinda hicbir zaman asimi olmadigi icin GitHub'in
-    # varsayilani (360 dk) gecerliydi: kosum 6 saat boyunca asili kalacakti ve
-    # daha kotusu, GitHub CALISAN bir isin gunlugunu vermiyor -- yani asilmanin
-    # NEREDE oldugunu gosteren kayit hic olusmuyordu. Asili kalan bir is sessizce
-    # tesihs edilemez olur. Zaman asimi olunca is duser ve gunlugu yayinlanir.
+    # ÖLÇÜLDÜ (2026-09-15, koşum 35023485144): "üzerine yükseltme kur" adımı
+    # asılı kaldı. İş akışında hiçbir zaman aşımı olmadığı için GitHub'ın
+    # varsayılanı (360 dk) geçerliydi: koşum 6 saat boyunca asılı kalacaktı ve
+    # daha kötüsü, GitHub ÇALIŞAN bir işin günlüğünü vermiyor; yani asılmanın
+    # NEREDE olduğunu gösteren kayıt hiç oluşmuyordu. Asılı kalan bir iş sessizce
+    # teşhis edilemez olur. Zaman aşımı olunca iş düşer ve günlüğü yayınlanır.
     #
-    # 25 dk, olculen gercek suredan (3 dk 16 sn; kosumlar 35020435160,
-    # 34950902280, 34948697458) yaklasik 8 kat buyuk: yavas bir runner'i
-    # dusurmeyecek kadar bol, asilmayi saatlerce beklemeyecek kadar kisa.
+    # 25 dk, ölçülen gerçek süreden (3 dk 16 sn; koşumlar 35020435160,
+    # 34950902280, 34948697458) yaklaşık 8 kat büyük: yavaş bir runner'ı
+    # düşürmeyecek kadar bol, asılmayı saatlerce beklemeyecek kadar kısa.
     timeout-minutes: 25
 
     steps:
@@ -55,10 +55,10 @@ jobs:
           -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:DebugType=none
           -p:Version=0.0.1-ci --nologo
 
-      # Akilli Uygulama Denetimi imzasiz her DLL'i ayri ayri itibara soruyor ve
-      # 0.2.0'da "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll" diyerek
-      # uygulamayi calistirmadi. Yayin tek dosya; imzasiz tek PE dosyasi exe olmali.
-      # Tek dosya ayari kaybolursa (kosul, SDK degisikligi) bunu yalnizca bu gorur.
+      # Akıllı Uygulama Denetimi imzasız her DLL'i ayrı ayrı itibara soruyor ve
+      # 0.2.0'da "Bu uygulamanın bir kısmı engellendi ... ZapretTR.dll" diyerek
+      # uygulamayı çalıştırmadı. Yayın tek dosya; imzasız tek PE dosyası exe olmalı.
+      # Tek dosya ayarı kaybolursa (koşul, SDK değişikliği) bunu yalnızca bu görür.
       - name: yayinda imzasiz DLL yok
         shell: pwsh
         run: |
@@ -100,7 +100,7 @@ jobs:
             if (-not (Test-Path $yol)) { throw "Kurulumdan sonra eksik: $yol" }
           }
 
-          # Programlar listesinde gorunmeli; gorunmezse kullanici kaldiramaz.
+          # Programlar listesinde görünmeli; görünmezse kullanıcı kaldıramaz.
           $anahtar = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8F3A1C42-5D7E-4B19-9A24-6E8C0F5D3B71}_is1'
           if (-not (Test-Path $anahtar)) { throw "Kaldirma kayit defteri girdisi yok: $anahtar" }
 
@@ -108,12 +108,12 @@ jobs:
           if (-not (Test-Path $kaldirici)) { throw "Kaldirici bulunamadi: $kaldirici" }
           "kaldirici=$kaldirici" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
 
-          # Temiz kurulumda servis OLMAMALI: otomatik baslatma kullanicinin
-          # acikca sectigi bir sey, kurulumun varsayilani degil.
-          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
-          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
-          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
-          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          # Temiz kurulumda servis OLMAMALI: otomatik başlatma kullanıcının
+          # açıkça seçtiği bir şey, kurulumun varsayılanı değil.
+          # sc.exe çıkış kodunu ADIMIN çıkış koduna sızdırmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adımın kodu olarak
+          # yansıtıyor; "servis yok" (1060) o yüzden başarısızlık gibi
+          # görünüyordu. Kontroller throw ile düşer, çıkış koduyla değil.
           function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
             $sonuc = $LASTEXITCODE -eq 0
@@ -125,10 +125,10 @@ jobs:
             if (ServisVar $ad) { throw "$ad servisi temiz kurulumda kurulmus olmamaliydi." }
           }
 
-          # DNS bekcisi her kurulumda kurulmali: servis modunda sonradan takilan
-          # karti yonlendiren ve olu cozumleyicide interneti geri getiren tek sey o.
-          # Kurulum paketi --register-dns-guard'in cikis kodunu kullaniciya
-          # gostermiyor; kaybolursa bunu yalnizca bu kontrol gorur.
+          # DNS bekçisi her kurulumda kurulmalı: servis modunda sonradan takılan
+          # kartı yönlendiren ve ölü çözümleyicide interneti geri getiren tek şey o.
+          # Kurulum paketi --register-dns-guard'ın çıkış kodunu kullanıcıya
+          # göstermiyor; kaybolursa bunu yalnızca bu kontrol görür.
           $gorev = Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi' -ErrorAction SilentlyContinue
           if (-not $gorev) { throw "DNS bekcisi gorevi kurulmadi." }
           $eylem = $gorev.Actions | Select-Object -First 1
@@ -136,7 +136,7 @@ jobs:
             throw "DNS bekcisi gorevi yanlis komutu gosteriyor: $($eylem.Execute) $($eylem.Arguments)"
           }
 
-          # Yedek yokken bekci turu hicbir sey yapmamali ve 0 ile bitmeli.
+          # Yedek yokken bekçi turu hiçbir şey yapmamalı ve 0 ile bitmeli.
           Start-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi'
           for ($i = 0; $i -lt 60 -and (Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi').State -eq 'Running'; $i++) { Start-Sleep -Seconds 1 }
           Start-Sleep -Seconds 2
@@ -149,9 +149,9 @@ jobs:
       - name: yapilandirma yaz ve servisi kur
         shell: pwsh
         run: |
-          # Gercek bir kullanicinin parametre testinden sonra sahip oldugu duruma
-          # esdeger yapilandirma. secureDnsEnabled KAPALI -- gerekcesi dosyanin
-          # basinda.
+          # Gerçek bir kullanıcının parametre testinden sonra sahip olduğu duruma
+          # eşdeğer yapılandırma. secureDnsEnabled KAPALI; gerekçesi dosyanın
+          # başında.
           $dizin = Join-Path $env:ProgramData 'ZapretTR'
           New-Item -ItemType Directory -Force $dizin | Out-Null
           @{
@@ -169,10 +169,10 @@ jobs:
       - name: servis kuruldu mu
         shell: pwsh
         run: |
-          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
-          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
-          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
-          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          # sc.exe çıkış kodunu ADIMIN çıkış koduna sızdırmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adımın kodu olarak
+          # yansıtıyor; "servis yok" (1060) o yüzden başarısızlık gibi
+          # görünüyordu. Kontroller throw ile düşer, çıkış koduyla değil.
           function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
             $sonuc = $LASTEXITCODE -eq 0
@@ -182,46 +182,47 @@ jobs:
 
           if (-not (ServisVar ZapretTR)) { throw "ZapretTR servisi kurulmadi." }
 
-          # Sifreli DNS kapaliyken DNS servisi kurulmamali. Kurulduysa
-          # yapilandirma dikkate alinmiyor demektir ve sistem DNS'i de
-          # cevrilmis olabilir -- CI icin de kullanici icin de kotu.
+          # Şifreli DNS kapalıyken DNS servisi kurulmamalı. Kurulduysa
+          # yapılandırma dikkate alınmıyor demektir ve sistem DNS'i de
+          # çevrilmiş olabilir; CI için de kullanıcı için de kötü.
           if (ServisVar ZapretTR-DNS) { throw "DNS kapaliyken ZapretTR-DNS kurulmus." }
 
-          # winws'i durduruyoruz: testin olctugu sey servisin VARLIGI, calisip
-          # calismadigi degil. Calisir durumda birakmak runner'in kendi 80/443
-          # trafigini gereksiz yere kurcalar.
+          # winws'i durduruyoruz: testin ölçtüğü şey servisin VARLIĞI, çalışıp
+          # çalışmadığı değil. Çalışır durumda bırakmak runner'ın kendi 80/443
+          # trafiğini gereksiz yere kurcalar.
           sc.exe stop ZapretTR *> $null
           Start-Sleep -Seconds 3
 
           exit 0
 
-      # --- 3. Asil sinav: yukseltme servisi koruyor mu -------------------------
+      # --- 3. Asıl sınav: yükseltme servisi koruyor mu -------------------------
       - name: uzerine yukseltme kur
         shell: pwsh
         run: |
-          # 0.2.0 ve oncesi cok dosyaliydi. O surumlerin kalintisini taklit et:
-          # yukseltme bunlari silmezse imzasiz ZapretTR.dll Program Files'ta kalir.
+          # 0.2.0 ve öncesi çok dosyalıydı. O sürümlerin kalıntısını taklit et:
+          # yükseltme bunları silmezse imzasız ZapretTR.dll Program Files'ta kalır.
           $kok = Join-Path $env:ProgramFiles 'ZapretTR'
           New-Item -ItemType Directory -Force (Join-Path $kok 'tr') | Out-Null
           foreach ($f in 'ZapretTR.dll','ZapretTr.Core.dll','ZapretTR.deps.json','tr\PresentationCore.resources.dll') {
             Set-Content (Join-Path $kok $f) 'eski surum kalintisi'
           }
 
-          # -Wait YOK, bilerek. Iki sebep:
+          # -Wait YOK, bilerek. İki sebep:
           #
-          # 1) KESIN: -Wait'in bekleme siniri yok. 2026-09-15'te bu adim (kosum
-          #    35023485144) asili kaldi ve is akisinda zaman asimi olmadigi icin
-          #    GitHub gunlugu HIC yayinlamadi -- yani asilmanin nerede oldugunu
-          #    gosteren kayit da olusmadi. Elle beklemek, asilmayi kayda dusuren
-          #    ve tanisi konabilen bir hataya cevirir.
+          # 1) KESİN: -Wait'in bekleme sınırı yok. 2026-09-15'te bu adım (koşum
+          #    35023485144) asılı kaldı ve iş akışında zaman aşımı olmadığı için
+          #    GitHub günlüğü HİÇ yayınlamadı; yani asılmanın nerede olduğunu
+          #    gösteren kayıt da oluşmadı. Elle beklemek, asılmayı kayda düşüren
+          #    ve teşhisi konabilen bir hataya çevirir.
           #
-          # 2) BILDIRILMIS ama burada KANITLANMADI: -Wait surec agacini bekliyor.
-          #    Kurulum [Run] icinde DNS bekcisini "nowait" ile baslatiyor; oyleyse
-          #    kurulum bitse bile adim o cocugu beklemis olurdu. O kosumun asilma
-          #    sebebi bu muydu bilmiyorum; elle beklemek ihtimali kaldiriyor.
+          # 2) BİLDİRİLMİŞ ama burada KANITLANMADI: -Wait süreç ağacını bekliyor.
+          #    Kurulum o sırada [Run] içinde DNS bekçisini "nowait" ile başlatıyordu
+          #    (sonradan [Code]'a taşındı); öyleyse kurulum bitse bile adım o çocuğu
+          #    beklemiş olurdu. O koşumun asılma sebebi bu muydu bilmiyorum; elle
+          #    beklemek ihtimali kaldırıyor.
           $p = Start-Process $env:paket -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
           if (-not $p.WaitForExit(600000)) {
-            # Asili kaldiysa NE bekledigini yaz; bir dahaki sefere tahmin etmeyelim.
+            # Asılı kaldıysa NE beklediğini yaz; bir dahaki sefere tahmin etmeyelim.
             Write-Host '--- calisan surecler ---'
             Get-Process | Where-Object { $_.Name -match 'setup|ZapretTR|winws|dnscrypt|sc$' } |
               Format-Table Id,Name,StartTime -AutoSize | Out-String | Write-Host
@@ -238,14 +239,14 @@ jobs:
       - name: servis yukseltmeden sag cikti mi
         shell: pwsh
         run: |
-          # 0.1.8'de duzeltilen hata: kurulum, dosyalari degistirebilmek icin
-          # servisi sokuyor ama geri kurmuyordu. Kullanici korumasiz kaliyordu ve
-          # HICBIR belirti yoktu -- uygulama dogru davraniyordu, kaybolan sey bir
-          # kez basilmis bir dugmenin sonucuydu.
-          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
-          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
-          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
-          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          # 0.1.8'de düzeltilen hata: kurulum, dosyaları değiştirebilmek için
+          # servisi söküyor ama geri kurmuyordu. Kullanıcı korumasız kalıyordu ve
+          # HİÇBİR belirti yoktu; uygulama doğru davranıyordu, kaybolan şey bir
+          # kez basılmış bir düğmenin sonucuydu.
+          # sc.exe çıkış kodunu ADIMIN çıkış koduna sızdırmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adımın kodu olarak
+          # yansıtıyor; "servis yok" (1060) o yüzden başarısızlık gibi
+          # görünüyordu. Kontroller throw ile düşer, çıkış koduyla değil.
           function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
             $sonuc = $LASTEXITCODE -eq 0
@@ -261,7 +262,7 @@ jobs:
           foreach ($f in 'ZapretTR.dll','ZapretTr.Core.dll','ZapretTR.deps.json','tr') {
             if (Test-Path (Join-Path $kok $f)) { throw "Yukseltme eski surum kalintisini silmedi: $f" }
           }
-          # [InstallDelete] kokteki *.dll'i siliyor; guncel yerel DLL'ler geri yazilmali.
+          # [InstallDelete] kökteki *.dll'i siliyor; güncel yerel DLL'ler geri yazılmalı.
           foreach ($f in 'msquic.dll','wpfgfx_cor3.dll') {
             if (-not (Test-Path (Join-Path $kok $f))) { throw "Yukseltmeden sonra eksik: $f" }
           }
@@ -274,7 +275,7 @@ jobs:
 
           exit 0
 
-      # --- 4. Sokme ve kaldirma -----------------------------------------------
+      # --- 4. Sökme ve kaldırma -----------------------------------------------
       - name: servisleri sok
         shell: pwsh
         run: |
@@ -282,10 +283,10 @@ jobs:
           $p = Start-Process $exe -ArgumentList '--uninstall-services' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "--uninstall-services $($p.ExitCode) koduyla dondu." }
 
-          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
-          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
-          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
-          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          # sc.exe çıkış kodunu ADIMIN çıkış koduna sızdırmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adımın kodu olarak
+          # yansıtıyor; "servis yok" (1060) o yüzden başarısızlık gibi
+          # görünüyordu. Kontroller throw ile düşer, çıkış koduyla değil.
           function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
             $sonuc = $LASTEXITCODE -eq 0
@@ -303,7 +304,7 @@ jobs:
           $p = Start-Process $env:kaldirici -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "Kaldirma $($p.ExitCode) koduyla dondu." }
 
-          # Kaldirici arka planda bitiyor olabilir.
+          # Kaldırıcı arka planda bitiyor olabilir.
           Start-Sleep -Seconds 5
 
       - name: kaldirma dogrula
@@ -317,10 +318,10 @@ jobs:
           $anahtar = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{8F3A1C42-5D7E-4B19-9A24-6E8C0F5D3B71}_is1'
           if (Test-Path $anahtar) { throw "Kaldirmadan sonra kayit defteri girdisi duruyor." }
 
-          # sc.exe cikis kodunu ADIMIN cikis koduna sizdirmadan sorar.
-          # pwsh -Command son yerel komutun kodunu adimin kodu olarak
-          # yansitiyor; "servis yok" (1060) o yuzden basarisizlik gibi
-          # gorunuyordu. Kontroller throw ile duser, cikis koduyla degil.
+          # sc.exe çıkış kodunu ADIMIN çıkış koduna sızdırmadan sorar.
+          # pwsh -Command son yerel komutun kodunu adımın kodu olarak
+          # yansıtıyor; "servis yok" (1060) o yüzden başarısızlık gibi
+          # görünüyordu. Kontroller throw ile düşer, çıkış koduyla değil.
           function ServisVar([string]$ad) {
             sc.exe query $ad *> $null
             $sonuc = $LASTEXITCODE -eq 0
@@ -332,15 +333,15 @@ jobs:
             if (ServisVar $ad) { throw "Kaldirmadan sonra $ad servisi duruyor." }
           }
 
-          # Kalinti gorev silinmis bir exe'yi her 10 dakikada calistirmaya calisir.
+          # Kalıntı görev, silinmiş bir exe'yi her 10 dakikada çalıştırmaya çalışır.
           if (Get-ScheduledTask -TaskName 'ZapretTR DNS Bekcisi' -ErrorAction SilentlyContinue) {
             throw "Kaldirmadan sonra DNS bekcisi gorevi duruyor."
           }
 
           exit 0
 
-      # Is hangi adimda duserse dussen runner temiz kalmali; kalinti bir surucu
-      # ya da servis sonraki kosumlari da bozar.
+      # İş hangi adımda düşerse düşsün runner temiz kalmalı; kalıntı bir sürücü
+      # ya da servis sonraki koşumları da bozar.
       - name: temizlik
         if: always()
         shell: pwsh

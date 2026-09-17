@@ -3,13 +3,13 @@ using System.Text.Json.Serialization;
 namespace ZapretTr.Core.Profiles;
 
 /// <summary>
-/// Tier 3 genel arama uzayi. ISP profili ve komsu profiller tukendiginde kullanilir.
+/// Tier 3 genel arama uzayı. İSS profili ve komşu profiller tükendiğinde kullanılır.
 /// </summary>
 /// <remarks>
-/// Yuzlerce aday tek tek JSON'a yazilmak yerine kombinatoryal tarif olarak duruyor:
-/// her aile bir taban arguman ve birkac eksen. Bu hem dosyayi kucuk tutuyor hem de
-/// arama uzayini ayarlamayi kolaylastiriyor -- bir eksene deger eklemek, elle yazilmis
-/// onlarca satiri elde guncellemekten cok daha az hataya acik.
+/// Yüzlerce aday tek tek JSON'a yazılmak yerine kombinatoryal tarif olarak duruyor:
+/// her aile bir taban argüman ve birkaç eksen. Bu hem dosyayı küçük tutuyor hem de
+/// arama uzayını ayarlamayı kolaylaştırıyor; bir eksene değer eklemek, elle yazılmış
+/// onlarca satırı elde güncellemekten çok daha az hataya açık.
 /// </remarks>
 public sealed class GenericLadder
 {
@@ -24,16 +24,16 @@ public sealed class GenericLadder
         = new Dictionary<string, IReadOnlyList<LadderFamily>>();
 
     /// <summary>
-    /// Bir bolumun tum adaylarini deneme sirasinda uretir.
+    /// Bir bölümün tüm adaylarını deneme sırasında üretir.
     /// </summary>
     /// <remarks>
-    /// Aileler dosyadaki sirayla gelir; aile icinde ilk eksen en yavas degisir.
-    /// Yani ayni fooling'in TTL varyantlari pes pese denenir. Bu kasitli: bir fooling
-    /// tamamen ise yaramiyorsa onun butun TTL varyantlarini denemek yerine hizlica
-    /// bir sonraki aileye gecmek daha iyi olurdu -- ama ekseni tersine cevirmek de
-    /// TTL'i sabit tutup fooling gezdirmek anlamina gelir ki DPI davranisi cogunlukla
-    /// fooling'e degil TTL'e duyarli. Bu sira, hangi ekseni once tuketmek istedigini
-    /// profil yazarina birakiyor: eksen sirasi JSON'da degistirilebilir.
+    /// Aileler dosyadaki sırayla gelir; aile içinde ilk eksen en yavaş değişir.
+    /// Yani aynı fooling'in TTL varyantları peş peşe denenir. Bu kasıtlı: bir fooling
+    /// tamamen işe yaramıyorsa onun bütün TTL varyantlarını denemek yerine hızlıca
+    /// bir sonraki aileye geçmek daha iyi olurdu; ama ekseni tersine çevirmek de
+    /// TTL'i sabit tutup fooling gezdirmek anlamına gelir ki DPI davranışı çoğunlukla
+    /// fooling'e değil TTL'e duyarlı. Bu sıra, hangi ekseni önce tüketmek istediğini
+    /// profil yazarına bırakıyor: eksen sırası JSON'da değiştirilebilir.
     /// </remarks>
     public IEnumerable<LadderCandidate> Expand(StrategySection section)
     {
@@ -57,14 +57,14 @@ public sealed class GenericLadder
         }
     }
 
-    /// <summary>Bir bolumun toplam aday sayisi. Ilerleme cubugu icin.</summary>
+    /// <summary>Bir bölümün toplam aday sayısı. İlerleme çubuğu için.</summary>
     public int CountFor(StrategySection section)
         => Sections.TryGetValue(section.ToJsonName(), out var families)
             ? families.Sum(f => f.Axes.Aggregate(1, (acc, axis) => acc * Math.Max(axis.Values.Count, 1)))
             : 0;
 
     /// <summary>
-    /// Eksenlerin kartezyen carpimi. Ilk eksen en yavas degisecek sekilde uretir.
+    /// Eksenlerin Kartezyen çarpımı. İlk eksen en yavaş değişecek şekilde üretir.
     /// </summary>
     private static IEnumerable<string[]> CartesianProduct(IReadOnlyList<LadderAxis> axes)
     {
@@ -85,7 +85,7 @@ public sealed class GenericLadder
 
             yield return current;
 
-            // Son eksenden basa dogru tasima yap: son eksen en hizli degisir.
+            // Son eksenden başa doğru taşıma yap: son eksen en hızlı değişir.
             var position = axes.Count - 1;
             while (position >= 0)
             {
@@ -115,7 +115,7 @@ public sealed class LadderFamily
     [JsonPropertyName("note")]
     public string? Note { get; init; }
 
-    /// <summary>Ailenin degismeyen kismi, ornegin "--dpi-desync=fake".</summary>
+    /// <summary>Ailenin değişmeyen kısmı, örneğin "--dpi-desync=fake".</summary>
     [JsonPropertyName("base")]
     public required string Base { get; init; }
 
@@ -128,10 +128,10 @@ public sealed class LadderAxis
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
-    /// <summary>Bos dizgi gecerli bir deger: "bu ekseni hic kullanma" demek.</summary>
+    /// <summary>Boş dizgi geçerli bir değer: "bu ekseni hiç kullanma" demek.</summary>
     [JsonPropertyName("values")]
     public IReadOnlyList<string> Values { get; init; } = Array.Empty<string>();
 }
 
-/// <summary>Merdivenden acilmis tek bir aday.</summary>
+/// <summary>Merdivenden açılmış tek bir aday.</summary>
 public readonly record struct LadderCandidate(string Family, string Args, string? Note);

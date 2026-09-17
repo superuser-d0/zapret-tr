@@ -18,8 +18,8 @@ public sealed class GenericLadderTests
     [Fact]
     public void SayimVeAcilim_Ayni_Sonucu_Verir()
     {
-        // CountFor ilerleme cubugu icin kullanilacak; Expand ile ayrisirsa
-        // kullanici yuzde yuze varmadan biten ya da yuzde yuzu gecen bir cubuk gorur.
+        // CountFor ilerleme çubuğu için kullanılacak; Expand ile ayrışırsa
+        // kullanıcı yüzde yüze varmadan biten ya da yüzde yüzü geçen bir çubuk görür.
         foreach (var section in Enum.GetValues<StrategySection>())
         {
             Assert.Equal(Ladder.CountFor(section), Ladder.Expand(section).Count());
@@ -29,8 +29,8 @@ public sealed class GenericLadderTests
     [Fact]
     public void AdaylarBenzersiz()
     {
-        // Ayni argumanin iki kez uretilmesi test suresini bosa uzatir.
-        // Eksenlerde bos dizgi kullanildigi icin bu kolayca olabilir.
+        // Aynı argümanın iki kez üretilmesi test süresini boşa uzatır.
+        // Eksenlerde boş dizgi kullanıldığı için bu kolayca olabilir.
         foreach (var section in Enum.GetValues<StrategySection>())
         {
             var args = Ladder.Expand(section).Select(c => c.Args).ToList();
@@ -47,8 +47,8 @@ public sealed class GenericLadderTests
     [Fact]
     public void IlkEksen_EnYavas_Degisir()
     {
-        // Aile icinde ilk eksenin degerleri gruplanmis gelmeli. Kartezyen carpim
-        // ters yonde uretilirse arama sirasi tasarlandigi gibi olmaz.
+        // Aile içinde ilk eksenin değerleri gruplanmış gelmeli. Kartezyen çarpım
+        // ters yönde üretilirse arama sırası tasarlandığı gibi olmaz.
         var family = Ladder.Sections["tcp443"].First(f => f.Family == "fake-fooling");
         var firstAxisValues = family.Axes[0].Values;
         var secondAxisCount = family.Axes[1].Values.Count;
@@ -58,19 +58,19 @@ public sealed class GenericLadderTests
             .Select(c => c.Args)
             .ToList();
 
-        // Ilk eksenin ilk degeri, ilk N adayin hepsinde bulunmali (N = ikinci eksenin boyu).
+        // İlk eksenin ilk değeri, ilk N adayın hepsinde bulunmalı (N = ikinci eksenin boyu).
         var firstValue = firstAxisValues[0];
         Assert.All(expanded.Take(secondAxisCount), a => Assert.Contains(firstValue, a, StringComparison.Ordinal));
 
-        // Ve (N+1). adayda artik bulunmamali.
+        // Ve (N+1). adayda artık bulunmamalı.
         Assert.DoesNotContain(firstValue, expanded[secondAxisCount], StringComparison.Ordinal);
     }
 
     [Fact]
     public void BosEksenDegeri_FazladanBosluk_Uretmez()
     {
-        // Eksenlerde "" degeri "bu ekseni kullanma" demek. Naif birlestirme
-        // "--dpi-desync=fake  --x" gibi cift bosluklu argumanlar uretirdi.
+        // Eksenlerde "" değeri "bu ekseni kullanma" demek. Naif birleştirme
+        // "--dpi-desync=fake  --x" gibi çift boşluklu argümanlar üretirdi.
         foreach (var section in Enum.GetValues<StrategySection>())
         {
             Assert.All(Ladder.Expand(section), c =>
@@ -84,8 +84,8 @@ public sealed class GenericLadderTests
     [Fact]
     public void Tcp443_SafBolme_Ailesi_Merdivende_Var()
     {
-        // Tasarim gerekcesi: DPI sahte paketleri eliyorsa "fake" tabanli ailelerin
-        // HEPSI birden coker. O senaryoda calisacak tek sey saf bolme.
+        // Tasarım gerekçesi: DPI sahte paketleri eliyorsa "fake" tabanlı ailelerin
+        // HEPSİ birden çöker. O senaryoda çalışacak tek şey saf bölme.
         var pureSplit = Ladder.Expand(StrategySection.Tcp443)
             .Where(c => !c.Args.Contains("dpi-desync=fake", StringComparison.Ordinal))
             .ToList();
@@ -96,9 +96,9 @@ public sealed class GenericLadderTests
     [Fact]
     public void AramaUzayi_MakulBuyuklukte()
     {
-        // Tier 3 son care; yine de bitmesi gereken bir is. Sirali testte ~2 sn/aday
-        // varsayimiyla 300 aday ~10 dakika demek -- ustune cikarsa merdiven
-        // budanmali, kullaniciyi belirsiz sure bekletmek cozum degil.
+        // Tier 3 son çare; yine de bitmesi gereken bir iş. Sıralı testte ~2 sn/aday
+        // varsayımıyla 300 aday ~10 dakika demek; üstüne çıkarsa merdiven
+        // budanmalı, kullanıcıyı belirsiz süre bekletmek çözüm değil.
         var total = Enum.GetValues<StrategySection>().Sum(Ladder.CountFor);
         Assert.InRange(total, 50, 300);
     }
@@ -106,22 +106,22 @@ public sealed class GenericLadderTests
     [Fact]
     public void GenelArama_Aileleri_Sirayla_Dolasiyor()
     {
-        // Butce sinirli oldugu icin SIRA sonucu belirliyor. Gercek bir kullanicida
-        // olculdu: TTNET hattinda 176 aday denendi, 1105 sn surdu, hicbiri tutmadi.
-        // Sebep, genel aramanin aileleri pes pese tuketmesiydi -- tcp443'te ilk aile
-        // (fake-fooling) 45 varyant ve genel aramaya kalan ~33 butcenin tamamini
+        // Bütçe sınırlı olduğu için SIRA sonucu belirliyor. Gerçek bir kullanıcıda
+        // ölçüldü: TTNET hattında 176 aday denendi, 1105 sn sürdü, hiçbiri tutmadı.
+        // Sebep, genel aramanın aileleri peş peşe tüketmesiydi: tcp443'te ilk aile
+        // (fake-fooling) 45 varyant ve genel aramaya kalan ~33'lük bütçenin tamamını
         // yiyordu; multisplit, multidisorder, fakedsplit, tls-mod ve syndata
-        // aileleri HIC denenmiyordu.
+        // aileleri HİÇ denenmiyordu.
         //
-        // Bu test o davranisin geri gelmesini engelliyor: ilk turda her aileden
-        // BIRER aday gelmeli.
+        // Bu test o davranışın geri gelmesini engelliyor: ilk turda her aileden
+        // BİRER aday gelmeli.
         var expanded = Ladder.Expand(StrategySection.Tcp443).ToList();
         var familyCount = expanded.Select(c => c.Family).Distinct(StringComparer.Ordinal).Count();
         Assert.True(familyCount > 1, "Test anlamli olmasi icin birden fazla aile gerekiyor.");
 
         var ordered = StrategyProber.InterleaveFamilies(expanded);
 
-        // Ilk N aday, N ailenin her birinden tam olarak birer tane olmali.
+        // İlk N aday, N ailenin her birinden tam olarak birer tane olmalı.
         var firstRound = ordered
             .Take(familyCount)
             .Select(c => c.Id.Split('#')[0])
@@ -129,7 +129,7 @@ public sealed class GenericLadderTests
 
         Assert.Equal(familyCount, firstRound.Distinct(StringComparer.Ordinal).Count());
 
-        // Hicbir aday kaybolmamali: siralama degisti, icerik degismedi.
+        // Hiçbir aday kaybolmamalı: sıralama değişti, içerik değişmedi.
         Assert.Equal(
             expanded.Select(c => c.Args).Distinct(StringComparer.Ordinal).Count(),
             ordered.Select(c => c.Args).Distinct(StringComparer.Ordinal).Count());
@@ -138,8 +138,8 @@ public sealed class GenericLadderTests
     [Fact]
     public void GenelArama_Aile_Icinde_Sirayi_Koruyor()
     {
-        // Aileler arasinda dolasiyoruz ama aile ICINDEKI sira profil yazarinin
-        // karari ve degismemeli.
+        // Aileler arasında dolaşıyoruz ama aile İÇİNDEKİ sıra profil yazarının
+        // kararı ve değişmemeli.
         var expanded = Ladder.Expand(StrategySection.Quic).ToList();
         var ordered = StrategyProber.InterleaveFamilies(expanded);
 

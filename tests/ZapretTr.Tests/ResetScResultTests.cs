@@ -3,16 +3,16 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// "Tüm Ayarları Sıfırla" adimlarinda <c>sc</c> sonucunun yorumlanmasi.
+/// "Tüm Ayarları Sıfırla" adımlarında <c>sc</c> sonucunun yorumlanması.
 /// </summary>
 /// <remarks>
-/// Sifirlamanin amaci bir DURUMA varmak; o durum zaten saglaniyorsa adim
-/// basarilidir. Gercek bir kullanici raporunda su satir vardi:
+/// Sıfırlamanın amacı bir DURUMA varmak; o durum zaten sağlanıyorsa adım
+/// başarılıdır. Gerçek bir kullanıcı raporunda şu satır vardı:
 ///
 ///     ! [!] ZapretTR servisi durduruldu -- [SC] ControlService FAILED 1062
 ///
-/// Servisin sureci bir onceki adimda oldurulmustu; durdurulacak bir sey yoktu ama
-/// kullanici kirmizi bir hata goruyordu.
+/// Servisin süreci bir önceki adımda öldürülmüştü; durdurulacak bir şey yoktu ama
+/// kullanıcı kırmızı bir hata görüyordu.
 /// </remarks>
 public sealed class ResetScResultTests
 {
@@ -37,8 +37,8 @@ public sealed class ResetScResultTests
     [Fact]
     public void Gercek_hata_hata_olarak_kalir()
     {
-        // 5 = erisim engellendi. Bunu yutmak, kullaniciyi "sifirladim" sanip
-        // servisi yerinde birakilmis bir makineyle birakirdi.
+        // 5 = erişim engellendi. Bunu yutmak, kullanıcıyı "sıfırladım" sanıp
+        // servisi yerinde bırakılmış bir makineyle bırakırdı.
         var adim = WinDivertCleanup.InterpretScResult("x", 5, "[SC] OpenService FAILED 5:\n\nAccess is denied.");
 
         Assert.False(adim.Succeeded);
@@ -47,8 +47,8 @@ public sealed class ResetScResultTests
     [Fact]
     public void Sifreli_DNS_servisi_de_sifirlamada_siliniyor()
     {
-        // Eskiden yalnizca ZapretTR siliniyordu; ZapretTR-DNS geride kaliyor ve
-        // kurtarma tanimi yuzunden sureci kendiliginden geri geliyordu.
+        // Eskiden yalnızca ZapretTR siliniyordu; ZapretTR-DNS geride kalıyor ve
+        // kurtarma tanımı yüzünden süreci kendiliğinden geri geliyordu.
         Assert.Contains(ServiceManager.WinwsServiceName, WinDivertCleanup.ServiceNames);
         Assert.Contains(ServiceManager.DnsServiceName, WinDivertCleanup.ServiceNames);
     }

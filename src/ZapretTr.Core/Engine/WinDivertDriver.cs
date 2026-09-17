@@ -4,12 +4,12 @@ using System.Text.RegularExpressions;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Takili surucuyu bosaltma denemesinin sonucu.</summary>
-/// <param name="Cleared">Denemeden sonra cekirdekte WinDivert surucusu kalmadi mi.</param>
-/// <param name="Detail">Kullaniciya ve gunluge yazilacak aciklama.</param>
+/// <summary>Takılı sürücüyü boşaltma denemesinin sonucu.</summary>
+/// <param name="Cleared">Denemeden sonra çekirdekte WinDivert sürücüsü kalmadı mı.</param>
+/// <param name="Detail">Kullanıcıya ve günlüğe yazılacak açıklama.</param>
 public sealed record DriverUnloadResult(bool Cleared, string Detail);
 
-/// <summary>winws, WinDivert surucusunu acamadigi icin baslayamadi.</summary>
+/// <summary>winws, WinDivert sürücüsünü açamadığı için başlayamadı.</summary>
 public sealed class WinDivertOpenException : InvalidOperationException
 {
     public WinDivertOpenException(int? win32Error, string message, bool recoverable)
@@ -19,48 +19,48 @@ public sealed class WinDivertOpenException : InvalidOperationException
         Recoverable = recoverable;
     }
 
-    /// <summary>winws'in bildirdigi Windows hata kodu; yazmadiysa null.</summary>
+    /// <summary>winws'in bildirdiği Windows hata kodu; yazmadıysa null.</summary>
     public int? Win32Error { get; }
 
-    /// <summary>Takili surucuyu bosaltmak bu hatayi duzeltebilir mi.</summary>
+    /// <summary>Takılı sürücüyü boşaltmak bu hatayı düzeltebilir mi.</summary>
     public bool Recoverable { get; }
 }
 
 /// <summary>
-/// WinDivert surucusunun cekirdekteki durumunu teshis eder ve takili kalmissa bosaltir.
+/// WinDivert sürücüsünün çekirdekteki durumunu teşhis eder ve takılı kalmışsa boşaltır.
 /// </summary>
 /// <remarks>
-/// SAHADAN GELEN BELIRTI: "yeni surumu indirip parametre testi yaptim, motor
-/// calismiyor; bilgisayari yeniden baslatinca aciliyor." Yeniden baslatmanin
-/// duzelttigi tek sey cekirdekte yuklu kalmis bir surucu.
+/// SAHADAN GELEN BELİRTİ: "yeni sürümü indirip parametre testi yaptım, motor
+/// çalışmıyor; bilgisayarı yeniden başlatınca açılıyor." Yeniden başlatmanın
+/// düzelttiği tek şey çekirdekte yüklü kalmış bir sürücü.
 ///
-/// WinDivert'in surucusu winws kapaninca cekirdekten DUSMUYOR: servis kaydi
-/// baslatildigi anda "silinmek uzere" isaretleniyor ve surucu ancak servis
-/// DURDURULUNCA ya da makine yeniden baslayinca gidiyor. Bu genelde zararsiz --
-/// sonraki winws yuklu surucuyu kullanir. Zararli oldugu iki durum var:
+/// WinDivert'in sürücüsü winws kapanınca çekirdekten DÜŞMÜYOR: servis kaydı
+/// başlatıldığı anda "silinmek üzere" işaretleniyor ve sürücü ancak servis
+/// DURDURULUNCA ya da makine yeniden başlayınca gidiyor. Bu genelde zararsız;
+/// sonraki winws yüklü sürücüyü kullanır. Zararlı olduğu iki durum var:
 ///
-///   1. Cekirdekteki surucu BASKA bir kopyadan geliyor (GoodbyeDPI, baska bir
-///      zapret dagitimi, WinDivert'in farkli bir surumu). Yeni surucu
-///      yuklenemiyor: 654 "onceki surucu hala bellekte".
-///   2. Surucu yarim birakilmis bir durdurmada kaldi: yukseltme/kaldirma winws'i
-///      oldururken hemen ardindan <c>sc stop</c> + <c>sc delete</c> calisiyor ve
-///      surec henuz tutamaclarini kapatmamis oluyor. Kayit "silinmek uzere
-///      isaretli" (1072) kaliyor, yeni kayit acilamiyor.
+///   1. Çekirdekteki sürücü BAŞKA bir kopyadan geliyor (GoodbyeDPI, başka bir
+///      zapret dağıtımı, WinDivert'in farklı bir sürümü). Yeni sürücü
+///      yüklenemiyor: 654 "önceki sürücü hâlâ bellekte".
+///   2. Sürücü yarım bırakılmış bir durdurmada kaldı: yükseltme/kaldırma winws'i
+///      öldürürken hemen ardından <c>sc stop</c> + <c>sc delete</c> çalışıyor ve
+///      süreç henüz tutamaçlarını kapatmamış oluyor. Kayıt "silinmek üzere
+///      işaretli" (1072) kalıyor, yeni kayıt açılamıyor.
 ///
-/// Iki durumda da yeniden baslatmaya gerek yok: surucuyu kullanan hicbir surec
-/// yoksa <c>sc stop</c> onu cekirdekten dusuruyor. Eskiden bunu yalnizca "Tum
-/// Ayarlari Sifirla" yapiyordu ve kullaniciya "bilgisayari yeniden baslatin"
+/// İki durumda da yeniden başlatmaya gerek yok: sürücüyü kullanan hiçbir süreç
+/// yoksa <c>sc stop</c> onu çekirdekten düşürüyor. Eskiden bunu yalnızca "Tüm
+/// Ayarları Sıfırla" yapıyordu ve kullanıcıya "bilgisayarı yeniden başlatın"
 /// deniyordu.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static partial class WinDivertDriver
 {
-    /// <summary>winws ciktisindaki satirlar surucu acma hatasini mi anlatiyor.</summary>
+    /// <summary>winws çıktısındaki satırlar sürücü açma hatasını mı anlatıyor.</summary>
     public static bool IsOpenFailure(IEnumerable<string> lines)
         => lines.Any(l => l.Contains("windivert: error opening filter", StringComparison.OrdinalIgnoreCase)
                           || l.Contains("win_dark_init failed", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>winws'in yazdigi "win32 error N" kodunu cikarir; yoksa null.</summary>
+    /// <summary>winws'in yazdığı "win32 error N" kodunu çıkarır; yoksa null.</summary>
     public static int? ParseWin32Error(IEnumerable<string> lines)
     {
         foreach (var line in lines)
@@ -79,18 +79,18 @@ public static partial class WinDivertDriver
     private static partial Regex Win32ErrorPattern();
 
     /// <summary>
-    /// Surucuyu bosaltmak bu hatayi duzeltebilir mi.
+    /// Sürücüyü boşaltmak bu hatayı düzeltebilir mi.
     /// </summary>
     /// <remarks>
-    /// Imza reddi, guvenlik yazilimi engeli, kapali BFE servisi ve eksik dosya
-    /// surucuyu bosaltmakla gecmez; o durumlarda denemek yalnizca kullaniciyi
-    /// bekletir ve "yeniden denendi" diyerek yanlis umut verir. Kodu bilinmeyen
-    /// hata deneniyor: takili surucu en sik sebep.
+    /// İmza reddi, güvenlik yazılımı engeli, kapalı BFE servisi ve eksik dosya
+    /// sürücüyü boşaltmakla geçmez; o durumlarda denemek yalnızca kullanıcıyı
+    /// bekletir ve "yeniden denendi" diyerek yanlış umut verir. Kodu bilinmeyen
+    /// hata deneniyor: takılı sürücü en sık sebep.
     /// </remarks>
     public static bool IsRecoverable(int? win32Error)
         => win32Error is not (577 or 1275 or 1753 or 5 or 2 or 3);
 
-    /// <summary>Hata kodunun kullaniciya anlatimi.</summary>
+    /// <summary>Hata kodunun kullanıcıya anlatımı.</summary>
     public static string Explain(int? win32Error) => win32Error switch
     {
         654 => "Cekirdekte baska ya da eski bir WinDivert surucusu yuklu kalmis (hata 654).",
@@ -105,11 +105,11 @@ public static partial class WinDivertDriver
     };
 
     /// <summary>
-    /// Surucuyu kullanabilecek bir surec calisiyor mu: winws ya da bilinen bir DPI araci.
+    /// Sürücüyü kullanabilecek bir süreç çalışıyor mu: winws ya da bilinen bir DPI aracı.
     /// </summary>
     /// <remarks>
-    /// Okunamiyorsa CALISIYOR sayiliyor: kullanilan bir surucuyu durdurmaya
-    /// kalkmaktansa bosaltmayi atlamak yeglenir.
+    /// Okunamıyorsa ÇALIŞIYOR sayılıyor: kullanılan bir sürücüyü durdurmaya
+    /// kalkmaktansa boşaltmayı atlamak yeğlenir.
     /// </remarks>
     public static bool IsAnyUserRunning()
     {
@@ -127,17 +127,17 @@ public static partial class WinDivertDriver
     private static DateTimeOffset _lastFailedUnload = DateTimeOffset.MinValue;
 
     /// <summary>
-    /// Bosaltma basarisiz olduktan sonra yeniden denenmeden once beklenen sure.
+    /// Boşaltma başarısız olduktan sonra yeniden denenmeden önce beklenen süre.
     /// </summary>
     /// <remarks>
-    /// Parametre testi yuzlerce aday deniyor. Surucu gercekten bosaltilamiyorsa
-    /// her aday icin 20 saniye beklemek, "motor calismiyor" sonucunu dakikalarca
+    /// Parametre testi yüzlerce aday deniyor. Sürücü gerçekten boşaltılamıyorsa
+    /// her aday için 20 saniye beklemek, "motor çalışmıyor" sonucunu dakikalarca
     /// geciktirirdi.
     /// </remarks>
     private static readonly TimeSpan FailedUnloadCooldown = TimeSpan.FromMinutes(2);
 
     /// <summary>
-    /// Kimse kullanmiyorsa WinDivert surucusunu cekirdekten dusurur ve dustugunu bekler.
+    /// Kimse kullanmıyorsa WinDivert sürücüsünü çekirdekten düşürür ve düştüğünü bekler.
     /// </summary>
     public static async Task<DriverUnloadResult> TryUnloadIdleAsync(
         TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -153,10 +153,10 @@ public static partial class WinDivertDriver
             }
         }
 
-        // Surucu bir SUREC tarafindan tutuluyorsa durdurma istegi onu dusurmez,
-        // yalnizca "durduruluyor" durumunda asili birakir ve durumu kotulestirir.
-        // Yarim olmekte olan bir winws icin kisa bir bekleme taniniyor:
-        // yukseltmedeki taskkill tam olarak boyle bir an birakiyor.
+        // Sürücü bir SÜREÇ tarafından tutuluyorsa durdurma isteği onu düşürmez,
+        // yalnızca "durduruluyor" durumunda asılı bırakır ve durumu kötüleştirir.
+        // Yarı ölmekte olan bir winws için kısa bir bekleme tanınıyor:
+        // yükseltmedeki taskkill tam olarak böyle bir an bırakıyor.
         var deadline = DateTimeOffset.UtcNow + timeout;
         while (IsAnyUserRunning())
         {
@@ -207,12 +207,12 @@ public static partial class WinDivertDriver
     }
 
     /// <summary>
-    /// <c>sc query</c> ciktisi surucunun gittigini ya da durdugunu mu soyluyor.
+    /// <c>sc query</c> çıktısı sürücünün gittiğini ya da durduğunu mu söylüyor.
     /// </summary>
     /// <remarks>
-    /// STOP_PENDING durmus SAYILMAZ: tam da takili kalmanin gorunumu o. 1060 "servis
-    /// yok" demek: WinDivert kaydi silinmek uzere isaretli oldugu icin surucu dusunce
-    /// kayit da kayboluyor.
+    /// STOP_PENDING durmuş SAYILMAZ: tam da takılı kalmanın görünümü o. 1060 "servis
+    /// yok" demek: WinDivert kaydı silinmek üzere işaretli olduğu için sürücü düşünce
+    /// kayıt da kayboluyor.
     /// </remarks>
     public static bool IsGoneOrStopped(string scQueryOutput)
         => scQueryOutput.Contains("1060", StringComparison.Ordinal)

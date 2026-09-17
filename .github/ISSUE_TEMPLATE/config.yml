@@ -1,7 +1,7 @@
-# Bos konu ACIK kalmali. Uygulamadaki "Hata Bildir" dugmesi formu
-# /issues/new?title=...&body=... adresiyle doldurulmus olarak aciyor; bos konu
-# kapatilirsa o adres sablon secme ekranina dusuyor ve doldurulmus metin
-# KAYBOLUYOR. Yani bu satir bir tercih degil, dugmenin calisma sarti.
+# Boş konu AÇIK kalmalı. Uygulamadaki "Hata Bildir" düğmesi formu
+# /issues/new?title=...&body=... adresiyle doldurulmuş olarak açıyor; boş konu
+# kapatılırsa o adres şablon seçme ekranına düşüyor ve doldurulmuş metin
+# KAYBOLUYOR. Yani bu satır bir tercih değil, düğmenin çalışma şartı.
 blank_issues_enabled: true
 
 contact_links:

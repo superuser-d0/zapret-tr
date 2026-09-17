@@ -1,27 +1,27 @@
 <Project>
 
   <!--
-    msquic.dll tek dosya paketine GIRMEMELI; exe'nin yaninda gercek dosya olarak
-    durmali. Yoksa QuicConnection.IsSupported false doner ve QUIC olcumu sessizce
+    msquic.dll tek dosya paketine GİRMEMELİ; exe'nin yanında gerçek dosya olarak
+    durmalı. Yoksa QuicConnection.IsSupported false döner ve QUIC ölçümü sessizce
     olmaz: belirti "QUIC bu makinede desteklenmiyor (msquic yok)".
 
-    OLCULDU, uc yayin bicimi karsilastirildi:
-      tek dosya, kirpilmamis  33.6 MB, 1 dosya   QUIC BOZUK
-      tek dosya, kirpilmis    11.3 MB, 1 dosya   QUIC BOZUK
-      cok dosya, kirpilmis    21.0 MB, 58 dosya  QUIC calisiyor
-      tek dosya + yanda msquic 11.8 MB, 2 dosya  QUIC calisiyor  (secilen)
+    ÖLÇÜLDÜ, üç yayın biçimi karşılaştırıldı:
+      tek dosya, kırpılmamış   33.6 MB, 1 dosya   QUIC BOZUK
+      tek dosya, kırpılmış     11.3 MB, 1 dosya   QUIC BOZUK
+      çok dosya, kırpılmış     21.0 MB, 58 dosya  QUIC çalışıyor
+      tek dosya + yanda msquic 11.8 MB, 2 dosya   QUIC çalışıyor  (seçilen)
 
-    Yani sorunun kaynagi KIRPMA DEGIL, PublishSingleFile. Bu, kirpma calismasindan
-    once de vardi: dagitilan 33.6 MB'lik saha paketi QUIC bolumunu hic olcemiyordu
-    ve kimse fark etmemisti, cunku kontrol hedefi korumasi o bolumu sessizce
-    atliyordu.
+    Yani sorunun kaynağı KIRPMA DEĞİL, PublishSingleFile. Bu, kırpma çalışmasından
+    önce de vardı: dağıtılan 33.6 MB'lık saha paketi QUIC bölümünü hiç ölçemiyordu
+    ve kimse fark etmemişti, çünkü kontrol hedefi koruması o bölümü sessizce
+    atlıyordu.
 
-    Dogrulamasi: yayin ciktisinda msquic.dll GORUNMELI (exe ile yan yana), ve
-    zapret-tr-test.exe cloudflare-quic.com teshisinde Http3 satiri BASARILI demeli.
+    Doğrulaması: yayın çıktısında msquic.dll GÖRÜNMELİ (exe ile yan yana) ve
+    zapret-tr-test.exe cloudflare-quic.com teşhisinde Http3 satırı BAŞARILI demeli.
 
-    Olcum saha araci (ZapretTr.Prober.Cli) icin yapildi. Hedef burada, cunku
-    uygulama da tek dosyaya gecti (ZapretTr.App.csproj) ve ayni dosya orada da
-    dustu; iki projede ayri kopya tutmak birinin unutulmasi demek.
+    Ölçüm saha aracı (ZapretTr.Prober.Cli) için yapıldı. Hedef burada, çünkü
+    uygulama da tek dosyaya geçti (ZapretTr.App.csproj) ve aynı dosya orada da
+    düştü; iki projede ayrı kopya tutmak birinin unutulması demek.
   -->
   <Target Name="MsQuicTekDosyaDisindaKalsin" AfterTargets="Publish"
           Condition="'$(PublishSingleFile)' == 'true'">
@@ -33,9 +33,9 @@
     <Copy SourceFiles="@(_MsQuicKaynak)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
 
     <!--
-      Kopyalama sessizce basarisiz olursa QUIC olcumu de sessizce olmaz. Bu
-      projede sessiz olcum hatasi en pahali hata sinifi, o yuzden burada
-      acikca patliyoruz.
+      Kopyalama sessizce başarısız olursa QUIC ölçümü de sessizce olmaz. Bu
+      projede sessiz ölçüm hatası en pahalı hata sınıfı, o yüzden burada
+      açıkça patlıyoruz.
     -->
     <Error Condition="!Exists('$(PublishDir)msquic.dll')"
            Text="msquic.dll yayin ciktisina kopyalanamadi. Bu dosya olmadan QuicConnection.IsSupported false doner ve QUIC bolumu sessizce olculemez." />

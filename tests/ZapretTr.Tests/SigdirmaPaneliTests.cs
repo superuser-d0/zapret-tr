@@ -6,13 +6,13 @@ using ZapretTr.App;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Pencere yerlesimi: dar pencerede alt bilgi ve gunluk gorunur kalmali, icerik kaymali.
+/// Pencere yerleşimi: dar pencerede alt bilgi ve günlük görünür kalmalı, içerik kaymalı.
 /// </summary>
 /// <remarks>
-/// 0.1.21'de duz Grid'le varsayilan pencerede "Çıkış" yarim, "Ayrıntılar" ve alt bilgi
-/// gorunmez kaliyordu. Ilk duzeltme denemesi de "Ayrıntılar"i kaybetti: gunlugun alt
-/// sinirini sifir yukseklikle olcuyordu ve WPF DesiredSize'i verilen alana kirptigi
-/// icin baslik 0 cikti. Iki hata da derlemeyi ve mevcut testleri geciyordu.
+/// 0.1.21'de düz Grid'le varsayılan pencerede "Çıkış" yarım, "Ayrıntılar" ve alt bilgi
+/// görünmez kalıyordu. İlk düzeltme denemesi de "Ayrıntılar"ı kaybetti: günlüğün alt
+/// sınırını sıfır yükseklikle ölçüyordu ve WPF DesiredSize'ı verilen alana kırptığı
+/// için başlık 0 çıktı. İki hata da derlemeyi ve mevcut testleri geçiyordu.
 /// </remarks>
 public sealed class SigdirmaPaneliTests
 {
@@ -81,8 +81,8 @@ public sealed class SigdirmaPaneliTests
             Content = new Border { Height = icerikYuksekligi },
         };
 
-        // Kapali Expander gibi: yalnizca basligi kadar yer ister. Acik gunluk gibi:
-        // verilen alanin tamamini ister (ic eleman her zaman daha buyuk).
+        // Kapalı Expander gibi: yalnızca başlığı kadar yer ister. Açık günlük gibi:
+        // verilen alanın tamamını ister (iç öğe her zaman daha büyük).
         FrameworkElement gunluk = gunlukAcik
             ? new Border { Child = new Border { Height = 5000 } }
             : new Border { Height = 30 };
@@ -104,7 +104,7 @@ public sealed class SigdirmaPaneliTests
         panel.UpdateLayout();
     }
 
-    /// <summary>Verilen isi STA is parcaciginda calistirir; yakalanan hatayi dondurur.</summary>
+    /// <summary>Verilen işi STA iş parçacığında çalıştırır; yakalanan hatayı döndürür.</summary>
     private static Exception? RunOnStaThread(Action action)
     {
         Exception? captured = null;

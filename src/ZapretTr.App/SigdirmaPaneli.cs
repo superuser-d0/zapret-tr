@@ -4,32 +4,32 @@ using System.Windows.Controls;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Pencereyi uc parcaya bolen panel: ustte kayabilen icerik, ortada gunluk,
+/// Pencereyi üç parçaya bölen panel: üstte kayabilen içerik, ortada günlük,
 /// altta alt bilgi.
 /// </summary>
 /// <remarks>
-/// Once duz bir Grid'di ve 0.1.21'de gercek bir kurulumda olculdu: varsayilan
-/// 440x720 pencerede "Çıkış" yarim kaliyordu, "Ayrıntılar" ve surumu yazan alt
-/// bilgi hic gorunmuyordu. Guncelleme bandi, dogrulanmamis strateji notu ya da
-/// test ilerleme cubugu cikinca "Tüm Ayarları Sıfırla" da kayboluyordu. Kaydirma
-/// yoktu; kullanici pencereyi buyutmeyi akil etmezse dugmeler onun icin YOKTU.
+/// Önce düz bir Grid'di ve 0.1.21'de gerçek bir kurulumda ölçüldü: varsayılan
+/// 440x720 pencerede "Çıkış" yarım kalıyordu, "Ayrıntılar" ve sürümü yazan alt
+/// bilgi hiç görünmüyordu. Güncelleme bandı, doğrulanmamış strateji notu ya da
+/// test ilerleme çubuğu çıkınca "Tüm Ayarları Sıfırla" da kayboluyordu. Kaydırma
+/// yoktu; kullanıcı pencereyi büyütmeyi akıl etmezse düğmeler onun için YOKTU.
 ///
-/// Grid bunu tek basina cozemiyor. Ust kismi bir ScrollViewer'a koymak yetmez:
-/// Auto satirda ScrollViewer sonsuz yukseklik alip hic kaymiyor, yildiz satirda
-/// ise gunluk kapaliyken bile icerigin altinda bos bir yer birakiyor. Istenen
-/// siralama su:
+/// Grid bunu tek başına çözemiyor. Üst kısmı bir ScrollViewer'a koymak yetmez:
+/// Auto satırda ScrollViewer sonsuz yükseklik alıp hiç kaymıyor, yıldız satırda
+/// ise günlük kapalıyken bile içeriğin altında boş bir yer bırakıyor. İstenen
+/// sıralama şu:
 ///
-///   1. Alt bilgi her zaman tam gorunur.
-///   2. Gunluk her zaman en az kendi alt siniri kadar yer alir: kapaliyken yalnizca
-///      basligi, aciksa <see cref="GunlukEnAzYukseklik"/>.
-///   3. Icerik dogal yuksekligini alir; sigmiyorsa geri kalana sikisip kayar.
-///   4. Artan yer gunluge gider -- pencere buyutulunce gunluk buyur.
+///   1. Alt bilgi her zaman tam görünür.
+///   2. Günlük her zaman en az kendi alt sınırı kadar yer alır: kapalıyken yalnızca
+///      başlığı, açıksa <see cref="GunlukEnAzYukseklik"/>.
+///   3. İçerik doğal yüksekliğini alır; sığmıyorsa geri kalana sıkışıp kayar.
+///   4. Artan yer günlüğe gider; pencere büyütülünce günlük büyür.
 ///
-/// Cocuklar sirayla: [0] icerik (ScrollViewer olmali), [1] gunluk, [2] alt bilgi.
+/// Çocuklar sırayla: [0] içerik (ScrollViewer olmalı), [1] günlük, [2] alt bilgi.
 /// </remarks>
 public sealed class SigdirmaPaneli : Panel
 {
-    /// <summary>Acik gunlugun, icerik kaysa bile birakilmayan yuksekligi.</summary>
+    /// <summary>Açık günlüğün, içerik kaysa bile bırakılmayan yüksekliği.</summary>
     public static readonly DependencyProperty GunlukEnAzYukseklikProperty =
         DependencyProperty.Register(
             nameof(GunlukEnAzYukseklik),
@@ -42,7 +42,7 @@ public sealed class SigdirmaPaneli : Panel
     private double _gunlukAltSinir;
     private double _altBilgi;
 
-    /// <summary>Acik gunlugun, icerik kaysa bile birakilmayan yuksekligi.</summary>
+    /// <summary>Açık günlüğün, içerik kaysa bile bırakılmayan yüksekliği.</summary>
     public double GunlukEnAzYukseklik
     {
         get => (double)GetValue(GunlukEnAzYukseklikProperty);
@@ -59,13 +59,13 @@ public sealed class SigdirmaPaneli : Panel
         altBilgi?.Measure(sonsuz);
         _altBilgi = altBilgi?.DesiredSize.Height ?? 0;
 
-        // Gunlugun alt siniri: GunlukEnAzYukseklik kadar alanla olculuyor. Kapali
-        // Expander yalnizca basligini istiyor, acik olan verilen alanin tamamini.
+        // Günlüğün alt sınırı: GunlukEnAzYukseklik kadar alanla ölçülüyor. Kapalı
+        // Expander yalnızca başlığını istiyor, açık olan verilen alanın tamamını.
         //
-        // Sifirla olcmek ise yaramiyor: FrameworkElement DesiredSize'i verilen alana
-        // kirpiyor ve baslik da sifir cikiyordu -- ilk denemede "Ayrıntılar" bu yuzden
-        // ekrandan kayboldu. Sonsuzla olcmek de olmaz: acik gunlukte liste butun
-        // satirlari icin kap uretir.
+        // Sıfırla ölçmek işe yaramıyor: FrameworkElement DesiredSize'ı verilen alana
+        // kırpıyor ve başlık da sıfır çıkıyordu; ilk denemede "Ayrıntılar" bu yüzden
+        // ekrandan kayboldu. Sonsuzla ölçmek de olmaz: açık günlükte liste bütün
+        // satırları için kap üretir.
         gunluk?.Measure(new Size(genislik, GunlukEnAzYukseklik));
         var gunlukAltSinir = gunluk?.DesiredSize.Height ?? 0;
         _gunlukAltSinir = gunlukAltSinir;
@@ -99,8 +99,8 @@ public sealed class SigdirmaPaneli : Panel
     {
         var (icerik, gunluk, altBilgi) = Cocuklar();
 
-        // Olcumden sonra yukseklik degismis olabilir (pencere kenari surukleniyor):
-        // oncelik sirasi ayni kalsin diye paylasim burada yeniden yapiliyor.
+        // Ölçümden sonra yükseklik değişmiş olabilir (pencere kenarı sürükleniyor):
+        // öncelik sırası aynı kalsın diye paylaşım burada yeniden yapılıyor.
         var altBilgiH = Math.Min(_altBilgi, finalSize.Height);
         var icerikH = Math.Max(0, Math.Min(_icerik, finalSize.Height - altBilgiH - _gunlukAltSinir));
         var gunlukH = Math.Max(0, finalSize.Height - altBilgiH - icerikH);

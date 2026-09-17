@@ -5,49 +5,49 @@ using System.Text.RegularExpressions;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Yayinlanmis en yeni surumu sorar.</summary>
+/// <summary>Yayımlanmış en yeni sürümü sorar.</summary>
 /// <remarks>
-/// Bu, uygulamanin KENDILIGINDEN disari istek yapan tek yeri ve bunu gizlemek dogru olmaz:
-/// GitHub'a bir GET gidiyor, dolayisiyla kullanicinin IP adresi GitHub'in
-/// gunluklerine dusuyor. Gonderilen baska hicbir sey yok -- ne hat bilgisi, ne
-/// secili strateji, ne olcum sonucu. Yalnizca "en son surum ne" sorusu.
+/// Bu, uygulamanın KENDİLİĞİNDEN dışarı istek yapan tek yeri ve bunu gizlemek doğru olmaz:
+/// GitHub'a bir GET gidiyor, dolayısıyla kullanıcının IP adresi GitHub'ın
+/// günlüklerine düşüyor. Gönderilen başka hiçbir şey yok: ne hat bilgisi, ne
+/// seçili strateji, ne ölçüm sonucu. Yalnızca "en son sürüm ne" sorusu.
 ///
-/// Neden var: gunde bir kac surum cikabiliyor ve her seferinde test
-/// kullanicilarina tek tek "sunu kur" demek gerekiyordu. Duzeltmeyi kullaniciya
-/// ulastiramayan bir surum ise yaramiyor.
+/// Neden var: günde birkaç sürüm çıkabiliyor ve her seferinde test
+/// kullanıcılarına tek tek "şunu kur" demek gerekiyordu. Düzeltmeyi kullanıcıya
+/// ulaştıramayan bir sürüm işe yaramıyor.
 ///
-/// Kapatilabilir olmasi sart (<c>updateCheckEnabled</c>): engellemenin konu
-/// oldugu bir arac, kullanicinin haberi olmadan ag istegi yapmamali.
+/// Kapatılabilir olması şart (<c>updateCheckEnabled</c>): engellemenin konu
+/// olduğu bir araç, kullanıcının haberi olmadan ağ isteği yapmamalı.
 /// </remarks>
 public static class UpdateChecker
 {
     private const string LatestUrl =
         "https://api.github.com/repos/superuser-d0/zapret-tr/releases/latest";
 
-    /// <summary>Yayin sayfasi; kullaniciya gosterilecek adres.</summary>
+    /// <summary>Yayın sayfası; kullanıcıya gösterilecek adres.</summary>
     public const string ReleasesPage =
         "https://github.com/superuser-d0/zapret-tr/releases/latest";
 
     /// <summary>
-    /// En yeni surumu sorar. Ulasilamazsa <c>null</c> doner.
+    /// En yeni sürümü sorar. Ulaşılamazsa <c>null</c> döner.
     /// </summary>
     /// <remarks>
-    /// Hata YUTULUYOR: guncelleme kontrolu bir kolaylik, korumanin parcasi
-    /// degil. Ag yoksa ya da GitHub cevap vermiyorsa kullaniciya hata
-    /// gostermenin bir anlami olmaz -- uygulamanin isi bundan etkilenmiyor.
+    /// Hata YUTULUYOR: güncelleme kontrolü bir kolaylık, korumanın parçası
+    /// değil. Ağ yoksa ya da GitHub cevap vermiyorsa kullanıcıya hata
+    /// göstermenin bir anlamı olmaz; uygulamanın işi bundan etkilenmiyor.
     /// </remarks>
     public static async Task<string?> GetLatestVersionAsync(
         TimeSpan timeout, CancellationToken cancellationToken = default)
         => (await CheckLatestAsync(timeout, cancellationToken).ConfigureAwait(false)).Version;
 
-    /// <summary>En yeni surumu sorar; alinamazsa SEBEBINI kullaniciya soylenecek bicimde doner.</summary>
+    /// <summary>En yeni sürümü sorar; alınamazsa SEBEBİNİ kullanıcıya söylenecek biçimde döner.</summary>
     /// <remarks>
-    /// "Güncellemeleri Denetle" basarisiz olunca yalnizca gunluge "Sürüm bilgisi
-    /// alınamadı" yaziyordu; Ayrintilar kapaliyken kullanici icin dugme hicbir sey
-    /// yapmiyordu. Sebep de tek bir cumleye siniyordu. En olasi sebeplerden biri
-    /// GitHub'in oturumsuz API sinirinin (IP basina saatte 60) dolmasi ve bu
-    /// kullanicinin yapabilecegi tek sey beklemek -- ne kadar bekleyecegini
-    /// soylemek gerekiyor.
+    /// "Güncellemeleri Denetle" başarısız olunca yalnızca günlüğe "Sürüm bilgisi
+    /// alınamadı" yazıyordu; Ayrıntılar kapalıyken kullanıcı için düğme hiçbir şey
+    /// yapmıyordu. Sebep de tek bir cümleye sığıyordu. En olası sebeplerden biri
+    /// GitHub'ın oturumsuz API sınırının (IP başına saatte 60) dolması ve bu
+    /// durumda kullanıcının yapabileceği tek şey beklemek; ne kadar bekleyeceğini
+    /// söylemek gerekiyor.
     /// </remarks>
     public static async Task<LatestVersionCheck> CheckLatestAsync(
         TimeSpan timeout, CancellationToken cancellationToken = default)
@@ -56,7 +56,7 @@ public static class UpdateChecker
         {
             using var client = new HttpClient { Timeout = timeout };
 
-            // GitHub API User-Agent olmadan 403 donuyor.
+            // GitHub API, User-Agent olmadan 403 dönüyor.
             client.DefaultRequestHeaders.Add("User-Agent", "ZapretTR");
             client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
 
@@ -89,10 +89,10 @@ public static class UpdateChecker
         }
     }
 
-    /// <summary>Yayin cevabindaki tag_name'den surumu cikarir ("v0.1.22" -> "0.1.22").</summary>
+    /// <summary>Yayın cevabındaki tag_name'den sürümü çıkarır ("v0.1.22" -> "0.1.22").</summary>
     /// <remarks>
-    /// Duz metin ayristirma: System.Text.Json'in yansimali yolu kirpma analizorunu
-    /// patlatiyor ve tek bir alan icin kaynak uretimli bir baglam tanimlamak fazla.
+    /// Düz metin ayrıştırma: System.Text.Json'ın yansımalı yolu kırpma çözümleyicisini
+    /// patlatıyor ve tek bir alan için kaynak üretimli bir bağlam tanımlamak fazla.
     /// </remarks>
     public static string? ParseTagName(string? json)
     {
@@ -107,11 +107,11 @@ public static class UpdateChecker
         return match.Success ? match.Groups[1].Value : null;
     }
 
-    /// <summary>Basarisiz HTTP cevabini kullaniciya soylenecek bir cumleye cevirir.</summary>
+    /// <summary>Başarısız HTTP cevabını kullanıcıya söylenecek bir cümleye çevirir.</summary>
     /// <param name="statusCode">HTTP durum kodu.</param>
-    /// <param name="rateLimitRemaining">X-RateLimit-Remaining basligi.</param>
-    /// <param name="rateLimitReset">X-RateLimit-Reset basligi (Unix saniyesi).</param>
-    /// <param name="now">Simdiki zaman; "kac dakika" hesabi icin.</param>
+    /// <param name="rateLimitRemaining">X-RateLimit-Remaining başlığı.</param>
+    /// <param name="rateLimitReset">X-RateLimit-Reset başlığı (Unix saniyesi).</param>
+    /// <param name="now">Şimdiki zaman; "kaç dakika" hesabı için.</param>
     public static string DescribeHttpFailure(int statusCode, string? rateLimitRemaining, string? rateLimitReset, DateTimeOffset now)
     {
         var sinirDoldu = statusCode is 403 or 429 && rateLimitRemaining?.Trim() == "0";
@@ -140,12 +140,12 @@ public static class UpdateChecker
         => response.Headers.TryGetValues(name, out var values) ? values.FirstOrDefault() : null;
 
     /// <summary>
-    /// <paramref name="latest"/> surumu <paramref name="current"/>'dan yeni mi.
+    /// <paramref name="latest"/> sürümü <paramref name="current"/>'dan yeni mi.
     /// </summary>
     /// <remarks>
-    /// Metin karsilastirmasi YANLIS sonuc verir: "0.1.9" ile "0.1.14"
-    /// karsilastirildiginda metin sirasi 0.1.9'u sonraya koyar ve guncelleme
-    /// hic gorunmez. Parcalar sayi olarak karsilastiriliyor.
+    /// Metin karşılaştırması YANLIŞ sonuç verir: "0.1.9" ile "0.1.14"
+    /// karşılaştırıldığında metin sırası 0.1.9'u sonraya koyar ve güncelleme
+    /// hiç görünmez. Parçalar sayı olarak karşılaştırılıyor.
     /// </remarks>
     public static bool IsNewer(string? latest, string? current)
     {
@@ -154,7 +154,7 @@ public static class UpdateChecker
             return false;
         }
 
-        // Kurulu surum "0.1.14+abc123" biciminde gelebiliyor (commit damgasi).
+        // Kurulu sürüm "0.1.14+abc123" biçiminde gelebiliyor (commit damgası).
         var currentCore = current.Split('+')[0];
 
         return Version.TryParse(latest, out var l)
@@ -163,7 +163,7 @@ public static class UpdateChecker
     }
 }
 
-/// <summary>Surum sorgusunun sonucu: surum ya da neden alinamadigi.</summary>
-/// <param name="Version">En yeni surum ("0.1.22"); alinamadiysa null.</param>
-/// <param name="Failure">Alinamadiysa kullaniciya gosterilecek sebep.</param>
+/// <summary>Sürüm sorgusunun sonucu: sürüm ya da neden alınamadığı.</summary>
+/// <param name="Version">En yeni sürüm ("0.1.22"); alınamadıysa null.</param>
+/// <param name="Failure">Alınamadıysa kullanıcıya gösterilecek sebep.</param>
 public sealed record LatestVersionCheck(string? Version, string? Failure);

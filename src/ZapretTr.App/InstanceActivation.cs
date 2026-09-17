@@ -5,67 +5,67 @@ using System.Windows.Threading;
 
 namespace ZapretTr.App;
 
-/// <summary>Calisan ornegin pencereyi gosterme istegine cevabi.</summary>
+/// <summary>Çalışan örneğin pencereyi gösterme isteğine cevabı.</summary>
 public enum ShowOutcome
 {
-    /// <summary>Pencere one getirildi.</summary>
+    /// <summary>Pencere öne getirildi.</summary>
     Shown,
 
-    /// <summary>Ornek kapanmakta; pencere gosterilemez.</summary>
+    /// <summary>Örnek kapanmakta; pencere gösterilemez.</summary>
     Closing,
 }
 
-/// <summary>Ikinci ornegin, calisan ornege "pencereni goster" demesinin sonucu.</summary>
+/// <summary>İkinci örneğin, çalışan örneğe "pencereni göster" demesinin sonucu.</summary>
 public enum ActivationResult
 {
-    /// <summary>Dinleyen bir ornek yok (baska oturumda olabilir ya da henuz acilmadi).</summary>
+    /// <summary>Dinleyen bir örnek yok (başka oturumda olabilir ya da henüz açılmadı).</summary>
     NoListener,
 
-    /// <summary>Calisan ornek pencereyi one getirdi.</summary>
+    /// <summary>Çalışan örnek pencereyi öne getirdi.</summary>
     Shown,
 
-    /// <summary>Calisan ornek kapanmakta.</summary>
+    /// <summary>Çalışan örnek kapanmakta.</summary>
     Closing,
 
-    /// <summary>Calisan ornek zamaninda cevap vermedi (donmus olabilir).</summary>
+    /// <summary>Çalışan örnek zamanında cevap vermedi (donmuş olabilir).</summary>
     NoAnswer,
 }
 
 /// <summary>
-/// Kisayola ikinci kez tiklandiginda uyari yerine calisan ornegin penceresini one getirir.
+/// Kısayola ikinci kez tıklandığında uyarı yerine çalışan örneğin penceresini öne getirir.
 /// </summary>
 /// <remarks>
-/// Eskiden ikinci ornek "ZapretTR zaten çalışıyor" penceresi gosterip cikiyordu; pencereyi
-/// X ile kapatan (yani bildirim alanina indiren) kullanici kisayola tiklayinca uyari
-/// goruyor, Tamam deyince yine pencereye ulasamiyordu.
+/// Eskiden ikinci örnek "ZapretTR zaten çalışıyor" penceresi gösterip çıkıyordu; pencereyi
+/// X ile kapatan (yani bildirim alanına indiren) kullanıcı kısayola tıklayınca uyarı
+/// görüyor, Tamam deyince yine pencereye ulaşamıyordu.
 ///
-/// Iki ornegin ayni anda calismasini engelleyen kilit DEGISMEDI (App.xaml.cs,
-/// DnsGuard.AppInstanceMutexName). Burada yalnizca ikinci ornek ile ilki arasinda
-/// adlandirilmis olaylarla bir el sikisma var:
+/// İki örneğin aynı anda çalışmasını engelleyen kilit DEĞİŞMEDİ (App.xaml.cs,
+/// DnsGuard.AppInstanceMutexName). Burada yalnızca ikinci örnek ile ilki arasında
+/// adlandırılmış olaylarla bir el sıkışma var:
 ///
-///   ikinci -> "goster"          ilk -> pencereyi gosterir -> "gosterildi"
-///                               ilk kapaniyorsa           -> "kapaniyor"
+///   ikinci -> "göster"          ilk -> pencereyi gösterir -> "gösterildi"
+///                               ilk kapanıyorsa           -> "kapanıyor"
 ///
-/// Ad oturum numarasini tasiyor: tek ornek kilidi Global, ama baska bir Windows
-/// oturumundaki pencereyi one getirmek o kullaniciya bir sey gostermez. O durumda
-/// dinleyici bulunamiyor ve eski uyari gosteriliyor.
+/// Ad oturum numarasını taşıyor: tek örnek kilidi Global, ama başka bir Windows
+/// oturumundaki pencereyi öne getirmek o kullanıcıya bir şey göstermez. O durumda
+/// dinleyici bulunamıyor ve eski uyarı gösteriliyor.
 ///
-/// Kapanmakta olan bir WPF penceresini gostermek istisna firlatiyor; bu yuzden ilk
-/// ornek o durumda gostermeyip "kapaniyor" diyor ve ikinci ornek ilkinin cikmasini
-/// bekleyip normal aciliyor.
+/// Kapanmakta olan bir WPF penceresini göstermek istisna fırlatıyor; bu yüzden ilk
+/// örnek o durumda göstermeyip "kapanıyor" diyor ve ikinci örnek ilkinin çıkmasını
+/// bekleyip normal açılıyor.
 /// </remarks>
 public static class InstanceActivation
 {
-    /// <summary>Bu oturumun olay adi oneki.</summary>
+    /// <summary>Bu oturumun olay adı öneki.</summary>
     public static string SessionPrefix => $@"Global\ZapretTR-pencere-{Process.GetCurrentProcess().SessionId}";
 
     /// <summary>
-    /// Calisan ornek olarak "goster" isteklerini dinlemeye baslar. Olaylar
-    /// kurulamazsa null doner; ikinci ornek o zaman eski uyariyi gosterir.
+    /// Çalışan örnek olarak "göster" isteklerini dinlemeye başlar. Olaylar
+    /// kurulamazsa null döner; ikinci örnek o zaman eski uyarıyı gösterir.
     /// </summary>
-    /// <param name="dispatcher">Pencerenin is parcacigi.</param>
-    /// <param name="tryShow">Pencereyi gosterir; kapaniyorsa <see cref="ShowOutcome.Closing"/>.</param>
-    /// <param name="prefix">Olay adi oneki; testler Local\ ile yaliyor.</param>
+    /// <param name="dispatcher">Pencerenin iş parçacığı.</param>
+    /// <param name="tryShow">Pencereyi gösterir; kapanıyorsa <see cref="ShowOutcome.Closing"/>.</param>
+    /// <param name="prefix">Olay adı öneki; testler Local\ ile yalıtıyor.</param>
     public static IDisposable? StartListening(Dispatcher dispatcher, Func<ShowOutcome> tryShow, string? prefix = null)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -81,9 +81,9 @@ public static class InstanceActivation
         }
     }
 
-    /// <summary>Calisan ornekten pencereyi one getirmesini ister.</summary>
-    /// <param name="answerTimeout">Cevap icin en fazla bu kadar beklenir.</param>
-    /// <param name="prefix">Olay adi oneki; testler Local\ ile yaliyor.</param>
+    /// <summary>Çalışan örnekten pencereyi öne getirmesini ister.</summary>
+    /// <param name="answerTimeout">Cevap için en fazla bu kadar beklenir.</param>
+    /// <param name="prefix">Olay adı öneki; testler Local\ ile yalıtıyor.</param>
     public static ActivationResult TryActivateExisting(TimeSpan answerTimeout, string? prefix = null)
     {
         var ad = prefix ?? SessionPrefix;
@@ -111,12 +111,12 @@ public static class InstanceActivation
 
                     using (kapaniyor)
                     {
-                        // Onceki bir istegin kalmis cevabi bu istegin cevabi sanilmasin.
+                        // Önceki bir isteğin kalmış cevabı bu isteğin cevabı sanılmasın.
                         gosterildi.Reset();
                         kapaniyor.Reset();
 
-                        // Windows arka plandaki bir surecin kendini one cikarmasina izin
-                        // vermiyor; kullanicinin az once actigi bu surec verebiliyor.
+                        // Windows arka plandaki bir sürecin kendini öne çıkarmasına izin
+                        // vermiyor; kullanıcının az önce açtığı bu süreç verebiliyor.
                         AllowOtherInstancesToComeForward();
 
                         goster.Set();
@@ -155,8 +155,8 @@ public static class InstanceActivation
         }
         catch (Exception)
         {
-            // Izin verilemediyse pencere yine gosterilir; yalnizca gorev cubugunda
-            // yanip sonebilir.
+            // İzin verilemediyse pencere yine gösterilir; yalnızca görev çubuğunda
+            // yanıp sönebilir.
         }
     }
 
@@ -191,9 +191,9 @@ public static class InstanceActivation
             {
                 try
                 {
-                    // Sinirli bekleme: arayuz is parcacigi mesgulse bu is parcacigi
-                    // sonsuza kadar asili kalmasin. Cevap gelmezse ikinci ornek eski
-                    // uyariyi gosterir.
+                    // Sınırlı bekleme: arayüz iş parçacığı meşgulse bu iş parçacığı
+                    // sonsuza kadar asılı kalmasın. Cevap gelmezse ikinci örnek eski
+                    // uyarıyı gösterir.
                     var sonuc = (ShowOutcome?)_dispatcher.Invoke(
                         () => (ShowOutcome?)_tryShow(),
                         DispatcherPriority.Normal,
@@ -211,7 +211,7 @@ public static class InstanceActivation
                 }
                 catch (Exception)
                 {
-                    // Dispatcher kapandi ya da gosterme basarisiz: cevap verilmez.
+                    // Dispatcher kapandı ya da gösterme başarısız: cevap verilmez.
                 }
             }
         }
@@ -220,10 +220,10 @@ public static class InstanceActivation
         {
             _dur.Set();
 
-            // Tutamaclar is parcacigi cikmadan kapatilmamali: WaitAny kapali bir
-            // tutamac uzerinde istisna firlatir ve arka plan is parcacigindaki
-            // yakalanmamis istisna butun sureci dusurur. Is parcacigi bir tryShow
-            // cagrisinin icindeyse en fazla o cagrinin 2 saniyelik siniri kadar surer.
+            // Tutamaçlar iş parçacığı çıkmadan kapatılmamalı: WaitAny kapalı bir
+            // tutamaç üzerinde istisna fırlatır ve arka plan iş parçacığındaki
+            // yakalanmamış istisna bütün süreci düşürür. İş parçacığı bir tryShow
+            // çağrısının içindeyse en fazla o çağrının 2 saniyelik sınırı kadar sürer.
             if (!_thread.Join(TimeSpan.FromSeconds(3)))
             {
                 return;

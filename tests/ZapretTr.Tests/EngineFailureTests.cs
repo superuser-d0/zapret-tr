@@ -4,18 +4,18 @@ using ZapretTr.Prober;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Motor art arda hic baslamadiginda aramanin durmasi.
+/// Motor art arda hiç başlamadığında aramanın durması.
 /// </summary>
 /// <remarks>
-/// Gercek bir kullanicida 304 aday 23 SANIYEDE "denendi" ve hepsi ayni sebeple
-/// dustu: winws hic baslamadi. Arayuz sonunda "CALISAN STRATEJI YOK" dedi,
-/// kullanici da bu hatta aracin yetmedigini dusundu. Dogru cumle "hicbir
-/// strateji DENENEMEDI" idi.
+/// Gerçek bir kullanıcıda 304 aday 23 SANİYEDE "denendi" ve hepsi aynı sebeple
+/// düştü: winws hiç başlamadı. Arayüz sonunda "ÇALIŞAN STRATEJİ YOK" dedi,
+/// kullanıcı da bu hatta aracın yetmediğini düşündü. Doğru cümle "hiçbir
+/// strateji DENENEMEDİ" idi.
 ///
-/// Bu kontrol iki yonlu tehlikeli, testler de o yuzden iki yonlu: cok gec
-/// tetiklenirse kullanici dakikalarca bosa bekler, cok erken tetiklenirse
-/// GERCEK aramayi keser ve calisan bir strateji varken "olcum yapilamadi" der.
-/// Ikincisi daha kotu.
+/// Bu kontrol iki yönlü tehlikeli, testler de o yüzden iki yönlü: çok geç
+/// tetiklenirse kullanıcı dakikalarca boşa bekler, çok erken tetiklenirse
+/// GERÇEK aramayı keser ve çalışan bir strateji varken "ölçüm yapılamadı" der.
+/// İkincisi daha kötü.
 /// </remarks>
 public sealed class EngineFailureTests
 {
@@ -47,7 +47,7 @@ public sealed class EngineFailureTests
     [Fact]
     public void Esigin_altinda_durdurmaz()
     {
-        // Tek tuk basarisizlik normal: gecici kilit, gecersiz parametre.
+        // Tek tük başarısızlık normal: geçici kilit, geçersiz parametre.
         var denemeler = Enumerable.Range(0, StrategyProber.MotorHataEsigi - 1)
             .Select(_ => MotorHatasi())
             .ToList();
@@ -58,10 +58,10 @@ public sealed class EngineFailureTests
     [Fact]
     public void Son_pencerede_basari_varsa_durdurmaz()
     {
-        // EN ONEMLI DURUM: motor CALISIYOR. Burada durmak, gercekten calisan
-        // bir strateji varken aramayi kesip "olcum yapilamadi" demek olurdu.
-        // Ilk hali bu senaryoyu kurmuyordu: basariyi pencerenin DISINA
-        // koydugum icin kontrol hic sinanmiyordu ve mutasyon yakalanmadi.
+        // EN ÖNEMLİ DURUM: motor ÇALIŞIYOR. Burada durmak, gerçekten çalışan
+        // bir strateji varken aramayı kesip "ölçüm yapılamadı" demek olurdu.
+        // İlk hâli bu senaryoyu kurmuyordu: başarıyı pencerenin DIŞINA
+        // koyduğum için kontrol hiç sınanmıyordu ve mutasyon yakalanmadı.
         var denemeler = new List<CandidateResult>();
         denemeler.AddRange(Enumerable.Range(0, StrategyProber.MotorHataEsigi - 1)
             .Select(_ => MotorHatasi()));
@@ -72,8 +72,8 @@ public sealed class EngineFailureTests
     [Fact]
     public void Baska_sebeple_dusenler_motor_hatasi_sayilmaz()
     {
-        // RST demek motorun CALISTIGI demek: paket gitti, DPI sifirladi. Bu,
-        // aranan bilginin ta kendisi -- durdurulacak sey degil.
+        // RST demek motorun ÇALIŞTIĞI demek: paket gitti, DPI sıfırladı. Bu,
+        // aranan bilginin ta kendisi; durdurulacak şey değil.
         var denemeler = Enumerable.Range(0, StrategyProber.MotorHataEsigi)
             .Select(_ => Sonuc(false, "baglanti sifirlandi (RST)"))
             .ToList();

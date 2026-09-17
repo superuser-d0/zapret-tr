@@ -8,19 +8,19 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Hemen olen bir surecin ciktisini beklemek arayuzu kilitlememeli.
+/// Hemen ölen bir sürecin çıktısını beklemek arayüzü kilitlememeli.
 /// </summary>
 /// <remarks>
-/// 2026-09-14, gercek kullanici: ZapretTR kapatilip yeniden acildiginda dondu ve
-/// Windows iki kez "yanit vermiyor" deyip kapatti. Sebep: "Baslat" arayuz is
-/// parcaciginda WinwsRunner.Start'i cagiriyor; winws 250 ms icinde olunce Start
-/// ciktinin bitmesini SINIRSIZ bekliyordu, ciktiyi okuyan is parcacigi ise satiri
-/// arayuze Dispatcher.Invoke ile yazmak icin arayuzu bekliyordu.
+/// 2026-09-14, gerçek kullanıcı: ZapretTR kapatılıp yeniden açıldığında dondu ve
+/// Windows iki kez "yanıt vermiyor" deyip kapattı. Sebep: "Başlat" arayüz iş
+/// parçacığında WinwsRunner.Start'ı çağırıyor; winws 250 ms içinde ölünce Start
+/// çıktının bitmesini SINIRSIZ bekliyordu, çıktıyı okuyan iş parçacığı ise satırı
+/// arayüze Dispatcher.Invoke ile yazmak için arayüzü bekliyordu.
 ///
-/// WinwsRunner.Start yonetici yetkisi istedigi icin burada dogrudan kosamiyor. Test
-/// ayni kosulu kuruyor: arayuz is parcacigi (Dispatcher), hemen olen ve stderr'e
-/// yazan bir surec (where.exe), satiri Dispatcher.Invoke ile gonderen okuyucu -- ve
-/// bekleme olarak Start'in kullandigi WinwsRunner.WaitForEarlyExit.
+/// WinwsRunner.Start yönetici yetkisi istediği için burada doğrudan koşamıyor. Test
+/// aynı koşulu kuruyor: arayüz iş parçacığı (Dispatcher), hemen ölen ve stderr'e
+/// yazan bir süreç (where.exe), satırı Dispatcher.Invoke ile gönderen okuyucu ve
+/// bekleme olarak Start'ın kullandığı WinwsRunner.WaitForEarlyExit.
 /// </remarks>
 public sealed class EarlyExitDeadlockTests
 {
@@ -61,10 +61,10 @@ public sealed class EarlyExitDeadlockTests
             using var ciktiBitti = new ManualResetEventSlim();
             using var hataBitti = new ManualResetEventSlim();
 
-            // Kilitlenmenin diger yarisi, bilerek: satiri arayuze SENKRON gonder.
-            // try: makine cok yukluyse satir, test arayuzu kapattiktan SONRA gelebilir;
-            // kapali Dispatcher'a Invoke istisna firlatir ve arka plan is parcacigindaki
-            // yakalanmamis istisna test surecini dusurur.
+            // Kilitlenmenin diğer yarısı, bilerek: satırı arayüze SENKRON gönder.
+            // try: makine çok yüklüyse satır, test arayüzü kapattıktan SONRA gelebilir;
+            // kapalı Dispatcher'a Invoke istisna fırlatır ve arka plan iş parçacığındaki
+            // yakalanmamış istisna test sürecini düşürür.
             void Gonder()
             {
                 try { arayuz.Invoke(() => { }); }
@@ -86,24 +86,24 @@ public sealed class EarlyExitDeadlockTests
             surec.BeginOutputReadLine();
             surec.BeginErrorReadLine();
 
-            // Sureler BOL tutuluyor ve bu, mutlu yolda hicbir sey yavaslatmiyor:
-            // WaitForEarlyExit surec olur olmaz donuyor (icerideki WaitForExit bir
-            // ust sinir, bekleme suresi degil). Yani buyuk deger yalnizca surec
-            // GERCEKTEN olmediginde bekleniyor -- ki zaten gormek istedigimiz hata o.
+            // Süreler BOL tutuluyor ve bu, mutlu yolda hiçbir şeyi yavaşlatmıyor:
+            // WaitForEarlyExit süreç ölür ölmez dönüyor (içerideki WaitForExit bir
+            // üst sınır, bekleme süresi değil). Yani büyük değer yalnızca süreç
+            // GERÇEKTEN ölmediğinde bekleniyor; zaten görmek istediğimiz hata o.
             //
-            // KIRILGANLIK, olculdu: 2026-09-15'te bu test 2000 ms ile bir YAYINI
-            // dusurdu (yayin is akisi, kosum 35020852773). Ayni commit dakikalar once
-            // "derle ve test"te gecmisti; yuklu bir runner'da where.exe 2 saniyede
-            // baslayip bitemedi. Dusen sey urun degil, testin zamanlama varsayimiydi:
-            // surec hala yasiyorsa WaitForEarlyExit'in false donmesi DOGRU davranis.
+            // KIRILGANLIK, ölçüldü: 2026-09-15'te bu test 2000 ms ile bir YAYINI
+            // düşürdü (yayın iş akışı, koşum 35020852773). Aynı commit dakikalar önce
+            // "derle ve test"te geçmişti; yüklü bir runner'da where.exe 2 saniyede
+            // başlayıp bitemedi. Düşen şey ürün değil, testin zamanlama varsayımıydı:
+            // süreç hâlâ yaşıyorsa WaitForEarlyExit'in false dönmesi DOĞRU davranış.
             olduMu = WinwsRunner.WaitForEarlyExit(surec, 15000, ciktiBitti.WaitHandle, hataBitti.WaitHandle);
             bitti.Set();
         });
 
-        // Eski kodla (parametresiz WaitForExit) bu bekleme HIC bitmiyordu; kilitlenme
-        // sonsuz surdugu icin ust sinirin buyuk olmasi testin gucunu azaltmiyor.
-        // Ust sinir, yukaridaki bekleme penceresinden buyuk olmak ZORUNDA: yavas ama
-        // kilitlenmemis bir makinede once bu iddia dusup yanlis teshis verirdi.
+        // Eski kodla (parametresiz WaitForExit) bu bekleme HİÇ bitmiyordu; kilitlenme
+        // sonsuz sürdüğü için üst sınırın büyük olması testin gücünü azaltmıyor.
+        // Üst sınır, yukarıdaki bekleme penceresinden büyük olmak ZORUNDA: yavaş ama
+        // kilitlenmemiş bir makinede önce bu iddia düşüp yanlış teşhis verirdi.
         Assert.True(bitti.Wait(TimeSpan.FromSeconds(60)), "Arayuz is parcacigi 60 saniyede donmedi: kilitlenme.");
         Assert.True(olduMu, "where.exe 15 saniyede olmeliydi; bu sure asilmissa makine asiri yuklu ya da surec gercekten asili kalmis.");
 
@@ -113,8 +113,8 @@ public sealed class EarlyExitDeadlockTests
     [Fact]
     public void Kaynakta_sinirsiz_WaitForExit_yok()
     {
-        // Parametresiz WaitForExit yonlendirilmis akislarin sonunu sinirsiz bekliyor.
-        // Arayuzden ulasilabilen bir yolda kullanilirsa kilitlenme geri gelir.
+        // Parametresiz WaitForExit yönlendirilmiş akışların sonunu sınırsız bekliyor.
+        // Arayüzden ulaşılabilen bir yolda kullanılırsa kilitlenme geri gelir.
         var kok = IoPath.Combine(XmlCommentTests.RepoRoot, "src");
         var bulunan = Directory.EnumerateFiles(kok, "*.cs", SearchOption.AllDirectories)
             .Where(f => !f.Contains($"{IoPath.DirectorySeparatorChar}obj{IoPath.DirectorySeparatorChar}", StringComparison.Ordinal))

@@ -1,19 +1,19 @@
 ; ZapretTR kurulum paketi (Inno Setup 6)
 ;
-; Bu paketin varlik sebebi teknik bir zorunluluk. Otomatik baslatma eklendikten
-; sonra Windows servisleri ikilileri MUTLAK YOLLA isaret etmeye basladi. Ikililer
-; derleme agacinda dururken depo tasinir ya da temizlenirse servisler acilista
-; baslayamiyor; winws calismayinca koruma gidiyor, ama asil kotusu dnscrypt-proxy
-; calismayinca sistem DNS'i 127.0.0.1'i gostermeye devam ediyor ve hicbir adres
-; cozulemiyor. Yani kullanicinin internetinin gitmesi.
+; Bu paketin var olma sebebi teknik bir zorunluluk. Otomatik başlatma eklendikten
+; sonra Windows servisleri ikilileri MUTLAK YOLLA işaret etmeye başladı. İkililer
+; derleme ağacında dururken depo taşınır ya da temizlenirse servisler açılışta
+; başlayamıyor; winws çalışmayınca koruma gidiyor, ama asıl kötüsü dnscrypt-proxy
+; çalışmayınca sistem DNS'i 127.0.0.1'i göstermeye devam ediyor ve hiçbir adres
+; çözülemiyor. Yani kullanıcının internetinin gitmesi.
 ;
-; Bu yuzden kurulum, ikilileri kullanicinin dokunmayacagi sabit bir dizine koyar.
+; Bu yüzden kurulum, ikilileri kullanıcının dokunmayacağı sabit bir dizine koyar.
 
 #define AppName "ZapretTR"
 
-; Surum disaridan verilebilir: ISCC /DAppVersion=1.2.3
-; Yayin akisi bunu git tag'inden geciyor, boylece kurulum paketi, exe'nin
-; surum kaynagi (Directory.Build.props) ve tag birbirinden ayrilamiyor.
+; Sürüm dışarıdan verilebilir: ISCC /DAppVersion=1.2.3
+; Yayın akışı bunu git etiketinden geçiriyor; böylece kurulum paketi, exe'nin
+; sürüm kaynağı (Directory.Build.props) ve etiket birbirinden ayrışamıyor.
 #ifndef AppVersion
   #define AppVersion "0.1.6"
 #endif
@@ -35,19 +35,19 @@ Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
 
-; Kurulum dosyasinin ve sihirbazin simgesi. Onceden Inno Setup'in varsayilan
-; simgesi ve resmi gorunuyordu. Uclu de tools/make-icon.ps1 ile uretiliyor.
+; Kurulum dosyasının ve sihirbazın simgesi. Önceden Inno Setup'ın varsayılan
+; simgesi ve resmi görünüyordu. Üçü de tools/make-icon.ps1 ile üretiliyor.
 SetupIconFile=..\src\ZapretTr.App\Assets\ZapretTR.ico
 WizardSmallImageFile=wizard-small-55.bmp,wizard-small-110.bmp
 
-; Kurulum yonetici olarak calismali: servis kurar ve cekirdek surucusu tasiyan
-; dosyalari Program Files altina yazar.
+; Kurulum yönetici olarak çalışmalı: servis kurar ve çekirdek sürücüsü taşıyan
+; dosyaları Program Files altına yazar.
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
-; Uygulamanin kendisi de yonetici gerektirdigi icin kurulum sonunda
-; "simdi calistir" secenegi yukseltilmis baslatir.
+; Uygulamanın kendisi de yönetici gerektirdiği için kurulum sonunda
+; "şimdi çalıştır" seçeneği yükseltilmiş başlatır.
 UninstallDisplayName={#AppName}
 UninstallDisplayIcon={app}\{#AppExe}
 
@@ -56,21 +56,21 @@ Name: "turkish"; MessagesFile: "compiler:Languages\Turkish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [InstallDelete]
-; 0.2.1'den once yayin cok dosyaliydi: ZapretTR.dll, ZapretTr.Core.dll ve
-; ZapretTr.Prober.dll exe'nin yaninda IMZASIZ duruyordu ve Akilli Uygulama
-; Denetimi "Bu uygulamanin bir kismi engellendi ... ZapretTR.dll" diyerek
-; uygulamayi calistirmadi. Artik tek dosya (gerekcesi ZapretTr.App.csproj'da).
-; Inno yukseltmede eski dosyalari kendiliginden silmiyor; silinmezse o imzasiz
-; DLL'ler ve ~150 MB .NET kalintisi Program Files'ta kalir. [InstallDelete]
-; dosya kopyalamadan ONCE calisiyor: guncel yerel DLL'ler (msquic, WPF'in
-; *_cor3 dosyalari) [Files] ile hemen geri yaziliyor. Yalnizca kok dizin; alt
-; klasorler (zapret-winws, dnscrypt-proxy, profiles) bu desenlere girmiyor.
-; Kullanici ayarlari ProgramData'da, burada degil.
+; 0.2.1'den önce yayın çok dosyalıydı: ZapretTR.dll, ZapretTr.Core.dll ve
+; ZapretTr.Prober.dll exe'nin yanında İMZASIZ duruyordu ve Akıllı Uygulama
+; Denetimi "Bu uygulamanın bir kısmı engellendi ... ZapretTR.dll" diyerek
+; uygulamayı çalıştırmadı. Artık tek dosya (gerekçesi ZapretTr.App.csproj'da).
+; Inno yükseltmede eski dosyaları kendiliğinden silmiyor; silinmezse o imzasız
+; DLL'ler ve ~150 MB .NET kalıntısı Program Files'ta kalır. [InstallDelete]
+; dosya kopyalamadan ÖNCE çalışıyor: güncel yerel DLL'ler (msquic, WPF'in
+; *_cor3 dosyaları) [Files] ile hemen geri yazılıyor. Yalnızca kök dizin; alt
+; klasörler (zapret-winws, dnscrypt-proxy, profiles) bu desenlere girmiyor.
+; Kullanıcı ayarları ProgramData'da, burada değil.
 Type: files; Name: "{app}\*.dll"
 Type: files; Name: "{app}\ZapretTR.deps.json"
 Type: files; Name: "{app}\ZapretTR.runtimeconfig.json"
 Type: files; Name: "{app}\createdump.exe"
-; WPF/WinForms yerellestirme derlemeleri; tek dosyada exe'nin icindeler.
+; WPF/WinForms yerelleştirme derlemeleri; tek dosyada exe'nin içindeler.
 Type: filesandordirs; Name: "{app}\cs"
 Type: filesandordirs; Name: "{app}\de"
 Type: filesandordirs; Name: "{app}\es"
@@ -86,20 +86,20 @@ Type: filesandordirs; Name: "{app}\zh-Hans"
 Type: filesandordirs; Name: "{app}\zh-Hant"
 
 [Files]
-; Uygulama ve kutuphaneleri
-; Hata ayiklama sembolleri (.pdb) disarida. Yayin zaten DebugType=none ile
-; uretiliyor ama bu filtre ikinci bir guvence: elle yapilmis bir yayin ciktisi
-; pakete sembol sizdirmasin.
+; Uygulama ve kütüphaneleri
+; Hata ayıklama sembolleri (.pdb) dışarıda. Yayın zaten DebugType=none ile
+; üretiliyor ama bu süzgeç ikinci bir güvence: elle yapılmış bir yayın çıktısı
+; pakete sembol sızdırmasın.
 Source: "..\publish\app\*"; DestDir: "{app}"; Excludes: "*.pdb"; Flags: ignoreversion recursesubdirs
 
-; winws ve bagimliliklari. VendorPaths bu klasoru uygulamanin YANINDA ariyor,
-; klasor adi bu yuzden birebir "zapret-winws" olmali.
+; winws ve bağımlılıkları. VendorPaths bu klasörü uygulamanın YANINDA arıyor,
+; klasör adı bu yüzden birebir "zapret-winws" olmalı.
 Source: "..\vendor\zapret-winws\*"; DestDir: "{app}\zapret-winws"; Flags: ignoreversion recursesubdirs
 
-; dnscrypt-proxy zapret-winws'in KARDESI olmali; VendorPaths onu boyle ariyor.
+; dnscrypt-proxy, zapret-winws'in KARDEŞİ olmalı; VendorPaths onu böyle arıyor.
 Source: "..\vendor\dnscrypt-proxy\*"; DestDir: "{app}\dnscrypt-proxy"; Flags: ignoreversion recursesubdirs
 
-; ISS profilleri ve hedef listesi
+; İSS profilleri ve hedef listesi
 Source: "..\profiles\*"; DestDir: "{app}\profiles"; Flags: ignoreversion recursesubdirs
 
 ; Lisans ve bildirimler
@@ -116,60 +116,60 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 Name: "desktopicon"; Description: "Masaüstüne kısayol ekle"; GroupDescription: "Ek görevler:"
 
 [Run]
-; DNS bekcisi kaydi ve bekci turu ARTIK BURADA DEGIL, [Code] icinde (CurStepChanged).
+; DNS bekçisi kaydı ve bekçi turu ARTIK BURADA DEĞİL, [Code] içinde (CurStepChanged).
 ;
-; Sebep olculdu (2026-09-16, gercek makine, 0.2.3): Akilli Uygulama Denetimi acikken
-; Windows imzasiz ZapretTR.exe'yi calistirmiyor ve Inno'nun [Run] girdisi bunu ham
-; haliyle kullanicinin yuzune veriyordu:
-;   "Su dosya yurutulmedi: C:\Program Files\ZapretTR\ZapretTR.exe
-;    CreateProcess tamamlanamadi; kod 4551. Uygulama Denetimi ilkesi bu dosyayi engelledi."
-; Kurulumun ortasinda, ne yapacagini soylemeyen bir kutu. [Code] icinde sonucu
-; kendimiz denetliyor ve sonunda TEK ve anlasilir bir aciklama veriyoruz.
+; Sebep ölçüldü (2026-09-16, gerçek makine, 0.2.3): Akıllı Uygulama Denetimi açıkken
+; Windows imzasız ZapretTR.exe'yi çalıştırmıyor ve Inno'nun [Run] girdisi bunu ham
+; hâliyle kullanıcının yüzüne veriyordu:
+;   "Şu dosya yürütülmedi: C:\Program Files\ZapretTR\ZapretTR.exe
+;    CreateProcess tamamlanamadı; kod 4551. Uygulama Denetimi ilkesi bu dosyayı engelledi."
+; Kurulumun ortasında, ne yapacağını söylemeyen bir kutu. [Code] içinde sonucu
+; kendimiz denetliyor ve sonunda TEK ve anlaşılır bir açıklama veriyoruz.
 
-; shellexec ZORUNLU. Uygulamanin manifesti requireAdministrator ve Inno, kurulum
-; sonu "simdi baslat" girdisini yukseltilmemis baglamda CreateProcess ile
-; calistiriyor -- CreateProcess UAC yukseltmesi yapamaz, yalnizca ShellExecute
-; yapar. Bayrak olmadan kurulum sonunda su hata cikiyordu:
-;   "CreateProcess tamamlanamadi; kod 740. The requested operation requires elevation."
-; Kullanici icin belirtisi kotu: kurulum bitiyor ama uygulama acilmiyor; yalnizca
-; masaustu kisayolundan aciliyor. Gercek makinede goruldu.
-; Check: ExeCalisabildi ZORUNLU. Olculdu (2026-09-16, SAC acik makine, 0.2.5 taslagi):
-; kurulum sonunda aciklama kutumuz dogru cikti, ama kullanici "simdi baslat" isaretliyken
-; Son dugmesine basinca Inno ham hatayi yine gosterdi:
+; shellexec ZORUNLU. Uygulamanın manifesti requireAdministrator ve Inno, kurulum
+; sonu "şimdi başlat" girdisini yükseltilmemiş bağlamda CreateProcess ile
+; çalıştırıyor; CreateProcess UAC yükseltmesi yapamaz, yalnızca ShellExecute
+; yapar. Bayrak olmadan kurulum sonunda şu hata çıkıyordu:
+;   "CreateProcess tamamlanamadı; kod 740. The requested operation requires elevation."
+; Kullanıcı için belirtisi kötü: kurulum bitiyor ama uygulama açılmıyor; yalnızca
+; masaüstü kısayolundan açılıyor. Gerçek makinede görüldü.
+; Check: ExeCalisabildi ZORUNLU. Ölçüldü (2026-09-16, SAC açık makine, 0.2.5 taslağı):
+; kurulum sonunda açıklama kutumuz doğru çıktı, ama kullanıcı "şimdi başlat" işaretliyken
+; Son düğmesine basınca Inno ham hatayı yine gösterdi:
 ;   "Unable to execute file: ...ZapretTR.exe / ShellExecuteEx failed; code 4551."
-; Exe az once calisamadiysa bu kutu hem gereksiz hem de aciklamamizi bozuyor.
+; Exe az önce çalışamadıysa bu kutu hem gereksiz hem de açıklamamızı bozuyor.
 Filename: "{app}\{#AppExe}"; Description: "{#AppName} uygulamasını şimdi başlat"; Flags: nowait postinstall skipifsilent shellexec; Check: ExeCalisabildi
 
 [UninstallRun]
-; Bekci ONCE siliniyor: servisler sokulurken bir bekci turu araya girerse
-; yarim kalmis bir durumu gorup DNS'i yeniden yonlendirmeye kalkabilir.
+; Bekçi ÖNCE siliniyor: servisler sökülürken bir bekçi turu araya girerse
+; yarım kalmış bir durumu görüp DNS'i yeniden yönlendirmeye kalkabilir.
 Filename: "{app}\{#AppExe}"; Parameters: "--unregister-dns-guard"; Flags: runhidden waituntilterminated; RunOnceId: "ZapretTrDnsGuard"
 
-; Kaldirmadan ONCE servisleri sokup DNS'i geri al. Bu adim atlanirsa kullanicinin
-; sistem DNS'i 127.0.0.1'de kalir, dnscrypt-proxy de silinmis olur ve makine
-; hicbir adi cozemez. Kaldirma sirasinda yapilabilecek en kotu sey bu.
+; Kaldırmadan ÖNCE servisleri söküp DNS'i geri al. Bu adım atlanırsa kullanıcının
+; sistem DNS'i 127.0.0.1'de kalır, dnscrypt-proxy de silinmiş olur ve makine
+; hiçbir adı çözemez. Kaldırma sırasında yapılabilecek en kötü şey bu.
 Filename: "{app}\{#AppExe}"; Parameters: "--uninstall-services"; Flags: runhidden waituntilterminated; RunOnceId: "ZapretTrServices"
 
 [UninstallDelete]
-; Uygulamanin urettigi calisma dosyalari (dnscrypt yapilandirmasi, cozumleyici
-; listesi) [Files] altinda listelenmedigi icin elle siliniyor.
+; Uygulamanın ürettiği çalışma dosyaları (dnscrypt yapılandırması, çözümleyici
+; listesi) [Files] altında listelenmediği için elle siliniyor.
 Type: filesandordirs; Name: "{app}\dnscrypt-proxy"
 Type: filesandordirs; Name: "{app}\zapret-winws"
 
 [Code]
-// Yukseltmeden ONCE otomatik baslatma servisi kurulu muydu. Kurulum, dosyalari
-// degistirebilmek icin servisleri sokmek ZORUNDA (calisan winws surucuyu, dolayisiyla
-// WinDivert64.sys'i kilitliyor) -- ama soktugunu geri kurmazsa kullanicinin otomatik
-// baslatma tercihi yukseltmede SESSIZCE kaybolur.
+// Yükseltmeden ÖNCE otomatik başlatma servisi kurulu muydu. Kurulum, dosyaları
+// değiştirebilmek için servisleri sökmek ZORUNDA (çalışan winws sürücüyü, dolayısıyla
+// WinDivert64.sys'i kilitliyor); ama söktüğünü geri kurmazsa kullanıcının otomatik
+// başlatma tercihi yükseltmede SESSİZCE kaybolur.
 //
-// 0.1.7 yukseltmesinde gercek bir makinede goruldu: kurulum bitti, uygulama "SISTEM
-// HAZIR" dedi, servisler yoktu ve kullanici korumasiz kaldi. Belirtisi yok: uygulama
-// dogru davraniyor, kaybolan sey kullanicinin bir daha basmadigi bir dugmenin sonucu.
+// 0.1.7 yükseltmesinde gerçek bir makinede görüldü: kurulum bitti, uygulama "SİSTEM
+// HAZIR" dedi, servisler yoktu ve kullanıcı korumasız kaldı. Belirtisi yok: uygulama
+// doğru davranıyor, kaybolan şey kullanıcının bir daha basmadığı bir düğmenin sonucu.
 var
   ServisGeriKurulacak: Boolean;
 
-// Kurulum sonunda ZapretTR.exe calistirilamadi mi (SAC, hata 4551). [Run]'daki
-// "simdi baslat" girdisi buna bakiyor; bkz. ExeCalisabildi.
+// Kurulum sonunda ZapretTR.exe çalıştırılamadı mı (SAC, hata 4551). [Run]'daki
+// "şimdi başlat" girdisi buna bakıyor; bkz. ExeCalisabildi.
 var
   Engellendi: Boolean;
 
@@ -178,7 +178,7 @@ begin
   Result := not Engellendi;
 end;
 
-// sc query cikis kodu: 0 = servis var, 1060 = yok.
+// sc query çıkış kodu: 0 = servis var, 1060 = yok.
 function ServisKurulu(const Ad: String): Boolean;
 var
   ResultCode: Integer;
@@ -187,7 +187,7 @@ begin
                  SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
-// Bir komutun ciktisinda metin geciyor mu (find bulunca 0 doner).
+// Bir komutun çıktısında metin geçiyor mu (find bulunca 0 döner).
 function CiktidaVar(const Komut, Metin: String): Boolean;
 var
   ResultCode: Integer;
@@ -196,11 +196,11 @@ begin
                  '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
 end;
 
-// taskkill /F surecin OLDUGUNU beklemeden donuyor: sonlandirma istegi gonderiliyor,
-// tutamaclar birkac yuz milisaniye sonra kapaniyor. O arada surucuye "dur"
-// denirse surucu kimse kullanmiyor olsa bile "durduruluyor" durumunda takili
-// kalabiliyor ve yeni winws onu acamiyordu -- sahadan gelen "yeni surumu kurdum,
-// motor calismiyor, yeniden baslatinca aciliyor" bildiriminin en olasi yolu.
+// taskkill /F sürecin ÖLDÜĞÜNÜ beklemeden dönüyor: sonlandırma isteği gönderiliyor,
+// tutamaçlar birkaç yüz milisaniye sonra kapanıyor. O arada sürücüye "dur"
+// denirse sürücü kimse kullanmıyor olsa bile "durduruluyor" durumunda takılı
+// kalabiliyor ve yeni winws onu açamıyordu. Sahadan gelen "yeni sürümü kurdum,
+// motor çalışmıyor, yeniden başlatınca açılıyor" bildiriminin en olası yolu bu.
 procedure SurecBitsin(const Ad: String);
 var
   i: Integer;
@@ -213,7 +213,7 @@ begin
   end;
 end;
 
-// Surucu servisi STOP_PENDING'den cikana kadar bekle (en cok 10 sn).
+// Sürücü servisi STOP_PENDING'den çıkana kadar bekle (en çok 10 sn).
 procedure SurucuDussun(const Ad: String);
 var
   i: Integer;
@@ -226,25 +226,25 @@ begin
   end;
 end;
 
-// Kurulum baslamadan once calisan bir surum varsa kapat: acik bir uygulama
-// dosyalari kilitler ve kurulum yarim kalir.
+// Kurulum başlamadan önce çalışan bir sürüm varsa kapat: açık bir uygulama
+// dosyaları kilitler ve kurulum yarım kalır.
 //
-// ONCE NAZIKCE. Eskiden dogrudan "taskkill /F" vardi ve bu, uygulamanin kendi
-// temizlik yolunu tamamen atliyordu: koruma acikken yukseltme yapan bir
-// kullanicida winws ve dnscrypt-proxy oksuz kaliyor, sistem DNS'i 127.0.0.1'de
-// kaliyordu. dnscrypt sonradan olurse makine hicbir adi cozemez.
+// ÖNCE NAZİKÇE. Eskiden doğrudan "taskkill /F" vardı ve bu, uygulamanın kendi
+// temizlik yolunu tamamen atlıyordu: koruma açıkken yükseltme yapan bir
+// kullanıcıda winws ve dnscrypt-proxy öksüz kalıyor, sistem DNS'i 127.0.0.1'de
+// kalıyordu. dnscrypt sonradan ölürse makine hiçbir adı çözemez.
 //
-// /F'siz taskkill WM_CLOSE gonderiyor; uygulamanin pencere kapanma yolu winws'i
-// durdurup DNS'i geri aliyor. Zorla oldurme yalnizca kapanmayan bir surec icin,
-// son care olarak kaliyor -- kurulumun dosya kilidi yuzunden yarim kalmasi da
-// kabul edilebilir degil.
-// Akilli Uygulama Denetimi ZORLAMA modunda mi.
+// /F'siz taskkill WM_CLOSE gönderiyor; uygulamanın pencere kapanma yolu winws'i
+// durdurup DNS'i geri alıyor. Zorla öldürme yalnızca kapanmayan bir süreç için,
+// son çare olarak kalıyor; kurulumun dosya kilidi yüzünden yarım kalması da
+// kabul edilebilir değil.
+// Akıllı Uygulama Denetimi ZORLAMA modunda mı.
 //
-// Deger: 0 kapali, 1 acik (zorlama), 2 degerlendirme. OLCULDU (2026-09-16):
-// degerlendirme modundaki bir makinede 0.2.4 hatasiz kuruldu ve calisti;
-// SAC ACIK bir makinede 0.2.5 taslagi kuruldu ama ZapretTR.exe hic calismadi
-// (hata 4551). "1 = acik" eslemesi Microsoft'un belgeledigi deger; acik bir
-// makinede okunarak DOGRULANMADI.
+// Değer: 0 kapalı, 1 açık (zorlama), 2 değerlendirme. ÖLÇÜLDÜ (2026-09-16):
+// değerlendirme modundaki bir makinede 0.2.4 hatasız kuruldu ve çalıştı; SAC
+// AÇIK bir makinede 0.2.5 taslağının kurulumu ZapretTR.exe'yi çalıştıramadı
+// (hata 4551). Aynı açık makinede bu kontrol 1 okudu ve uyarı kurulumun başında
+// çıktı; "1 = açık" eşlemesi böylece gerçek makinede de doğrulandı.
 function SacAcik(): Boolean;
 var
   Durum: Cardinal;
@@ -259,11 +259,11 @@ var
   ResultCode: Integer;
   Mesaj: String;
 begin
-  // SAC aciksa kurulum BASTAN soylemeli. Eskiden kullanici once kuruluyor, sonra
-  // "exe calistirilamadi" kutusunu goruyor ve elinde acilmayan bir uygulama
-  // kaliyordu. Kod imzasi olmadan bu engeli asmanin yolu yok; yapabildigimiz tek
-  // sey kullaniciyi kurmadan once bilgilendirmek. Sessiz kurulumda (CI) soru
-  // sorulmuyor ve kurulum suruyor.
+  // SAC açıksa kurulum BAŞTAN söylemeli. Eskiden kullanıcı önce kuruyor, sonra
+  // "exe çalıştırılamadı" kutusunu görüyor ve elinde düzgün çalışmayan bir uygulama
+  // kalıyordu. Kod imzası olmadan bu engeli aşmanın yolu yok; yapabildiğimiz tek
+  // şey kullanıcıyı kurmadan önce bilgilendirmek. Sessiz kurulumda (CI) soru
+  // sorulmuyor ve kurulum sürüyor.
   if SacAcik() then
   begin
     Mesaj := 'Bu bilgisayarda Akilli Uygulama Denetimi ACIK.' + #13#10 + #13#10;
@@ -291,8 +291,8 @@ begin
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe',
        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Temizligin bitmesi icin sure taniniyor: winws'in durmasi ve DNS'in geri
-  // alinmasi anlik degil.
+  // Temizliğin bitmesi için süre tanınıyor: winws'in durması ve DNS'in geri
+  // alınması anlık değil.
   Sleep(4000);
 
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM ZapretTR.exe /F',
@@ -300,21 +300,21 @@ begin
   Result := True;
 end;
 
-// Dosyalar degistirilmeden ONCE onceki kurulumun surucusunu cekirdekten kaldir.
+// Dosyalar değiştirilmeden ÖNCE önceki kurulumun sürücüsünü çekirdekten kaldır.
 //
-// Gercek bir kullanicida goruldu: bir test kosumundan sonra WinDivert surucusu
-// cekirdekte asili kaliyor ve WinDivert64.sys kilitleniyor. Yukseltme o dosyayi
-// degistiremiyor ve kurulum su hatayi veriyor:
+// Gerçek bir kullanıcıda görüldü: bir test koşumundan sonra WinDivert sürücüsü
+// çekirdekte asılı kalıyor ve WinDivert64.sys kilitleniyor. Yükseltme o dosyayı
+// değiştiremiyor ve kurulum şu hatayı veriyor:
 //
-//   "Var olan dosya degistirilirken sorun cikti:
-//    DeleteFile tamamlanamadi; kod 5. Erisim engellendi."
+//   "Var olan dosya değiştirilirken sorun çıktı:
+//    DeleteFile tamamlanamadı; kod 5. Erişim engellendi."
 //
-// Kullaniciya kalan tek secenek "bu dosya atlansin" oluyor -- yani eski surucu
-// dosyasiyla devam etmek. Ayni kilit, kaldirmadan sonra da klasorde kalinti
-// birakiyor ve bir sonraki kurulum ayni duvara tosluyor.
+// Kullanıcıya kalan tek seçenek "bu dosya atlansın" oluyor; yani eski sürücü
+// dosyasıyla devam etmek. Aynı kilit, kaldırmadan sonra da klasörde kalıntı
+// bırakıyor ve bir sonraki kurulum aynı duvara tosluyor.
 //
-// PrepareToInstall dogru kanca: kurulum yeri artik belli ({app} cozulebiliyor)
-// ama dosya kopyalama henuz baslamadi.
+// PrepareToInstall doğru kanca: kurulum yeri artık belli ({app} çözülebiliyor)
+// ama dosya kopyalama henüz başlamadı.
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
@@ -326,19 +326,19 @@ begin
   OncekiExe := ExpandConstant('{app}\{#AppExe}');
   Sc := ExpandConstant('{sys}\sc.exe');
 
-  // Durum, sokme ISLEMINDEN ONCE okunmali; sonra bakmanin anlami olmaz.
+  // Durum, sökme İŞLEMİNDEN ÖNCE okunmalı; sonra bakmanın anlamı olmaz.
   ServisGeriKurulacak := ServisKurulu('ZapretTR');
 
-  // 1) Onceki surumun kendi temizligi: servisleri soker ve DNS'i geri alir.
-  //    Kullanici ayarlari ve ogrenilmis dogrulamalar KORUNUR.
+  // 1) Önceki sürümün kendi temizliği: servisleri söker ve DNS'i geri alır.
+  //    Kullanıcı ayarları ve öğrenilmiş doğrulamalar KORUNUR.
   //
-  //    SONUCU DENETLENIYOR ve denetlenmesi ZORUNLU. Eskiden burada Exec'in donus
-  //    degeri de ResultCode da yok sayiliyordu. Gercek bir makinede olculdu
-  //    (2026-09-16, 0.2.3 kurulumu): Akilli Uygulama Denetimi acikken Windows
-  //    ZapretTR.exe'yi calistirmiyor (hata 4551, "An Application Control policy
-  //    has blocked this file") -- yani bu cagri basarisiz oluyor, servisler
-  //    SOKULMUYOR ve kimse fark etmiyor. Kullanicinin bildirimi: "guncelleme
-  //    sirasinda servisleri kapamiyor".
+  //    SONUCU DENETLENİYOR ve denetlenmesi ZORUNLU. Eskiden burada Exec'in dönüş
+  //    değeri de ResultCode da yok sayılıyordu. Gerçek bir makinede ölçüldü
+  //    (2026-09-16, 0.2.3 kurulumu): Akıllı Uygulama Denetimi açıkken Windows
+  //    ZapretTR.exe'yi çalıştırmıyor (hata 4551, "An Application Control policy
+  //    has blocked this file"); yani bu çağrı başarısız oluyor, servisler
+  //    SÖKÜLMÜYOR ve kimse fark etmiyor. Kullanıcının bildirimi: "güncelleme
+  //    sırasında servisleri kapamıyor".
   TemizlikYapildi := False;
   if FileExists(OncekiExe) then
   begin
@@ -347,15 +347,15 @@ begin
       and (ResultCode = 0);
   end;
 
-  // 1b) Exe calismadiysa servisleri KURULUM kendisi soker.
+  // 1b) Exe çalışmadıysa servisleri KURULUM kendisi söker.
   //
-  //     sc.exe Microsoft imzali; SAC onu engellemiyor, dolayisiyla bu yol imzasiz
-  //     exe'mize hic bagli degil. Tek basina yetmiyor -- exe'nin yaptigi DNS geri
-  //     almayi sc.exe yapamaz; ama servisin ayakta kalip dosyalari kilitlemesi ve
-  //     yukseltmenin yarim kalmasi bundan daha kotu.
+  //     sc.exe Microsoft imzalı; SAC onu engellemiyor, dolayısıyla bu yol imzasız
+  //     exe'mize hiç bağlı değil. Tek başına yetmiyor: exe'nin yaptığı DNS geri
+  //     almayı sc.exe yapamaz; ama servisin ayakta kalıp dosyaları kilitlemesi ve
+  //     yükseltmenin yarım kalması bundan daha kötü.
   //
-  //     DNS geri alma bu durumda DNS bekcisine kaliyor: gorev SYSTEM olarak kosuyor
-  //     ve cozumleyici yoksa yonlendirmeyi zaten geri aliyor.
+  //     DNS geri alma bu durumda DNS bekçisine kalıyor: görev SYSTEM olarak koşuyor
+  //     ve çözümleyici yoksa yönlendirmeyi zaten geri alıyor.
   if not TemizlikYapildi then
   begin
     Exec(Sc, 'stop ZapretTR', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -366,25 +366,25 @@ begin
     Exec(Sc, 'delete ZapretTR-DNS', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 
-  // 2) Surucuyu KURULUM KENDISI kaldirir; onceki exe'ye guvenmez.
+  // 2) Sürücüyü KURULUM KENDİSİ kaldırır; önceki exe'ye güvenmez.
   //
-  //    Sebep: bu adim eski surume DELEGE EDILEMEZ. Surucu kaldirma davranisi
-  //    0.1.4'te eklendi, dolayisiyla 0.1.3 ve oncesinden yukseltirken cagrilan
-  //    exe onu YAPMIYOR. Tam da duzeltmeye calistigimiz kullanicilar eski surumde
-  //    olacagi icin, kurulumun kendi ayaklari uzerinde durmasi sart.
+  //    Sebep: bu adım eski sürüme DEVREDİLEMEZ. Sürücü kaldırma davranışı
+  //    0.1.4'te eklendi, dolayısıyla 0.1.3 ve öncesinden yükseltirken çağrılan
+  //    exe onu YAPMIYOR. Tam da düzeltmeye çalıştığımız kullanıcılar eski sürümde
+  //    olacağı için kurulumun kendi ayakları üzerinde durması şart.
   //
-  //    sc.exe cagrilari WinDivertCleanup'in yaptiginin aynisi. (Sc yukarida atandi.)
+  //    sc.exe çağrıları WinDivertCleanup'ın yaptığının aynısı. (Sc yukarıda atandı.)
 
-  // winws surucuyu acik tutuyor olabilir; once o gitmeli.
+  // winws sürücüyü açık tutuyor olabilir; önce o gitmeli.
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM winws.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Exec(ExpandConstant('{cmd}'), '/c taskkill /IM dnscrypt-proxy.exe /F', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Surucuye dokunmadan once surecin GERCEKTEN bitmesini bekle; gerekcesi SurecBitsin'de.
+  // Sürücüye dokunmadan önce sürecin GERÇEKTEN bitmesini bekle; gerekçesi SurecBitsin'de.
   SurecBitsin('winws.exe');
 
-  // Uc ad birden: WinDivert'i baska araclar da kuruyor. WinDivert14 GoodbyeDPI'in
-  // ve WinDivert 1.4'un adi, monkey bazi dagitimlarinki. Biri geride kalip surucusu
-  // cekirdege yuklu duruyorsa dosya yine kilitli kalir ve ayni kod 5 hatasi doner.
+  // Üç ad birden: WinDivert'i başka araçlar da kuruyor. WinDivert14 GoodbyeDPI'ın
+  // ve WinDivert 1.4'ün adı, monkey bazı dağıtımlarınki. Biri geride kalıp sürücüsü
+  // çekirdeğe yüklü duruyorsa dosya yine kilitli kalır ve aynı kod 5 hatası döner.
   Exec(Sc, 'stop windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   SurucuDussun('windivert');
   Exec(Sc, 'delete windivert', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
@@ -395,39 +395,39 @@ begin
   SurucuDussun('monkey');
   Exec(Sc, 'delete monkey', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Surucu goruntusunun cekirdekten dusmesi anlik degil.
+  // Sürücü görüntüsünün çekirdekten düşmesi anlık değil.
   Sleep(2000);
 end;
 
-// Sokulen servisi geri kur. Dosyalar yerine gectikten SONRA, cunku servis yeni
-// ikiliyi gostermeli.
+// Sökülen servisi geri kur. Dosyalar yerine geçtikten SONRA, çünkü servis yeni
+// ikiliyi göstermeli.
 //
-// Geri kurma sessizce basarisiz olmamali: olursa kullanici korundugunu sanarak
-// korumasiz kalir, ki duzeltmeye calistigimiz sey tam olarak bu.
+// Geri kurma sessizce başarısız olmamalı: olursa kullanıcı korunduğunu sanarak
+// korumasız kalır; düzeltmeye çalıştığımız şey de tam olarak bu.
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
   Exe: String;
   Mesaj: String;
 begin
-  // ServisGeriKurulacak kosulu ARTIK BURADA DEGIL: DNS bekcisi, servis kurulu
-  // olmasa da her kurulumda yazilmali (gerekcesi DnsGuard.cs). Eskiden bu satir
-  // "not ServisGeriKurulacak" ile de cikiyordu ama bekci [Run] icindeydi, yani
-  // ayri kosuyordu; ikisi burada birlestigi icin kosul daraltildi.
+  // ServisGeriKurulacak koşulu ARTIK BURADA DEĞİL: DNS bekçisi, servis kurulu
+  // olmasa da her kurulumda yazılmalı (gerekçesi DnsGuard.cs). Eskiden bu satır
+  // "not ServisGeriKurulacak" ile de çıkıyordu ama bekçi [Run] içindeydi, yani
+  // ayrı koşuyordu; ikisi burada birleştiği için koşul daraltıldı.
   if CurStep <> ssPostInstall then
     Exit;
 
   Exe := ExpandConstant('{app}\{#AppExe}');
   Engellendi := False;
 
-  // 1) DNS bekcisi gorevi. Her kurulumda yeniden yaziliyor ki gorev YENI exe'yi
-  //    gostersin. Gerekcesi DnsGuard.cs'de: servis modunda arkada DNS'i izleyen
-  //    baska hicbir sey yok.
+  // 1) DNS bekçisi görevi. Her kurulumda yeniden yazılıyor ki görev YENİ exe'yi
+  //    göstersin. Gerekçesi DnsGuard.cs'de: servis modunda arkada DNS'i izleyen
+  //    başka hiçbir şey yok.
   if not Exec(Exe, '--register-dns-guard', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
     Engellendi := True;
 
-  // 2) Sokulen otomatik baslatma servisini geri kur. Sessizce basarisiz olmamali:
-  //    olursa kullanici korundugunu sanarak korumasiz kalir.
+  // 2) Sökülen otomatik başlatma servisini geri kur. Sessizce başarısız olmamalı:
+  //    olursa kullanıcı korunduğunu sanarak korumasız kalır.
   if ServisGeriKurulacak then
   begin
     if not Exec(Exe, '--install-services', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
@@ -442,32 +442,32 @@ begin
              mbInformation, MB_OK);
   end;
 
-  // 3) Kurulum biterken bir bekci turu: yukseltme sirasinda DNS geri alinamamissa
-  //    sistem 127.0.0.1'de cozumleyicisiz kalmis olabilir ve bir sonraki
-  //    tetikleyiciyi (en gec 10 dk) beklemeye gerek yok. nowait: bekci
-  //    cozumleyiciyi 90 sn'ye kadar bekleyebiliyor, kurulum beklememeli.
+  // 3) Kurulum biterken bir bekçi turu: yükseltme sırasında DNS geri alınamamışsa
+  //    sistem 127.0.0.1'de çözümleyicisiz kalmış olabilir ve bir sonraki
+  //    tetikleyiciyi (en geç 10 dk) beklemeye gerek yok. nowait: bekçi
+  //    çözümleyiciyi 90 sn'ye kadar bekleyebiliyor, kurulum beklememeli.
   Exec(Exe, '--dns-guard', '', SW_HIDE, ewNoWait, ResultCode);
 
-  // Exe HIC calismadiysa sebebi neredeyse her zaman Akilli Uygulama Denetimi
-  // (hata 4551). Kullanici bunu ham CreateProcess hatasi olarak gormesin: ne
-  // oldugunu ve ne yapacagini TEK bir yerde, sirasiyla soyluyoruz.
+  // Exe HİÇ çalışmadıysa sebebi neredeyse her zaman Akıllı Uygulama Denetimi
+  // (hata 4551). Kullanıcı bunu ham CreateProcess hatası olarak görmesin: ne
+  // olduğunu ve ne yapacağını TEK bir yerde, sırasıyla söylüyoruz.
   //
-  // Iki adim da gerekli ve ikincisini gercek kullanici bulup bildirdi
-  // (2026-09-16): yalnizca SAC'i kapatmak YETMEDI, indirilen dosyanin
-  // "Engellemeyi Kaldir" isaretinin de temizlenmesi gerekti.
+  // İki adım da gerekli ve ikincisini gerçek kullanıcı bulup bildirdi
+  // (2026-09-16): yalnızca SAC'yi kapatmak YETMEDİ, indirilen dosyanın
+  // "Engellemeyi Kaldır" işaretinin de temizlenmesi gerekti.
   if Engellendi and (not WizardSilent()) then
   begin
-    // Metin degiskene yaziliyor ve HICBIR SATIR '#' ile BASLAMIYOR. Sebep
-    // olculdu: ISCC'nin onislemcisi satir basindaki '#' karakterini yonerge
-    // sayiyor, dolayisiyla '#13#10' ile baslayan bir devam satiri derlemeyi
+    // Metin değişkene yazılıyor ve HİÇBİR SATIR '#' ile BAŞLAMIYOR. Sebep
+    // ölçüldü: ISCC'nin önişlemcisi satır başındaki '#' karakterini yönerge
+    // sayıyor, dolayısıyla '#13#10' ile başlayan bir devam satırı derlemeyi
     // "Unknown preprocessor directive" ile durduruyor. Bu, metin testlerinin
-    // goremedigi bir hata sinifi; yalnizca gercek derleme yakaliyor.
+    // göremediği bir hata sınıfı; yalnızca gerçek derleme yakalıyor.
     Mesaj := 'Windows, ZapretTR.exe dosyasini calistirmadi'
              + ' (Akilli Uygulama Denetimi, hata 4551).' + #13#10 + #13#10;
-    // "ZapretTR kurulu" yaziyordu; dogru ama yaniltici. "Acilmaz" da YANLIS cikti:
-    // ayni makinede (SAC acik, 2026-09-16) kurulum exe'yi calistiramadi ama kullanici
-    // uygulamayi sonradan acabildi. Olculen: servis ve bekci kurulamadi; winws.exe
-    // ve dnscrypt-proxy.exe de imzasiz.
+    // "ZapretTR kurulu" yazıyordu; doğru ama yanıltıcı. "Açılmaz" da YANLIŞ çıktı:
+    // aynı makinede (SAC açık, 2026-09-16) kurulum exe'yi çalıştıramadı ama kullanıcı
+    // uygulamayı sonradan açabildi. Ölçülen: servis ve bekçi kurulamadı; winws.exe
+    // ve dnscrypt-proxy.exe de imzasız.
     Mesaj := Mesaj + 'Dosyalar kopyalandi, ama bu ayar acikken ZapretTR duzgun calismaz:'
              + ' otomatik baslatma servisi ve DNS bekcisi kurulamadi.' + #13#10 + #13#10;
     Mesaj := Mesaj + 'Cozum icin SIRASIYLA:' + #13#10;

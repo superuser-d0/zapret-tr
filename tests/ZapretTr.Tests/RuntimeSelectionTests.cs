@@ -3,14 +3,14 @@ using ZapretTr.Core.Profiles;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Gunluk kullanimda hangi bolumlere dokunuldugunun kurali.
+/// Günlük kullanımda hangi bölümlere dokunulduğunun kuralı.
 /// </summary>
 /// <remarks>
-/// Bu testlerin varlik sebebi olculmus bir zarar: ilk surumde secilen HTTPS
-/// stratejisinin yanina diger butun bolumlerin en yuksek agirlikli adaylari da
-/// otomatik ekleniyordu. Gercek bir kosumda sorunsuz calisan QUIC baglantisi,
-/// uzerine denenmemis bir QUIC stratejisi uygulanınca bozuldu -- hicbir sey
-/// duzelmedi, bir sey bozuldu.
+/// Bu testlerin var olma sebebi ölçülmüş bir zarar: ilk sürümde seçilen HTTPS
+/// stratejisinin yanına diğer bütün bölümlerin en yüksek ağırlıklı adayları da
+/// otomatik ekleniyordu. Gerçek bir koşumda sorunsuz çalışan QUIC bağlantısı,
+/// üzerine denenmemiş bir QUIC stratejisi uygulanınca bozuldu: hiçbir şey
+/// düzelmedi, bir şey bozuldu.
 /// </remarks>
 public sealed class RuntimeSelectionTests
 {
@@ -36,7 +36,7 @@ public sealed class RuntimeSelectionTests
     [Fact]
     public void SecilenStrateji_Her_Zaman_Uygulanir()
     {
-        // Kullanicinin bilerek yaptigi tercih, dogrulanmamis olsa da uygulanir.
+        // Kullanıcının bilerek yaptığı tercih, doğrulanmamış olsa da uygulanır.
         var selection = RuntimeSelection.Build(profile: null, "--dpi-desync=fake");
 
         Assert.Single(selection);
@@ -56,8 +56,8 @@ public sealed class RuntimeSelectionTests
 
         var selection = RuntimeSelection.Build(profile, "--dpi-desync=fake --dpi-desync-ttl=4");
 
-        // Yalnizca kullanicinin sectigi HTTPS bolumu. Digerlerine dokunulmaz:
-        // o trafik zaten calisiyor olabilir ve denenmemis bir strateji onu bozar.
+        // Yalnızca kullanıcının seçtiği HTTPS bölümü. Diğerlerine dokunulmaz:
+        // o trafik zaten çalışıyor olabilir ve denenmemiş bir strateji onu bozar.
         Assert.Single(selection);
         Assert.True(selection.ContainsKey(StrategySection.Tcp443));
         Assert.False(selection.ContainsKey(StrategySection.Quic));
@@ -78,7 +78,7 @@ public sealed class RuntimeSelectionTests
 
         Assert.Equal(2, selection.Count);
 
-        // Agirligi daha yuksek olan tahmin degil, DOGRULANMIS olan secilir.
+        // Ağırlığı daha yüksek olan tahmin değil, DOĞRULANMIŞ olan seçilir.
         Assert.Equal("--dpi-desync=fake", selection[StrategySection.Quic]);
     }
 
@@ -116,14 +116,14 @@ public sealed class RuntimeSelectionTests
     [Fact]
     public void GercekTurkTelekomProfili_QuicBolumune_Yalnizca_DogrulanmisStratejiyle_Dokunuyor()
     {
-        // Gercek veriye karsi kosuluyor. Kural "QUIC'e hic dokunma" DEGIL, "yalnizca
-        // DOGRULANMIS stratejiyle dokun": olculmus zarar, sorunsuz calisan bir QUIC
-        // baglantisinin uzerine DENENMEMIS bir strateji uygulanmasindan gelmisti.
+        // Gerçek veriye karşı koşuluyor. Kural "QUIC'e hiç dokunma" DEĞİL, "yalnızca
+        // DOĞRULANMIŞ stratejiyle dokun": ölçülmüş zarar, sorunsuz çalışan bir QUIC
+        // bağlantısının üzerine DENENMEMİŞ bir strateji uygulanmasından gelmişti.
         //
-        // Bu test bir sure "QUIC komuta hic girmemeli" diye duruyordu, cunku profilde
-        // dogrulanmis QUIC adayi yoktu. Artik var (tt-quic-anyproto-cutoff, gercek
-        // TTNET hattinda 3/3). Testin oncülü degisti, korudugu kural degismedi --
-        // bu yuzden silinmedi, dogrulanmisligi ACIKCA kontrol edecek sekilde yazildi.
+        // Bu test bir süre "QUIC komuta hiç girmemeli" diye duruyordu, çünkü profilde
+        // doğrulanmış QUIC adayı yoktu. Artık var (tt-quic-anyproto-cutoff, gerçek
+        // TTNET hattında 3/3). Testin öncülü değişti, koruduğu kural değişmedi;
+        // bu yüzden silinmedi, doğrulanmışlığı AÇIKÇA kontrol edecek şekilde yazıldı.
         var store = ProfileStore.Load();
         var tt = store.FindById("turk-telekom");
         Assert.NotNull(tt);

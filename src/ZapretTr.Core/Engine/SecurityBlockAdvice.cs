@@ -22,7 +22,7 @@ public enum SecurityBlockKind
 /// </summary>
 /// <remarks>
 /// <para>
-/// 2026-09: "Windows güncellemesinden sonra Defender ZapretTR'i siliyor, kurulum bile
+/// 2026-09: "Windows güncellemesinden sonra Defender ZapretTR'yi siliyor, kurulum bile
 /// açılmıyor" duyumu geldi. Ölçülen: Defender aynı gün zapret2 arşivini indirme anında
 /// <c>Trojan:Win32/Tecabans.STV!cl</c> diye silmişti (bulut makine öğrenmesi, FastPath);
 /// geliştirici makinesinde Akıllı Uygulama Denetimi "Değerlendirme" modunda. İkisi de
@@ -121,7 +121,7 @@ public static class SecurityBlockAdvice
     /// <para>
     /// 4551'in kendisi ARTIK ÖLÇÜLDÜ (2026-09-16, gerçek makine, 0.2.3 kurulumu):
     /// Akıllı Uygulama Denetimi açıkken Windows hem Inno'nun <c>%TEMP%</c>'teki
-    /// <c>setup.tmp</c>'sini hem de kurulmuş <c>ZapretTR.exe</c>'yi çalıştırmadı --
+    /// <c>setup.tmp</c>'sini hem de kurulmuş <c>ZapretTR.exe</c>'yi çalıştırmadı:
     /// "CreateProcess tamamlanamadı; kod 4551. Uygulama Denetimi ilkesi bu dosyayı
     /// engelledi." Yani bu kod bir varsayım değil, görülmüş bir durum.
     /// </para>
@@ -196,7 +196,7 @@ public static class SecurityBlockAdvice
             // ölçüldü (2026-09-16, 0.2.3 kurulumu): kullanıcı Akıllı Uygulama
             // Denetimi'ni kapattı ve kurulum yine engellendi; ancak indirdiği
             // dosyanın "Engellemeyi Kaldır" işaretini de temizleyince geçti.
-            // Önceki metin yalnızca SAC'ten bahsediyordu, yani kullanıcıyı
+            // Önceki metin yalnızca SAC'den bahsediyordu, yani kullanıcıyı
             // "yaptım, yine olmadı" noktasında bırakıyordu.
             SecurityBlockKind.ApplicationControl =>
                 "Bu özellik imzasız uygulamaları çalıştırmıyor ve tek tek " +

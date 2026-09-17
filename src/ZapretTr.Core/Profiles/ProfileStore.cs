@@ -4,7 +4,7 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Core.Profiles;
 
 /// <summary>
-/// ISP profillerini ve genel merdiveni diskten yukler, ASN/kurulus adina gore eslestirir.
+/// İSS profillerini ve genel merdiveni diskten yükler, ASN/kuruluş adına göre eşleştirir.
 /// </summary>
 public sealed class ProfileStore
 {
@@ -15,17 +15,17 @@ public sealed class ProfileStore
         Root = root;
     }
 
-    /// <summary>Yuklendigi profiles/ dizini.</summary>
+    /// <summary>Yüklendiği profiles/ dizini.</summary>
     public string Root { get; }
 
-    /// <summary>Tum ISP profilleri, priority sirasinda (kucuk once).</summary>
+    /// <summary>Tüm İSS profilleri, priority sırasında (küçük önce).</summary>
     public IReadOnlyList<IspProfile> Profiles { get; }
 
     public GenericLadder Ladder { get; }
 
     /// <param name="learned">
-    /// Kullanicinin kendi testlerinde dogruladigi adaylar. Dagitimla gelen
-    /// profillerin uzerine bindirilir.
+    /// Kullanıcının kendi testlerinde doğruladığı adaylar. Dağıtımla gelen
+    /// profillerin üzerine bindirilir.
     /// </param>
     public static ProfileStore Load(
         string? profilesDirectory = null,
@@ -52,8 +52,8 @@ public sealed class ProfileStore
             }
             catch (JsonException ex)
             {
-                // Tek bozuk profil yuzunden tum uygulamanin acilmamasi kabul edilemez,
-                // ama sessizce yutmak da kabul edilemez -- dosya adiyla birlikte yukselt.
+                // Tek bozuk profil yüzünden tüm uygulamanın açılmaması kabul edilemez,
+                // ama sessizce yutmak da kabul edilemez; dosya adıyla birlikte yükselt.
                 throw new InvalidDataException($"Profil okunamadi: {Path.GetFileName(file)} -- {ex.Message}", ex);
             }
         }
@@ -82,13 +82,13 @@ public sealed class ProfileStore
         => Profiles.FirstOrDefault(p => string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// ASN ve kurulus adina gore eslesen profilleri en iyi eslesme once olacak
-    /// sekilde dondurur.
+    /// ASN ve kuruluş adına göre eşleşen profilleri en iyi eşleşme önce olacak
+    /// şekilde döndürür.
     /// </summary>
     /// <remarks>
-    /// ASN ile eslesenler once gelir: kurulus adi eslesmesi anahtar kelimeye dayali
-    /// ve daha zayif. Ornegin "vodafone" hem sabit hat hem mobil profiliyle eslesir;
-    /// bu durumda kullaniciya secim sunmak dogru davranis, birini sessizce secmek degil.
+    /// ASN ile eşleşenler önce gelir: kuruluş adı eşleşmesi anahtar kelimeye dayalı
+    /// ve daha zayıf. Örneğin "vodafone" hem sabit hat hem mobil profiliyle eşleşir;
+    /// bu durumda kullanıcıya seçim sunmak doğru davranış, birini sessizce seçmek değil.
     /// </remarks>
     public IReadOnlyList<IspProfile> Match(int? asn, string? orgName)
     {
@@ -105,14 +105,14 @@ public sealed class ProfileStore
     }
 
     /// <summary>
-    /// Tier 2 icin komsu profiller: verilen profil disindaki hepsi, priority sirasinda.
+    /// Tier 2 için komşu profiller: verilen profil dışındaki hepsi, priority sırasında.
     /// </summary>
     public IReadOnlyList<IspProfile> NeighboursOf(IspProfile profile)
         => Profiles.Where(p => p.Id != profile.Id).ToList();
 
     /// <summary>
-    /// profiles/ dizinini arar: once uygulamanin yaninda (kurulu hal), sonra yukari
-    /// dogru depo kokunde (gelistirme hali).
+    /// profiles/ dizinini arar: önce uygulamanın yanında (kurulu hâl), sonra yukarı
+    /// doğru depo kökünde (geliştirme hâli).
     /// </summary>
     private static string LocateProfilesDirectory()
     {

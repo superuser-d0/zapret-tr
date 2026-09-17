@@ -1,17 +1,17 @@
-<!-- Acik tema. Degerler koyu tema eklenmeden onceki arayuzun renklerinin birebir
-     aynisi: acik temada gorunen hicbir sey degismesin.
+<!-- Açık tema. Değerler koyu tema eklenmeden önceki arayüzün renklerinin birebir
+     aynısı: açık temada görünen hiçbir şey değişmesin.
 
-     Iki temada da AYNI anahtarlar olmali (ThemeDictionaryTests bunu denetliyor).
-     Eksik bir anahtar tema degisince o elemani eski renginde birakir ya da
-     StaticResource ise pencereyi hic kurmaz. -->
+     İki temada da AYNI anahtarlar olmalı (ThemeDictionaryTests bunu denetliyor).
+     Eksik bir anahtar tema değişince o öğeyi eski renginde bırakır ya da
+     StaticResource ise pencereyi hiç kurmaz. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
 
     <sys:String x:Key="ThemeName">Light</sys:String>
 
-    <!-- Durum bandi renkleri. Renk TEK basina anlam tasimiyor: her durumda yazi da
-         degisiyor, boylece renk ayrimi gucluk ceken kullanicilar da ayni bilgiyi aliyor. -->
+    <!-- Durum bandı renkleri. Renk TEK başına anlam taşımıyor: her durumda yazı da
+         değişiyor, böylece renk ayrımında güçlük çeken kullanıcılar da aynı bilgiyi alıyor. -->
     <SolidColorBrush x:Key="StatusReadyBrush"   Color="#E8EEF7" />
     <SolidColorBrush x:Key="StatusRunningBrush" Color="#D8F0DC" />
     <SolidColorBrush x:Key="StatusPausedBrush"  Color="#FBEBD0" />
@@ -44,8 +44,8 @@
     <SolidColorBrush x:Key="UpdateTextBrush"    Color="#7A5A00" />
     <SolidColorBrush x:Key="UpdateSubTextBrush" Color="#8A6D3B" />
 
-    <!-- Acik temada standart kontrollerin Windows gorunumu korunuyor; yalnizca
-         onceden App.xaml'da duran boyut ayarlari burada. -->
+    <!-- Açık temada standart kontrollerin Windows görünümü korunuyor; yalnızca
+         önceden App.xaml'da duran boyut ayarları burada. -->
     <Style TargetType="ComboBox">
         <Setter Property="Height" Value="28" />
         <Setter Property="VerticalContentAlignment" Value="Center" />

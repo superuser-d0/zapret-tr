@@ -3,12 +3,12 @@ using ZapretTr.Prober;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// ASN ayiklamasi. Ag erisimi gerektirmeyen, saf kisim.
+/// ASN ayıklaması. Ağ erişimi gerektirmeyen, saf kısım.
 /// </summary>
 /// <remarks>
-/// Bu ayiklama yanlis calisirsa "Bilmiyorum" akisi sessizce yanlis profili
-/// onerir: kullanici test yapar, ISS'ine ait olmayan adaylar denenir ve sonuc
-/// alinamaz. Hata gorunur bir cokme degil, sadece "calismiyor" hissi olurdu.
+/// Bu ayıklama yanlış çalışırsa "Bilmiyorum" akışı sessizce yanlış profili
+/// önerir: kullanıcı test yapar, İSS'ine ait olmayan adaylar denenir ve sonuç
+/// alınamaz. Hata görünür bir çökme değil, sadece "çalışmıyor" hissi olurdu.
 /// </remarks>
 public sealed class IspDetectorTests
 {
@@ -36,14 +36,14 @@ public sealed class IspDetectorTests
     [Fact]
     public void RakamOlmayan_AS_Onegi_Eslesmez()
     {
-        // "ASELSAN" gibi bir kurulus adi AS ile basliyor ama ASN degil.
+        // "ASELSAN" gibi bir kuruluş adı AS ile başlıyor ama ASN değil.
         Assert.Null(IspDetector.ParseAsn("ASELSAN Elektronik"));
     }
 
     [Fact]
     public void MetnnIcindeki_Asn_de_Bulunur()
     {
-        // Bazi servisler ASN'yi cumlenin ortasinda veriyor.
+        // Bazı servisler ASN'yi cümlenin ortasında veriyor.
         Assert.Equal(12735, IspDetector.ParseAsn("Provider AS12735 TurkNet Iletisim"));
     }
 
@@ -71,8 +71,8 @@ public sealed class IspDetectorTests
     [Fact]
     public void CokluEslesme_Belirsiz_Sayilir()
     {
-        // "vodafone" hem sabit hat hem mobil profiliyle eslesir. Bu durumda
-        // birini sessizce secmek yerine kullaniciya sormak dogru davranis.
+        // "vodafone" hem sabit hat hem mobil profiliyle eşleşir. Bu durumda
+        // birini sessizce seçmek yerine kullanıcıya sormak doğru davranış.
         var store = ZapretTr.Core.Profiles.ProfileStore.Load();
         var matches = store.Match(null, "Vodafone Turkey");
 

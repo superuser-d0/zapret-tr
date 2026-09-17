@@ -1,7 +1,7 @@
 name: derle ve test
 
-# Windows'a bagli bir proje: WPF, WinDivert, yonetici yetkisi. Linux runner'da
-# derlenmesi bile mumkun degil, o yuzden tek is windows-latest uzerinde.
+# Windows'a bağlı bir proje: WPF, WinDivert, yönetici yetkisi. Linux runner'da
+# derlenmesi bile mümkün değil, o yüzden tek iş windows-latest üzerinde.
 on:
   push:
     branches: ['**']
@@ -15,9 +15,9 @@ jobs:
   build:
     runs-on: windows-latest
 
-    # Zaman asimi yoksa GitHub'in varsayilani 360 dk ve asili kalan bir is
-    # gunlugunu HIC yayinlamiyor: tanisi konamayan, 6 saat suren bir hata.
-    # 20 dk, olculen sureden (~2 dk 10 sn) yaklasik 9 kat buyuk.
+    # Zaman aşımı yoksa GitHub'ın varsayılanı 360 dk ve asılı kalan bir iş
+    # günlüğünü HİÇ yayınlamıyor: teşhisi konamayan, 6 saat süren bir hata.
+    # 20 dk, ölçülen süreden (~2 dk 10 sn) yaklaşık 9 kat büyük.
     timeout-minutes: 20
 
     steps:
@@ -27,29 +27,29 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Upstream ikilileri SHA256 ile dogrulanarak iniyor. Bu adim testler icin
-      # de gerekli: arayuz duman testleri vendor/ altindaki winws.exe'yi ariyor
-      # ve dosya yoksa gorunum modeli "KURULUM EKSIK" durumunda kalip iki test
-      # duser. Bu bir kez gercek bir makinede yasandi.
+      # Upstream ikilileri SHA256 ile doğrulanarak iniyor. Bu adım testler için
+      # de gerekli: arayüz duman testleri vendor/ altındaki winws.exe'yi arıyor
+      # ve dosya yoksa görünüm modeli "KURULUM EKSİK" durumunda kalıp iki test
+      # düşer. Bu bir kez gerçek bir makinede yaşandı.
       - name: upstream ikililerini indir
         run: powershell -ExecutionPolicy Bypass -File tools/fetch-upstream.ps1
 
-      # winws'in --hostlist-domains= bayragini GERCEKTEN kabul ettigi burada
-      # dogrulaniyor. Birim testleri yalnizca bizim urettigimiz dizgiyi olcuyor;
-      # bayragin sabitlenmis upstream ikilisinde gecerli olup olmadigini onlar
-      # goremez. Gelistirici makinesinde de kosturulamiyor: winws --dry-run bile
-      # yonetici yetkisi istiyor, runner ise zaten yonetici.
+      # winws'in --hostlist-domains= bayrağını GERÇEKTEN kabul ettiği burada
+      # doğrulanıyor. Birim testleri yalnızca bizim ürettiğimiz dizgiyi ölçüyor;
+      # bayrağın sabitlenmiş upstream ikilisinde geçerli olup olmadığını onlar
+      # göremez. Geliştirici makinesinde de koşturulamıyor: winws --dry-run bile
+      # yönetici yetkisi istiyor, runner ise zaten yönetici.
       #
-      # Bu, issue #1'in duzeltmesinin can damari: bayrak sessizce gecersiz olsaydi
-      # winws acilmaz ve koruma hic baslamazdi.
+      # Bu, issue #1'in düzeltmesinin can damarı: bayrak sessizce geçersiz olsaydı
+      # winws açılmaz ve koruma hiç başlamazdı.
       - name: winws hostlist bayragini kabul ediyor mu
         shell: pwsh
         run: |
           $winws = "vendor/zapret-winws/winws.exe"
           if (-not (Test-Path $winws)) { throw "winws.exe yok: $winws" }
 
-          # Uygulamanin urettigi bicimin aynisi: bolum basina --hostlist-domains,
-          # bolumler --new ile ayrilmis.
+          # Uygulamanın ürettiği biçimin aynısı: bölüm başına --hostlist-domains,
+          # bölümler --new ile ayrılmış.
           $argv = @(
             '--dry-run',
             '--wf-tcp=80,443',
@@ -73,15 +73,15 @@ jobs:
       - name: test
         run: dotnet test tests/ZapretTr.Tests -c Release --nologo --logger "console;verbosity=normal"
 
-      # Kirpilmis yayin ayri bir hata sinifini yakaliyor: yansimayla calisan bir
-      # JSON yolu eklenirse kirpma analizoru IL2026/IL3050 uretir ve proje bunu
-      # HATA sayar. Normal derleme bunu gostermez, o yuzden CI'da ayrica kosuyor.
+      # Kırpılmış yayın ayrı bir hata sınıfını yakalıyor: yansımayla çalışan bir
+      # JSON yolu eklenirse kırpma çözümleyicisi IL2026/IL3050 üretir ve proje bunu
+      # HATA sayar. Normal derleme bunu göstermez, o yüzden CI'da ayrıca koşuyor.
       - name: kirpilmis yayin (analizor kontrolu)
         run: dotnet publish src/ZapretTr.Prober.Cli -c Release -o publish/cli --nologo
 
-      # msquic.dll tek dosya paketine gomulunce calisma aninda bulunamiyor ve
-      # QUIC olcumu SESSIZCE yapilamaz hale geliyor. csproj bunu <Error> ile
-      # koruyor; burada bir kez daha, cikti uzerinden dogruluyoruz.
+      # msquic.dll tek dosya paketine gömülünce çalışma anında bulunamıyor ve
+      # QUIC ölçümü SESSİZCE yapılamaz hâle geliyor. csproj bunu <Error> ile
+      # koruyor; burada bir kez daha, çıktı üzerinden doğruluyoruz.
       - name: msquic yayin ciktisinda mi
         shell: pwsh
         run: |

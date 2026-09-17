@@ -3,19 +3,19 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Yeni bir dogrulama, ayni bolumdeki eskisinin YERINE geciyor mu.
+/// Yeni bir doğrulama, aynı bölümdeki eskisinin YERİNE geçiyor mu.
 /// </summary>
 /// <remarks>
-/// Eskiden anahtar (ISS, bolum, ARGUMAN) idi ve sonuc suydu: bir testte
-/// "fake+ttl4" dogrulanip kaydediliyor, engelleme degisip yeni testte
-/// "multisplit pos=2" kazaniyor, ve IKISI birden "bu baglantida dogrulandi"
-/// etiketiyle listede duruyordu. Calisma zamaninda bolum basina tek kazanan
-/// kullanildigi icin ikinci kayit hicbir sey eklemiyor -- yalnizca hangisinin
-/// guncel oldugunu belirsizlestiriyor ve kayitli secim eskisini gosterebiliyor.
+/// Eskiden anahtar (İSS, bölüm, ARGÜMAN) idi ve sonuç şuydu: bir testte
+/// "fake+ttl4" doğrulanıp kaydediliyor, engelleme değişip yeni testte
+/// "multisplit pos=2" kazanıyor ve İKİSİ birden "bu bağlantıda doğrulandı"
+/// etiketiyle listede duruyordu. Çalışma zamanında bölüm başına tek kazanan
+/// kullanıldığı için ikinci kayıt hiçbir şey eklemiyor; yalnızca hangisinin
+/// güncel olduğunu belirsizleştiriyor ve kayıtlı seçim eskisini gösterebiliyor.
 ///
-/// Test diske DOKUNMUYOR: birlestirme kurali saf bir metoda (ConfigStore.Merge)
-/// ayrildi, dolayisiyla GERCEK kod sinaniyor ama %ProgramData% yoluna hicbir
-/// sey yazilmiyor.
+/// Test diske DOKUNMUYOR: birleştirme kuralı saf bir metoda (ConfigStore.Merge)
+/// ayrıldı, dolayısıyla GERÇEK kod sınanıyor ama %ProgramData% yoluna hiçbir
+/// şey yazılmıyor.
 /// </remarks>
 public sealed class LearnedReplacementTests
 {
@@ -43,7 +43,7 @@ public sealed class LearnedReplacementTests
             Aday("turk-telekom", "tcp443", "--dpi-desync=multisplit --dpi-desync-split-pos=2"),
         ]);
 
-        // TAM OLARAK BIR kayit kalmali: eski parametre artik dogru degil.
+        // TAM OLARAK BİR kayıt kalmalı: eski parametre artık doğru değil.
         Assert.Single(sonuc);
         Assert.Contains("multisplit", sonuc[0].Args, StringComparison.Ordinal);
     }
@@ -51,8 +51,8 @@ public sealed class LearnedReplacementTests
     [Fact]
     public void Farkli_bolumler_birbirini_silmiyor()
     {
-        // tcp80, tcp443 ve quic ayri ayri aranip ayri ayri uygulaniyor;
-        // birinin guncellenmesi digerini gecersiz kilmaz.
+        // tcp80, tcp443 ve quic ayrı ayrı aranıp ayrı ayrı uygulanıyor;
+        // birinin güncellenmesi diğerini geçersiz kılmaz.
         var mevcut = new List<LearnedCandidate>
         {
             Aday("turk-telekom", "tcp80", "--dpi-desync=fake,fakedsplit"),
@@ -73,8 +73,8 @@ public sealed class LearnedReplacementTests
     [Fact]
     public void Farkli_saglayicilar_birbirini_silmiyor()
     {
-        // Kullanici ag degistirdiginde eski agin dogrulamasi kaybolmamali:
-        // eve donunce yeniden test yapmasi gerekmesin.
+        // Kullanıcı ağ değiştirdiğinde eski ağın doğrulaması kaybolmamalı:
+        // eve dönünce yeniden test yapması gerekmesin.
         var mevcut = new List<LearnedCandidate>
         {
             Aday("turk-telekom", "tcp443", "--dpi-desync=fake --dpi-desync-ttl=4"),

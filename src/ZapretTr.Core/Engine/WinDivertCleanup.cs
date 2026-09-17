@@ -3,83 +3,83 @@ using System.Runtime.Versioning;
 
 namespace ZapretTr.Core.Engine;
 
-/// <summary>Bir temizlik adiminin sonucu. Arayuzde tek tek gosterilir.</summary>
+/// <summary>Bir temizlik adımının sonucu. Arayüzde tek tek gösterilir.</summary>
 public sealed record CleanupStep(string Description, bool Succeeded, string? Detail = null);
 
 /// <summary>
-/// WinDivert surucusunu ve ZapretTR'nin biraktigi izleri kaldirir.
+/// WinDivert sürücüsünü ve ZapretTR'nin bıraktığı izleri kaldırır.
 /// </summary>
 /// <remarks>
-/// "Tum ayarlari sifirla" dugmesinin arkasindaki is. Yikici oldugu icin davranisi
-/// sabit ve acik tutuldu: ne yaptigi adim adim raporlanir.
+/// "Tüm Ayarları Sıfırla" düğmesinin arkasındaki iş. Yıkıcı olduğu için davranışı
+/// sabit ve açık tutuldu: ne yaptığı adım adım raporlanır.
 ///
-/// DNS ayari EN BASTA geri alinir. Bu dugmeye basan kullanici cogu zaman "bir seyler
-/// bozuldu" diye geliyor; sifreli DNS acikken uygulama duzgun kapanmadiysa sistem
-/// hala 127.0.0.1'i gosteriyor ve hicbir ad cozulmuyor olabilir. O durumda once
-/// ad cozumu duzelmeli, diger adimlar beklesin. Kullanicinin KENDI koydugu DNS
-/// ayarina dokunulmaz -- yalnizca bizim yaptigimiz degisiklik, diskteki yedekten
-/// geri yuklenir.
+/// DNS ayarı EN BAŞTA geri alınır. Bu düğmeye basan kullanıcı çoğu zaman "bir şeyler
+/// bozuldu" diye geliyor; şifreli DNS açıkken uygulama düzgün kapanmadıysa sistem
+/// hâlâ 127.0.0.1'i gösteriyor ve hiçbir ad çözülmüyor olabilir. O durumda önce
+/// ad çözümü düzelmeli, diğer adımlar beklesin. Kullanıcının KENDİ koyduğu DNS
+/// ayarına dokunulmaz; yalnızca bizim yaptığımız değişiklik, diskteki yedekten
+/// geri yüklenir.
 ///
-/// Surucu kaldirma adimlari upstream'in kendi windivert_delete.cmd dosyasiyla ayni:
+/// Sürücü kaldırma adımları upstream'in kendi windivert_delete.cmd dosyasıyla aynı:
 /// sc stop windivert, sc delete windivert.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class WinDivertCleanup
 {
-    /// <summary>ZapretTR'nin kurdugu Windows servisinin adi.</summary>
+    /// <summary>ZapretTR'nin kurduğu Windows servisinin adı.</summary>
     public const string ServiceName = ServiceManager.WinwsServiceName;
 
     /// <summary>
-    /// Sifirlamada kaldirilan ZapretTR servislerinin tamami.
+    /// Sıfırlamada kaldırılan ZapretTR servislerinin tamamı.
     /// </summary>
     /// <remarks>
-    /// Burada eskiden yalnizca <see cref="ServiceName"/> vardi; sifreli DNS servisi
-    /// (<c>ZapretTR-DNS</c>) hic silinmiyordu. Sifirlama onun surecini olduruyor,
-    /// servisin kurtarma tanimi ("coktuyse 5 sn sonra yeniden baslat") de sureci
-    /// geri getiriyordu. Sonuc: "her seyi sildim" diyen kullanicida acilista
-    /// kendiliginden baslayan ve 127.0.0.1:53'u tutan bir servis kaliyordu.
+    /// Burada eskiden yalnızca <see cref="ServiceName"/> vardı; şifreli DNS servisi
+    /// (<c>ZapretTR-DNS</c>) hiç silinmiyordu. Sıfırlama onun sürecini öldürüyor,
+    /// servisin kurtarma tanımı ("çöktüyse 5 sn sonra yeniden başlat") de süreci
+    /// geri getiriyordu. Sonuç: "her şeyi sildim" diyen kullanıcıda açılışta
+    /// kendiliğinden başlayan ve 127.0.0.1:53'ü tutan bir servis kalıyordu.
     /// </remarks>
     public static readonly string[] ServiceNames =
         [ServiceManager.WinwsServiceName, ServiceManager.DnsServiceName];
 
-    /// <summary>WinDivert surucusunun servis adi.</summary>
+    /// <summary>WinDivert sürücüsünün servis adı.</summary>
     public const string DriverServiceName = "windivert";
     /// <summary>
-    /// Kaldirilacak SURUCU servis adlarinin tamami.
+    /// Kaldırılacak SÜRÜCÜ servis adlarının tamamı.
     /// </summary>
     /// <remarks>
-    /// Yalnizca "windivert" YETMIYOR. WinDivert'i baska araclar da kuruyor ve farkli
-    /// servis adlari birakiyor: "WinDivert14" (WinDivert 1.4 ve GoodbyeDPI'in kullandigi
-    /// ad) ve bazi dagitimlarda "monkey". Bunlardan biri geride kalmis ve surucusu hala
-    /// cekirdege yukluyse winws kendi surucusunu yukleyemiyor ve BUTUN adaylar ayni
-    /// sekilde basarisiz oluyor -- disaridan "hicbir strateji calismadi" gibi gorunuyor.
+    /// Yalnızca "windivert" YETMİYOR. WinDivert'i başka araçlar da kuruyor ve farklı
+    /// servis adları bırakıyor: "WinDivert14" (WinDivert 1.4 ve GoodbyeDPI'ın kullandığı
+    /// ad) ve bazı dağıtımlarda "monkey". Bunlardan biri geride kalmış ve sürücüsü hâlâ
+    /// çekirdeğe yüklüyse winws kendi sürücüsünü yükleyemiyor ve BÜTÜN adaylar aynı
+    /// şekilde başarısız oluyor; dışarıdan "hiçbir strateji çalışmadı" gibi görünüyor.
     ///
-    /// Bu liste, Zapret Win TR (Ali Mali) projesinin temizlik adimlarindan ogrenildi;
-    /// orada da tam olarak bu uc ad sokuluyor. GoodbyeDPI Turkiye'de ayni is icin cok
-    /// yaygin, dolayisiyla bu kalintinin gercekten bulunma ihtimali yuksek.
+    /// Bu liste, Zapret Win TR (Ali Mali) projesinin temizlik adımlarından öğrenildi;
+    /// orada da tam olarak bu üç ad sökülüyor. GoodbyeDPI Türkiye'de aynı iş için çok
+    /// yaygın, dolayısıyla bu kalıntının gerçekten bulunma ihtimali yüksek.
     /// </remarks>
     public static readonly string[] DriverServiceNames = ["windivert", "WinDivert14", "monkey"];
 
-    // Cakisan arac tespiti burada DEGIL: <see cref="ConflictScanner"/> icinde.
+    // Çakışan araç tespiti burada DEĞİL: <see cref="ConflictScanner"/> içinde.
     //
-    // Burada da bir tane vardi ve yalnizca CALISAN surece bakiyordu; kapali ama
-    // kurulu kalintiyi -- en sik karsilasilan hali -- hic gormuyordu. Ikisini
-    // birden tutmak, bu depoda bir kez pahaliya patlamis bir hatanin aynisi
-    // olurdu: ayni karar iki ayri yerde, biri guncellenince otekinin sessizce
-    // geride kalmasi. Tek yer var, orasi ConflictScanner.
+    // Burada da bir tane vardı ve yalnızca ÇALIŞAN sürece bakıyordu; kapalı ama
+    // kurulu kalıntıyı, yani en sık karşılaşılan hâli, hiç görmüyordu. İkisini
+    // birden tutmak, bu depoda bir kez pahalıya patlamış bir hatanın aynısı
+    // olurdu: aynı karar iki ayrı yerde, biri güncellenince ötekinin sessizce
+    // geride kalması. Tek yer var, orası ConflictScanner.
 
-    /// <summary>Yapilandirmanin tutuldugu dizin.</summary>
+    /// <summary>Yapılandırmanın tutulduğu dizin.</summary>
     public static string ConfigDirectory => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
         "ZapretTR");
 
     /// <summary>
-    /// Sifirlamayi yurutur ve her adimin sonucunu dondurur.
+    /// Sıfırlamayı yürütür ve her adımın sonucunu döndürür.
     /// </summary>
     /// <param name="removeConfig">
-    /// Yapilandirmayi ve ogrenilmis agirliklari da silsin mi. false verilirse yalnizca
-    /// calisan seyler durdurulur -- "internetim bozuldu" durumundan cikmak icin
-    /// kullanicinin profil secimlerini kaybetmesi gerekmiyor.
+    /// Yapılandırmayı ve öğrenilmiş ağırlıkları da silsin mi. false verilirse yalnızca
+    /// çalışan şeyler durdurulur; "internetim bozuldu" durumundan çıkmak için
+    /// kullanıcının profil seçimlerini kaybetmesi gerekmiyor.
     /// </param>
     public static async Task<IReadOnlyList<CleanupStep>> RunAsync(
         bool removeConfig = true,
@@ -87,23 +87,23 @@ public static class WinDivertCleanup
     {
         var steps = new List<CleanupStep>();
 
-        // DNS EN BASTA geri aliniyor. Sifirlamayi calistiran kullanici cogu zaman
-        // "bir seyler bozuldu" diye buraya geliyor; ad cozumu calismiyorsa once o
-        // duzelmeli, diger adimlar beklesin.
+        // DNS EN BAŞTA geri alınıyor. Sıfırlamayı çalıştıran kullanıcı çoğu zaman
+        // "bir şeyler bozuldu" diye buraya geliyor; ad çözümü çalışmıyorsa önce o
+        // düzelmeli, diğer adımlar beklesin.
         steps.Add(await RestoreDnsAsync(cancellationToken).ConfigureAwait(false));
 
-        // SERVISLER SURECLERDEN ONCE.
+        // SERVİSLER SÜREÇLERDEN ÖNCE.
         //
-        // Sira eskiden tersti: once surecler olduruluyor, sonra servise "dur"
-        // deniyordu. Iki sonucu vardi. (1) Servisin sureci zaten olmus oldugu icin
-        // "sc stop" 1062 ("servis baslatilmamis") donuyor ve kullanici basarili bir
-        // adimi kirmizi hata olarak goruyordu. (2) Daha onemlisi: servisin sureci
-        // disaridan olduruldugunde Windows bunu COKME sayip kurtarma tanimini
-        // calistiriyor ve servisi 5 sn sonra geri getiriyordu.
+        // Sıra eskiden tersti: önce süreçler öldürülüyor, sonra servise "dur"
+        // deniyordu. İki sonucu vardı. (1) Servisin süreci zaten ölmüş olduğu için
+        // "sc stop" 1062 ("servis başlatılmamış") dönüyor ve kullanıcı başarılı bir
+        // adımı kırmızı hata olarak görüyordu. (2) Daha önemlisi: servisin süreci
+        // dışarıdan öldürüldüğünde Windows bunu ÇÖKME sayıp kurtarma tanımını
+        // çalıştırıyor ve servisi 5 sn sonra geri getiriyordu.
         //
-        // Simdi: once temiz durdurma (kurtarma tetiklenmez), sonra silme (silinmek
-        // uzere isaretlenen servis yeniden baslatilamaz), en son geride kalan
-        // surecler -- uygulamanin kendi baslattiklari ya da durmakta gec kalanlar.
+        // Şimdi: önce temiz durdurma (kurtarma tetiklenmez), sonra silme (silinmek
+        // üzere işaretlenen servis yeniden başlatılamaz), en son geride kalan
+        // süreçler; yani uygulamanın kendi başlattıkları ya da durmakta geç kalanlar.
         foreach (var service in ServiceNames)
         {
             steps.Add(await RunScAsync("stop", service, $"{service} servisi durduruldu", cancellationToken).ConfigureAwait(false));
@@ -113,9 +113,9 @@ public static class WinDivertCleanup
         steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
 
-        // Cozumleyici artik yok; DNS'i hala yalnizca 127.0.0.1 olan kart kaldiysa
-        // o kart hicbir adi cozemez. Ilk adimdaki geri alma bunu yedekten yapiyor,
-        // bu adim YEDEGIN YETMEDIGI yeri kapatiyor.
+        // Çözümleyici artık yok; DNS'i hâlâ yalnızca 127.0.0.1 olan kart kaldıysa
+        // o kart hiçbir adı çözemez. İlk adımdaki geri alma bunu yedekten yapıyor,
+        // bu adım YEDEĞİN YETMEDİĞİ yeri kapatıyor.
         steps.Add(await ResetOrphanedDnsAsync(cancellationToken).ConfigureAwait(false));
         SystemDnsManager.ClearSuspended();
         foreach (var driver in DriverServiceNames)
@@ -124,10 +124,10 @@ public static class WinDivertCleanup
             steps.Add(await RunScAsync("delete", driver, $"{driver} surucusu kaldirildi", cancellationToken).ConfigureAwait(false));
         }
 
-        // "sc stop" yalnizca istegi iletiyor. Surucu gercekten dusmeden
-        // "sifirlandi" demek, hemen ardindan yapilan parametre testinde motorun
-        // takili surucuye carpip "OLCUM YAPILAMADI" demesine yol aciyordu --
-        // ve arayuz buna karsilik "bilgisayari yeniden baslatin" diyordu.
+        // "sc stop" yalnızca isteği iletiyor. Sürücü gerçekten düşmeden
+        // "sıfırlandı" demek, hemen ardından yapılan parametre testinde motorun
+        // takılı sürücüye çarpıp "ÖLÇÜM YAPILAMADI" demesine yol açıyordu;
+        // arayüz de buna karşılık "bilgisayarı yeniden başlatın" diyordu.
         steps.Add(await WaitDriversGoneAsync(cancellationToken).ConfigureAwait(false));
 
         if (removeConfig)
@@ -141,26 +141,26 @@ public static class WinDivertCleanup
     }
 
     /// <summary>
-    /// "Duraklat": sifirlamanin durdurdugu HER SEYI durdurur, hicbir seyi SILMEZ.
+    /// "Duraklat": sıfırlamanın durdurduğu HER ŞEYİ durdurur, hiçbir şeyi SİLMEZ.
     /// </summary>
     /// <remarks>
-    /// Duraklat eskiden yalnizca uygulamanin kendi baslattigi winws ile sifreli
-    /// DNS'i kapatiyordu. Gercek makinede olculdu (2026-09-13): elle "Başlat"
-    /// sonrasi "Duraklat" dendiginde winws ve dnscrypt kapaniyor, DNS geri
-    /// aliniyordu ama WinDivert SURUCUSU 20 saniye sonra bile cekirdekte RUNNING
-    /// duruyordu. Arkada kurulu bir servis varsa ona hic dokunulmuyordu. Ayni
-    /// kullanicida VPN (Proton) koruma kapatildiktan sonra da baglanmadi ve ancak
-    /// "Tüm Ayarları Sıfırla" ile -- surucuyu cekirdekten dusurdukten bir saniye
-    /// sonra -- baglandi. Kullanicinin haklı beklentisi: "duraklat" dediginde
-    /// arkada hicbir sey kalmamali.
+    /// Duraklat eskiden yalnızca uygulamanın kendi başlattığı winws ile şifreli
+    /// DNS'i kapatıyordu. Gerçek makinede ölçüldü (2026-09-13): elle "Başlat"
+    /// sonrası "Duraklat" dendiğinde winws ve dnscrypt kapanıyor, DNS geri
+    /// alınıyordu ama WinDivert SÜRÜCÜSÜ 20 saniye sonra bile çekirdekte RUNNING
+    /// duruyordu. Arkada kurulu bir servis varsa ona hiç dokunulmuyordu. Aynı
+    /// kullanıcıda VPN (Proton) koruma kapatıldıktan sonra da bağlanmadı ve ancak
+    /// "Tüm Ayarları Sıfırla" ile, sürücüyü çekirdekten düşürdükten bir saniye
+    /// sonra bağlandı. Kullanıcının haklı beklentisi: "duraklat" dediğinde
+    /// arkada hiçbir şey kalmamalı.
     ///
-    /// Adimlar <see cref="RunAsync"/> ile ayni sirada; farklar:
+    /// Adımlar <see cref="RunAsync"/> ile aynı sırada; farklar:
     ///
-    ///   * servisler SILINMIYOR, duraklatiliyor (<see cref="ServiceManager.PauseAsync"/>):
-    ///     durur ve acilista baslamaz, kayit ve ayar yerinde kalir;
-    ///   * surucu kaydi silinmiyor, yalnizca durduruluyor (winws bir sonraki
-    ///     baslatmada zaten yeniden kuruyor);
-    ///   * yapilandirma ve ogrenilmis sonuclar SILINMIYOR.
+    ///   * servisler SİLİNMİYOR, duraklatılıyor (<see cref="ServiceManager.PauseAsync"/>):
+    ///     durur ve açılışta başlamaz, kayıt ve ayar yerinde kalır;
+    ///   * sürücü kaydı silinmiyor, yalnızca durduruluyor (winws bir sonraki
+    ///     başlatmada zaten yeniden kuruyor);
+    ///   * yapılandırma ve öğrenilmiş sonuçlar SİLİNMİYOR.
     /// </remarks>
     public static async Task<IReadOnlyList<CleanupStep>> StopEverythingAsync(CancellationToken cancellationToken = default)
     {
@@ -172,14 +172,14 @@ public static class WinDivertCleanup
             steps.AddRange(await ServiceManager.PauseAsync(cancellationToken).ConfigureAwait(false));
         }
 
-        // Servisin olmayan (uygulamaya ait ya da yetim) yonlendirme de geri aliniyor.
+        // Servise ait olmayan (uygulamaya ait ya da yetim) yönlendirme de geri alınıyor.
         steps.Add(await RestoreDnsAsync(cancellationToken).ConfigureAwait(false));
 
         steps.Add(await KillDnsCryptProcessesAsync(cancellationToken).ConfigureAwait(false));
         steps.Add(await KillWinwsProcessesAsync(cancellationToken).ConfigureAwait(false));
 
-        // Geri alma bir yerde basarisiz olduysa cozumleyici artik yok ve kart hala
-        // 127.0.0.1'de: otomatige dondur. Sifirlamadaki gerekceyle ayni.
+        // Geri alma bir yerde başarısız olduysa çözümleyici artık yok ve kart hâlâ
+        // 127.0.0.1'de: otomatiğe döndür. Sıfırlamadaki gerekçeyle aynı.
         steps.Add(await ResetOrphanedDnsAsync(cancellationToken).ConfigureAwait(false));
         SystemDnsManager.ClearSuspended();
 
@@ -195,8 +195,8 @@ public static class WinDivertCleanup
     }
 
     /// <summary>
-    /// Duraklatmadan sonra arkada hala calisan ya da yerinde duran seyleri olcer.
-    /// Bos liste: gercekten hicbir sey kalmamis.
+    /// Duraklatmadan sonra arkada hâlâ çalışan ya da yerinde duran şeyleri ölçer.
+    /// Boş liste: gerçekten hiçbir şey kalmamış.
     /// </summary>
     public static async Task<IReadOnlyList<string>> FindLeftoversAsync(CancellationToken cancellationToken = default)
     {
@@ -217,7 +217,7 @@ public static class WinDivertCleanup
             SystemDnsManager.HasBackup, status.WinwsRunning);
     }
 
-    /// <summary>Olculen kalintilari kullaniciya yazilacak satirlara cevirir.</summary>
+    /// <summary>Ölçülen kalıntıları kullanıcıya yazılacak satırlara çevirir.</summary>
     public static IReadOnlyList<string> DescribeLeftovers(
         int winwsProcesses, int dnsCryptProcesses, IReadOnlyList<string> loadedDrivers,
         bool dnsRedirected, bool serviceRunning)
@@ -286,8 +286,8 @@ public static class WinDivertCleanup
         }
         catch (Exception ex)
         {
-            // Bu adimin sessizce gecmesi kabul edilemez: basarisiz olursa
-            // kullanicinin ad cozumu calismiyor olabilir ve bunu bilmesi gerekir.
+            // Bu adımın sessizce geçmesi kabul edilemez: başarısız olursa
+            // kullanıcının ad çözümü çalışmıyor olabilir ve bunu bilmesi gerekir.
             return new CleanupStep("Sistem DNS ayari geri alinamadi", false, ex.Message);
         }
     }
@@ -327,17 +327,17 @@ public static class WinDivertCleanup
     }
 
     /// <summary>
-    /// Yedegi olmayan ya da yedekten geri alinamamis 127.0.0.1 yonlendirmelerini
-    /// otomatige dondurur.
+    /// Yedeği olmayan ya da yedekten geri alınamamış 127.0.0.1 yönlendirmelerini
+    /// otomatiğe döndürür.
     /// </summary>
     /// <remarks>
-    /// Iki gercek yol: geri alma basarisiz oldu (yedek duruyor ama netsh dustu) ya
-    /// da yedek hic yok (elle silinmis, bozuk, eski bir surumden kalma). Ikisinde de
-    /// sifirlama biterken sistem DNS'i 127.0.0.1'i gosteriyor, dnscrypt az once
-    /// oldurulmus ve makine ad cozemiyordu -- "sifirladim, internetim gitti".
+    /// İki gerçek yol: geri alma başarısız oldu (yedek duruyor ama netsh düştü) ya
+    /// da yedek hiç yok (elle silinmiş, bozuk, eski bir sürümden kalma). İkisinde de
+    /// sıfırlama biterken sistem DNS'i 127.0.0.1'i gösteriyor, dnscrypt az önce
+    /// öldürülmüş ve makine ad çözemiyordu: "sıfırladım, internetim gitti".
     ///
-    /// 127.0.0.1:53 hala cevap veriyorsa dokunulmuyor: orada bizim olmayan bir
-    /// cozumleyici var (AdGuard Home, Acrylic...) ve o kullanicinin kendi ayari.
+    /// 127.0.0.1:53 hâlâ cevap veriyorsa dokunulmuyor: orada bizim olmayan bir
+    /// çözümleyici var (AdGuard Home, Acrylic...) ve o kullanıcının kendi ayarı.
     /// </remarks>
     private static async Task<CleanupStep> ResetOrphanedDnsAsync(CancellationToken cancellationToken)
     {
@@ -436,16 +436,16 @@ public static class WinDivertCleanup
     }
 
     /// <summary>
-    /// <c>sc stop</c> / <c>sc delete</c> sonucunu sifirlama acisindan yorumlar.
+    /// <c>sc stop</c> / <c>sc delete</c> sonucunu sıfırlama açısından yorumlar.
     /// </summary>
     /// <remarks>
-    /// Sifirlamanin amaci bir DURUMA varmak; o durum zaten saglaniyorsa adim
-    /// basarilidir. Bunlari hata gostermek kullaniciyi olmayan bir sorunun
-    /// pesine dusuruyordu:
+    /// Sıfırlamanın amacı bir DURUMA varmak; o durum zaten sağlanıyorsa adım
+    /// başarılıdır. Bunları hata göstermek kullanıcıyı olmayan bir sorunun
+    /// peşine düşürüyordu:
     ///
-    ///   1060 = servis yuklu degil        -> kaldirilacak bir sey yok
-    ///   1062 = servis baslatilmamis      -> durdurulacak bir sey yok
-    ///   1072 = servis silinmek uzere isaretli -> silme zaten istenmis
+    ///   1060 = servis yüklü değil        -> kaldırılacak bir şey yok
+    ///   1062 = servis başlatılmamış      -> durdurulacak bir şey yok
+    ///   1072 = servis silinmek üzere işaretli -> silme zaten istenmiş
     /// </remarks>
     public static CleanupStep InterpretScResult(string description, int exitCode, string output)
     {

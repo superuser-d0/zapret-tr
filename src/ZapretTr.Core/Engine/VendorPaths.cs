@@ -1,27 +1,27 @@
 namespace ZapretTr.Core.Engine;
 
 /// <summary>
-/// vendor/zapret-winws altindaki upstream dosyalarinin yerini bulur ve profillerdeki
-/// yer tutuculari gercek yollara cevirir.
+/// vendor/zapret-winws altındaki upstream dosyalarının yerini bulur ve profillerdeki
+/// yer tutucuları gerçek yollara çevirir.
 /// </summary>
 /// <remarks>
-/// Profiller mutlak yol icermez -- <c>{FAKE_QUIC_GOOGLE}</c> gibi yer tutucular kullanir.
-/// Boylece ayni profil JSON'u hem gelistirme agacinda hem kurulu uygulamada hem de
-/// saha testi icin paketlenmis tek dosyalik Prober'da calisir.
+/// Profiller mutlak yol içermez; <c>{FAKE_QUIC_GOOGLE}</c> gibi yer tutucular kullanır.
+/// Böylece aynı profil JSON'u hem geliştirme ağacında hem kurulu uygulamada hem de
+/// saha testi için paketlenmiş tek dosyalık Prober'da çalışır.
 /// </remarks>
 public sealed class VendorPaths
 {
     public const string FakeQuicGooglePlaceholder = "{FAKE_QUIC_GOOGLE}";
     public const string FakeTlsIanaPlaceholder = "{FAKE_TLS_IANA}";
 
-    // QUIC sahte yuk cesitleri. Hangisinin ise yaradigi DPI kutusunun neyi
-    // dogruladigina bagli oldugu icin merdivende ayri bir eksen olarak duruyorlar.
+    // QUIC sahte yük çeşitleri. Hangisinin işe yaradığı DPI kutusunun neyi
+    // doğruladığına bağlı olduğu için merdivende ayrı bir eksen olarak duruyorlar.
     public const string FakeQuicFacebookPlaceholder = "{FAKE_QUIC_FACEBOOK}";
     public const string FakeQuicVkPlaceholder = "{FAKE_QUIC_VK}";
     public const string FakeQuicKyberPlaceholder = "{FAKE_QUIC_KYBER}";
     public const string QuicShortHeaderPlaceholder = "{QUIC_SHORT_HEADER}";
 
-    /// <summary>--dpi-desync-udplen-pattern icin dolgu deseni.</summary>
+    /// <summary>--dpi-desync-udplen-pattern için dolgu deseni.</summary>
     public const string Zero512Placeholder = "{ZERO_512}";
 
     private VendorPaths(string root) => Root = root;
@@ -30,12 +30,12 @@ public sealed class VendorPaths
     public string Root { get; }
 
     /// <summary>
-    /// Belirtilen dizini vendor koku kabul eder; varligini DOGRULAMAZ.
+    /// Belirtilen dizini vendor kökü kabul eder; varlığını DOĞRULAMAZ.
     /// </summary>
     /// <remarks>
-    /// Iki kullanimi var: kullanicinin ikilileri elle baska bir yere koydugu kurulumlar,
-    /// ve testler -- komut kurma mantigi diskte gercek bir winws.exe olmadan da
-    /// dogrulanabilmeli, yoksa testler upstream indirmesine bagimli hale gelir.
+    /// İki kullanımı var: kullanıcının ikilileri elle başka bir yere koyduğu kurulumlar
+    /// ve testler. Komut kurma mantığı diskte gerçek bir winws.exe olmadan da
+    /// doğrulanabilmeli, yoksa testler upstream indirmesine bağımlı hâle gelir.
     /// </remarks>
     public static VendorPaths ForRoot(string root)
     {
@@ -46,16 +46,16 @@ public sealed class VendorPaths
     public string WinwsExe => Path.Combine(Root, "winws.exe");
 
     /// <summary>
-    /// winws.exe cygwin ile derlendigi icin bu DLL olmadan hic baslamiyor.
-    /// Eksikse Windows modal bir hata penceresi acar ve surec olmez; yani
-    /// cagiran taraf hata almak yerine SONSUZA KADAR BEKLER. Bu yuzden
-    /// varligi calistirmadan once kontrol ediliyor.
+    /// winws.exe cygwin ile derlendiği için bu DLL olmadan hiç başlamıyor.
+    /// Eksikse Windows kalıcı (modal) bir hata penceresi açar ve süreç ölmez; yani
+    /// çağıran taraf hata almak yerine SONSUZA KADAR BEKLER. Bu yüzden
+    /// varlığı çalıştırmadan önce kontrol ediliyor.
     /// </summary>
     public string CygwinDll => Path.Combine(Root, "cygwin1.dll");
 
     /// <summary>
-    /// dnscrypt-proxy. zapret-winws'in KARDESI dizinde duruyor, icinde degil:
-    /// ayri bir projeden geliyor ve ayri bir surumle sabitleniyor.
+    /// dnscrypt-proxy. zapret-winws'in KARDEŞ dizininde duruyor, içinde değil:
+    /// ayrı bir projeden geliyor ve ayrı bir sürümle sabitleniyor.
     /// </summary>
     public string DnsCryptExe => Path.Combine(
         Path.GetDirectoryName(Root) ?? Root, "dnscrypt-proxy", "dnscrypt-proxy.exe");
@@ -77,21 +77,21 @@ public sealed class VendorPaths
     public string QuicInitialFilter => Path.Combine(Root, "windivert.filter", "windivert_part.quic_initial_ietf.txt");
 
     /// <summary>
-    /// vendor dizinini arar: once uygulamanin yanina bakar (kurulu hal), sonra
-    /// yukari dogru depo kokunu arar (gelistirme hali).
+    /// vendor dizinini arar: önce uygulamanın yanına bakar (kurulu hâl), sonra
+    /// yukarı doğru depo kökünü arar (geliştirme hâli).
     /// </summary>
     /// <exception cref="DirectoryNotFoundException">
-    /// Bulunamazsa. Mesaj once KULLANICININ yapabilecegi seyi soyler.
+    /// Bulunamazsa. Mesaj önce KULLANICININ yapabileceği şeyi söyler.
     /// </exception>
     /// <remarks>
-    /// Mesajin sirasi kasitli. Eskiden yalnizca "depo kokunden
-    /// fetch-upstream.ps1 calistir" yaziyordu -- yani kurulum paketiyle gelen bir
-    /// kullaniciya, elinde olmayan bir depoda, kullanamayacagi bir komut. Oysa
-    /// KURULU bir makinede bu dosyanin kaybolmasinin en olasi sebebi belli:
-    /// WinDivert cekirdek surucusu tasidigi icin virus programlari
-    /// <c>winws.exe</c> ve <c>WinDivert64.sys</c>'i sik sik karantinaya aliyor.
-    /// Kurulum sorunsuz bitiyor, dosyalar sonradan siliniyor ve kullanicinin
-    /// gordugu tek sey uygulamanin calismamasi oluyor.
+    /// Mesajın sırası kasıtlı. Eskiden yalnızca "depo kökünden
+    /// fetch-upstream.ps1 çalıştır" yazıyordu; yani kurulum paketiyle gelen bir
+    /// kullanıcıya, elinde olmayan bir depoda, kullanamayacağı bir komut. Oysa
+    /// KURULU bir makinede bu dosyanın kaybolmasının en olası sebebi belli:
+    /// WinDivert çekirdek sürücüsü taşıdığı için virüs programları
+    /// <c>winws.exe</c> ve <c>WinDivert64.sys</c>'i sık sık karantinaya alıyor.
+    /// Kurulum sorunsuz bitiyor, dosyalar sonradan siliniyor ve kullanıcının
+    /// gördüğü tek şey uygulamanın çalışmaması oluyor.
     /// </remarks>
     public static VendorPaths Locate(string? startDirectory = null)
     {
@@ -107,12 +107,12 @@ public sealed class VendorPaths
     }
 
     /// <summary>
-    /// Eksik dosya durumunda kullaniciya gosterilecek metin.
+    /// Eksik dosya durumunda kullanıcıya gösterilecek metin.
     /// </summary>
     /// <remarks>
-    /// Tek yerde duruyor cunku ayni durum uc ayri yoldan bildiriliyordu
+    /// Tek yerde duruyor, çünkü aynı durum üç ayrı yoldan bildiriliyordu
     /// (<see cref="Locate"/>, <c>WinwsRunner.Start</c>, <c>DnsCryptRunner</c>) ve
-    /// ucu de kullaniciya yalnizca gelistirici talimati veriyordu.
+    /// üçü de kullanıcıya yalnızca geliştirici talimatı veriyordu.
     /// </remarks>
     public static string MissingFilesAdvice(string missing) =>
         $"Kurulum dosyalari eksik: {missing}. " +
@@ -126,7 +126,7 @@ public sealed class VendorPaths
         "(Depodan calistiriyorsaniz: 'powershell -ExecutionPolicy Bypass -File " +
         "tools\\fetch-upstream.ps1'.)";
 
-    /// <summary>Bulunabildiyse dondurur, bulunamazsa null. Kullanicidan once durum gostermek isteyen kod icin.</summary>
+    /// <summary>Bulunabildiyse döndürür, bulunamazsa null. Kullanıcıdan önce durum göstermek isteyen kod için.</summary>
     public static VendorPaths? TryLocate(string? startDirectory = null)
     {
         try
@@ -143,11 +143,11 @@ public sealed class VendorPaths
     {
         var start = startDirectory ?? AppContext.BaseDirectory;
 
-        // Kurulu hal: ikililer uygulamanin yaninda.
+        // Kurulu hâl: ikililer uygulamanın yanında.
         yield return Path.Combine(start, "zapret-winws");
         yield return start;
 
-        // Gelistirme hali: bin/Debug/net8.0 icinden yukari dogru depo kokunu ara.
+        // Geliştirme hâli: bin/Debug/net8.0 içinden yukarı doğru depo kökünü ara.
         var dir = new DirectoryInfo(start);
         while (dir is not null)
         {
@@ -157,12 +157,12 @@ public sealed class VendorPaths
     }
 
     /// <summary>
-    /// Tek bir arguman parcasindaki yer tutuculari cozer.
+    /// Tek bir argüman parçasındaki yer tutucuları çözer.
     /// </summary>
     /// <remarks>
-    /// Parca bazinda calisir cunku komut once bosluklardan bolunur, sonra degistirilir.
-    /// Ters sirada yapilsaydi icinde bosluk olan bir kullanici yolu
-    /// (C:\Users\Ali Veli\...) iki ayri argumana bolunurdu.
+    /// Parça bazında çalışır, çünkü komut önce boşluklardan bölünür, sonra değiştirilir.
+    /// Ters sırada yapılsaydı içinde boşluk olan bir kullanıcı yolu
+    /// (C:\Users\Ali Veli\...) iki ayrı argümana bölünürdü.
     /// </remarks>
     public string ResolvePlaceholders(string argument) => argument
         .Replace(FakeQuicGooglePlaceholder, FakeQuicGoogle, StringComparison.Ordinal)
@@ -173,7 +173,7 @@ public sealed class VendorPaths
         .Replace(QuicShortHeaderPlaceholder, QuicShortHeader, StringComparison.Ordinal)
         .Replace(Zero512Placeholder, Zero512, StringComparison.Ordinal);
 
-    /// <summary>Indirilmesi gereken dosyalardan eksik olanlari listeler. Bos liste = her sey yerinde.</summary>
+    /// <summary>İndirilmesi gereken dosyalardan eksik olanları listeler. Boş liste = her şey yerinde.</summary>
     public IReadOnlyList<string> FindMissingFiles()
     {
         var required = new[]

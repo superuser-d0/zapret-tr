@@ -5,41 +5,40 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Kurulumun, imzasiz kendi exe'mize bagimli kalmamasi.
+/// Kurulumun, imzasız kendi exe'mize bağımlı kalmaması.
 /// </summary>
 /// <remarks>
-/// OLCULDU (gercek makine, 2026-09-16, 0.2.3 kurulumu): Akilli Uygulama Denetimi
-/// acikken Windows ZapretTR.exe'yi calistirmiyor -- hata 4551, "An Application
-/// Control policy has blocked this file". Iki sonucu oldu:
+/// ÖLÇÜLDÜ (gerçek makine, 2026-09-16, 0.2.3 kurulumu): Akıllı Uygulama Denetimi
+/// açıkken Windows ZapretTR.exe'yi çalıştırmıyor; hata 4551, "An Application
+/// Control policy has blocked this file". İki sonucu oldu:
 ///
-///   * <c>PrepareToInstall</c> servisleri sokmek icin onceki surumun exe'sini
-///     cagiriyordu ve Exec'in sonucunu YOK SAYIYORDU. Cagri basarisiz oluyor,
-///     servisler sokulmuyor, kimse fark etmiyor. Kullanicinin bildirimi:
-///     "guncelleme sirasinda servisleri kapamiyor".
-///   * [Run] girdileri ham CreateProcess hatasini kullanicinin yuzune veriyordu:
-///     "CreateProcess tamamlanamadi; kod 4551" -- ne oldugunu da ne yapmasi
-///     gerektigini de soylemeyen bir kutu, hem de kurulumun ortasinda.
+///   * <c>PrepareToInstall</c> servisleri sökmek için önceki sürümün exe'sini
+///     çağırıyordu ve Exec'in sonucunu YOK SAYIYORDU. Çağrı başarısız oluyor,
+///     servisler sökülmüyor, kimse fark etmiyor. Kullanıcının bildirimi:
+///     "güncelleme sırasında servisleri kapamıyor".
+///   * [Run] girdileri ham CreateProcess hatasını kullanıcının yüzüne veriyordu:
+///     "CreateProcess tamamlanamadı; kod 4551". Ne olduğunu da ne yapması
+///     gerektiğini de söylemeyen bir kutu, hem de kurulumun ortasında.
 ///
-/// Kural: kurulum, IMZALI araclarla (sc.exe) ayakta kalabilmeli. Imzasiz exe'yi
-/// cagirmak "en iyi ihtimal" olabilir ama tek yol OLAMAZ.
+/// Kural: kurulum, İMZALI araçlarla (sc.exe) ayakta kalabilmeli. İmzasız exe'yi
+/// çağırmak "en iyi ihtimal" olabilir ama tek yol OLAMAZ.
 ///
-/// Bu testler metin uzerinde calisiyor. ISCC yalnizca CI'da var (yerelde Inno
-/// Setup kurulu degil), dolayisiyla derleme hatasini CI yakalar; buradaki
-/// testler paketi uretmeden, yerelde de kosuyor -- AppIconTests'teki gerekcenin
-/// aynisi.
+/// Bu testler metin üzerinde çalışıyor. ISCC her makinede kurulu değil,
+/// dolayısıyla derleme hatasını CI yakalar; buradaki testler paketi üretmeden,
+/// her yerde koşuyor. AppIconTests'teki gerekçenin aynısı.
 /// </remarks>
 public sealed class KurulumSacTests
 {
     private static string Iss => File.ReadAllText(
         IoPath.Combine(XmlCommentTests.RepoRoot, "installer", "setup.iss"));
 
-    /// <summary>[Code] bolumu, yalnizca yorumlar atilmis. Icerik kontrolleri icin.</summary>
+    /// <summary>[Code] bölümü, yalnızca yorumlar atılmış. İçerik kontrolleri için.</summary>
     private static string Kod
     {
         get
         {
             var src = Iss;
-            // Satir basindaki bolum basligi; yorumlarda gecen "[Code]" degil.
+            // Satır başındaki bölüm başlığı; yorumlarda geçen "[Code]" değil.
             var govde = src[src.IndexOf("\n[Code]", StringComparison.Ordinal)..];
             return string.Join('\n', govde.Split('\n')
                 .Select(l => Regex.Replace(l, @"//.*$", string.Empty)));
@@ -47,21 +46,21 @@ public sealed class KurulumSacTests
     }
 
     /// <summary>
-    /// <see cref="Kod"/>, string sabitleri de bosaltilmis. YAPISAL kontroller icin.
+    /// <see cref="Kod"/>, string sabitleri de boşaltılmış. YAPISAL kontroller için.
     /// </summary>
     /// <remarks>
-    /// Ayri olmasi sart: <c>'--register-dns-guard'</c> bir string sabiti, dolayisiyla
-    /// icerik kontrolu bu surumde yapilirsa her zaman bulunamaz. (Bu testi yazarken
+    /// Ayrı olması şart: <c>'--register-dns-guard'</c> bir string sabiti, dolayısıyla
+    /// içerik kontrolü bu sürümde yapılırsa her zaman bulunamaz. (Bu testi yazarken
     /// tam olarak o oldu.)
     /// </remarks>
     private static string KodYapisal => Regex.Replace(Kod, @"'(?:[^']|'')*'", "''");
 
-    // --- Servis sokme imzasiz exe'ye bagli olmamali -------------------------------
+    // --- Servis sökme imzasız exe'ye bağlı olmamalı -------------------------------
 
     [Fact]
     public void Onceki_Exe_Cagrisinin_Sonucu_Denetleniyor()
     {
-        // Sonuc yok sayilirsa SAC engeli sessiz kalir ve servisler ayakta kalir.
+        // Sonuç yok sayılırsa SAC engeli sessiz kalır ve servisler ayakta kalır.
         Assert.Matches(
             new Regex(@"Exec\(OncekiExe,\s*'--uninstall-services'[^)]*\)\s*\r?\n?\s*and\s*\(ResultCode\s*=\s*0\)",
                       RegexOptions.IgnoreCase),
@@ -71,7 +70,7 @@ public sealed class KurulumSacTests
     [Fact]
     public void Exe_Calismazsa_Servisler_Sc_Ile_Sokuluyor()
     {
-        // sc.exe Microsoft imzali; SAC onu engellemiyor. Yedek yol BU olmali.
+        // sc.exe Microsoft imzalı; SAC onu engellemiyor. Yedek yol BU olmalı.
         var kod = Kod;
 
         Assert.Contains("not TemizlikYapildi", kod, StringComparison.Ordinal);
@@ -83,14 +82,14 @@ public sealed class KurulumSacTests
         }
     }
 
-    // --- Ham CreateProcess hatasi kullaniciya gosterilmemeli ----------------------
+    // --- Ham CreateProcess hatası kullanıcıya gösterilmemeli ----------------------
 
     [Fact]
     public void Run_Bolumu_Exeyi_Sessizce_Cagirmiyor()
     {
-        // [Run] basarisiz olursa Inno ham hatayi gosteriyor ve biz araya giremiyoruz.
-        // Bu iki cagri [Code]'a tasindi; geri gelirlerse kullanici yine 4551 kutusunu
-        // kurulumun ortasinda gorur.
+        // [Run] başarısız olursa Inno ham hatayı gösteriyor ve biz araya giremiyoruz.
+        // Bu iki çağrı [Code]'a taşındı; geri gelirlerse kullanıcı yine 4551 kutusunu
+        // kurulumun ortasında görür.
         var src = Iss;
         var run = src[src.IndexOf("[Run]", StringComparison.Ordinal)..
                       src.IndexOf("[UninstallRun]", StringComparison.Ordinal)];
@@ -102,8 +101,8 @@ public sealed class KurulumSacTests
     [Fact]
     public void Bekci_Kaydi_KAYBOLMADI()
     {
-        // [Run]'dan cikarildi diye ozellik de gitmemeli: gorev her kurulumda
-        // yeniden yazilmali ki YENI exe'yi gostersin.
+        // [Run]'dan çıkarıldı diye özellik de gitmemeli: görev her kurulumda
+        // yeniden yazılmalı ki YENİ exe'yi göstersin.
         var kod = Kod;
 
         Assert.Contains("--register-dns-guard", kod, StringComparison.Ordinal);
@@ -113,9 +112,9 @@ public sealed class KurulumSacTests
     [Fact]
     public void Bekci_Servis_Kurulu_Olmasa_Da_Yaziliyor()
     {
-        // Eskiden CurStepChanged "not ServisGeriKurulacak" ile de cikiyordu; bekci
-        // ayri ([Run]) kostugu icin sorun degildi. Ikisi birlestigine gore o kosul
-        // geri gelirse bekci, servis kullanmayan kullanicilarda SESSIZCE kurulmaz.
+        // Eskiden CurStepChanged "not ServisGeriKurulacak" ile de çıkıyordu; bekçi
+        // ayrı ([Run]) koştuğu için sorun değildi. İkisi birleştiğine göre o koşul
+        // geri gelirse bekçi, servis kullanmayan kullanıcılarda SESSİZCE kurulmaz.
         Assert.DoesNotContain("(CurStep <> ssPostInstall) or (not ServisGeriKurulacak)",
                               Kod, StringComparison.Ordinal);
     }
@@ -123,10 +122,10 @@ public sealed class KurulumSacTests
     [Fact]
     public void Engellenince_Ne_Yapilacagi_SIRASIYLA_Yaziyor()
     {
-        // Iki adim da gerekli ve ikincisini gercek kullanici bulup bildirdi:
-        // yalnizca SAC'i kapatmak YETMEDI, indirilen dosyanin "Engellemeyi Kaldir"
-        // isaretinin de temizlenmesi gerekti. Biri eksik kalirsa kullanici
-        // "yaptim, yine olmadi" noktasina geri doner.
+        // İki adım da gerekli ve ikincisini gerçek kullanıcı bulup bildirdi:
+        // yalnızca SAC'yi kapatmak YETMEDİ, indirilen dosyanın "Engellemeyi Kaldır"
+        // işaretinin de temizlenmesi gerekti. Biri eksik kalırsa kullanıcı
+        // "yaptım, yine olmadı" noktasına geri döner.
         var src = Iss;
 
         Assert.Contains("Engellemeyi Kaldir", src, StringComparison.Ordinal);
@@ -134,13 +133,13 @@ public sealed class KurulumSacTests
         Assert.Contains("4551", src, StringComparison.Ordinal);
     }
 
-    // --- SAC aciksa kurmadan ONCE soyleniyor --------------------------------------
+    // --- SAC açıksa kurmadan ÖNCE söyleniyor --------------------------------------
 
     [Fact]
     public void Sac_Acikken_Kurulum_Basinda_Uyariyor()
     {
-        // OLCULDU (2026-09-16): SAC acik makinede 0.2.5 taslagi kuruldu, uyari
-        // kurulum SONUNDA geldi ve uygulama hic acilmadi.
+        // ÖLÇÜLDÜ (2026-09-16): SAC açık makinede 0.2.5 taslağı kuruldu ve uyarı
+        // kurulumun SONUNDA geldi.
         var kod = Kod;
         var init = kod[kod.IndexOf("function InitializeSetup", StringComparison.Ordinal)..];
         init = init[..init.IndexOf("Exec(", StringComparison.Ordinal)];
@@ -152,8 +151,8 @@ public sealed class KurulumSacTests
     [Fact]
     public void Sac_Uyarisi_Sessiz_Kurulumu_Durdurmuyor()
     {
-        // CI /VERYSILENT /SUPPRESSMSGBOXES ile kuruyor. Duz MsgBox sessiz kurulumda
-        // da soru sorar; SuppressibleMsgBox varsayilan cevabi (IDYES) kullanir.
+        // CI /VERYSILENT /SUPPRESSMSGBOXES ile kuruyor. Düz MsgBox sessiz kurulumda
+        // da soru sorar; SuppressibleMsgBox varsayılan cevabı (IDYES) kullanır.
         var kod = Kod;
         var init = kod[kod.IndexOf("function InitializeSetup", StringComparison.Ordinal)..];
         init = init[..init.IndexOf("Exec(", StringComparison.Ordinal)];
@@ -166,8 +165,8 @@ public sealed class KurulumSacTests
     [Fact]
     public void Engellenince_Uygulamanin_Acilmayacagi_Soyleniyor()
     {
-        // "ZapretTR kurulu" yaniltici, "ZapretTR acilmaz" ise olculerek YANLIS cikti
-        // (SAC acik makinede pencere sonradan acildi). Olculen: duzgun calismiyor.
+        // "ZapretTR kurulu" yanıltıcı, "ZapretTR acilmaz" ise ölçülerek YANLIŞ çıktı
+        // (SAC açık makinede pencere sonradan açıldı). Ölçülen: düzgün çalışmıyor.
         Assert.DoesNotContain("'ZapretTR kurulu, ama", Iss, StringComparison.Ordinal);
         Assert.DoesNotContain("ZapretTR acilmaz", Iss, StringComparison.Ordinal);
         Assert.Contains("ZapretTR duzgun calismaz", Iss, StringComparison.Ordinal);
@@ -176,8 +175,8 @@ public sealed class KurulumSacTests
     [Fact]
     public void Exe_Engellendiyse_Simdi_Baslat_Denenmiyor()
     {
-        // OLCULDU (2026-09-16): aciklama kutusundan sonra "simdi baslat" girdisi ham
-        // "ShellExecuteEx failed; code 4551" kutusunu yine gosterdi.
+        // ÖLÇÜLDÜ (2026-09-16): açıklama kutusundan sonra "şimdi başlat" girdisi ham
+        // "ShellExecuteEx failed; code 4551" kutusunu yine gösterdi.
         var src = Iss;
         var run = src[src.IndexOf("[Run]", StringComparison.Ordinal)..
                       src.IndexOf("[UninstallRun]", StringComparison.Ordinal)];
@@ -187,13 +186,13 @@ public sealed class KurulumSacTests
         Assert.Matches(new Regex(@"function ExeCalisabildi\(\): Boolean;\s*begin\s*Result := not Engellendi;"), Kod);
     }
 
-    // --- Yapisal saglik ----------------------------------------------------------
+    // --- Yapısal sağlık ----------------------------------------------------------
 
     [Fact]
     public void Pascal_Bloklari_Dengeli()
     {
-        // ISCC yerelde yok; en olasi Pascal hatasini (eksik/fazla end) burada
-        // yakaliyoruz. Derlemenin yerine gecmez, ucuz bir on kontrol.
+        // ISCC her yerde yok; en olası Pascal hatasını (eksik/fazla end) burada
+        // yakalıyoruz. Derlemenin yerine geçmez, ucuz bir ön kontrol.
         var kod = KodYapisal;
         var begin = Regex.Matches(kod, @"\bbegin\b", RegexOptions.IgnoreCase).Count;
         var end = Regex.Matches(kod, @"\bend\b", RegexOptions.IgnoreCase).Count;
@@ -204,14 +203,14 @@ public sealed class KurulumSacTests
     [Fact]
     public void Kod_Icinde_Satir_Basi_Diyez_YOK()
     {
-        // OLCULDU: ISCC'nin onislemcisi satir basindaki '#' karakterini yonerge
-        // sayiyor. Cok satirli bir MsgBox'ta devam satiri '#13#10' ile baslayinca
+        // ÖLÇÜLDÜ: ISCC'nin önişlemcisi satır başındaki '#' karakterini yönerge
+        // sayıyor. Çok satırlı bir MsgBox'ta devam satırı '#13#10' ile başlayınca
         // derleme "Unknown preprocessor directive" ile DURDU (setup.iss:399).
         //
-        // Bu tam da metin testlerinin goremedigi sinifti: begin/end dengeliydi,
-        // degiskenler bildirilmisti, icerik dogruydu -- ama dosya derlenmiyordu.
-        // Testi, gercek derleme hatayi bulduktan SONRA yazdim; derlemenin yerine
-        // gecmez, yalnizca ayni hatanin sessizce geri gelmesini engeller.
+        // Bu tam da metin testlerinin göremediği sınıftı: begin/end dengeliydi,
+        // değişkenler bildirilmişti, içerik doğruydu; ama dosya derlenmiyordu.
+        // Testi, gerçek derleme hatayı bulduktan SONRA yazdım; derlemenin yerine
+        // geçmez, yalnızca aynı hatanın sessizce geri gelmesini engeller.
         var src = Iss;
         var kodBasi = src.IndexOf("[Code]", StringComparison.Ordinal);
 
@@ -228,8 +227,8 @@ public sealed class KurulumSacTests
     [Fact]
     public void Kullanilan_Degiskenler_Bildirilmis()
     {
-        // Pascal'da bildirilmemis degisken derleme hatasi; ISCC olmadan bunu
-        // yakalayan tek sey bu.
+        // Pascal'da bildirilmemiş değişken derleme hatası; ISCC olmadan bunu
+        // yakalayan tek şey bu.
         var kod = KodYapisal;
 
         foreach (var ad in new[] { "TemizlikYapildi", "Engellendi", "Exe", "Sc", "OncekiExe", "Mesaj", "Durum" })

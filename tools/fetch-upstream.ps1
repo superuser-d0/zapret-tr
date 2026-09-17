@@ -1,24 +1,24 @@
-<#
+﻿<#
 .SYNOPSIS
-    zapret/winws ikililerini sabitlenmis bir upstream surumunden indirir ve dogrular.
+    zapret/winws ikililerini sabitlenmiş bir upstream sürümünden indirir ve doğrular.
 
 .DESCRIPTION
-    ZapretTR, zapret'in C kodunu fork'lamaz. Yalnizca calisma zamaninda gereken
-    ikilileri (winws.exe, WinDivert surucusu, WinDivert filtre parcalari, sahte
-    QUIC yuku) upstream'den ceker.
+    ZapretTR, zapret'in C kodunu fork'lamaz. Yalnızca çalışma zamanında gereken
+    ikilileri (winws.exe, WinDivert sürücüsü, WinDivert filtre parçaları, sahte
+    QUIC yükü) upstream'den çeker.
 
-    Surum sabitleme commit SHA'si ile yapilir: zapret-win-bundle deposunda tag yok,
-    ama commit SHA'si icerik-adreslidir, yani tag'den daha guclu bir garanti verir.
+    Sürüm sabitleme commit SHA'sı ile yapılır: zapret-win-bundle deposunda etiket yok,
+    ama commit SHA'sı içerik adresli, yani etiketten daha güçlü bir garanti verir.
 
-    Her dosyanin SHA256'si tools/upstream-manifest.json icinde tutulur ve indirme
-    sonrasi dogrulanir. Upstream surumunu yukseltmek icin: asagidaki $BundleCommit /
-    $ZapretTag degerlerini degistir, sonra -UpdateManifest ile calistir, sonra
-    olusan manifest farkini incele ve commit'le.
+    Her dosyanın SHA256'sı tools/upstream-manifest.json içinde tutulur ve indirme
+    sonrası doğrulanır. Upstream sürümünü yükseltmek için: aşağıdaki $BundleCommit /
+    $ZapretTag değerlerini değiştir, sonra -UpdateManifest ile çalıştır, sonra
+    oluşan manifest farkını incele ve commit'le.
 
 .PARAMETER UpdateManifest
-    Dogrulama yapmak yerine manifest'i indirilen dosyalara gore yeniden uretir.
-    Upstream surumu yukseltilirken kullanilir. Manifest degisikligi kod incelemesinde
-    gorunur olsun diye ayri bir bayrak olarak birakildi.
+    Doğrulama yapmak yerine manifest'i indirilen dosyalara göre yeniden üretir.
+    Upstream sürümü yükseltilirken kullanılır. Manifest değişikliği kod incelemesinde
+    görünür olsun diye ayrı bir bayrak olarak bırakıldı.
 
 .PARAMETER Force
     vendor/ dolu olsa bile yeniden indirir.
@@ -32,64 +32,64 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-# --- Sabitlenmis upstream surumleri ------------------------------------------
-# zapret-win-bundle @ 2026-08-23. Bu depoda tag yok, commit SHA ile sabitliyoruz.
+# --- Sabitlenmiş upstream sürümleri ------------------------------------------
+# zapret-win-bundle @ 2026-08-23. Bu depoda etiket yok, commit SHA ile sabitliyoruz.
 $BundleCommit = '32fbbebf29be855566faef0961ac85627a3a4aeb'
-# Ana zapret deposu, lisans metni ve sahte TLS yukleri icin.
+# Ana zapret deposu, lisans metni ve sahte TLS yükleri için.
 $ZapretTag    = 'v72.13'
-# dnscrypt-proxy: DNS kacirmasini asmak icin. Turkiye'de engelleme cogu zaman
-# once DNS katmaninda oluyor ve o katman asilmadan DPI stratejisi ise yaramiyor.
+# dnscrypt-proxy: DNS kaçırmasını aşmak için. Türkiye'de engelleme çoğu zaman
+# önce DNS katmanında oluyor ve o katman aşılmadan DPI stratejisi işe yaramıyor.
 $DnsCryptVersion = '2.1.18'
 $DnsCryptSha256  = '15f0c8f1f40620a54ddfd8752c327dabe1146f84618d68874f79c4f52490b396'
 
 $BundleBase = "https://raw.githubusercontent.com/bol-van/zapret-win-bundle/$BundleCommit/zapret-winws"
 $ZapretBase = "https://raw.githubusercontent.com/bol-van/zapret/$ZapretTag"
 
-# --- Indirilecek dosyalar -----------------------------------------------------
-# Liste dar tutuldu (winws2.exe, lua/ ve ornek preset .cmd dosyalari alinmiyor),
-# ama DARLIK BAGIMLILIK ATLAMAK DEGIL. Ilk surumde cygwin1.dll "gereksiz 3MB"
-# diye cikarilmisti; winws.exe cygwin ile derlendigi icin o dosya olmadan hic
-# baslamiyor ve "cygwin1.dll was not found" diye MODAL bir hata penceresi
-# aciyor -- surec olmedigi icin cagiran taraf da sonsuza kadar bekliyor.
+# --- İndirilecek dosyalar -----------------------------------------------------
+# Liste dar tutuldu (winws2.exe, lua/ ve örnek preset .cmd dosyaları alınmıyor),
+# ama DARLIK BAĞIMLILIK ATLAMAK DEĞİL. İlk sürümde cygwin1.dll "gereksiz 3MB"
+# diye çıkarılmıştı; winws.exe cygwin ile derlendiği için o dosya olmadan hiç
+# başlamıyor ve "cygwin1.dll was not found" diye KALICI (modal) bir hata penceresi
+# açıyor; süreç ölmediği için çağıran taraf da sonsuza kadar bekliyor.
 #
-# Bu listeyi budarken once bagimliliklari dogrula:
+# Bu listeyi budarken önce bağımlılıkları doğrula:
 #   winws.exe -> ADVAPI32, KERNEL32, ole32, OLEAUT32, wlanapi  (Windows sistem)
-#                cygwin1.dll, WinDivert.dll                     (bundle icinden)
+#                cygwin1.dll, WinDivert.dll                     (bundle içinden)
 $Files = @(
-    # Motor ve surucu
+    # Motor ve sürücü
     @{ Url = "$BundleBase/winws.exe";        Dest = 'winws.exe' }
     @{ Url = "$BundleBase/cygwin1.dll";      Dest = 'cygwin1.dll' }
     @{ Url = "$BundleBase/WinDivert.dll";    Dest = 'WinDivert.dll' }
     @{ Url = "$BundleBase/WinDivert64.sys";  Dest = 'WinDivert64.sys' }
 
-    # WinDivert ham filtre parcalari (--wf-raw-part ile kullanilir).
-    # discord_media ve stun, Discord sesli gorusme icin gerekli.
+    # WinDivert ham filtre parçaları (--wf-raw-part ile kullanılır).
+    # discord_media ve stun, Discord sesli görüşme için gerekli.
     @{ Url = "$BundleBase/windivert.filter/windivert_part.discord_media.txt"     ; Dest = 'windivert.filter/windivert_part.discord_media.txt' }
     @{ Url = "$BundleBase/windivert.filter/windivert_part.stun.txt"              ; Dest = 'windivert.filter/windivert_part.stun.txt' }
     @{ Url = "$BundleBase/windivert.filter/windivert_part.quic_initial_ietf.txt" ; Dest = 'windivert.filter/windivert_part.quic_initial_ietf.txt' }
     @{ Url = "$BundleBase/windivert.filter/README.txt"                           ; Dest = 'windivert.filter/README.txt' }
 
-    # Sahte paket yukleri. TLS icin ayri dosyaya gerek yok: --dpi-desync-fake-tls-mod
-    # ile SNI runtime'da uretilebiliyor. QUIC icin hazir yuk sart -- upstream'de
-    # --dpi-desync-fake-quic-mod diye bir karsiligi YOK, tek eksen hazir yukun kendisi.
+    # Sahte paket yükleri. TLS için ayrı dosyaya gerek yok: --dpi-desync-fake-tls-mod
+    # ile SNI çalışma zamanında üretilebiliyor. QUIC için hazır yük şart; upstream'de
+    # --dpi-desync-fake-quic-mod diye bir karşılığı YOK, tek eksen hazır yükün kendisi.
     @{ Url = "$BundleBase/files/quic_initial_www_google_com.bin" ; Dest = 'files/quic_initial_www_google_com.bin' }
     @{ Url = "$ZapretBase/files/fake/tls_clienthello_iana_org.bin" ; Dest = 'files/tls_clienthello_iana_org.bin' }
 
-    # QUIC sahte yuk cesitleri. Tek bir yukle sinirli kalmak arama uzayini yapay
-    # olarak daraltiyordu: hangi yukun ise yaradigi DPI kutusunun neyi dogruladigina
-    # bagli ve bunlar farkli QUIC yiginlarindan (Chrome, mvfst, quiche) uretilmis.
-    # kyber varyantlari buyuk ClientHello uretenler icin; Discord istemcisi Chromium
-    # tabanli ve olculdugu kadariyla ClientHello'yu 2.5 KB'a yayiyor.
+    # QUIC sahte yük çeşitleri. Tek bir yükle sınırlı kalmak arama uzayını yapay
+    # olarak daraltıyordu: hangi yükün işe yaradığı DPI kutusunun neyi doğruladığına
+    # bağlı ve bunlar farklı QUIC yığınlarından (Chrome, mvfst, quiche) üretilmiş.
+    # kyber varyantları büyük ClientHello üretenler için; Discord istemcisi Chromium
+    # tabanlı ve ölçüldüğü kadarıyla ClientHello'yu 2.5 KB'a yayıyor.
     @{ Url = "$ZapretBase/files/fake/quic_initial_facebook_com.bin"       ; Dest = 'files/quic_initial_facebook_com.bin' }
     @{ Url = "$ZapretBase/files/fake/quic_initial_vk_com.bin"             ; Dest = 'files/quic_initial_vk_com.bin' }
     @{ Url = "$ZapretBase/files/fake/quic_initial_rutracker_org_kyber_1.bin" ; Dest = 'files/quic_initial_rutracker_org_kyber_1.bin' }
     @{ Url = "$ZapretBase/files/fake/quic_short_header.bin"               ; Dest = 'files/quic_short_header.bin' }
 
-    # --dpi-desync-udplen-pattern icin dolgu deseni. Varsayilan dolgu sifir; DPI
-    # sifir dolguyu eleyip paketi yine tanryorsa desenin degismesi gerekiyor.
+    # --dpi-desync-udplen-pattern için dolgu deseni. Varsayılan dolgu sıfır; DPI
+    # sıfır dolguyu eleyip paketi yine tanıyorsa desenin değişmesi gerekiyor.
     @{ Url = "$ZapretBase/files/fake/zero_512.bin" ; Dest = 'files/zero_512.bin' }
 
-    # MIT lisans metni - dagitimda yaninda gitmek zorunda.
+    # MIT lisans metni; dağıtımda yanında gitmek zorunda.
     @{ Url = "$ZapretBase/docs/LICENSE.txt" ; Dest = 'LICENSE.upstream.txt' }
 )
 
@@ -108,7 +108,7 @@ Write-Host ''
 
 New-Item -ItemType Directory -Force -Path $VendorDir | Out-Null
 
-# Mevcut manifest, artimli indirme icin okunuyor.
+# Mevcut manifest, artımlı indirme için okunuyor.
 $existingHashes = @{}
 if (Test-Path $ManifestPath) {
     $existingManifest = Get-Content -Path $ManifestPath -Raw | ConvertFrom-Json
@@ -117,14 +117,14 @@ if (Test-Path $ManifestPath) {
     }
 }
 
-# --- Indirme ------------------------------------------------------------------
-# Indirme ARTIMLI: yerinde duran ve manifest'teki ozetiyle birebir ayni olan dosya
-# yeniden indirilmez. Onceki hali "dosya sayisi yeterliyse hepsini atla, degilse
-# hepsini indir" seklindeydi ve listeye YENI bir dosya eklemek butun listeyi
-# yeniden indirmeyi zorunlu kiliyordu. Bu, WinDivert64.sys bir test kosumundan
-# sonra hala cekirdege yuklu oldugunda (servis silinse bile surucu goruntusu
-# kaldirilana kadar kilitli kalir) "dosya baska bir surec tarafindan kullaniliyor"
-# ile basarisiz oluyor ve tek cozum yeniden baslatmak oluyordu.
+# --- İndirme ------------------------------------------------------------------
+# İndirme ARTIMLI: yerinde duran ve manifest'teki özetiyle birebir aynı olan dosya
+# yeniden indirilmez. Önceki hâli "dosya sayısı yeterliyse hepsini atla, değilse
+# hepsini indir" şeklindeydi ve listeye YENİ bir dosya eklemek bütün listeyi
+# yeniden indirmeyi zorunlu kılıyordu. Bu, WinDivert64.sys bir test koşumundan
+# sonra hâlâ çekirdeğe yüklü olduğunda (servis silinse bile sürücü görüntüsü
+# kaldırılana kadar kilitli kalır) "dosya başka bir süreç tarafından kullanılıyor"
+# ile başarısız oluyor ve tek çözüm yeniden başlatmak oluyordu.
 $downloaded = @{}
 foreach ($file in $Files) {
     $destPath = Join-Path $VendorDir $file.Dest
@@ -152,10 +152,10 @@ foreach ($file in $Files) {
 
 Write-Host ''
 
-# --- Manifest uretimi ya da dogrulama -----------------------------------------
+# --- Manifest üretimi ya da doğrulama -----------------------------------------
 # --- dnscrypt-proxy ----------------------------------------------------------
-# Tek dosya degil zip oldugu icin ayri ele aliniyor. Zip'in SHA256'si script'te
-# sabit; indirme sonrasi dogrulanmadan acilmaz.
+# Tek dosya değil zip olduğu için ayrı ele alınıyor. Zip'in SHA256'sı betikte
+# sabit; indirme sonrası doğrulanmadan açılmaz.
 $dnsDir = Join-Path $RepoRoot 'vendor/dnscrypt-proxy'
 $dnsExe = Join-Path $dnsDir 'dnscrypt-proxy.exe'
 
@@ -179,8 +179,8 @@ if ($Force -or $UpdateManifest -or -not (Test-Path $dnsExe)) {
     if (Test-Path $dnsDir) { Remove-Item $dnsDir -Recurse -Force }
     New-Item -ItemType Directory -Force -Path $dnsDir | Out-Null
 
-    # Zip'in tamami degil, yalnizca ihtiyacimiz olanlar aciliyor: ornek listeler
-    # ve servis .bat dosyalari bizim akisimizda kullanilmiyor.
+    # Zip'in tamamı değil, yalnızca ihtiyacımız olanlar açılıyor: örnek listeler
+    # ve servis .bat dosyaları bizim akışımızda kullanılmıyor.
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [IO.Compression.ZipFile]::OpenRead($dnsZip)
     try {
@@ -216,12 +216,12 @@ if ($UpdateManifest) {
     return
 }
 
-# Not: burada bir zamanlar "$skipWinws ise dogrulamayi atla" dali vardi. Indirme
-# hepsi-ya-hicbiri iken anlamliydi; artimli hale gelince o degisken kalkti ama dal
-# kaldi ve StrictMode altinda script HER kosumda tam bu noktada patladi -- yani
-# dosyalar iniyor, SHA256 dogrulamasi hicbir zaman kosmuyordu. Artimli akista
-# atlanacak bir sey yok: yerinde duran dosyanin ozeti de $downloaded'a yaziliyor,
-# dolayisiyla asagidaki dongu her zaman TUM dosyalari dogruluyor.
+# Not: burada bir zamanlar "$skipWinws ise doğrulamayı atla" dalı vardı. İndirme
+# hepsi-ya-hiçbiri iken anlamlıydı; artımlı hâle gelince o değişken kalktı ama dal
+# kaldı ve StrictMode altında betik HER koşumda tam bu noktada patladı; yani
+# dosyalar iniyor, SHA256 doğrulaması hiçbir zaman koşmuyordu. Artımlı akışta
+# atlanacak bir şey yok: yerinde duran dosyanın özeti de $downloaded'a yazılıyor,
+# dolayısıyla aşağıdaki döngü her zaman TÜM dosyaları doğruluyor.
 
 if (-not (Test-Path $ManifestPath)) {
     throw "Manifest yok: $ManifestPath`nIlk uretim icin: .\tools\fetch-upstream.ps1 -UpdateManifest"

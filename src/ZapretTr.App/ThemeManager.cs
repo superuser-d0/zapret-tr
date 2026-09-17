@@ -5,7 +5,7 @@ using Microsoft.Win32;
 
 namespace ZapretTr.App;
 
-/// <summary>Arayuz temasi.</summary>
+/// <summary>Arayüz teması.</summary>
 public enum AppTheme
 {
     Light,
@@ -13,26 +13,26 @@ public enum AppTheme
 }
 
 /// <summary>
-/// Acik ve koyu tema arasinda gecis yapar.
+/// Açık ve koyu tema arasında geçiş yapar.
 /// </summary>
 /// <remarks>
-/// Renkler Themes/Light.xaml ve Themes/Dark.xaml'da. Gecis, uygulama kaynaklarindaki
-/// tema sozlugunu digeriyle degistirerek yapiliyor; stiller renklere DynamicResource
-/// ile baktigi icin acik pencere yeniden kurulmadan boyaniyor.
+/// Renkler Themes/Light.xaml ve Themes/Dark.xaml'da. Geçiş, uygulama kaynaklarındaki
+/// tema sözlüğünü diğeriyle değiştirerek yapılıyor; stiller renklere DynamicResource
+/// ile baktığı için açık pencere yeniden kurulmadan boyanıyor.
 ///
-/// Tema sozlugu kaynak adresiyle degil, icindeki "ThemeName" anahtariyla bulunuyor:
-/// App.xaml'daki goreli adres ile koddaki pack adresi ayni sozlugu gostermelerine
-/// ragmen metin olarak eslesmiyor.
+/// Tema sözlüğü kaynak adresiyle değil, içindeki "ThemeName" anahtarıyla bulunuyor:
+/// App.xaml'daki göreli adres ile koddaki pack adresi aynı sözlüğü göstermelerine
+/// rağmen metin olarak eşleşmiyor.
 /// </remarks>
 public static class ThemeManager
 {
     private const string ThemeNameKey = "ThemeName";
 
-    /// <summary>Su an uygulanmis tema.</summary>
+    /// <summary>Şu an uygulanmış tema.</summary>
     public static AppTheme Current { get; private set; } = AppTheme.Light;
 
-    /// <summary>Kayitli tercihi temaya cevirir; tercih yoksa Windows'un ayarina uyar.</summary>
-    /// <param name="saved">config.json'daki deger: "dark", "light" ya da null.</param>
+    /// <summary>Kayıtlı tercihi temaya çevirir; tercih yoksa Windows'un ayarına uyar.</summary>
+    /// <param name="saved">config.json'daki değer: "dark", "light" ya da null.</param>
     public static AppTheme Resolve(string? saved) => saved?.Trim().ToLowerInvariant() switch
     {
         "dark" => AppTheme.Dark,
@@ -40,10 +40,10 @@ public static class ThemeManager
         _ => IsWindowsDark() ? AppTheme.Dark : AppTheme.Light,
     };
 
-    /// <summary>Temanin config.json'a yazilacak adi.</summary>
+    /// <summary>Temanın config.json'a yazılacak adı.</summary>
     public static string ToConfigValue(AppTheme theme) => theme == AppTheme.Dark ? "dark" : "light";
 
-    /// <summary>Temayi uygular: kaynak sozlugunu degistirir ve acik pencerelerin basligini boyar.</summary>
+    /// <summary>Temayı uygular: kaynak sözlüğünü değiştirir ve açık pencerelerin başlığını boyar.</summary>
     public static void Apply(AppTheme theme)
     {
         var app = Application.Current;
@@ -79,11 +79,11 @@ public static class ThemeManager
         }
     }
 
-    /// <summary>Pencerenin Windows basligini temaya uygun boyar.</summary>
+    /// <summary>Pencerenin Windows başlığını temaya uygun boyar.</summary>
     /// <remarks>
-    /// Baslik cubugu WPF'in degil Windows'un. Boyanmazsa koyu pencerenin ustunde
-    /// bembeyaz bir serit kaliyor. Pencere tutamaci henuz yoksa (SourceInitialized
-    /// oncesi) bir sey yapilmiyor; MainWindow bunu SourceInitialized'da yeniden cagiriyor.
+    /// Başlık çubuğu WPF'in değil Windows'un. Boyanmazsa koyu pencerenin üstünde
+    /// bembeyaz bir şerit kalıyor. Pencere tutamacı henüz yoksa (SourceInitialized
+    /// öncesi) bir şey yapılmıyor; MainWindow bunu SourceInitialized'da yeniden çağırıyor.
     /// </remarks>
     public static void ApplyTitleBar(Window window)
     {
@@ -95,8 +95,8 @@ public static class ThemeManager
 
         var deger = Current == AppTheme.Dark ? 1 : 0;
 
-        // 20: Windows 11 ve Windows 10 20H1 sonrasi. 19: daha eski Windows 10 surumleri.
-        // Ikisi de desteklenmiyorsa hata kodu donuyor ve baslik acik kaliyor; zararsiz.
+        // 20: Windows 11 ve Windows 10 20H1 sonrası. 19: daha eski Windows 10 sürümleri.
+        // İkisi de desteklenmiyorsa hata kodu dönüyor ve başlık açık kalıyor; zararsız.
         if (DwmSetWindowAttribute(tutamac, 20, ref deger, sizeof(int)) != 0)
         {
             _ = DwmSetWindowAttribute(tutamac, 19, ref deger, sizeof(int));

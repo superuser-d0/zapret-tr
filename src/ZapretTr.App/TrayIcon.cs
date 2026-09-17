@@ -5,18 +5,18 @@ using System.Windows.Forms;
 namespace ZapretTr.App;
 
 /// <summary>
-/// Saat yanindaki bildirim alani simgesi.
+/// Saat yanındaki bildirim alanı simgesi.
 /// </summary>
 /// <remarks>
-/// Pencereyi X ile kapatmak uygulamayi SONLANDIRMAMALI: koruma arka planda
-/// calismaya devam etsin isteniyor. Ama sonlandirmiyorsa kullanicinin
-/// uygulamaya geri donebilmesi de gerekiyor -- yoksa gorunmez bir surec
-/// birakmis oluruz ve kullanicinin onu durdurmasinin tek yolu Gorev Yoneticisi
-/// olur. Simge, gizlenen pencerenin geri getirilebilecegi tek yer.
+/// Pencereyi X ile kapatmak uygulamayı SONLANDIRMAMALI: koruma arka planda
+/// çalışmaya devam etsin isteniyor. Ama sonlandırmıyorsa kullanıcının
+/// uygulamaya geri dönebilmesi de gerekiyor; yoksa görünmez bir süreç
+/// bırakmış oluruz ve kullanıcının onu durdurmasının tek yolu Görev Yöneticisi
+/// olur. Simge, gizlenen pencerenin geri getirilebileceği tek yer.
 ///
-/// Simge WinForms'tan: WPF'in kendi bildirim alani API'si yok ve tek bir simge
-/// icin ucuncu taraf bir paket almak, guvendigimiz kod miktarini bosuna
-/// buyutur.
+/// Simge WinForms'tan: WPF'in kendi bildirim alanı API'si yok ve tek bir simge
+/// için üçüncü taraf bir paket almak, güvendiğimiz kod miktarını boşuna
+/// büyütür.
 /// </remarks>
 public sealed class TrayIcon : IDisposable
 {
@@ -24,7 +24,7 @@ public sealed class TrayIcon : IDisposable
     private readonly Window _window;
     private bool _disposed;
 
-    /// <summary>Kullanici simgeden "Çıkış" dedi.</summary>
+    /// <summary>Kullanıcı simgeden "Çıkış" dedi.</summary>
     public event EventHandler? ExitRequested;
 
     public TrayIcon(Window window)
@@ -39,8 +39,8 @@ public sealed class TrayIcon : IDisposable
 
         _icon = new NotifyIcon
         {
-            // Uygulamanin kendi simgesi: ayri bir .ico dosyasi tasimak yerine
-            // calisan exe'den okunuyor, boylece ikisi ayrisamiyor.
+            // Uygulamanın kendi simgesi: ayrı bir .ico dosyası taşımak yerine
+            // çalışan exe'den okunuyor, böylece ikisi ayrışamıyor.
             Icon = SimgeyiAl(),
             Text = "ZapretTR",
             Visible = false,
@@ -50,14 +50,14 @@ public sealed class TrayIcon : IDisposable
         _icon.DoubleClick += (_, _) => Goster();
     }
 
-    /// <summary>Pencereyi gizler ve simgeyi gosterir.</summary>
+    /// <summary>Pencereyi gizler ve simgeyi gösterir.</summary>
     public void Gizle()
     {
         _window.Hide();
         _icon.Visible = true;
 
-        // Ilk gizlemede bir kez bilgilendir: kullanici uygulamanin kapandigini
-        // saniyorsa simgeyi aramaz ve "kapatamiyorum" diye geri gelir.
+        // İlk gizlemede bir kez bilgilendir: kullanıcı uygulamanın kapandığını
+        // sanıyorsa simgeyi aramaz ve "kapatamıyorum" diye geri gelir.
         _icon.BalloonTipTitle = "ZapretTR arka planda";
         _icon.BalloonTipText = "Koruma çalışmaya devam ediyor. " +
                                "Pencereyi geri getirmek için simgeye çift tıklayın.";
@@ -69,8 +69,8 @@ public sealed class TrayIcon : IDisposable
     {
         _window.Show();
 
-        // Yalnizca simge durumundaysa: tam ekrana alinmis bir pencereyi gizleyip
-        // geri getirmek onu kucultuyordu.
+        // Yalnızca simge durumundaysa: tam ekrana alınmış bir pencereyi gizleyip
+        // geri getirmek onu küçültüyordu.
         if (_window.WindowState == WindowState.Minimized)
         {
             _window.WindowState = WindowState.Normal;
@@ -84,8 +84,8 @@ public sealed class TrayIcon : IDisposable
     {
         try
         {
-            // Once gomulu .ico: bildirim alaninin boyutuna (olcege gore 16, 20, 24...)
-            // uyan goruntu kucultme yapilmadan seciliyor.
+            // Önce gömülü .ico: bildirim alanının boyutuna (ölçeğe göre 16, 20, 24...)
+            // uyan görüntü küçültme yapılmadan seçiliyor.
             using var akis = typeof(TrayIcon).Assembly.GetManifestResourceStream("ZapretTR.ico");
             if (akis is not null)
             {
@@ -104,8 +104,8 @@ public sealed class TrayIcon : IDisposable
         }
         catch (Exception)
         {
-            // Simge okunamadi. Bu, uygulamanin calismasini engelleyecek bir sey
-            // degil -- varsayilan simgeyle devam.
+            // Simge okunamadı. Bu, uygulamanın çalışmasını engelleyecek bir şey
+            // değil; varsayılan simgeyle devam.
         }
 
         return SystemIcons.Application;
@@ -120,8 +120,8 @@ public sealed class TrayIcon : IDisposable
 
         _disposed = true;
 
-        // Simge acikca gizlenmeli: yalnizca Dispose etmek, Windows'un bildirim
-        // alaninda "hayalet" bir simge birakabiliyor (fare uzerine gelene kadar
+        // Simge açıkça gizlenmeli: yalnızca Dispose etmek, Windows'un bildirim
+        // alanında "hayalet" bir simge bırakabiliyor (fare üzerine gelene kadar
         // silinmiyor).
         _icon.Visible = false;
         _icon.Dispose();

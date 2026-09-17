@@ -4,26 +4,26 @@ using System.Net.Sockets;
 namespace ZapretTr.Prober;
 
 /// <summary>
-/// UDP tabanli trafigin disari cikip cikmadigini STUN ile olcer.
+/// UDP tabanlı trafiğin dışarı çıkıp çıkmadığını STUN ile ölçer.
 /// </summary>
 /// <remarks>
-/// Discord sesli gorusme UDP kullaniyor ve HTTP istemcisiyle olculemez. Bu bolum
-/// bugune kadar hic sinanmiyordu: probe-targets.json'da discord-voice hedefi yoktu,
-/// dolayisiyla arac "ses calisiyor mu" sorusuna sessiz kaliyordu. Kullanici
-/// "Discord acildi" diye rapor gorurken sesli gorusmenin durumu hakkinda hicbir
-/// sey soylenmemis oluyordu.
+/// Discord sesli görüşme UDP kullanıyor ve HTTP istemcisiyle ölçülemez. Bu bölüm
+/// bugüne kadar hiç sınanmıyordu: probe-targets.json'da discord-voice hedefi yoktu,
+/// dolayısıyla araç "ses çalışıyor mu" sorusuna sessiz kalıyordu. Kullanıcı
+/// "Discord açıldı" diye rapor görürken sesli görüşmenin durumu hakkında hiçbir
+/// şey söylenmemiş oluyordu.
 ///
-/// STUN secilmesinin sebebi: Discord'un ses altyapisi zaten STUN kullaniyor ve
-/// sunucular kamuya acik, kimlik dogrulama istemiyor. Basit bir Binding Request
-/// gonderip cevap gelip gelmedigine bakmak, UDP yolunun acik olup olmadigini
-/// dogrudan olcuyor.
+/// STUN seçilmesinin sebebi: Discord'un ses altyapısı zaten STUN kullanıyor ve
+/// sunucular kamuya açık, kimlik doğrulama istemiyor. Basit bir Binding Request
+/// gönderip cevap gelip gelmediğine bakmak, UDP yolunun açık olup olmadığını
+/// doğrudan ölçüyor.
 ///
-/// Bir DNS/STUN kutuphanesi eklemek yerine paket elle kuruluyor; bagimlilik
-/// yuzeyini buyutmemek icin.
+/// Bir DNS/STUN kütüphanesi eklemek yerine paket elle kuruluyor; bağımlılık
+/// yüzeyini büyütmemek için.
 /// </remarks>
 public sealed class StunProbeClient
 {
-    /// <summary>STUN'un sabit sihirli sayisi (RFC 5389).</summary>
+    /// <summary>STUN'un sabit sihirli sayısı (RFC 5389).</summary>
     private static readonly byte[] MagicCookie = [0x21, 0x12, 0xA4, 0x42];
 
     private readonly TimeSpan _timeout;
@@ -32,11 +32,11 @@ public sealed class StunProbeClient
         => _timeout = timeout ?? TimeSpan.FromSeconds(4);
 
     /// <summary>
-    /// STUN sunucusuna Binding Request gonderip cevap bekler.
+    /// STUN sunucusuna Binding Request gönderip cevap bekler.
     /// </summary>
     /// <returns>
-    /// Cevap geldiyse basarili. UDP yolu kapaliysa ya da DPI paketleri dusuruyorsa
-    /// zaman asimi doner.
+    /// Cevap geldiyse başarılı. UDP yolu kapalıysa ya da DPI paketleri düşürüyorsa
+    /// zaman aşımı döner.
     /// </returns>
     public async Task<ProbeOutcome> TryReachAsync(
         string host, int port = 19302, string? pinnedIp = null, CancellationToken cancellationToken = default)
@@ -68,9 +68,9 @@ public sealed class StunProbeClient
 
             var response = await udp.ReceiveAsync(cts.Token).ConfigureAwait(false);
 
-            // Cevabin BIZIM sorgumuza ait oldugunu dogrula. Islem kimligi
-            // eslesmezse gelen paket baska bir seydir ve "calisiyor" saymak
-            // yaniltici olur.
+            // Cevabın BİZİM sorgumuza ait olduğunu doğrula. İşlem kimliği
+            // eşleşmezse gelen paket başka bir şeydir ve "çalışıyor" saymak
+            // yanıltıcı olur.
             if (!IsMatchingResponse(response.Buffer, transactionId))
             {
                 return new ProbeOutcome(false, "STUN: cevap islem kimligiyle eslesmedi", resolvedIp);
@@ -80,7 +80,7 @@ public sealed class StunProbeClient
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            // UDP'de "baglanti reddedildi" yok; engellemenin belirtisi sessizliktir.
+            // UDP'de "bağlantı reddedildi" yok; engellemenin belirtisi sessizliktir.
             return new ProbeOutcome(false, "zaman asimi (UDP cevabi yok)", resolvedIp);
         }
         catch (Exception ex)
@@ -96,9 +96,9 @@ public sealed class StunProbeClient
         Random.Shared.NextBytes(transactionId);
 
         var packet = new byte[20];
-        packet[0] = 0x00;   // Binding Request, ust bayt
+        packet[0] = 0x00;   // Binding Request, üst bayt
         packet[1] = 0x01;   // Binding Request, alt bayt
-        packet[2] = 0x00;   // govde uzunlugu: 0
+        packet[2] = 0x00;   // gövde uzunluğu: 0
         packet[3] = 0x00;
 
         MagicCookie.CopyTo(packet, 4);
@@ -109,7 +109,7 @@ public sealed class StunProbeClient
 
     private static bool IsMatchingResponse(byte[] buffer, byte[] transactionId)
     {
-        // 20 bayt baslik + sihirli sayi + islem kimligi.
+        // 20 bayt başlık + sihirli sayı + işlem kimliği.
         if (buffer.Length < 20)
         {
             return false;

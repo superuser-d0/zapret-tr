@@ -1,13 +1,13 @@
-<!-- Koyu tema. Zemin neredeyse siyah; kontroller bir ton acik, yazi kirik beyaz.
+<!-- Koyu tema. Zemin neredeyse siyah; kontroller bir ton açık, yazı kırık beyaz.
 
-     Standart kontrollerin bir kismi burada YENIDEN CIZILIYOR, cunku Windows'un
-     (Aero2) sablonlari bazi renkleri sabit yaziyor ve Background vermek onlari
-     degistirmiyor: acilir listenin dugmesi gri gecisli kaliyor, onay isareti
-     koyu zemin uzerinde koyu (gorunmez), kaydirma cubugu acik gri. Sablonlar
-     acik temaya konmadi; acik temada Windows gorunumu aynen duruyor.
+     Standart kontrollerin bir kısmı burada YENİDEN ÇİZİLİYOR, çünkü Windows'un
+     (Aero2) şablonları bazı renkleri sabit yazıyor ve Background vermek onları
+     değiştirmiyor: açılır listenin düğmesi gri geçişli kalıyor, onay işareti
+     koyu zemin üzerinde koyu (görünmez), kaydırma çubuğu açık gri. Şablonlar
+     açık temaya konmadı; açık temada Windows görünümü aynen duruyor.
 
-     Boyutlar acik temadakiyle ayni tutuldu (acilir liste 28, Ayrintilar basligi
-     yaklasik 23): pencerenin varsayilan boyutta sigmasi temadan bagimsiz olmali. -->
+     Boyutlar açık temadakiyle aynı tutuldu (açılır liste 28, Ayrıntılar başlığı
+     yaklaşık 23): pencerenin varsayılan boyutta sığması temadan bağımsız olmalı. -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
@@ -95,7 +95,7 @@
         </Setter>
     </Style>
 
-    <!-- ================= Acilir liste ================= -->
+    <!-- ================= Açılır liste ================= -->
     <ControlTemplate x:Key="KoyuAcilirListeDugmesi" TargetType="ToggleButton">
         <Border x:Name="Zemin" CornerRadius="3" BorderThickness="1"
                 Background="{DynamicResource InputBackBrush}"
@@ -178,7 +178,7 @@
         </Setter>
     </Style>
 
-    <!-- ================= Gunluk listesi ================= -->
+    <!-- ================= Günlük listesi ================= -->
     <Style TargetType="ListBox">
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
     </Style>
@@ -202,7 +202,7 @@
         </Setter>
     </Style>
 
-    <!-- ================= Ayrintilar paneli ================= -->
+    <!-- ================= Ayrıntılar paneli ================= -->
     <ControlTemplate x:Key="KoyuAyrintilarBasligi" TargetType="ToggleButton">
         <Border Background="Transparent" Padding="0,2">
             <StackPanel Orientation="Horizontal">
@@ -249,7 +249,7 @@
         </Setter>
     </Style>
 
-    <!-- ================= Kaydirma cubugu ================= -->
+    <!-- ================= Kaydırma çubuğu ================= -->
     <Style x:Key="KoyuKaydirmaBosluk" TargetType="RepeatButton">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -332,12 +332,12 @@
         </Style.Triggers>
     </Style>
 
-    <!-- ScrollViewer'in iki cubugun kesistigi kosesi Aero2'de acik gri kaliyor. -->
+    <!-- ScrollViewer'ın iki çubuğun kesiştiği köşesi Aero2'de açık gri kalıyor. -->
     <Style TargetType="ScrollViewer">
         <Setter Property="Background" Value="Transparent" />
     </Style>
 
-    <!-- ================= Diger ================= -->
+    <!-- ================= Diğer ================= -->
     <Style TargetType="ProgressBar">
         <Setter Property="Background" Value="{DynamicResource InputBackBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource InputBorderBrush}" />

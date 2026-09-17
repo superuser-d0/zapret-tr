@@ -5,52 +5,52 @@ using ZapretTr.Core.Profiles;
 
 namespace ZapretTr.Prober;
 
-/// <summary>Baglantinin hangi servis saglayiciya ait oldugu.</summary>
-/// <param name="Asn">Otonom sistem numarasi. Bulunamadiysa null.</param>
-/// <param name="OrgName">Kurulus adi. Bulunamadiysa null.</param>
-/// <param name="Source">Bilgiyi hangi servisten aldigimiz.</param>
+/// <summary>Bağlantının hangi servis sağlayıcıya ait olduğu.</summary>
+/// <param name="Asn">Otonom sistem numarası. Bulunamadıysa null.</param>
+/// <param name="OrgName">Kuruluş adı. Bulunamadıysa null.</param>
+/// <param name="Source">Bilgiyi hangi servisten aldığımız.</param>
 public sealed record IspIdentity(int? Asn, string? OrgName, string Source)
 {
     public bool IsKnown => Asn is not null || !string.IsNullOrWhiteSpace(OrgName);
 }
 
-/// <summary>Tespit sonucu ve eslesen profiller.</summary>
+/// <summary>Tespit sonucu ve eşleşen profiller.</summary>
 /// <param name="Identity">Tespit edilen kimlik.</param>
-/// <param name="Matches">Eslesen profiller, en iyi eslesme once.</param>
+/// <param name="Matches">Eşleşen profiller, en iyi eşleşme önce.</param>
 public sealed record IspDetectionResult(IspIdentity? Identity, IReadOnlyList<IspProfile> Matches)
 {
-    /// <summary>Tek ve net bir eslesme varsa o profil; yoksa null.</summary>
+    /// <summary>Tek ve net bir eşleşme varsa o profil; yoksa null.</summary>
     public IspProfile? BestMatch => Matches.Count > 0 ? Matches[0] : null;
 
-    /// <summary>Birden fazla profil eslesti; kullaniciya secim sunulmali.</summary>
+    /// <summary>Birden fazla profil eşleşti; kullanıcıya seçim sunulmalı.</summary>
     public bool IsAmbiguous => Matches.Count > 1;
 }
 
 /// <summary>
-/// Baglantinin servis saglayicisini tespit eder.
+/// Bağlantının servis sağlayıcısını tespit eder.
 /// </summary>
 /// <remarks>
-/// Arayuzdeki "Bilmiyorum / otomatik tespit et" secenegini calisir hale getiren
-/// parca. Kullanicilarin cogu servis saglayicisini teknik adiyla bilmiyor
-/// ("Turk Telekom" mu "TTNET" mi, "Superonline" mu "Turkcell" mi) ve bilmemek
+/// Arayüzdeki "Bilmiyorum / otomatik tespit et" seçeneğini çalışır hâle getiren
+/// parça. Kullanıcıların çoğu servis sağlayıcısını teknik adıyla bilmiyor
+/// ("Türk Telekom" mu "TTNET" mi, "Superonline" mı "Turkcell" mi) ve bilmemek
 /// testi engellememeli.
 ///
-/// Iki kaynak sirayla deneniyor. Tek bir servise guvenmek kirilgan olurdu:
-/// bunlarin herhangi biri kapali olabilir ya da -- Turkiye baglaminda daha
-/// onemlisi -- engellenmis olabilir.
+/// İki kaynak sırayla deneniyor. Tek bir servise güvenmek kırılgan olurdu:
+/// bunların herhangi biri kapalı olabilir ya da, Türkiye bağlamında daha
+/// önemlisi, engellenmiş olabilir.
 ///
-/// Gonderilen tek bilgi baglantinin kendi genel IP adresi, ki zaten baglanilan
-/// her sunucu onu goruyor. Baska hicbir sey gonderilmiyor.
+/// Gönderilen tek bilgi bağlantının kendi genel IP adresi; zaten bağlanılan
+/// her sunucu onu görüyor. Başka hiçbir şey gönderilmiyor.
 ///
-/// SIRA ONEMLI: once HTTPS olan ipinfo.io. Eskiden once ip-api.com soruluyordu ve
-/// o istek SIFRESIZ gidiyor (ucretsiz planinda HTTPS yok): servis saglayici,
-/// kullanicinin "hangi servis saglayicidayim" sorgusunu duz metin olarak goruyordu.
-/// ip-api yalnizca yedek; README-DETAYLI "Sik sorulanlar"da bu yazili. Kullanici
-/// servis saglayicisini listeden secerse bu sinif hic calismiyor.
+/// SIRA ÖNEMLİ: önce HTTPS olan ipinfo.io. Eskiden önce ip-api.com soruluyordu ve
+/// o istek ŞİFRESİZ gidiyor (ücretsiz planında HTTPS yok): servis sağlayıcı,
+/// kullanıcının "hangi servis sağlayıcıdayım" sorgusunu düz metin olarak görüyordu.
+/// ip-api yalnızca yedek; README-DETAYLI "Sık sorulanlar"da bu yazılı. Kullanıcı
+/// servis sağlayıcısını listeden seçerse bu sınıf hiç çalışmıyor.
 /// </remarks>
 public sealed class IspDetector : IDisposable
 {
-    /// <summary>Sorgu kaynaklari, sorulma sirasiyla. Ilki sifreli olmali.</summary>
+    /// <summary>Sorgu kaynakları, sorulma sırasıyla. İlki şifreli olmalı.</summary>
     public static IReadOnlyList<string> QueryOrder { get; } =
     [
         "https://ipinfo.io/json",
@@ -65,7 +65,7 @@ public sealed class IspDetector : IDisposable
         _client.DefaultRequestHeaders.UserAgent.ParseAdd("ZapretTR");
     }
 
-    /// <summary>Kimligi tespit edip eslesen profilleri doner.</summary>
+    /// <summary>Kimliği tespit edip eşleşen profilleri döner.</summary>
     public async Task<IspDetectionResult> DetectAsync(
         ProfileStore profiles, CancellationToken cancellationToken = default)
     {
@@ -80,7 +80,7 @@ public sealed class IspDetector : IDisposable
         return new IspDetectionResult(identity, profiles.Match(identity.Asn, identity.OrgName));
     }
 
-    /// <summary>Baglantinin ASN ve kurulus adini bulur; hicbir kaynak cevap vermezse null.</summary>
+    /// <summary>Bağlantının ASN ve kuruluş adını bulur; hiçbir kaynak cevap vermezse null.</summary>
     public async Task<IspIdentity?> IdentifyAsync(CancellationToken cancellationToken = default)
     {
         var identity = await TryIpInfoAsync(cancellationToken).ConfigureAwait(false);
@@ -106,11 +106,11 @@ public sealed class IspDetector : IDisposable
                 return null;
             }
 
-            // "as" alani "AS9121 Turk Telekomunikasyon Anonim Sirketi" seklinde geliyor.
+            // "as" alanı "AS9121 Turk Telekomunikasyon Anonim Sirketi" şeklinde geliyor.
             var asn = ParseAsn(response.As);
 
-            // Kurulus adi icin birkac alan var; en dolgun olani sec cunku profil
-            // eslesmesi anahtar kelime aramasiyla yapiliyor.
+            // Kuruluş adı için birkaç alan var; en dolgun olanı seç, çünkü profil
+            // eşleşmesi anahtar kelime aramasıyla yapılıyor.
             var org = new[] { response.Isp, response.Org, response.AsName, response.As }
                 .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
@@ -134,7 +134,7 @@ public sealed class IspDetector : IDisposable
                 return null;
             }
 
-            // ipinfo "org" alanini "AS9121 Turk Telekomunikasyon" seklinde veriyor.
+            // ipinfo "org" alanını "AS9121 Turk Telekomunikasyon" şeklinde veriyor.
             return new IspIdentity(ParseAsn(response.Org), response.Org, "ipinfo.io");
         }
         catch (Exception)
@@ -143,7 +143,7 @@ public sealed class IspDetector : IDisposable
         }
     }
 
-    /// <summary>"AS9121 Bir Sirket" gibi bir dizgiden 9121 cikarir.</summary>
+    /// <summary>"AS9121 Bir Şirket" gibi bir dizgiden 9121 çıkarır.</summary>
     public static int? ParseAsn(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))

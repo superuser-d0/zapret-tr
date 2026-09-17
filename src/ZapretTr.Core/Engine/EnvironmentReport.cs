@@ -5,35 +5,35 @@ using System.Runtime.Versioning;
 namespace ZapretTr.Core.Engine;
 
 /// <summary>
-/// Makinenin O ANKI durumunu satir satir yazar: "Raporu Kaydet"in gunlukten
-/// sonraki yarisi.
+/// Makinenin O ANKİ durumunu satır satır yazar: "Raporu Kaydet"in günlükten
+/// sonraki yarısı.
 /// </summary>
 /// <remarks>
-/// Neden ayri bir sinif ve neden bu kadar cok alan: raporun tek isi, uzaktan
-/// gelen "olmadi" cumlesini teshis edilebilir bir seye cevirmek. Bugune kadar
-/// rapor yalnizca gorunum modelinin BILDIGI seyleri tasiyordu -- secili profil,
-/// secili strateji, gunluk. Oysa "olmadi" bildirimlerinin cogunda gorunum
-/// modelinin bildigi hicbir sey yanlis degil; yanlis olan, gorunum modelinin
-/// BAKMADIGI seyler:
+/// Neden ayrı bir sınıf ve neden bu kadar çok alan: raporun tek işi, uzaktan
+/// gelen "olmadı" cümlesini teşhis edilebilir bir şeye çevirmek. Bugüne kadar
+/// rapor yalnızca görünüm modelinin BİLDİĞİ şeyleri taşıyordu: seçili profil,
+/// seçili strateji, günlük. Oysa "olmadı" bildirimlerinin çoğunda görünüm
+/// modelinin bildiği hiçbir şey yanlış değil; yanlış olan, görünüm modelinin
+/// BAKMADIĞI şeyler:
 ///
-///   * uygulama yonetici olarak acilmamis (winws hicbir sey yapamaz),
-///   * upstream ikilileri eksik ya da bozuk kurulmus,
-///   * winws/dnscrypt surecleri hic ayakta degil,
-///   * otomatik baslatma servisi kurulu ama DURMUS,
-///   * sistem DNS'i hala bizde ama dinleyen kimse yok (ad cozumu tamamen olu),
-///   * GoodbyeDPI gibi baska bir arac WinDivert'i tutuyor.
+///   * uygulama yönetici olarak açılmamış (winws hiçbir şey yapamaz),
+///   * upstream ikilileri eksik ya da bozuk kurulmuş,
+///   * winws/dnscrypt süreçleri hiç ayakta değil,
+///   * otomatik başlatma servisi kurulu ama DURMUŞ,
+///   * sistem DNS'i hâlâ bizde ama dinleyen kimse yok (ad çözümü tamamen ölü),
+///   * GoodbyeDPI gibi başka bir araç WinDivert'i tutuyor.
 ///
-/// Bunlarin hicbiri gunlukte gorunmuyor -- ozellikle de kullanici bilgisayari
-/// yeniden baslatip uygulamayi YENI actiysa: o durumda gunluk neredeyse bos ve
-/// eski rapor bicimi hicbir sey anlatmiyordu. Bu bolum kullanicidan tek tek
-/// soru sormadan o alti soruyu birden cevapliyor.
+/// Bunların hiçbiri günlükte görünmüyor; özellikle de kullanıcı bilgisayarı
+/// yeniden başlatıp uygulamayı YENİ açtıysa: o durumda günlük neredeyse boş ve
+/// eski rapor biçimi hiçbir şey anlatmıyordu. Bu bölüm kullanıcıya tek tek
+/// soru sormadan o altı soruyu birden cevaplıyor.
 ///
-/// Hicbir adim disari istek yapmaz ve genel IP adresi yazilmaz.
+/// Hiçbir adım dışarı istek yapmaz ve genel IP adresi yazılmaz.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public static class EnvironmentReport
 {
-    /// <summary>Ortam ozetini toplar. Hicbir kosulda firlatmaz.</summary>
+    /// <summary>Ortam özetini toplar. Hiçbir koşulda fırlatmaz.</summary>
     public static async Task<IReadOnlyList<string>> CollectAsync(
         CancellationToken cancellationToken = default)
     {
@@ -51,12 +51,12 @@ public static class EnvironmentReport
     }
 
     /// <summary>
-    /// Tek bir bolumu ekler ve o bolumun hatasini kendi icinde tutar.
+    /// Tek bir bölümü ekler ve o bölümün hatasını kendi içinde tutar.
     /// </summary>
     /// <remarks>
-    /// Bolumlerden biri patlarsa rapor yine de yazilmali. Rapor bir teshis araci;
-    /// teshis araclarinin en kotu ozelligi, tam ihtiyac duyuldugu anda hicbir sey
-    /// uretmemeleridir.
+    /// Bölümlerden biri patlarsa rapor yine de yazılmalı. Rapor bir teşhis aracı;
+    /// teşhis araçlarının en kötü özelliği, tam ihtiyaç duyulduğu anda hiçbir şey
+    /// üretmemeleridir.
     /// </remarks>
     private static async Task AddAsync(
         List<string> lines,
@@ -141,10 +141,10 @@ public static class EnvironmentReport
         return Task.FromResult<IReadOnlyList<string>>(lines);
     }
 
-    /// <summary>Ayni addaki surecten kac tane var.</summary>
+    /// <summary>Aynı addaki süreçten kaç tane var.</summary>
     /// <remarks>
-    /// ZapretTR icin sayinin BIRDEN buyuk olmasi tek basina bir teshis: ikinci
-    /// bir ornek winws'i ayni filtreyle acamaz ve kullanici "Baslat calismiyor"
+    /// ZapretTR için sayının BİRDEN büyük olması tek başına bir teşhis: ikinci
+    /// bir örnek winws'i aynı filtreyle açamaz ve kullanıcı "Başlat çalışmıyor"
     /// diye bildirir.
     /// </remarks>
     private static string SurecSayisi(string ad)
@@ -209,9 +209,9 @@ public static class EnvironmentReport
                       ? "var, sahibi: " + (SystemDnsManager.BackupOwner ?? "bilinmiyor")
                       : "yok"));
 
-        // Bekcinin kendisi de sessizce eksik olabilir (gorev silinmis, kurulum
-        // paketi degil saha paketi kullaniliyor); o zaman yeni kartlar ve olu
-        // cozumleyici yine kimsenin gozunde degil.
+        // Bekçinin kendisi de sessizce eksik olabilir (görev silinmiş, kurulum
+        // paketi değil saha paketi kullanılıyor); o zaman yeni kartlar ve ölü
+        // çözümleyici yine kimsenin gözünde değil.
         lines.Add("  DNS bekcisi gorevi            : "
                   + (await DnsGuardTask.IsRegisteredAsync(cancellationToken).ConfigureAwait(false)
                       ? "kurulu"
@@ -228,10 +228,10 @@ public static class EnvironmentReport
             lines.Add("  Bekcinin son kaydi            : " + sonBekci);
         }
 
-        // EN TEHLIKELI BILESIM ve raporda tek satirda gorunmesi gereken sey:
-        // sistem DNS'i bize cevrilmis ama dinleyen kimse yok. O makine hicbir adi
-        // cozemez ve kullanicinin bildirdigi sey "internetim gitti" olur -- ki
-        // disaridan "program calismadi" ile ayni cumleyle anlatilir.
+        // EN TEHLİKELİ BİLEŞİM ve raporda tek satırda görünmesi gereken şey:
+        // sistem DNS'i bize çevrilmiş ama dinleyen kimse yok. O makine hiçbir adı
+        // çözemez ve kullanıcının bildirdiği şey "internetim gitti" olur; bu da
+        // dışarıdan "program çalışmadı" ile aynı cümleyle anlatılır.
         if (SystemDnsManager.HasBackup && !responding)
         {
             lines.Add("  DIKKAT: sistem DNS'i bize cevrilmis ama cozumleyici cevap vermiyor.");
@@ -252,14 +252,14 @@ public static class EnvironmentReport
     }
 
     /// <summary>
-    /// Raporda gosterilecek arayuzler: yonlendirmenin dokundugu kume.
+    /// Raporda gösterilecek arayüzler: yönlendirmenin dokunduğu küme.
     /// </summary>
     /// <remarks>
-    /// Kasitli olarak <see cref="SystemDnsManager.IsRedirectTarget"/> ile ayni
-    /// soruyu soruyor. Raporun degeri, "hangi kartlarin DNS'i degistirilecekti"
-    /// ile "hangi kartlarin DNS'i gercekten degismis" arasindaki farki
-    /// gosterebilmesinde: ikisi ayrisiyorsa sifreli DNS yarim kalmis demektir ve
-    /// belirtisi yok -- arayuz yine "KORUMA AKTIF" der.
+    /// Kasıtlı olarak <see cref="SystemDnsManager.IsRedirectTarget"/> ile aynı
+    /// soruyu soruyor. Raporun değeri, "hangi kartların DNS'i değiştirilecekti"
+    /// ile "hangi kartların DNS'i gerçekten değişmiş" arasındaki farkı
+    /// gösterebilmesinde: ikisi ayrışıyorsa şifreli DNS yarım kalmış demektir ve
+    /// belirtisi yok; arayüz yine "KORUMA AKTİF" der.
     /// </remarks>
     private static IEnumerable<NetworkInterface> AktifArayuzler()
     {
@@ -278,23 +278,23 @@ public static class EnvironmentReport
     }
 
     /// <summary>
-    /// Baska DPI araclarindan kalan izler ve DNS'i bozan durumlar.
+    /// Başka DPI araçlarından kalan izler ve DNS'i bozan durumlar.
     /// </summary>
     /// <remarks>
-    /// Burasi eskiden yalnizca CALISAN surece bakiyordu ve en sik karsilasilan
-    /// hali kaciriyordu: kapali ama kurulu kalinti. Kullanicilarin cogu bu araca
-    /// baska bir araçtan geliyor (Turkiye'de en yaygini GoodbyeDPI); eski arac
-    /// "kaldirildi" saniliyor ama servis kaydi kaliyor ve acilista WinDivert'i
-    /// kapiyor. Rapor bunu tasimazsa gelen bildirim yine "hicbir strateji
-    /// calismadi" cumlesinden ibaret kaliyor.
+    /// Burası eskiden yalnızca ÇALIŞAN sürece bakıyordu ve en sık karşılaşılan
+    /// hâli kaçırıyordu: kapalı ama kurulu kalıntı. Kullanıcıların çoğu bu araca
+    /// başka bir araçtan geliyor (Türkiye'de en yaygını GoodbyeDPI); eski araç
+    /// "kaldırıldı" sanılıyor ama servis kaydı kalıyor ve açılışta WinDivert'i
+    /// kapıyor. Rapor bunu taşımazsa gelen bildirim yine "hiçbir strateji
+    /// çalışmadı" cümlesinden ibaret kalıyor.
     /// </remarks>
     private static async Task<IReadOnlyList<string>> CakismaAsync(CancellationToken cancellationToken)
     {
         var lines = new List<string>();
 
         // Hedef listesi ProbeTargetStore'da ve o Prober projesinde; Core oraya
-        // bagimli degil. hosts kontrolu bu yuzden raporda bos gecmiyor, ama
-        // adlari veremedigimiz icin yalnizca arayuz tarafinda dolu kosuyor.
+        // bağımlı değil. hosts kontrolü bu yüzden raporda boş geçmiyor, ama
+        // adları veremediğimiz için yalnızca arayüz tarafında dolu koşuyor.
         var bulgular = await ConflictScanner.ScanAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 

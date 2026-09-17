@@ -10,7 +10,7 @@ using ZapretTr.Prober;
 
 namespace ZapretTr.App.ViewModels;
 
-/// <summary>Arayuzun ust bandinda gosterilen genel durum.</summary>
+/// <summary>Arayüzün üst bandında gösterilen genel durum.</summary>
 public enum AppStatus
 {
     NotReady,
@@ -21,16 +21,16 @@ public enum AppStatus
     Faulted,
 }
 
-/// <summary>Strateji secim kutusundaki tek bir satir.</summary>
+/// <summary>Strateji seçim kutusundaki tek bir satır.</summary>
 public sealed record StrategyChoice(string Id, string Display, string Args, CandidateSource Source)
 {
-    /// <summary>Bu strateji bizim testimizde dogrulandi mi.</summary>
+    /// <summary>Bu strateji bizim testimizde doğrulandı mı.</summary>
     public bool IsVerified => Source == CandidateSource.Verified;
 
     public override string ToString() => Display;
 }
 
-/// <summary>ISP secim kutusundaki tek bir satir. Profili null olan satir "bilmiyorum".</summary>
+/// <summary>İSS seçim kutusundaki tek bir satır. Profili null olan satır "bilmiyorum".</summary>
 public sealed record IspChoice(IspProfile? Profile, string Display)
 {
     public override string ToString() => Display;
@@ -40,21 +40,21 @@ public sealed record IspChoice(IspProfile? Profile, string Display)
 public sealed class MainViewModel : INotifyPropertyChanged
 {
     private readonly VendorPaths? _vendor;
-    /// <summary>Yuklu profiller (kullanicinin dogrulamalari bindirilmis).</summary>
+    /// <summary>Yüklü profiller (kullanıcının doğrulamaları bindirilmiş).</summary>
     /// <remarks>
-    /// readonly DEGIL: "Tüm Ayarları Sıfırla" ogrenilmis dogrulamalari siliyor ve
-    /// listenin bellekte eski haliyle kalmasi, silinmis bir seyin ekranda
-    /// "dogrulandi" olarak gorunmesi demek olurdu.
+    /// readonly DEĞİL: "Tüm Ayarları Sıfırla" öğrenilmiş doğrulamaları siliyor ve
+    /// listenin bellekte eski hâliyle kalması, silinmiş bir şeyin ekranda
+    /// "doğrulandı" olarak görünmesi demek olurdu.
     /// </remarks>
     private ProfileStore? _profiles;
     private readonly WinwsRunner? _runner;
 
-    /// <summary>winws.exe'nin icinden okunan surum; motor hic calismamisken alt bilgi icin.</summary>
+    /// <summary>winws.exe'nin içinden okunan sürüm; motor hiç çalışmamışken alt bilgi için.</summary>
     private readonly string? _embeddedWinwsVersion;
     private readonly DnsCryptRunner? _dnsRunner;
     private CancellationTokenSource? _testCancellation;
 
-    /// <summary>Otomatik baslatma servisi parametre testi icin durduruldu mu.</summary>
+    /// <summary>Otomatik başlatma servisi parametre testi için durduruldu mu.</summary>
     private bool _serviceSuspendedForTest;
 
     private AppStatus _status = AppStatus.NotReady;
@@ -74,17 +74,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isServicePaused;
 
     /// <summary>
-    /// Kayitli ayarlar geri yuklenirken true.
+    /// Kayıtlı ayarlar geri yüklenirken true.
     /// </summary>
     /// <remarks>
-    /// Bu bayrak olmadan geri yukleme kendi kendini bozuyordu: ilk atanan ozelligin
-    /// setter'i SaveSelection() cagiriyor, o an ISS ve strateji HENUZ geri
-    /// yuklenmemis oluyor ve yapilandirma yarim haliyle uzerine yaziliyordu. Sonuc:
-    /// her acilista ayarlarin bir kismi sessizce kayboluyordu.
+    /// Bu bayrak olmadan geri yükleme kendi kendini bozuyordu: ilk atanan özelliğin
+    /// setter'ı SaveSelection() çağırıyor, o an İSS ve strateji HENÜZ geri
+    /// yüklenmemiş oluyor ve yapılandırma yarım hâliyle üzerine yazılıyordu. Sonuç:
+    /// her açılışta ayarların bir kısmı sessizce kayboluyordu.
     /// </remarks>
     private bool _isRestoring;
 
-    /// <summary>Temizlik bir kez kosulduysa tekrar kosmasin.</summary>
+    /// <summary>Temizlik bir kez koşulduysa tekrar koşmasın.</summary>
     private bool _shutdownCompleted;
 
     public MainViewModel()
@@ -105,9 +105,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _vendor = VendorPaths.Locate();
 
-            // Kullanicinin kendi dogruladiklari dagitim profillerinin uzerine
+            // Kullanıcının kendi doğruladıkları dağıtım profillerinin üzerine
             // bindiriliyor: parametre testinde bulunan strateji bir sonraki
-            // acilista "dogrulanmis" olarak hazir gelsin.
+            // açılışta "doğrulanmış" olarak hazır gelsin.
             _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
             _runner = new WinwsRunner(_vendor);
             _embeddedWinwsVersion = WinwsRunner.ReadEmbeddedVersion(_vendor.WinwsExe);
@@ -115,8 +115,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 Append(line.Text, line.IsError);
 
-                // Surum satiri "calisiyor" bildiriminden SONRA okunabiliyor; o durumda
-                // alt bilgi bir sonraki durum degisikligine kadar eski kaliyordu.
+                // Sürüm satırı "çalışıyor" bildiriminden SONRA okunabiliyor; o durumda
+                // alt bilgi bir sonraki durum değişikliğine kadar eski kalıyordu.
                 if (WinwsRunner.ParseVersion(line.Text) is not null)
                 {
                     Application.Current?.Dispatcher.BeginInvoke(() =>
@@ -130,10 +130,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             _dnsRunner = new DnsCryptRunner(_vendor);
 
-            // Cozumleyici dokumu SUZULUYOR. Suzulmezse acilisatki 470 satirlik
-            // sunucu listesi 500 satirlik gunlugu tasirip her seyi disari
-            // atiyor -- gercek bir kullanicinin raporunda tam olarak bu oldu.
-            // Gerekcesi ve neyin gectigi DnsCryptRunner.IsNoise icinde.
+            // Çözümleyici dökümü SÜZÜLÜYOR. Süzülmezse açılıştaki 470 satırlık
+            // sunucu listesi 500 satırlık günlüğü taşırıp her şeyi dışarı
+            // atıyor; gerçek bir kullanıcının raporunda tam olarak bu oldu.
+            // Gerekçesi ve neyin geçtiği DnsCryptRunner.IsNoise içinde.
             _dnsRunner.LogLineReceived += line =>
             {
                 if (!DnsCryptRunner.IsNoise(line))
@@ -142,10 +142,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 }
             };
 
-            // Onceki calismada uygulama duzgun kapanmadiysa sistem DNS'i hala
-            // 127.0.0.1'i gosteriyor olabilir ve o durumda hicbir ad cozulmez.
-            // Kullaniciya sormadan duzeltiyoruz: internetin yokken onay beklemek
-            // yardim degil, engel.
+            // Önceki çalışmada uygulama düzgün kapanmadıysa sistem DNS'i hâlâ
+            // 127.0.0.1'i gösteriyor olabilir ve o durumda hiçbir ad çözülmez.
+            // Kullanıcıya sormadan düzeltiyoruz: interneti yokken onay beklemek
+            // yardım değil, engel.
             _ = RecoverDnsIfNeededAsync();
 
             LoadIspChoices();
@@ -154,18 +154,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             SetIdleStatus();
             Append("Profiller yüklendi: " + _profiles.Profiles.Count + " servis sağlayıcısı.");
 
-            // Beklemiyoruz: ag yavassa uygulamanin acilisini geciktirmesin.
+            // Beklemiyoruz: ağ yavaşsa uygulamanın açılışını geciktirmesin.
             NotifyIfVersionChanged();
 
 
             var missing = _vendor.FindMissingFiles();
             if (missing.Count > 0)
             {
-                // Kullaniciya "fetch-upstream.ps1 calistirin" demek, kurulum
+                // Kullanıcıya "fetch-upstream.ps1 çalıştırın" demek, kurulum
                 // paketiyle gelen birine elinde olmayan bir depoda
-                // kullanamayacagi bir komut vermekti. Kurulu bir makinede bu
-                // dosyalarin kaybolmasinin en olasi sebebi virus programinin
-                // WinDivert surucusunu karantinaya almasi.
+                // kullanamayacağı bir komut vermekti. Kurulu bir makinede bu
+                // dosyaların kaybolmasının en olası sebebi virüs programının
+                // WinDivert sürücüsünü karantinaya alması.
                 SetStatus(AppStatus.NotReady, "KURULUM DOSYALARI EKSİK",
                     $"{missing.Count} dosya eksik. Ayrıntılar ve çözüm günlükte.");
 
@@ -176,8 +176,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Kurulum eksikse uygulama acilmali ve NEDEN acilamadigini soylemeli;
-            // sessizce coken bir pencere kullaniciya hicbir sey anlatmaz.
+            // Kurulum eksikse uygulama açılmalı ve NEDEN açılamadığını söylemeli;
+            // sessizce çöken bir pencere kullanıcıya hiçbir şey anlatmaz.
             SetStatus(AppStatus.NotReady, "KURULUM EKSİK", ex.Message);
             Append(ex.Message, isError: true);
         }
@@ -189,17 +189,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public RelayCommand StartCommand { get; }
 
-    /// <summary>Acik ve koyu tema arasinda gecer.</summary>
+    /// <summary>Açık ve koyu tema arasında geçer.</summary>
     public RelayCommand ToggleThemeCommand { get; }
 
-    /// <summary>Tema dugmesinin yazisi: gecilecek temayi soyler.</summary>
+    /// <summary>Tema düğmesinin yazısı: geçilecek temayı söyler.</summary>
     public string ThemeButtonText => ThemeManager.Current == AppTheme.Dark ? "Açık tema" : "Koyu tema";
     public RelayCommand PauseCommand { get; }
     public RelayCommand TestCommand { get; }
     public RelayCommand CancelTestCommand { get; }
     private string? _updateMessage;
 
-    /// <summary>Yeni surum varsa gosterilecek satir; yoksa <c>null</c>.</summary>
+    /// <summary>Yeni sürüm varsa gösterilecek satır; yoksa <c>null</c>.</summary>
     public string? UpdateMessage
     {
         get => _updateMessage;
@@ -212,30 +212,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Guncelleme satiri gosterilsin mi.</summary>
+    /// <summary>Güncelleme satırı gösterilsin mi.</summary>
     public bool HasUpdate => !string.IsNullOrEmpty(UpdateMessage);
 
-    /// <summary>Kullanici uygulamadan GERCEKTEN cikmak istedi.</summary>
+    /// <summary>Kullanıcı uygulamadan GERÇEKTEN çıkmak istedi.</summary>
     /// <remarks>
-    /// Pencereyi kapatmak artik cikis anlamina gelmiyor (bildirim alanina
-    /// iniyor), bu yuzden niyetin ayrica duyurulmasi gerekiyor.
+    /// Pencereyi kapatmak artık çıkış anlamına gelmiyor (bildirim alanına
+    /// iniyor), bu yüzden niyetin ayrıca duyurulması gerekiyor.
     /// </remarks>
     public event EventHandler? ExitRequested;
 
     public RelayCommand ResetCommand { get; }
 
-    /// <summary>Guncellemeyi denetler; varsa indirip kurar.</summary>
+    /// <summary>Güncellemeyi denetler; varsa indirip kurar.</summary>
     public RelayCommand UpdateCommand { get; }
 
-    /// <summary>Gunlugu ve ortam ozetini bir dosyaya yazar.</summary>
+    /// <summary>Günlüğü ve ortam özetini bir dosyaya yazar.</summary>
     public RelayCommand SaveReportCommand { get; }
 
-    /// <summary>Doldurulmus hata bildirimi formunu tarayicida acar.</summary>
+    /// <summary>Doldurulmuş hata bildirimi formunu tarayıcıda açar.</summary>
     public RelayCommand ReportIssueCommand { get; }
     public RelayCommand ExitCommand { get; }
     public RelayCommand ServiceCommand { get; }
 
-    // --- Baglanan ozellikler ----------------------------------------------------
+    // --- Bağlanan özellikler ----------------------------------------------------
 
     public ObservableCollection<IspChoice> IspChoices { get; } = [];
 
@@ -271,7 +271,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         private set => Set(ref _statusDetail, value);
     }
 
-    /// <summary>Durum bandinin rengi. XAML bunu kaynak anahtari olarak kullanir.</summary>
+    /// <summary>Durum bandının rengi. XAML bunu kaynak anahtarı olarak kullanır.</summary>
     public string StatusBrushKey => Status switch
     {
         AppStatus.Running => "StatusRunningBrush",
@@ -281,7 +281,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _ => "StatusReadyBrush",
     };
 
-    /// <summary>Ana dugmenin yazisi. Duraklatilmis durumdan devam etmek "baslat"tan farkli okunmali.</summary>
+    /// <summary>Ana düğmenin yazısı. Duraklatılmış durumdan devam etmek "başlat"tan farklı okunmalı.</summary>
     public string PrimaryButtonText => Status switch
     {
         AppStatus.Running => "ZAPRET ÇALIŞIYOR",
@@ -318,13 +318,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Secili stratejinin henuz dogrulanmadigi. Rozet bunu gosterir.
+    /// Seçili stratejinin henüz doğrulanmadığı. Rozet bunu gösterir.
     /// </summary>
     /// <remarks>
-    /// Bu ayrimin arayuze cikmasi kasitli: profil verisinin buyuk kismi toplulukta
-    /// bildirilmis ya da mekanizmadan turetilmis, bizim test etmedigimiz adaylardan
-    /// olusuyor. Kullaniciya "bu calisiyor" demek ile "bu denenmeye deger" demek
-    /// arasindaki farki gizlemek, ise yaramadiginda guveni tumden yikar.
+    /// Bu ayrımın arayüze çıkması kasıtlı: profil verisinin büyük kısmı toplulukta
+    /// bildirilmiş ya da mekanizmadan türetilmiş, bizim test etmediğimiz adaylardan
+    /// oluşuyor. Kullanıcıya "bu çalışıyor" demek ile "bu denenmeye değer" demek
+    /// arasındaki farkı gizlemek, işe yaramadığında güveni tümden yıkar.
     /// </remarks>
     public bool IsSelectedStrategyUnverified => SelectedStrategy is { IsVerified: false };
 
@@ -340,20 +340,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool IsReady => Status is AppStatus.Ready or AppStatus.Running or AppStatus.Paused;
 
     /// <summary>
-    /// Manuel baslatma mumkun mu.
+    /// Elle başlatma mümkün mü.
     /// </summary>
     /// <remarks>
-    /// Servis kuruluysa winws ZATEN calisiyor ve ayni filtreyle ikinci bir ornek
-    /// baslatilamiyor -- winws "A copy of winws is already running with the same
-    /// filter" deyip 1 koduyla cikiyor. Dugme yine de aciktı ve basan kullanici
-    /// "winws baslar baslamaz 1 koduyla kapandi" diye anlamsiz bir hata aliyordu.
-    /// Gercek bir kullanicida yasandi.
+    /// Servis kuruluysa winws ZATEN çalışıyor ve aynı filtreyle ikinci bir örnek
+    /// başlatılamıyor; winws "A copy of winws is already running with the same
+    /// filter" deyip 1 koduyla çıkıyor. Düğme yine de açıktı ve basan kullanıcı
+    /// "winws başlar başlamaz 1 koduyla kapandı" diye anlamsız bir hata alıyordu.
+    /// Gerçek bir kullanıcıda yaşandı.
     ///
-    /// Koruma zaten aciksa basilacak bir dugme olmamali.
+    /// Koruma zaten açıksa basılacak bir düğme olmamalı.
     /// </remarks>
     private bool _isServiceStopped;
 
-    /// <summary>Servis kurulu ama calismiyor: koruma yok.</summary>
+    /// <summary>Servis kurulu ama çalışmıyor: koruma yok.</summary>
     public bool IsServiceStopped
     {
         get => _isServiceStopped;
@@ -365,15 +365,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
                             && (IsServicePaused || (SelectedStrategy is not null && !IsServiceInstalled));
 
     /// <summary>
-    /// Duraklatma mumkun mu: uygulamanin kendi korumasi calisiyorsa YA DA otomatik
-    /// baslatma servisi calisiyorsa.
+    /// Duraklatma mümkün mü: uygulamanın kendi koruması çalışıyorsa YA DA otomatik
+    /// başlatma servisi çalışıyorsa.
     /// </summary>
     /// <remarks>
-    /// Eskiden yalnizca ilki vardi. Servis modunda dugme hep kapaliydi ve korumayi
-    /// gecici olarak kapatmanin tek yolu ayari silen "Otomatik Başlatmayı Kaldır"
-    /// ya da "Tüm Ayarları Sıfırla" idi. VPN kullanmak isteyen gercek bir kullanici
-    /// tam olarak bu yuzden sifirlamak zorunda kaldi; gerekcesi
-    /// <see cref="ServiceManager.PauseAsync"/> icinde.
+    /// Eskiden yalnızca ilki vardı. Servis modunda düğme hep kapalıydı ve korumayı
+    /// geçici olarak kapatmanın tek yolu ayarı silen "Otomatik Başlatmayı Kaldır"
+    /// ya da "Tüm Ayarları Sıfırla" idi. VPN kullanmak isteyen gerçek bir kullanıcı
+    /// tam olarak bu yüzden sıfırlamak zorunda kaldı; gerekçesi
+    /// <see cref="ServiceManager.PauseAsync"/> içinde.
     /// </remarks>
     public bool CanPause => !IsBusy
                             && (Status == AppStatus.Running
@@ -381,13 +381,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
                                     && ((IsServiceInstalled && !IsServicePaused) || _hasLeftovers)));
 
     /// <summary>
-    /// Arkada ZapretTR'den kalan calisan bir sey var mi: winws, dnscrypt ya da DNS
-    /// yonlendirmesi. Varsa Duraklat, koruma "calisiyor" gorunmese de acik kalir.
+    /// Arkada ZapretTR'den kalan çalışan bir şey var mı: winws, dnscrypt ya da DNS
+    /// yönlendirmesi. Varsa Duraklat, koruma "çalışıyor" görünmese de açık kalır.
     /// </summary>
     /// <remarks>
-    /// Motor coktugunde ("BEKLENMEDİK DURUŞ") ya da onceki bir oturumdan kalinti
-    /// varken dugme kapaliydi; kullanicinin elinde yalnizca ayari silen
-    /// sifirlama kaliyordu.
+    /// Motor çöktüğünde ("BEKLENMEDİK DURUŞ") ya da önceki bir oturumdan kalıntı
+    /// varken düğme kapalıydı; kullanıcının elinde yalnızca ayarı silen
+    /// sıfırlama kalıyordu.
     /// </remarks>
     private bool _hasLeftovers;
 
@@ -427,7 +427,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         set => Set(ref _isLogExpanded, value);
     }
 
-    /// <summary>Kullanicinin elle girdigi hedef. Bos birakilabilir.</summary>
+    /// <summary>Kullanıcının elle girdiği hedef. Boş bırakılabilir.</summary>
     public string CustomTarget
     {
         get => _customTarget;
@@ -436,21 +436,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     /// <summary>Alt bilgideki motor sürümü.</summary>
     /// <remarks>
-    /// Burada eskiden sabit olarak "winws v72.13" yaziyordu ve bu YANLISTI.
-    /// Gercek bir kullanicinin gunlugu motoru kendi agziyla ele verdi:
-    /// <c>github version v72.12</c>. Sebebi tedarik zincirinde --
+    /// Burada eskiden sabit olarak "winws v72.13" yazıyordu ve bu YANLIŞTI.
+    /// Gerçek bir kullanıcının günlüğü motoru kendi ağzıyla ele verdi:
+    /// <c>github version v72.12</c>. Sebebi tedarik zincirinde:
     /// <c>winws.exe</c> <c>zapret-win-bundle</c> deposundan bir COMMIT ile
-    /// sabitleniyor (orada tag yok); v72.13 yalnizca sahte yuk dosyalarinin ve
-    /// filtre parcalarinin geldigi <c>zapret</c> tag'i. Yani o numara hicbir
-    /// zaman winws'in surumu degildi.
+    /// sabitleniyor (orada etiket yok); v72.13 yalnızca sahte yük dosyalarının ve
+    /// filtre parçalarının geldiği <c>zapret</c> etiketi. Yani o numara hiçbir
+    /// zaman winws'in sürümü değildi.
     ///
-    /// Artik motor bir kez calistiysa ONUN soyledigi gosteriliyor; hic
-    /// calismadiysa uydurmak yerine ikilinin nereden geldigi yaziliyor.
+    /// Artık motor bir kez çalıştıysa ONUN söylediği gösteriliyor; hiç
+    /// çalışmadıysa uydurmak yerine ikilinin nereden geldiği yazılıyor.
     /// </remarks>
     /// <remarks>
-    /// Once motorun calisirken kendi bildirdigi surum, yoksa ikilinin icinden
-    /// okunan. Yalnizca ilkine bakmak alt bilginin duruma gore degismesine yol
-    /// aciyordu; gerekcesi <see cref="WinwsRunner.ReadEmbeddedVersion"/>'da.
+    /// Önce motorun çalışırken kendi bildirdiği sürüm, yoksa ikilinin içinden
+    /// okunan. Yalnızca ilkine bakmak alt bilginin duruma göre değişmesine yol
+    /// açıyordu; gerekçesi <see cref="WinwsRunner.ReadEmbeddedVersion"/>'da.
     /// </remarks>
     public string EngineVersionText =>
         ((_runner?.ReportedVersion ?? _embeddedWinwsVersion) is { } surum
@@ -458,24 +458,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
             : "winws (zapret-win-bundle)")
         + " · dnscrypt-proxy 2.1.18";
 
-    /// <summary>Pencere basligi: uygulamanin surumuyle.</summary>
+    /// <summary>Pencere başlığı: uygulamanın sürümüyle.</summary>
     /// <remarks>
-    /// Uygulamanin KENDI surumu ekranda hicbir yerde yazmiyordu; alt bilgide
-    /// yalnizca motorun surumu vardi. "Hangi surumdesiniz" sorusunun cevabi ancak
-    /// "Raporu Kaydet" dosyasinda bulunuyordu -- yani yeni surumu indirdigini
-    /// soyleyen kullanicinin gercekten onu calistirip calistirmadigi bilinemiyordu.
+    /// Uygulamanın KENDİ sürümü ekranda hiçbir yerde yazmıyordu; alt bilgide
+    /// yalnızca motorun sürümü vardı. "Hangi sürümdesiniz" sorusunun cevabı ancak
+    /// "Raporu Kaydet" dosyasında bulunuyordu; yani yeni sürümü indirdiğini
+    /// söyleyen kullanıcının gerçekten onu çalıştırıp çalıştırmadığı bilinemiyordu.
     /// </remarks>
     public string WindowTitle => "ZapretTR " + ShortVersion(SurumMetni());
 
-    /// <summary>Alt bilgi: uygulama, motor ve cozumleyici surumleri tek satirda.</summary>
+    /// <summary>Alt bilgi: uygulama, motor ve çözümleyici sürümleri tek satırda.</summary>
     public string FooterText => "ZapretTR " + ShortVersion(SurumMetni()) + " · " + EngineVersionText;
 
     /// <summary>
-    /// "0.1.20+5cc46a98..." gibi bir surum metninden kullaniciya gosterilecek kismi alir.
+    /// "0.1.20+5cc46a98..." gibi bir sürüm metninden kullanıcıya gösterilecek kısmı alır.
     /// </summary>
     /// <remarks>
-    /// Commit ozeti rapora giriyor (teshis icin gerekli) ama baslikta 40 karakterlik
-    /// bir ozet kullaniciya bir sey soylemiyor.
+    /// Commit özeti rapora giriyor (teşhis için gerekli) ama başlıkta 40 karakterlik
+    /// bir özet kullanıcıya bir şey söylemiyor.
     /// </remarks>
     public static string ShortVersion(string informationalVersion)
     {
@@ -484,14 +484,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Sifreli DNS kullanilsin mi. Varsayilan olarak ACIK.
+    /// Şifreli DNS kullanılsın mı. Varsayılan olarak AÇIK.
     /// </summary>
     /// <remarks>
-    /// Varsayilanin acik olmasi olculmus bir gerekce tasiyor: bu makinede
-    /// discord.com, pornhub.com ve xvideos.com'un ucu de saglayicinin engel
-    /// sunucusuna cozumleniyordu. O katman asilmadan winws stratejisi hicbir sey
-    /// degistirmiyor -- trafik zaten gercek sunucuya gitmiyor. Kapali baslasaydi
-    /// kullanicilarin cogu "calismiyor" deyip birakirdi.
+    /// Varsayılanın açık olması ölçülmüş bir gerekçe taşıyor: bu makinede
+    /// discord.com, pornhub.com ve xvideos.com'un üçü de sağlayıcının engel
+    /// sunucusuna çözümleniyordu. O katman aşılmadan winws stratejisi hiçbir şey
+    /// değiştirmiyor; trafik zaten gerçek sunucuya gitmiyor. Kapalı başlasaydı
+    /// kullanıcıların çoğu "çalışmıyor" deyip bırakırdı.
     /// </remarks>
     public bool IsSecureDnsEnabled
     {
@@ -506,7 +506,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Otomatik baslatma servisi kurulu mu.</summary>
+    /// <summary>Otomatik başlatma servisi kurulu mu.</summary>
     public bool IsServiceInstalled
     {
         get => _isServiceInstalled;
@@ -518,18 +518,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Notify(nameof(CanStart));
                 RefreshCommands();
 
-                // Servis kuruluysa koruma acilistan itibaren zaten calisiyor.
-                // Kullanici bunu ekranda gormeli, yoksa "neden Baslat kapali"
-                // diye dusunur. Metnin kendisi SetIdleStatus icinde, tek yerde.
+                // Servis kuruluysa koruma açılıştan itibaren zaten çalışıyor.
+                // Kullanıcı bunu ekranda görmeli, yoksa "neden Başlat kapalı"
+                // diye düşünür. Metnin kendisi SetIdleStatus içinde, tek yerde.
                 RefreshIdlePresentation();
             }
         }
     }
 
-    /// <summary>Otomatik baslatma servisi kullanici tarafindan duraklatildi mi.</summary>
+    /// <summary>Otomatik başlatma servisi kullanıcı tarafından duraklatıldı mı.</summary>
     /// <remarks>
-    /// Duraklatilmis servis <see cref="IsServiceInstalled"/> sayiliyor (kaldirma
-    /// dugmesi gorunur kalsin), ama koruma kapali ve ana dugme onu geri aciyor.
+    /// Duraklatılmış servis <see cref="IsServiceInstalled"/> sayılıyor (kaldırma
+    /// düğmesi görünür kalsın), ama koruma kapalı ve ana düğme onu geri açıyor.
     /// </remarks>
     public bool IsServicePaused
     {
@@ -548,7 +548,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ? "Otomatik Başlatmayı Kaldır"
         : "Servis Olarak Yükle (Otomatik Başlat)";
 
-    /// <summary>Sifreli DNS su an gercekten devrede mi.</summary>
+    /// <summary>Şifreli DNS şu an gerçekten devrede mi.</summary>
     public bool IsSecureDnsActive
     {
         get => _isSecureDnsActive;
@@ -559,8 +559,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task StartAsync()
     {
-        // Duraklatilmis servis KENDI kayitli ayariyla geri aciliyor; secili
-        // stratejiyle uygulama icinde ikinci bir koruma baslatilmiyor.
+        // Duraklatılmış servis KENDİ kayıtlı ayarıyla geri açılıyor; seçili
+        // stratejiyle uygulama içinde ikinci bir koruma başlatılmıyor.
         if (IsServicePaused)
         {
             await ResumeServiceAsync().ConfigureAwait(true);
@@ -579,8 +579,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 await _runner.StopAsync().ConfigureAwait(true);
             }
 
-            // Sifreli DNS ONCE aciliyor. Ters sirada yapilsaydi winws, hala engel
-            // sunucusuna giden bir trafigi kurcalamis olurdu -- yani hicbir sey.
+            // Şifreli DNS ÖNCE açılıyor. Ters sırada yapılsaydı winws, hâlâ engel
+            // sunucusuna giden bir trafiği kurcalamış olurdu; yani hiçbir şey.
             if (IsSecureDnsEnabled && _dnsRunner is not null && !_dnsRunner.IsRunning)
             {
                 Append("Şifreli DNS başlatılıyor...");
@@ -601,18 +601,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await _runner.StartAsync(arguments).ConfigureAwait(true);
             SaveSelection();
 
-            // BU KORUMA YENIDEN BASLATMAYI ATLATMAZ VE BUNU SOYLEMEK ZORUNDAYIZ.
+            // BU KORUMA YENİDEN BAŞLATMAYI ATLATMAZ VE BUNU SÖYLEMEK ZORUNDAYIZ.
             //
-            // "Başlat" yalnizca bu oturumda bir winws sureci aciyor. Kullanici
-            // bilgisayari kapatip actiginda geriye hicbir sey kalmiyor: uygulama
-            // kendiliginden acilmiyor, winws calismiyor, koruma yok. Ekranda
-            // bunu anlatan tek satir yoktu.
+            // "Başlat" yalnızca bu oturumda bir winws süreci açıyor. Kullanıcı
+            // bilgisayarı kapatıp açtığında geriye hiçbir şey kalmıyor: uygulama
+            // kendiliğinden açılmıyor, winws çalışmıyor, koruma yok. Ekranda
+            // bunu anlatan tek satır yoktu.
             //
-            // Belirtisi tam olarak sahadan gelen cumle: "kurdum, calisti,
-            // bilgisayari yeniden baslattim, olmadi." Kullanici uygulamayi bir
-            // kez ayarlanip unutulacak bir sey sandi -- ki dogru beklenti bu, ve
-            // karsiligi olan dugme ("Servis Olarak Yükle") ekranda duruyordu ama
-            // hicbir yerde ONERILMIYORDU.
+            // Belirtisi tam olarak sahadan gelen cümle: "kurdum, çalıştı,
+            // bilgisayarı yeniden başlattım, olmadı." Kullanıcı uygulamayı bir
+            // kez ayarlanıp unutulacak bir şey sandı (ki doğru beklenti bu) ve
+            // karşılığı olan düğme ("Servis Olarak Yükle") ekranda duruyordu ama
+            // hiçbir yerde ÖNERİLMİYORDU.
             if (!IsServiceInstalled)
             {
                 Append("NOT: bu koruma yalnızca şu an için geçerli. Bilgisayarı yeniden");
@@ -620,8 +620,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("\"Servis Olarak Yükle (Otomatik Başlat)\" düğmesini kullanın.");
             }
 
-            // Kayitli strateji HALA calisiyor mu. Beklemiyoruz: baslatma aninda
-            // bitmis sayilir, dogrulama arkadan gelir.
+            // Kayıtlı strateji HÂLÂ çalışıyor mu. Beklemiyoruz: başlatma anında
+            // bitmiş sayılır, doğrulama arkadan gelir.
             _ = VerifyAfterStartAsync();
         }
         catch (Exception ex)
@@ -629,22 +629,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append(ex.Message, isError: true);
             SetStatus(AppStatus.Faulted, "BAŞLATILAMADI", ex.Message);
 
-            // Yarim kalmis bir baslatma DNS'i bizde birakmamali: winws acilmadiysa
-            // kullanicinin kazanci yok ama sistem DNS'i degistirilmis olur.
+            // Yarım kalmış bir başlatma DNS'i bizde bırakmamalı: winws açılmadıysa
+            // kullanıcının kazancı yok ama sistem DNS'i değiştirilmiş olur.
             await StopSecureDnsAsync().ConfigureAwait(true);
         }
     }
 
     /// <summary>
-    /// Baglantidan servis saglayiciyi tespit edip secmeyi dener.
+    /// Bağlantıdan servis sağlayıcıyı tespit edip seçmeyi dener.
     /// </summary>
     /// <remarks>
-    /// Tespit BASARISIZ olursa test yine de calisir, sadece genel aramadan baslar.
-    /// Kullaniciyi "once ISS'ini sec" diye geri cevirmek, bilmeyen kullaniciyi
-    /// tam da yardim etmesi gereken yerde duvara toslatmak olurdu.
+    /// Tespit BAŞARISIZ olursa test yine de çalışır, sadece genel aramadan başlar.
+    /// Kullanıcıyı "önce İSS'ini seç" diye geri çevirmek, bilmeyen kullanıcıyı
+    /// tam da yardım etmesi gereken yerde duvara toslatmak olurdu.
     ///
-    /// Birden fazla profil eslesirse (ornegin "vodafone" hem sabit hat hem mobil)
-    /// secim kullaniciya birakiliyor; birini sessizce secmek yanlis profille
+    /// Birden fazla profil eşleşirse (örneğin "vodafone" hem sabit hat hem mobil)
+    /// seçim kullanıcıya bırakılıyor; birini sessizce seçmek yanlış profille
     /// dakikalarca test etmek demek olabilir.
     /// </remarks>
     private async Task TryDetectIspAsync()
@@ -712,16 +712,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Tespit bir kolaylik; basarisizligi testi engellememeli.
+            // Tespit bir kolaylık; başarısızlığı testi engellememeli.
             Append("Tespit denemesi başarısız: " + ex.Message, isError: true);
         }
     }
 
-    /// <summary>Kayitli secimleri geri yukler.</summary>
+    /// <summary>Kayıtlı seçimleri geri yükler.</summary>
     /// <remarks>
-    /// Strateji once id ile, bulunamazsa argumanla aranir. Id'ler profil surumleri
-    /// arasinda degisebiliyor; kullanicinin calisan ayarinin sirf id eslesmedi diye
-    /// kaybolmasi kabul edilemez.
+    /// Strateji önce kimlikle, bulunamazsa argümanla aranır. Kimlikler profil sürümleri
+    /// arasında değişebiliyor; kullanıcının çalışan ayarının sırf kimlik eşleşmedi diye
+    /// kaybolması kabul edilemez.
     /// </remarks>
     private void RestoreSavedSelection()
     {
@@ -761,34 +761,34 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Secimleri diske yazar. Her degisiklikte degil, anlamli anlarda cagrilir.</summary>
+    /// <summary>Seçimleri diske yazar. Her değişiklikte değil, anlamlı anlarda çağrılır.</summary>
     /// <summary>
-    /// Gunlugu ve ortam ozetini kullanicinin sectigi bir dosyaya yazar.
+    /// Günlüğü ve ortam özetini kullanıcının seçtiği bir dosyaya yazar.
     /// </summary>
     /// <remarks>
-    /// Bu dugme bir kolaylik degil, eksik bir kanaldi. Turksat Kablonet
-    /// kullanicisi 0.1.6'nin calistigini bildirdi ama profil hala
-    /// dogrulanmamis durumda: HANGI adayin kazandigini bilmiyoruz, cunku
-    /// kullanicinin gunlugu bize ulastirmasinin tek yolu pencereden metni elle
-    /// secip kopyalamakti. Bildirim geldi, veri gelmedi.
+    /// Bu düğme bir kolaylık değil, eksik bir kanaldı. Türksat Kablonet
+    /// kullanıcısı 0.1.6'nın çalıştığını bildirdi ama profil hâlâ
+    /// doğrulanmamış durumda: HANGİ adayın kazandığını bilmiyoruz, çünkü
+    /// kullanıcının günlüğü bize ulaştırmasının tek yolu pencereden metni elle
+    /// seçip kopyalamaktı. Bildirim geldi, veri gelmedi.
     ///
-    /// Rapor DISARI GONDERILMIYOR: yalnizca diske yaziliyor, neyi paylasacagina
-    /// kullanici karar veriyor. Dosyanin basinda ne icerdigi yaziyor ki
-    /// paylasmadan once bilerek baksin.
+    /// Rapor DIŞARI GÖNDERİLMİYOR: yalnızca diske yazılıyor, neyi paylaşacağına
+    /// kullanıcı karar veriyor. Dosyanın başında ne içerdiği yazıyor ki
+    /// paylaşmadan önce bilerek baksın.
     /// </remarks>
-    /// <summary>Surum degistiyse kullaniciya durumu bildirir.</summary>
+    /// <summary>Sürüm değiştiyse kullanıcıya durumu bildirir.</summary>
     /// <remarks>
-    /// Guncellemeden sonra kayitli parametreleri SILMIYORUZ. Bir sürüm
-    /// degisikligi ISS'in DPI yapilandirmasini degistirmiyor, dolayisiyla
-    /// olculmus strateji hala gecerli; silmek kullaniciyi her guncellemede
-    /// dakikalarca surecek yeni bir teste zorlardi ve guncellemekten
-    /// cekinmesine yol acardi.
+    /// Güncellemeden sonra kayıtlı parametreleri SİLMİYORUZ. Bir sürüm
+    /// değişikliği İSS'in DPI yapılandırmasını değiştirmiyor, dolayısıyla
+    /// ölçülmüş strateji hâlâ geçerli; silmek kullanıcıyı her güncellemede
+    /// dakikalarca sürecek yeni bir teste zorlardı ve güncellemekten
+    /// çekinmesine yol açardı.
     ///
-    /// Asil endise -- "ya eski parametre artik calismiyorsa" -- zaten
-    /// karsilanmis durumda: Baslat'tan birkac saniye sonra hedefler
-    /// gercekten aciliyor mu diye olculuyor ve acilmiyorsa "ÇALIŞIYOR — AMA
-    /// AÇMIYOR" deyip yeni bir test oneriliyor. Yani karar TAHMINE degil
-    /// OLCUME dayaniyor.
+    /// Asıl endişe ("ya eski parametre artık çalışmıyorsa") zaten
+    /// karşılanmış durumda: Başlat'tan birkaç saniye sonra hedefler
+    /// gerçekten açılıyor mu diye ölçülüyor ve açılmıyorsa "ÇALIŞIYOR — AMA
+    /// AÇMIYOR" deyip yeni bir test öneriliyor. Yani karar TAHMİNE değil
+    /// ÖLÇÜME dayanıyor.
     /// </remarks>
     private void NotifyIfVersionChanged()
     {
@@ -818,23 +818,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            // Bilgilendirme amacli; basarisiz olmasi uygulamayi etkilemez.
+            // Bilgilendirme amaçlı; başarısız olması uygulamayı etkilemez.
         }
     }
 
-    /// <summary>Temayi degistirir ve tercihi kaydeder.</summary>
+    /// <summary>Temayı değiştirir ve tercihi kaydeder.</summary>
     /// <remarks>
-    /// Kayit, SaveSelection gibi mevcut dosyanin USTUNE yapiliyor: diger alanlar
-    /// korunmali. Kaydedilemezse tema yine degisiyor; yalnizca bir sonraki acilista
-    /// hatirlanmiyor.
+    /// Kayıt, SaveSelection gibi mevcut dosyanın ÜSTÜNE yapılıyor: diğer alanlar
+    /// korunmalı. Kaydedilemezse tema yine değişiyor; yalnızca bir sonraki açılışta
+    /// hatırlanmıyor.
     /// </remarks>
     private Task ToggleThemeAsync()
     {
         var yeni = ThemeManager.Current == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
         ThemeManager.Apply(yeni);
 
-        // Durum bandinin rengi donusturucuyle bir kez aliniyor; tema degisince
-        // yeniden sorulmazsa band eski temanin renginde kalir.
+        // Durum bandının rengi dönüştürücüyle bir kez alınıyor; tema değişince
+        // yeniden sorulmazsa bant eski temanın renginde kalır.
         Notify(nameof(StatusBrushKey));
         Notify(nameof(ThemeButtonText));
 
@@ -852,21 +852,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return Task.CompletedTask;
     }
 
-    /// <summary>Onceki guncellemelerden kalan kurulum paketlerini siler.</summary>
+    /// <summary>Önceki güncellemelerden kalan kurulum paketlerini siler.</summary>
     /// <remarks>
-    /// Acilista kosuyor, cunku guncellemeden hemen sonraki acilis tam da paketin
-    /// artik gereksiz oldugu an. Ama o an kurulum hala bitmemis olabiliyor: uygulamayi
-    /// kurulumun son sayfasi baslatiyor ve kurulum kendi dosyasini birkac saniye daha
+    /// Açılışta koşuyor, çünkü güncellemeden hemen sonraki açılış tam da paketin
+    /// artık gereksiz olduğu an. Ama o an kurulum hâlâ bitmemiş olabiliyor: uygulamayı
+    /// kurulumun son sayfası başlatıyor ve kurulum kendi dosyasını birkaç saniye daha
     /// kilitli tutuyor. Silinemeyen varsa bir kez daha deneniyor.
     ///
-    /// Guncelleme o arada basladiysa (IsBusy) dokunulmuyor: indirilmekte ya da
-    /// calistirilmak uzere olan paketi silmek guncellemeyi bozardi.
+    /// Güncelleme o arada başladıysa (IsBusy) dokunulmuyor: indirilmekte ya da
+    /// çalıştırılmak üzere olan paketi silmek güncellemeyi bozardı.
     ///
-    /// KURUCUDAN CAGRILMIYOR; App.OnStartup cagiriyor. Kurucudan cagrildiginda test
-    /// paketi (pencere ve gorunum modelini kuran duman testleri) gelistiricinin
-    /// GERCEK %TEMP%\ZapretTR-guncelleme klasorunu bosaltti -- 2026-09-14'te
-    /// bu makinede alti paket boyle silindi. Silen bir islem yalnizca uygulama
-    /// gercekten acildiginda kosmali.
+    /// KURUCUDAN ÇAĞRILMIYOR; App.OnStartup çağırıyor. Kurucudan çağrıldığında test
+    /// paketi (pencere ve görünüm modelini kuran duman testleri) geliştiricinin
+    /// GERÇEK %TEMP%\ZapretTR-guncelleme klasörünü boşalttı; 2026-09-14'te
+    /// bu makinede altı paket böyle silindi. Silen bir işlem yalnızca uygulama
+    /// gerçekten açıldığında koşmalı.
     /// </remarks>
     public async Task DeleteOldUpdatePackagesAsync()
     {
@@ -902,24 +902,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            // Temizlik; basarisiz olmasi uygulamayi etkilemez. Paketler bir sonraki
-            // acilista ya da guncellemede yine denenir.
+            // Temizlik; başarısız olması uygulamayı etkilemez. Paketler bir sonraki
+            // açılışta ya da güncellemede yine denenir.
         }
     }
 
-    /// <summary>Yayinlanmis daha yeni bir surum var mi diye bakar.</summary>
+    /// <summary>Yayımlanmış daha yeni bir sürüm var mı diye bakar.</summary>
     /// <remarks>
-    /// Gunde birkac surum cikabiliyor ve her seferinde kullanicilara tek tek
-    /// "sunu kur" demek gerekiyordu; kullaniciya ulasmayan bir duzeltme ise
-    /// yaramiyor. Bu, uygulamanin DISARI istek yapan tek yeri: GitHub'a
-    /// yalnizca "en son surum ne" sorusu gidiyor, baska hicbir sey degil.
-    /// Ayardan kapatilabilir.
+    /// Günde birkaç sürüm çıkabiliyor ve her seferinde kullanıcılara tek tek
+    /// "şunu kur" demek gerekiyordu; kullanıcıya ulaşmayan bir düzeltme işe
+    /// yaramıyor. Bu, uygulamanın DIŞARI istek yapan tek yeri: GitHub'a
+    /// yalnızca "en son sürüm ne" sorusu gidiyor, başka hiçbir şey değil.
+    /// Ayardan kapatılabilir.
     /// </remarks>
     /// <remarks>
-    /// KURUCUDAN CAGRILMIYOR; App.OnStartup cagiriyor. Kurucudan cagrildiginda test
-    /// paketindeki her pencere ve gorunum modeli kurulumu GitHub'a gercek bir sorgu
-    /// atiyordu; GitHub oturumsuz sorgulari IP basina saatte 60 ile sinirliyor ve
-    /// test kosumlari ayni makinedeki uygulamanin sinirini da tuketiyordu.
+    /// KURUCUDAN ÇAĞRILMIYOR; App.OnStartup çağırıyor. Kurucudan çağrıldığında test
+    /// paketindeki her pencere ve görünüm modeli kurulumu GitHub'a gerçek bir sorgu
+    /// atıyordu; GitHub oturumsuz sorguları IP başına saatte 60 ile sınırlıyor ve
+    /// test koşumları aynı makinedeki uygulamanın sınırını da tüketiyordu.
     /// </remarks>
     public async Task CheckForUpdateAsync()
     {
@@ -945,22 +945,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            // Guncelleme kontrolu bir kolaylik, korumanin parcasi degil:
-            // basarisiz olmasi kullaniciya hata olarak gosterilmemeli.
+            // Güncelleme kontrolü bir kolaylık, korumanın parçası değil:
+            // başarısız olması kullanıcıya hata olarak gösterilmemeli.
         }
     }
 
     /// <summary>
-    /// "Güncellemeleri Denetle": yeni surum varsa indirip kurulumu baslatir.
+    /// "Güncellemeleri Denetle": yeni sürüm varsa indirip kurulumu başlatır.
     /// </summary>
     /// <remarks>
-    /// Kullanicilar her surumde tarayici acip dosyayi bulmak zorundaydi ve bu,
-    /// duzeltmenin kullaniciya ulasmasindaki en buyuk surtunmeydi.
+    /// Kullanıcılar her sürümde tarayıcı açıp dosyayı bulmak zorundaydı ve bu,
+    /// düzeltmenin kullanıcıya ulaşmasındaki en büyük sürtünmeydi.
     ///
-    /// Indirilen paket CALISTIRILACAGI icin SHA256 dogrulamasi atlanmiyor
-    /// (UpdateDownloader yapiyor) ve kurulum kullanici ONAYLAMADAN baslamiyor:
-    /// uygulamanin kendi kendine ikili calistirmasi, kullanicinin bilmesi
-    /// gereken bir sey.
+    /// İndirilen paket ÇALIŞTIRILACAĞI için SHA256 doğrulaması atlanmıyor
+    /// (UpdateDownloader yapıyor) ve kurulum kullanıcı ONAYLAMADAN başlamıyor:
+    /// uygulamanın kendi kendine ikili çalıştırması, kullanıcının bilmesi
+    /// gereken bir şey.
     /// </remarks>
     private async Task UpdateAsync()
     {
@@ -978,11 +978,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 var sebep = sorgu.Failure ?? "Sürüm bilgisi alınamadı.";
                 Append("Güncellemeler denetlenemedi: " + sebep, isError: true);
 
-                // PENCEREYLE SOYLE. Eskiden yalnizca gunluge yaziliyordu; Ayrintilar
-                // kapaliyken dugmeye basan kullanici ekranda hicbir degisiklik
-                // gormuyor ve dugmenin bozuk oldugunu dusunuyordu (2026-09-14,
-                // gercek kullanici). "Guncel" sonucu zaten pencereyle soyleniyordu,
-                // basarisizlik soylenmiyordu.
+                // PENCEREYLE SÖYLE. Eskiden yalnızca günlüğe yazılıyordu; Ayrıntılar
+                // kapalıyken düğmeye basan kullanıcı ekranda hiçbir değişiklik
+                // görmüyor ve düğmenin bozuk olduğunu düşünüyordu (2026-09-14,
+                // gerçek kullanıcı). "Güncel" sonucu zaten pencereyle söyleniyordu,
+                // başarısızlık söylenmiyordu.
                 MessageBox.Show(
                     "Güncellemeler denetlenemedi." + Environment.NewLine + Environment.NewLine +
                     sebep + Environment.NewLine + Environment.NewLine +
@@ -1001,10 +1001,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append($"En güncel sürümü kullanıyorsunuz ({kurulu}).");
                 UpdateMessage = null;
 
-                // Sonucu SOYLEMEK gerekiyor. Eskiden yalnizca gunluge
-                // yaziliyordu ve Ayrintilar paneli varsayilan olarak kapali:
-                // kullanici dugmeye basiyor, ekranda hicbir sey degismiyor ve
-                // dugmenin calisip calismadigini bilmiyordu.
+                // Sonucu SÖYLEMEK gerekiyor. Eskiden yalnızca günlüğe
+                // yazılıyordu ve Ayrıntılar paneli varsayılan olarak kapalı:
+                // kullanıcı düğmeye basıyor, ekranda hiçbir şey değişmiyor ve
+                // düğmenin çalışıp çalışmadığını bilmiyordu.
                 MessageBox.Show(
                     $"Yeni güncelleme bulunamadı." + Environment.NewLine + Environment.NewLine +
                     $"En güncel sürümü kullanıyorsunuz: {kurulu}",
@@ -1038,7 +1038,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var sonOnluk = -1;
             var ilerleme = new Progress<int>(yuzde =>
             {
-                // Her bayt icin satir yazmak gunlugu kullanilamaz hale getiriyor;
+                // Her bayt için satır yazmak günlüğü kullanılamaz hâle getiriyor;
                 // onar onar yeter.
                 if (yuzde / 10 > sonOnluk)
                 {
@@ -1057,8 +1057,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             System.Diagnostics.Process.Start(
                 new System.Diagnostics.ProcessStartInfo(paket) { UseShellExecute = true });
 
-            // Kurulum calisan uygulamayi kapatmak zorunda (dosyalar kilitli).
-            // Kendimiz cikarsak kullanici "neden kapandi" diye sormaz.
+            // Kurulum çalışan uygulamayı kapatmak zorunda (dosyalar kilitli).
+            // Kendimiz çıkarsak kullanıcı "neden kapandı" diye sormaz.
             ExitRequested?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception ex)
@@ -1066,8 +1066,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Güncelleme başarısız: " + ex.Message, isError: true);
             Append("Yayın sayfasından elle indirebilirsiniz: " + UpdateChecker.ReleasesPage);
 
-            // Indirme ya da ozet dogrulamasi basarisizsa da kullanici bunu gormeli;
-            // yoksa "İndir ve Kur"a basti ve hicbir sey olmadi.
+            // İndirme ya da özet doğrulaması başarısızsa da kullanıcı bunu görmeli;
+            // yoksa "İndir ve Kur"a bastı ve hiçbir şey olmadı.
             MessageBox.Show(
                 "Güncelleme yapılamadı." + Environment.NewLine + Environment.NewLine +
                 ex.Message + Environment.NewLine + Environment.NewLine +
@@ -1107,13 +1107,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Kaydetme basarisiz olsa bile uygulama calismaya devam etmeli:
-            // rapor bir teshis araci, korumanin parcasi degil.
+            // Kaydetme başarısız olsa bile uygulama çalışmaya devam etmeli:
+            // rapor bir teşhis aracı, korumanın parçası değil.
             Append("Rapor kaydedilemedi: " + ex.Message, isError: true);
         }
     }
 
-    /// <summary>Hata bildirimi icin ortam ozetini toplar.</summary>
+    /// <summary>Hata bildirimi için ortam özetini toplar.</summary>
     public IssueDetails BuildIssueDetails() => new(
         AppVersion: SurumMetni(),
         EngineVersion: EngineVersionText,
@@ -1128,12 +1128,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         Status: StatusHeadline,
         LogLines: [.. LogLines]);
 
-    /// <summary>Doldurulmus hata bildirimi formunu tarayicida acar.</summary>
+    /// <summary>Doldurulmuş hata bildirimi formunu tarayıcıda açar.</summary>
     /// <remarks>
-    /// Buradan HICBIR SEY GONDERILMIYOR: tarayicida form aciliyor, gonderme
-    /// karari kullanicinin. Once onay kutusu cikiyor cunku acilan sayfada
-    /// kullanicinin hatti ve denedigi parametreler yaziyor olacak; bunu
-    /// habersiz yapmak, guncelleme denetimindeki tutumumuzla celisirdi.
+    /// Buradan HİÇBİR ŞEY GÖNDERİLMİYOR: tarayıcıda form açılıyor, gönderme
+    /// kararı kullanıcının. Önce onay kutusu çıkıyor, çünkü açılan sayfada
+    /// kullanıcının hattı ve denediği parametreler yazıyor olacak; bunu
+    /// habersiz yapmak, güncelleme denetimindeki tutumumuzla çelişirdi.
     /// </remarks>
     private Task ReportIssueAsync()
     {
@@ -1165,8 +1165,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Tarayici acilamadi diye kullaniciyi bildirimsiz birakmayalim:
-            // konu listesinin adresini gunluge yazip elle gitmesini saglayalim.
+            // Tarayıcı açılamadı diye kullanıcıyı bildirimsiz bırakmayalım:
+            // konu listesinin adresini günlüğe yazıp elle gitmesini sağlayalım.
             Append("Form açılamadı: " + ex.Message, isError: true);
             Append("Bildirimi elle açabilirsiniz: " + IssueReporter.IssuesPage);
         }
@@ -1176,9 +1176,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     /// <summary>Rapor metnini kurar.</summary>
     /// <remarks>
-    /// Ortam ozeti gunlugun ONUNE konuyor. Gunluk tek basina cogu zaman
-    /// yetmiyor: "su aday calisti" satirini okuyup hangi profil ve hangi surumle
-    /// oldugunu bilmeden profile isleyemiyoruz.
+    /// Ortam özeti günlüğün ÖNÜNE konuyor. Günlük tek başına çoğu zaman
+    /// yetmiyor: "şu aday çalıştı" satırını okuyup hangi profil ve hangi sürümle
+    /// olduğunu bilmeden profile işleyemiyoruz.
     /// </remarks>
     public string BuildReport()
     {
@@ -1207,14 +1207,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         sb.AppendLine("Durum            : " + StatusHeadline);
         sb.AppendLine();
 
-        // MAKINENIN OLCULEN DURUMU, gorunum modelinin bildikleri DEGIL.
+        // MAKİNENİN ÖLÇÜLEN DURUMU, görünüm modelinin bildikleri DEĞİL.
         //
-        // Eski rapor yalnizca yukaridaki alanlari ve gunlugu tasiyordu. Bir
-        // kullanici bilgisayari yeniden baslatip uygulamayi yeni actiysa gunluk
-        // neredeyse bos oluyor ve rapor "calismadi" cumlesine hicbir sey
-        // ekleyemiyordu -- oysa "olmadi" bildirimlerinde yanlis olan sey
-        // genellikle yukaridaki alanlarda degil, bu bolumde gorunuyor: yetki,
-        // eksik dosya, olu servis, DNS'in bizde asili kalmasi.
+        // Eski rapor yalnızca yukarıdaki alanları ve günlüğü taşıyordu. Bir
+        // kullanıcı bilgisayarı yeniden başlatıp uygulamayı yeni açtıysa günlük
+        // neredeyse boş oluyor ve rapor "çalışmadı" cümlesine hiçbir şey
+        // ekleyemiyordu; oysa "olmadı" bildirimlerinde yanlış olan şey
+        // genellikle yukarıdaki alanlarda değil, bu bölümde görünüyor: yetki,
+        // eksik dosya, ölü servis, DNS'in bizde asılı kalması.
         sb.AppendLine("Makine durumu");
         sb.AppendLine("=============");
         sb.AppendLine();
@@ -1235,13 +1235,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Ortam ozetini toplar; toplanamazsa raporu bosa dusurmez.
+    /// Ortam özetini toplar; toplanamazsa raporu boşa düşürmez.
     /// </summary>
     /// <remarks>
-    /// Bilerek eszamanli: <c>BuildReport</c> arayuz is parcacigindan cagriliyor ve
-    /// <see cref="EnvironmentReport"/> icindeki her bekleme
-    /// <c>ConfigureAwait(false)</c> ile yazildigi icin geri cagri arayuz kuyruguna
-    /// donmuyor -- yani kilitlenme yok. Sure birkac sc.exe cagrisi kadar.
+    /// Bilerek eşzamanlı: <c>BuildReport</c> arayüz iş parçacığından çağrılıyor ve
+    /// <see cref="EnvironmentReport"/> içindeki her bekleme
+    /// <c>ConfigureAwait(false)</c> ile yazıldığı için geri çağrı arayüz kuyruğuna
+    /// dönmüyor; yani kilitlenme yok. Süre birkaç sc.exe çağrısı kadar.
     /// </remarks>
     private static IReadOnlyList<string> CollectEnvironmentLines()
     {
@@ -1268,8 +1268,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
     private void SaveSelection()
     {
-        // Geri yukleme sirasinda kaydetme: yarim durumu diske yazmak, kaydedilmis
-        // ayarlarin bir kismini silmek demek.
+        // Geri yükleme sırasında kaydetme: yarım durumu diske yazmak, kaydedilmiş
+        // ayarların bir kısmını silmek demek.
         if (_isRestoring)
         {
             return;
@@ -1277,12 +1277,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            // Mevcut dosyanin USTUNE yaziliyor, yerine degil. Eskiden her kayit
-            // sifirdan bir AppConfig yaziyordu ve arayuzde karsiligi olmayan
-            // alanlar sessizce siliniyordu: elle kapatilan guncelleme denetimi
-            // (updateCheckEnabled) bir sonraki secimde yeniden aciliyor,
-            // lastRunVersion her seferinde null oluyordu -- gercek makinedeki
-            // config.json'da oyleydi.
+            // Mevcut dosyanın ÜSTÜNE yazılıyor, yerine değil. Eskiden her kayıt
+            // sıfırdan bir AppConfig yazıyordu ve arayüzde karşılığı olmayan
+            // alanlar sessizce siliniyordu: elle kapatılan güncelleme denetimi
+            // (updateCheckEnabled) bir sonraki seçimde yeniden açılıyor,
+            // lastRunVersion her seferinde null oluyordu; gerçek makinedeki
+            // config.json'da öyleydi.
             var config = ConfigStore.Load();
             config.SelectedIspId = SelectedIsp?.Profile?.Id;
             config.SelectedStrategyId = SelectedStrategy?.Id;
@@ -1293,7 +1293,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            // Kaydedememek calismayi engellememeli; yalnizca bir sonraki acilista
+            // Kaydedememek çalışmayı engellememeli; yalnızca bir sonraki açılışta
             // ayarlar geri gelmez.
             Append("Ayarlar kaydedilemedi: " + ex.Message, isError: true);
         }
@@ -1305,14 +1305,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             var status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
 
-            // "Kurulu" ile "calisiyor" AYRI sorular. Ikisini birbirine
-            // karistirmak kullaniciyi kilitliyordu: servis kurulu ama durmussa
-            // arayuz "servis modu aktif" deyip Baslat'i kapatiyor, koruma yok
-            // ve kullanicinin yapabilecegi de bir sey yok. Gercek bir
-            // kullanicida 0.1.9'dan 0.1.15'e yukseltmeden sonra yasandi.
+            // "Kurulu" ile "çalışıyor" AYRI sorular. İkisini birbirine
+            // karıştırmak kullanıcıyı kilitliyordu: servis kurulu ama durmuşsa
+            // arayüz "SERVİS MODU AKTİF" deyip Başlat'ı kapatıyor, koruma yok
+            // ve kullanıcının yapabileceği de bir şey yok. Gerçek bir
+            // kullanıcıda 0.1.9'dan 0.1.15'e yükseltmeden sonra yaşandı.
             //
-            // Bu durumda servisi "kurulu degil" sayiyoruz: boylece Baslat
-            // ACIK kaliyor ve kullanici korumasini elle baslatabiliyor.
+            // Bu durumda servisi "kurulu değil" sayıyoruz: böylece Başlat
+            // AÇIK kalıyor ve kullanıcı korumasını elle başlatabiliyor.
             _hasLeftovers = HasLeftoverProcessesOrRedirect();
             IsServiceStopped = status.InstalledButStopped;
             IsServicePaused = status.WinwsPaused;
@@ -1328,8 +1328,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("  Sorun sürerse bilgisayarı bir kez yeniden başlatın.");
             }
 
-            // Servis duraklatildiysa ya da duraklatmadan ciktiysa bant da degismeli.
-            // Uygulamanin KENDI duraklatmasina dokunulmuyor: onda servis kurulu degil.
+            // Servis duraklatıldıysa ya da duraklatmadan çıktıysa bant da değişmeli.
+            // Uygulamanın KENDİ duraklatmasına dokunulmuyor: onda servis kurulu değil.
             if (Status == AppStatus.Ready
                 || (Status == AppStatus.Paused && IsServiceInstalled))
             {
@@ -1359,11 +1359,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Yapilandirmadaki "servis duraklatildi" bilgisini servisin gercek durumuna esitler.</summary>
+    /// <summary>Yapılandırmadaki "servis duraklatıldı" bilgisini servisin gerçek durumuna eşitler.</summary>
     /// <remarks>
-    /// Bilgi yalnizca yukseltmede okunuyor (bkz. <see cref="AppConfig.ServicePaused"/>).
-    /// Her durum okumasinda esitleniyor ki servis baska bir yoldan acildiysa ya da
-    /// kaldirildiysa guncelleme eski bir niyete gore davranmasin.
+    /// Bilgi yalnızca yükseltmede okunuyor (bkz. <see cref="AppConfig.ServicePaused"/>).
+    /// Her durum okumasında eşitleniyor ki servis başka bir yoldan açıldıysa ya da
+    /// kaldırıldıysa güncelleme eski bir niyete göre davranmasın.
     /// </remarks>
     private void SyncServicePausedSetting(bool paused)
     {
@@ -1383,21 +1383,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Sifreli DNS servisi olmusse -- ya da hic yoksa ama sistem DNS'i hala
-    /// bizdeyse -- kullaniciyi uyarir.
+    /// Şifreli DNS servisi ölmüşse (ya da hiç yoksa ama sistem DNS'i hâlâ
+    /// bizdeyse) kullanıcıyı uyarır.
     /// </summary>
     /// <remarks>
-    /// Servis durumu bugune kadar YALNIZCA winws icin sorulmustu. Oysa iki
-    /// katmanli korumada ikinci servis (<c>ZapretTR-DNS</c>) sessizce dusebiliyor
-    /// ve sonucu winws'inkinden daha agir:
+    /// Servis durumu bugüne kadar YALNIZCA winws için sorulmuştu. Oysa iki
+    /// katmanlı korumada ikinci servis (<c>ZapretTR-DNS</c>) sessizce düşebiliyor
+    /// ve sonucu winws'inkinden daha ağır:
     ///
-    ///   * winws duserse engelli siteler geri kapanir -- can sikici ama gorunur.
-    ///   * dnscrypt duserse sistem DNS'i hala 127.0.0.1'i gosteriyorken orada
-    ///     dinleyen kimse kalmaz ve makine HICBIR adi cozemez. Kullanicinin
-    ///     bunu anlatis bicimi de "internetim gitti" ya da sadece "olmadi".
+    ///   * winws düşerse engelli siteler geri kapanır; can sıkıcı ama görünür.
+    ///   * dnscrypt düşerse sistem DNS'i hâlâ 127.0.0.1'i gösteriyorken orada
+    ///     dinleyen kimse kalmaz ve makine HİÇBİR adı çözemez. Kullanıcının
+    ///     bunu anlatış biçimi de "internetim gitti" ya da sadece "olmadı".
     ///
-    /// Bu durumda arayuz "SERVİS MODU AKTİF" diyordu, cunku sorulan tek soru
-    /// winws'in ayakta olup olmadigiydi ve winws gercekten ayaktaydi.
+    /// Bu durumda arayüz "SERVİS MODU AKTİF" diyordu, çünkü sorulan tek soru
+    /// winws'in ayakta olup olmadığıydı ve winws gerçekten ayaktaydı.
     /// </remarks>
     private async Task WarnIfSecureDnsServiceIsDeadAsync(ServiceStatus status)
     {
@@ -1428,7 +1428,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Otomatik baslatmayi kurar ya da kaldirir.</summary>
+    /// <summary>Otomatik başlatmayı kurar ya da kaldırır.</summary>
     private async Task ToggleServiceAsync()
     {
         if (_vendor is null)
@@ -1436,11 +1436,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        // SESSIZ CIKIS YOK. Bu kosul eskiden hicbir sey soylemeden geri
-        // donuyordu: strateji secilmemis bir kullanici "Servis Olarak Yükle"ye
-        // basiyor, ekranda hicbir sey degismiyor ve dugmenin bozuk oldugunu
-        // dusunuyordu. Kurulum sonrasi ilk acilista strateji listesi ZATEN bos
-        // oldugu icin bu, en olasi yol.
+        // SESSİZ ÇIKIŞ YOK. Bu koşul eskiden hiçbir şey söylemeden geri
+        // dönüyordu: strateji seçilmemiş bir kullanıcı "Servis Olarak Yükle"ye
+        // basıyor, ekranda hiçbir şey değişmiyor ve düğmenin bozuk olduğunu
+        // düşünüyordu. Kurulum sonrası ilk açılışta strateji listesi ZATEN boş
+        // olduğu için bu, en olası yol.
         if (SelectedStrategy is null && !IsServiceInstalled)
         {
             MessageBox.Show(
@@ -1474,10 +1474,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
                 Append("Otomatik başlatma kaldırıldı.");
 
-                // Eskiden burada "bilgisayari yeniden baslatin" oneriliyordu: surucu
-                // cekirdekte takili kalirsa sonraki testte motor acilmiyordu. Motor
-                // artik bu durumda surucuyu kendisi bosaltip yeniden deniyor
-                // (WinwsRunner.StartAsync); kullaniciya yeniden baslatma yuku
+                // Eskiden burada "bilgisayarı yeniden başlatın" öneriliyordu: sürücü
+                // çekirdekte takılı kalırsa sonraki testte motor açılmıyordu. Motor
+                // artık bu durumda sürücüyü kendisi boşaltıp yeniden deniyor
+                // (WinwsRunner.StartAsync); kullanıcıya yeniden başlatma yükü
                 // bindirmek gereksiz.
                 SetStatus(AppStatus.Ready, "OTOMATİK BAŞLATMA KAPATILDI",
                     "Koruma şu an kapalı. \"ZAPRET'İ BAŞLAT\" ya da yeni bir parametre testiyle devam edebilirsiniz.");
@@ -1501,8 +1501,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     Şu anki ayarınız kullanılacak:
 
                     """
-                    // Bu dala ancak strateji secilmisken giriliyor; yukaridaki
-                    // kontrol secimsiz kullaniciyi mesajla geri cevirdi.
+                    // Bu dala ancak strateji seçilmişken giriliyor; yukarıdaki
+                    // kontrol seçimsiz kullanıcıyı mesajla geri çevirdi.
                     + $"   {Describe(SelectedStrategy!.Args)}"
                     + Environment.NewLine + Environment.NewLine
                     + dnsNote
@@ -1516,16 +1516,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     return;
                 }
 
-                // UYGULAMANIN KENDI KORUMASI ONCE DURMALI; SERVIS DEVRALACAK.
+                // UYGULAMANIN KENDİ KORUMASI ÖNCE DURMALI; SERVİS DEVRALACAK.
                 //
-                // Dugme koruma calisirken de acik. Eskiden oyle kurulum yapildiginda
-                // uc sey birden bozuluyordu: servisin winws'i ayni filtreyle ikinci
-                // ornek olarak acilamiyordu, servisin dnscrypt'i 127.0.0.1:53'u
-                // uygulamanin dnscrypt'i tuttugu icin baglayamiyordu -- ama "cevap
-                // veriyor mu" kontrolu UYGULAMANINKINDEN cevap alip geciyordu -- ve
-                // DNS yedegi "uygulama" sahipligiyle kaliyordu. Uygulama kapaninca
-                // yonlendirmeyi geri aliyor, kendi dnscrypt'ini de kapatiyordu:
-                // ekranda "SERVİS MODU AKTİF", arkada sifreli DNS yok.
+                // Düğme koruma çalışırken de açık. Eskiden öyle kurulum yapıldığında
+                // üç şey birden bozuluyordu: servisin winws'i aynı filtreyle ikinci
+                // örnek olarak açılamıyordu; servisin dnscrypt'i 127.0.0.1:53'ü
+                // uygulamanın dnscrypt'i tuttuğu için bağlayamıyordu (ama "cevap
+                // veriyor mu" kontrolü UYGULAMANINKİNDEN cevap alıp geçiyordu); ve
+                // DNS yedeği "uygulama" sahipliğiyle kalıyordu. Uygulama kapanınca
+                // yönlendirmeyi geri alıyor, kendi dnscrypt'ini de kapatıyordu:
+                // ekranda "SERVİS MODU AKTİF", arkada şifreli DNS yok.
                 if (_runner?.IsRunning == true || _dnsRunner?.IsRunning == true)
                 {
                     Append("Uygulamanın kendi koruması durduruluyor; servis devralacak...");
@@ -1538,9 +1538,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     await StopSecureDnsAsync().ConfigureAwait(true);
                 }
 
-                // Servise, arayuzun calistirdigi komutun AYNISI veriliyor. Ayrisirsa
-                // kullanicinin test edip begendigi sey ile acilista calisan sey
-                // farkli olur.
+                // Servise, arayüzün çalıştırdığı komutun AYNISI veriliyor. Ayrışırsa
+                // kullanıcının test edip beğendiği şey ile açılışta çalışan şey
+                // farklı olur.
                 var winners = BuildRuntimeSelection();
                 var builder = new WinwsCommandBuilder(_vendor);
                 var arguments = builder.BuildRuntimeCommand(winners, BuildHostlistDomains(winners));
@@ -1570,8 +1570,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await RefreshServiceStatusAsync().ConfigureAwait(true);
             SaveSelection();
 
-            // Servis gercekten ayaktaysa hedefleri olc. Beklemiyoruz: kurulum
-            // bitmis sayilir, dogrulama arkadan gelir -- Baslat yolundaki gibi.
+            // Servis gerçekten ayaktaysa hedefleri ölç. Beklemiyoruz: kurulum
+            // bitmiş sayılır, doğrulama arkadan gelir; Başlat yolundaki gibi.
             if (servisYeniKuruldu && IsServiceInstalled)
             {
                 _ = VerifyAfterStartAsync(viaService: true);
@@ -1588,7 +1588,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Sifreli DNS'i kapatir ve sistem ayarini geri alir. Kapaliysa sessizce doner.</summary>
+    /// <summary>Şifreli DNS'i kapatır ve sistem ayarını geri alır. Kapalıysa sessizce döner.</summary>
     private async Task StopSecureDnsAsync()
     {
         if (_dnsRunner is null)
@@ -1606,12 +1606,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Onceki calismadan kalan DNS yonlendirmesini temizler.
+    /// Önceki çalışmadan kalan DNS yönlendirmesini temizler.
     /// </summary>
     /// <remarks>
-    /// Uygulama duzgun kapanmadiysa sistem DNS'i hala 127.0.0.1'i gosteriyor ama
-    /// dnscrypt-proxy calismiyor olabilir. O durumda makine HICBIR adi cozemez.
-    /// Acilista sessizce duzeltiyoruz.
+    /// Uygulama düzgün kapanmadıysa sistem DNS'i hâlâ 127.0.0.1'i gösteriyor ama
+    /// dnscrypt-proxy çalışmıyor olabilir. O durumda makine HİÇBİR adı çözemez.
+    /// Açılışta sessizce düzeltiyoruz.
     /// </remarks>
     private async Task RecoverDnsIfNeededAsync()
     {
@@ -1624,18 +1624,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             var responding = await DnsCryptRunner.IsLocalResolverRespondingAsync().ConfigureAwait(true);
 
-            // YONLENDIRMEYI SERVIS YAPTIYSA HEMEN KARAR VERME.
+            // YÖNLENDİRMEYİ SERVİS YAPTIYSA HEMEN KARAR VERME.
             //
-            // Kullanicilarin buyuk kismi uygulamayi acilistan hemen sonra aciyor
-            // ve o an ZapretTR-DNS servisi HENUZ ayaga kalkmamis olabiliyor:
-            // dnscrypt-proxy once agi bekliyor, sonra cozumleyici listesini
-            // cekiyor. Tek bir denemeye bakip "olmus" saymak, calisir durumdaki
-            // bir kurulumun sifreli DNS'ini sessizce sokmek demekti -- ustelik
-            // yedek de silindigi icin geri donusu yoktu. Kullanicinin gordugu
-            // sey "bir sure sonra engeller geri geldi" oluyordu.
+            // Kullanıcıların büyük kısmı uygulamayı açılıştan hemen sonra açıyor
+            // ve o an ZapretTR-DNS servisi HENÜZ ayağa kalkmamış olabiliyor:
+            // dnscrypt-proxy önce ağı bekliyor, sonra çözümleyici listesini
+            // çekiyor. Tek bir denemeye bakıp "ölmüş" saymak, çalışır durumdaki
+            // bir kurulumun şifreli DNS'ini sessizce sökmek demekti; üstelik
+            // yedek de silindiği için geri dönüşü yoktu. Kullanıcının gördüğü
+            // şey "bir süre sonra engeller geri geldi" oluyordu.
             //
-            // Uygulamanin kendi yonlendirmesinde bekleme yok: uygulama yeni
-            // aciliyorsa onu yapan onceki oturum zaten kapanmis demektir.
+            // Uygulamanın kendi yönlendirmesinde bekleme yok: uygulama yeni
+            // açılıyorsa onu yapan önceki oturum zaten kapanmış demektir.
             if (!responding && SystemDnsManager.IsOwnedByService)
             {
                 Append("Sistem DNS'i servise yönlendirilmiş; şifreli DNS servisi bekleniyor...");
@@ -1662,7 +1662,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>127.0.0.1:53 cevap verene kadar bekler; sure dolarsa false.</summary>
+    /// <summary>127.0.0.1:53 cevap verene kadar bekler; süre dolarsa false.</summary>
     private static async Task<bool> WaitForLocalResolverAsync(TimeSpan timeout)
     {
         var deadline = DateTimeOffset.UtcNow + timeout;
@@ -1681,30 +1681,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Calistirilacak bolum -> strateji eslesmesini kurar.
+    /// Çalıştırılacak bölüm -> strateji eşleşmesini kurar.
     /// </summary>
     /// <remarks>
-    /// Kural <see cref="RuntimeSelection"/> icinde: sorunu olmayan yere dokunma.
-    /// Kullanicinin sectigi HTTPS stratejisi ve yalnizca DOGRULANMIS diger bolumler
-    /// uygulanir. Denenmemis bir strateji calisan trafige uygulanmaz -- gercek bir
-    /// kosumda bunun bedeli olculdu: sorunsuz calisan QUIC baglantisi, uzerine
-    /// denenmemis bir QUIC stratejisi uygulanınca bozuldu.
+    /// Kural <see cref="RuntimeSelection"/> içinde: sorunu olmayan yere dokunma.
+    /// Kullanıcının seçtiği HTTPS stratejisi ve yalnızca DOĞRULANMIŞ diğer bölümler
+    /// uygulanır. Denenmemiş bir strateji çalışan trafiğe uygulanmaz; gerçek bir
+    /// koşumda bunun bedeli ölçüldü: sorunsuz çalışan QUIC bağlantısı, üzerine
+    /// denenmemiş bir QUIC stratejisi uygulanınca bozuldu.
     /// </remarks>
     private Dictionary<StrategySection, string> BuildRuntimeSelection()
         => RuntimeSelection.Build(CurrentProfile(), SelectedStrategy!.Args);
 
     /// <summary>
-    /// Secili saglayicinin, en son ogrenilmis dogrulamalar bindirilmis profili.
+    /// Seçili sağlayıcının, en son öğrenilmiş doğrulamalar bindirilmiş profili.
     /// </summary>
     /// <remarks>
-    /// <see cref="SelectedIsp"/> listedeki kaydi tutuyor ve o kayit uygulama acilirken
-    /// yuklenmis profili gosteriyor. Test yeni bir sey dogrulayinca diske yaziliyordu ama
-    /// bellekteki profil ESKI kaliyordu. Olculdu (2026-09-16, 0.2.6, Turk Telekom): test
-    /// "acilan: discord-guncelleme, discord, roblox" dedi, hemen ardindan Baslat
-    /// "yalnizca su adreslere (6): discord..." dedi -- roblox.com yoktu, dogrulama
-    /// "Acilmayanlar: www.roblox.com" diye uyardi. Uygulama yeniden acilana kadar yeni
-    /// dogrulama hicbir yere yansimiyordu; bu 0.2.2'den beri her kategori icin boyleydi.
-    /// Calisma zamani kararlari (hangi bolumler, hangi adresler) bu yuzden buradan okunur.
+    /// <see cref="SelectedIsp"/> listedeki kaydı tutuyor ve o kayıt uygulama açılırken
+    /// yüklenmiş profili gösteriyor. Test yeni bir şey doğrulayınca diske yazılıyordu ama
+    /// bellekteki profil ESKİ kalıyordu. Ölçüldü (2026-09-16, 0.2.6, Türk Telekom): test
+    /// "açılan: discord-guncelleme, discord, roblox" dedi, hemen ardından Başlat
+    /// "yalnızca şu adreslere uygulanacak (6): discord…" dedi; roblox.com yoktu, doğrulama
+    /// "Açılmayanlar: www.roblox.com" diye uyardı. Uygulama yeniden açılana kadar yeni
+    /// doğrulama hiçbir yere yansımıyordu; bu 0.2.2'den beri her kategori için böyleydi.
+    /// Çalışma zamanı kararları (hangi bölümler, hangi adresler) bu yüzden buradan okunur.
     /// </remarks>
     private IspProfile? CurrentProfile()
     {
@@ -1720,12 +1720,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Stratejinin uygulanacagi alan adlari. Bos donerse strateji butun trafige uygulanir.
+    /// Stratejinin uygulanacağı alan adları. Boş dönerse strateji bütün trafiğe uygulanır.
     /// </summary>
     /// <remarks>
-    /// Issue #1 (Vodafone Net, 2026-09-15): kazanan 443 stratejisi butun 443 trafigine
-    /// uygulaniyordu ve GitHub calismiyordu. Artik yalnizca engelli olculmus
-    /// kategorilerin adreslerine ve kullanicinin kendi hedefine dokunuluyor.
+    /// Issue #1 (Vodafone Net, 2026-09-15): kazanan 443 stratejisi bütün 443 trafiğine
+    /// uygulanıyordu ve GitHub çalışmıyordu. Artık yalnızca engelli ölçülmüş
+    /// kategorilerin adreslerine ve kullanıcının kendi hedefine dokunuluyor.
     /// </remarks>
     private IReadOnlyList<string> BuildHostlistDomains(
         IReadOnlyDictionary<StrategySection, string> winners)
@@ -1735,9 +1735,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return [];
         }
 
-        // Test yapmadan dogrudan Baslat'a basan kullanici da uyarilmali: kutudaki
-        // adres anlasilmiyorsa koruma onu KAPSAMIYOR. Test yolundaki uyari burada
-        // gorunmez, cunku test hic kosmamis olabilir.
+        // Test yapmadan doğrudan Başlat'a basan kullanıcı da uyarılmalı: kutudaki
+        // adres anlaşılmıyorsa koruma onu KAPSAMIYOR. Test yolundaki uyarı burada
+        // görünmez, çünkü test hiç koşmamış olabilir.
         if (HostlistStore.DescribeUnusableTarget(CustomTarget) is { } sorun)
         {
             Append(sorun, isError: true);
@@ -1749,30 +1749,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Baslatmadan sonra kayitli stratejinin GERCEKTEN ise yaradigini olcer.
+    /// Başlatmadan sonra kayıtlı stratejinin GERÇEKTEN işe yaradığını ölçer.
     /// </summary>
     /// <remarks>
-    /// Kullanici bir kez test yapip stratejiyi kaydediyor ve sonraki acilislarda
-    /// dogrudan Baslat'a basiyor -- test tekrar kosmuyor. Ama engelleme degisebilir:
-    /// ISS'in DPI yapilandirmasi guncellenir ve dun calisan parametre bugun calismaz.
-    /// O durumda arayuz "CALISIYOR" gosteriyordu ve kullanici korundugunu saniyordu.
+    /// Kullanıcı bir kez test yapıp stratejiyi kaydediyor ve sonraki açılışlarda
+    /// doğrudan Başlat'a basıyor; test tekrar koşmuyor. Ama engelleme değişebilir:
+    /// İSS'in DPI yapılandırması güncellenir ve dün çalışan parametre bugün çalışmaz.
+    /// O durumda arayüz "ÇALIŞIYOR" gösteriyordu ve kullanıcı korunduğunu sanıyordu.
     ///
-    /// Burada yalnizca tcp443 hedefleri olculuyor: ucu de birkac saniye suruyor ve
-    /// baslatma akisini bekletmiyor. HICBIRI acilmiyorsa strateji artik ise
-    /// yaramiyor demektir ve kullaniciya yeni bir test onerilir.
+    /// Burada yalnızca tcp443 hedefleri ölçülüyor: üçü de birkaç saniye sürüyor ve
+    /// başlatma akışını bekletmiyor. HİÇBİRİ açılmıyorsa strateji artık işe
+    /// yaramıyor demektir ve kullanıcıya yeni bir test önerilir.
     ///
-    /// Dogrulama bir KOLAYLIK: kendisi hata verirse baslatma bozulmamali, cunku
-    /// winws zaten calisiyor ve olcumun basarisizligi korumanin basarisizligi degil.
+    /// Doğrulama bir KOLAYLIK: kendisi hata verirse başlatma bozulmamalı, çünkü
+    /// winws zaten çalışıyor ve ölçümün başarısızlığı korumanın başarısızlığı değil.
     ///
-    /// Servis kurulumundan sonra da cagriliyor. Eskiden yalnizca "Başlat" yolunda
-    /// kosuyordu; servis kuran kullanicinin ekraninda "SERVİS MODU AKTİF" yaziyordu
-    /// ama servisin gercekten hedefleri actigi hic olculmemisti. Ustelik servis
-    /// yolu en cok kullanilan yol: README kullaniciya tam olarak onu oneriyor.
+    /// Servis kurulumundan sonra da çağrılıyor. Eskiden yalnızca "Başlat" yolunda
+    /// koşuyordu; servis kuran kullanıcının ekranında "SERVİS MODU AKTİF" yazıyordu
+    /// ama servisin gerçekten hedefleri açtığı hiç ölçülmemişti. Üstelik servis
+    /// yolu en çok kullanılan yol: README kullanıcıya tam olarak onu öneriyor.
     /// </remarks>
     /// <param name="viaService">
-    /// Koruma otomatik baslatma servisiyle mi calisiyor. O yolda durum degeri
-    /// <see cref="AppStatus.Ready"/> kaliyor (Baslat dugmesi servis varken kapali),
-    /// yani "hala calisiyor mu" sorusu farkli soruluyor.
+    /// Koruma otomatik başlatma servisiyle mi çalışıyor. O yolda durum değeri
+    /// <see cref="AppStatus.Ready"/> kalıyor (Başlat düğmesi servis varken kapalı),
+    /// yani "hâlâ çalışıyor mu" sorusu farklı soruluyor.
     /// </param>
     private async Task VerifyAfterStartAsync(bool viaService = false)
     {
@@ -1781,8 +1781,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        // Olcum suresince kullanici durdurmus, test baslatmis ya da servisi
-        // kaldirmis olabilir: o durumda "acmiyor" yazmak kafa karistirir.
+        // Ölçüm süresince kullanıcı durdurmuş, test başlatmış ya da servisi
+        // kaldırmış olabilir: o durumda "açmıyor" yazmak kafa karıştırır.
         bool HalaDevrede() => viaService
             ? Status == AppStatus.Ready && IsServiceInstalled && !IsServicePaused
             : Status == AppStatus.Running;
@@ -1791,12 +1791,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            // Ag yiginin oturmasi icin kisa bir bekleme; hemen olcmek yanlis
-            // negatif uretiyor.
+            // Ağ yığınının oturması için kısa bir bekleme; hemen ölçmek yanlış
+            // negatif üretiyor.
             await Task.Delay(TimeSpan.FromSeconds(3)).ConfigureAwait(true);
 
-            // Bu arada winws coktuyse (Faulted) veya kullanici durdurduysa olcecek
-            // bir sey yok: hatanin uzerine "acmiyor" yazmak kafa karistirir.
+            // Bu arada winws çöktüyse (Faulted) veya kullanıcı durdurduysa ölçecek
+            // bir şey yok: hatanın üzerine "açmıyor" yazmak kafa karıştırır.
             if (!HalaDevrede())
             {
                 return;
@@ -1836,22 +1836,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return;
             }
 
-            // HANGI HEDEFIN ACILMADIGINI YAZ.
+            // HANGİ HEDEFİN AÇILMADIĞINI YAZ.
             //
-            // Eskiden yalnizca sayi yaziliyordu ve yalnizca SIFIR acildiginda
-            // uyariliyordu. Gercek bir kullanicinin raporunda sonuc suydu:
+            // Eskiden yalnızca sayı yazılıyordu ve yalnızca SIFIR açıldığında
+            // uyarılıyordu. Gerçek bir kullanıcının raporunda sonuç şuydu:
             //
             //     Doğrulandı: 1/4 hedef açılıyor.
             //     Durum: KORUMA AKTİF
             //
-            // O dort hedefin ucu Discord, biri YouTube -- ve YouTube o hatta
-            // zaten engelli degil. Yani acilan tek hedef muhtemelen hicbir sey
-            // gerektirmeyen hedefti ve Discord'un ucu de kapaliydi. Ekran yesil
-            // "KORUMA AKTİF" diyordu ve "Doğrulandı" kelimesi kullaniyordu.
+            // O dört hedefin üçü Discord, biri YouTube; ve YouTube o hatta
+            // zaten engelli değil. Yani açılan tek hedef muhtemelen hiçbir şey
+            // gerektirmeyen hedefti ve Discord'un üçü de kapalıydı. Ekran yeşil
+            // "KORUMA AKTİF" diyordu ve "Doğrulandı" kelimesini kullanıyordu.
             //
-            // Bu, bu projedeki en pahali hata sinifi: kullanici korundugunu
-            // saniyor. Ustelik hangi hedefin acilmadigi yazilmadigi icin gelen
-            // rapordan da anlasilamiyordu -- sayinin kendisi teshis vermiyor,
+            // Bu, bu projedeki en pahalı hata sınıfı: kullanıcı korunduğunu
+            // sanıyor. Üstelik hangi hedefin açılmadığı yazılmadığı için gelen
+            // rapordan da anlaşılamıyordu; sayının kendisi teşhis vermiyor,
             // ADLAR veriyor.
             if (acilan.Count == 0)
             {
@@ -1877,23 +1877,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            // Dogrulama yapilamadi. Sessiz geciyoruz: winws calisiyor ve olcumun
-            // kendi hatasini korumanin hatasi gibi gostermek yanlis olur.
+            // Doğrulama yapılamadı. Sessiz geçiyoruz: winws çalışıyor ve ölçümün
+            // kendi hatasını korumanın hatası gibi göstermek yanlış olur.
         }
     }
     /// <summary>
-    /// "Duraklat": ZapretTR'nin arkada calisan HER SEYINI durdurur, ayari silmez.
+    /// "Duraklat": ZapretTR'nin arkada çalışan HER ŞEYİNİ durdurur, ayarı silmez.
     /// </summary>
     /// <remarks>
-    /// Eskiden iki ayri ve eksik yol vardi. Elle baslatilan korumada yalnizca
-    /// uygulamanin kendi winws'i ile sifreli DNS'i kapaniyordu; gercek makinede
-    /// olculdu (2026-09-13) ki WinDivert surucusu Duraklat'tan 20 saniye sonra bile
-    /// cekirdekte RUNNING kaliyordu, arkada kurulu bir servis varsa ona hic
-    /// dokunulmuyordu. Ayni kullanicida VPN koruma kapatildiktan sonra da baglanmadi
-    /// ve ancak sifirlamayla baglandi. Artik Duraklat sifirlamanin durdurdugu her seyi
-    /// durduruyor (<see cref="WinDivertCleanup.StopEverythingAsync"/>), yalnizca
-    /// hicbir seyi silmiyor; ardindan gercekten bir sey kalip kalmadigini OLCUP
-    /// yaziyor.
+    /// Eskiden iki ayrı ve eksik yol vardı. Elle başlatılan korumada yalnızca
+    /// uygulamanın kendi winws'i ile şifreli DNS'i kapanıyordu; gerçek makinede
+    /// ölçüldü (2026-09-13) ki WinDivert sürücüsü Duraklat'tan 20 saniye sonra bile
+    /// çekirdekte RUNNING kalıyordu, arkada kurulu bir servis varsa ona hiç
+    /// dokunulmuyordu. Aynı kullanıcıda VPN koruma kapatıldıktan sonra da bağlanmadı
+    /// ve ancak sıfırlamayla bağlandı. Artık Duraklat sıfırlamanın durdurduğu her şeyi
+    /// durduruyor (<see cref="WinDivertCleanup.StopEverythingAsync"/>), yalnızca
+    /// hiçbir şeyi silmiyor; ardından gerçekten bir şey kalıp kalmadığını ÖLÇÜP
+    /// yazıyor.
     /// </remarks>
     private async Task PauseAsync()
     {
@@ -1927,7 +1927,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
             if (!IsServicePaused && SelectedStrategy is null)
             {
-                // Devam ettirilecek bir koruma yok; yalnizca kalintilar temizlendi.
+                // Devam ettirilecek bir koruma yok; yalnızca kalıntılar temizlendi.
                 SetIdleStatus("Arkada kalan her şey durduruldu.");
                 return;
             }
@@ -1947,7 +1947,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Duraklatilmis servisi kayitli ayariyla geri acar.</summary>
+    /// <summary>Duraklatılmış servisi kayıtlı ayarıyla geri açar.</summary>
     private async Task ResumeServiceAsync()
     {
         IsBusy = true;
@@ -1998,25 +1998,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        // Test sirasinda winws kapali olmali: baseline taramasi mevcut durumu
-        // olcecek, acik bir strateji olcumu kirletir.
+        // Test sırasında winws kapalı olmalı: baseline taraması mevcut durumu
+        // ölçecek, açık bir strateji ölçümü kirletir.
         if (_runner is { IsRunning: true })
         {
             Append("Test için winws geçici olarak durduruluyor.");
             await _runner.StopAsync().ConfigureAwait(true);
         }
 
-        // BASKA BIR DPI ARACI ACIKSA ONCE ONU SOYLE. WinDivert'i ayni anda iki arac
-        // kullanamiyor; GoodbyeDPI acikken winws paketleri goremiyor ve butun adaylar
-        // ayni sekilde dusuyor. Kullanicinin gordugu sey "N aday denendi, hicbiri
-        // calismadi" oluyor -- yani stratejiler kotu saniliyor, oysa olcum hic
-        // yapilamamis. Testi engellemiyoruz; karar kullanicinin, ama korlemesine
+        // BAŞKA BİR DPI ARACI AÇIKSA ÖNCE ONU SÖYLE. WinDivert'i aynı anda iki araç
+        // kullanamıyor; GoodbyeDPI açıkken winws paketleri göremiyor ve bütün adaylar
+        // aynı şekilde düşüyor. Kullanıcının gördüğü şey "N aday denendi, hiçbiri
+        // çalışmadı" oluyor; yani stratejiler kötü sanılıyor, oysa ölçüm hiç
+        // yapılamamış. Testi engellemiyoruz; karar kullanıcının, ama körlemesine
         // 15 dakika beklemesin.
         await ScanAndOfferCleanupAsync().ConfigureAwait(true);
 
-        // "Bilmiyorum" secildiyse once ISS'i tespit etmeyi dene. Profil bilinmeden
-        // yapilan test Tier 1'i tamamen atlar ve dogrudan genel aramaya duser --
-        // yani kullanici tam da bu araci hizlandiran seyden mahrum kalir.
+        // "Bilmiyorum" seçildiyse önce İSS'i tespit etmeyi dene. Profil bilinmeden
+        // yapılan test Tier 1'i tamamen atlar ve doğrudan genel aramaya düşer;
+        // yani kullanıcı tam da bu aracı hızlandıran şeyden mahrum kalır.
         if (SelectedIsp?.Profile is null)
         {
             await TryDetectIspAsync().ConfigureAwait(true);
@@ -2043,23 +2043,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
             }
             else if (HostlistStore.DescribeUnusableTarget(CustomTarget) is { } sorun)
             {
-                // Eskiden burada HICBIR SEY yoktu: anlasilmayan girdi sessizce
-                // dusuyordu ve kullanici testin kendi sitesini denedigini saniyordu
-                // (issue #1, KeremKuyucu). Sessiz reddetmek, calismayan bir ozellikten
-                // daha kotu -- kullanici yanlis bir sey yaptigini bile bilmiyor.
+                // Eskiden burada HİÇBİR ŞEY yoktu: anlaşılmayan girdi sessizce
+                // düşüyordu ve kullanıcı testin kendi sitesini denediğini sanıyordu
+                // (issue #1, KeremKuyucu). Sessiz reddetmek, çalışmayan bir özellikten
+                // daha kötü: kullanıcı yanlış bir şey yaptığını bile bilmiyor.
                 Append(sorun, isError: true);
             }
 
-            // Sifreli DNS secimi OLCUME de gecmeli. Gecmedigi surece hedefler sistem
-            // DNS'iyle cozuluyordu ve Turkiye'de o katman cogu zaman kacirilmis
-            // durumda: discord.com engel sunucusuna cozuluyor, olcum "engel sayfasi"
-            // goruyor, bolum DnsRedirected isaretleniyor ve strateji aranmiyor.
+            // Şifreli DNS seçimi ÖLÇÜME de geçmeli. Geçmediği sürece hedefler sistem
+            // DNS'iyle çözülüyordu ve Türkiye'de o katman çoğu zaman kaçırılmış
+            // durumda: discord.com engel sunucusuna çözülüyor, ölçüm "engel sayfası"
+            // görüyor, bölüm DnsRedirected işaretleniyor ve strateji aranmıyor.
             //
-            // Gercek makinede olculdu (TTNET, kurulum paketiyle): arayuz
-            // "ENGEL BULUNAMADI" diyordu ve kullaniciya "kendi hedefinizi girin"
-            // oneriyordu; ayni hatta ayni anda CLI --doh ile 22 calisan strateji
-            // buluyordu. Yani urunun ana yuzeyi, DNS kacirmasi olan her hatta
-            // -- ki bu Turkiye'de olagan durum -- kullanilamaz haldeydi.
+            // Gerçek makinede ölçüldü (TTNET, kurulum paketiyle): arayüz
+            // "ENGEL BULUNAMADI" diyordu ve kullanıcıya "kendi hedefinizi girin"
+            // öneriyordu; aynı hatta aynı anda CLI --doh ile 22 çalışan strateji
+            // buluyordu. Yani ürünün ana yüzeyi, DNS kaçırması olan her hatta
+            // (ki bu Türkiye'de olağan durum) kullanılamaz hâldeydi.
             var prober = new StrategyProber(_vendor, _profiles, targets, IsSecureDnsEnabled);
             var progress = new Progress<ProbeProgress>(OnProbeProgress);
 
@@ -2068,9 +2068,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     SelectedIsp?.Profile,
                     progress,
                     stopAtFirstSuccess: true,
-                    // Arayuzden calisan testte bolum basina butce koyuyoruz: Tier 3'un
-                    // 180 adayini sonuna kadar denemek kullaniciyi belirsiz sure
-                    // bekletir. Sinira takilirsa "daha genis ara" ayri bir eylem olmali.
+                    // Arayüzden çalışan testte bölüm başına bütçe koyuyoruz: Tier 3'ün
+                    // 180 adayını sonuna kadar denemek kullanıcıyı belirsiz süre
+                    // bekletir. Sınıra takılırsa "daha geniş ara" ayrı bir eylem olmalı.
                     maxCandidatesPerSection: 60,
                     cancellationToken: _testCancellation.Token)
                 .ConfigureAwait(true);
@@ -2085,9 +2085,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (ProbeEngineException ex)
         {
-            // "Strateji bulunamadi" DEMEK DEGIL. Motor hic baslamadigi icin
-            // hicbir aday olculemedi; ikisini ayni ekranda gostermek kullaniciyi
-            // yanlis yone gonderiyordu ("demek bu hatta ise yaramiyor").
+            // "Strateji bulunamadı" DEMEK DEĞİL. Motor hiç başlamadığı için
+            // hiçbir aday ölçülemedi; ikisini aynı ekranda göstermek kullanıcıyı
+            // yanlış yöne gönderiyordu ("demek bu hatta işe yaramıyor").
             Append("ÖLÇÜM YAPILAMADI: motor art arda hiç başlamadı.", isError: true);
             Append(ex.Message, isError: true);
             Append("Bu bir strateji sorunu değil; makinede motoru engelleyen bir şey var.");
@@ -2116,19 +2116,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Otomatik baslatma servisi calisiyorsa test suresince durdurur.
+    /// Otomatik başlatma servisi çalışıyorsa test süresince durdurur.
     /// </summary>
     /// <remarks>
-    /// Test yalnizca uygulamanin KENDI baslattigi winws'i durduruyordu. Servis
-    /// kuruluyken arkada ikinci bir winws calismaya devam ediyor ve olcumu iki
-    /// yerden bozuyordu: mevcut durum taramasi servisin stratejisi acikken
-    /// yapildigi icin engel gorunmuyordu ("ENGEL BULUNAMADI"), adaylar ise ayni
-    /// filtreyle ikinci ornek olarak baslayamiyordu ("ÖLÇÜM YAPILAMADI").
+    /// Test yalnızca uygulamanın KENDİ başlattığı winws'i durduruyordu. Servis
+    /// kuruluyken arkada ikinci bir winws çalışmaya devam ediyor ve ölçümü iki
+    /// yerden bozuyordu: mevcut durum taraması servisin stratejisi açıkken
+    /// yapıldığı için engel görünmüyordu ("ENGEL BULUNAMADI"), adaylar ise aynı
+    /// filtreyle ikinci örnek olarak başlayamıyordu ("ÖLÇÜM YAPILAMADI").
     ///
-    /// Servisin durumu burada YENIDEN soruluyor; acilistaki onbellege
-    /// guvenilmiyor, cunku servis o zamandan beri kurulmus ya da dusmus olabilir.
-    /// Kurulu ama zaten durmus bir servise dokunulmuyor: geri baslatilacak bir
-    /// sey yok ve test sonunda onu baslatmak kullanicinin gormedigi bir degisiklik
+    /// Servisin durumu burada YENİDEN soruluyor; açılıştaki önbelleğe
+    /// güvenilmiyor, çünkü servis o zamandan beri kurulmuş ya da düşmüş olabilir.
+    /// Kurulu ama zaten durmuş bir servise dokunulmuyor: geri başlatılacak bir
+    /// şey yok ve test sonunda onu başlatmak kullanıcının görmediği bir değişiklik
     /// olurdu.
     /// </remarks>
     private async Task SuspendServiceForTestAsync()
@@ -2151,8 +2151,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         Append("Otomatik başlatma servisi test boyunca durduruluyor; test bitince geri açılacak.");
 
-        // Bayrak DURDURMADAN ONCE kaldiriliyor: durdurma yarida kalsa bile servis
-        // artik bizim elimizde ve test sonunda geri baslatilmali.
+        // Bayrak DURDURMADAN ÖNCE kaldırılıyor: durdurma yarıda kalsa bile servis
+        // artık bizim elimizde ve test sonunda geri başlatılmalı.
         _serviceSuspendedForTest = true;
 
         var stopped = await ServiceManager
@@ -2167,17 +2167,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// <see cref="SuspendServiceForTestAsync"/> ile durdurulan servisi geri acar.
+    /// <see cref="SuspendServiceForTestAsync"/> ile durdurulan servisi geri açar.
     /// </summary>
     /// <remarks>
-    /// Birden fazla yoldan cagrilabilir (testin sonu, uygulamadan cikis); bayrak
-    /// beklemeden ONCE indiriliyor ki servis iki kez baslatilmasin.
+    /// Birden fazla yoldan çağrılabilir (testin sonu, uygulamadan çıkış); bayrak
+    /// beklemeden ÖNCE indiriliyor ki servis iki kez başlatılmasın.
     ///
-    /// Servis KURULDUGU ANDAKI ayarla geri gelir. Test yeni bir strateji bulduysa
-    /// bu kendiliginden servise gecmez; bunu kullaniciya soylemek zorundayiz, yoksa
-    /// "test buldu ama hicbir sey degismedi" durumu yeniden ortaya cikar.
+    /// Servis KURULDUĞU ANDAKİ ayarla geri gelir. Test yeni bir strateji bulduysa
+    /// bu kendiliğinden servise geçmez; bunu kullanıcıya söylemek zorundayız, yoksa
+    /// "test buldu ama hiçbir şey değişmedi" durumu yeniden ortaya çıkar.
     /// </remarks>
-    /// <param name="newStrategyFound">Test calisan bir parametre buldu mu.</param>
+    /// <param name="newStrategyFound">Test çalışan bir parametre buldu mu.</param>
     private async Task ResumeServiceAfterTestAsync(bool newStrategyFound)
     {
         if (!_serviceSuspendedForTest)
@@ -2197,8 +2197,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Append("Koruma şu anda kapalı. Bilgisayarı yeniden başlatınca servis kendiliğinden açılır.",
                 isError: true);
 
-            // Yalnizca basarisizlikta tazeleniyor: basarili yolda durum bandi
-            // degismemeli, yoksa test sonucu ("STRATEJİ BULUNDU") ekrandan
+            // Yalnızca başarısızlıkta tazeleniyor: başarılı yolda durum bandı
+            // değişmemeli, yoksa test sonucu ("STRATEJİ BULUNDU") ekrandan
             // silinir ve yerine "SERVİS MODU AKTİF" yazar.
             await RefreshServiceStatusAsync().ConfigureAwait(true);
             return;
@@ -2213,22 +2213,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Testten ONCE baska araclarin kalintilarini arar ve silinebilir olanlar
-    /// icin kullanicidan onay ister.
+    /// Testten ÖNCE başka araçların kalıntılarını arar ve silinebilir olanlar
+    /// için kullanıcıdan onay ister.
     /// </summary>
     /// <remarks>
-    /// Burasi eskiden yalnizca CALISAN surece bakiyordu. O kontrol en sik
-    /// karsilasilan hali -- kapali ama kurulu kalintiyi -- hic gormuyordu:
-    /// kullanici eski araci kapatiyor, "kapattim" diyor, ama geride kalan servis
-    /// kaydi acilista geri geliyor ve WinDivert'i kapiyor. Sonuc, disaridan
-    /// "hicbir strateji calismadi" gibi gorunen bir olcum. Gercek bir
-    /// kullanicida olculdu: 176 aday, 1105 saniye, sonuc yok.
+    /// Burası eskiden yalnızca ÇALIŞAN sürece bakıyordu. O kontrol en sık
+    /// karşılaşılan hâli (kapalı ama kurulu kalıntıyı) hiç görmüyordu:
+    /// kullanıcı eski aracı kapatıyor, "kapattım" diyor, ama geride kalan servis
+    /// kaydı açılışta geri geliyor ve WinDivert'i kapıyor. Sonuç, dışarıdan
+    /// "hiçbir strateji çalışmadı" gibi görünen bir ölçüm. Gerçek bir
+    /// kullanıcıda ölçüldü: 176 aday, 1105 saniye, sonuç yok.
     ///
-    /// Silme AYRI bir karar ve kullanicinin: ne silinecegi tek tek yaziliyor ve
-    /// onaysiz hicbir sey silinmiyor. Silinebilir sayilan tek sey KAYIT --
-    /// oksuz servisler ve sahipsiz surucu kayitlari. Baska bir urunun
-    /// dosyalarina dokunulmuyor; bizi engelleyen sey dosyalar degil kayit, ve
-    /// calisan bir kurulumu bozmanin geri donusu yok.
+    /// Silme AYRI bir karar ve kullanıcının: ne silineceği tek tek yazılıyor ve
+    /// onaysız hiçbir şey silinmiyor. Silinebilir sayılan tek şey KAYIT:
+    /// öksüz servisler ve sahipsiz sürücü kayıtları. Başka bir ürünün
+    /// dosyalarına dokunulmuyor; bizi engelleyen şey dosyalar değil kayıt ve
+    /// çalışan bir kurulumu bozmanın geri dönüşü yok.
     /// </remarks>
     private async Task ScanAndOfferCleanupAsync()
     {
@@ -2236,8 +2236,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            // hosts kontrolu icin test hedeflerimizin adlari veriliyor: DNS
-            // zehirlenmesi tam olarak o adlari baska bir adrese cevirir.
+            // hosts kontrolü için test hedeflerimizin adları veriliyor: DNS
+            // zehirlenmesi tam olarak o adları başka bir adrese çevirir.
             string[] hedefler = _profiles is null
                 ? []
                 : ProbeTargetStore.Load(_profiles.Root)
@@ -2324,13 +2324,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task ResetAsync()
     {
-        // Yikici islem: onaysiz calistirilmamali ve tam olarak ne yapacagi
-        // onceden soylenmeli.
+        // Yıkıcı işlem: onaysız çalıştırılmamalı ve tam olarak ne yapacağı
+        // önceden söylenmeli.
         //
-        // Metin eskiden "DNS ayarlariniza dokunulmaz" diyordu; ayni anda gunluk
-        // "Sistem DNS ayari geri alindi" yaziyordu. Davranis dogru (sifirlama DNS'i
-        // bizde birakmamali), yanlis olan metindi: kullanicinin KENDI ayarina
-        // dokunulmuyor, ZapretTR'nin yaptigi yonlendirme geri aliniyor.
+        // Metin eskiden "DNS ayarlarınıza dokunulmaz" diyordu; aynı anda günlük
+        // "Sistem DNS ayari geri alindi" yazıyordu. Davranış doğru (sıfırlama DNS'i
+        // bizde bırakmamalı), yanlış olan metindi: kullanıcının KENDİ ayarına
+        // dokunulmuyor, ZapretTR'nin yaptığı yönlendirme geri alınıyor.
         var confirmation = MessageBox.Show(
             "Bu işlem şunları yapacak:\n\n" +
             "  • Çalışan winws ve şifreli DNS süreçlerini durdurur\n" +
@@ -2369,11 +2369,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append($"{mark} {step.Description}{detail}", isError: !step.Succeeded);
             }
 
-            // Diski temizlemek YETMIYOR: profiller, secili saglayici ve
-            // strateji BELLEKTE duruyordu. Kullanici "sıfırla" dedikten sonra
-            // ekranda hala eski ISS ve "✓ dogrulanmis" strateji goruyordu --
-            // silinmis bir seyin adi ekranda kaliyordu. Daha kotusu: o haliyle
-            // Baslat'a basmak, artik diskte karsiligi olmayan bir secimi
+            // Diski temizlemek YETMİYOR: profiller, seçili sağlayıcı ve
+            // strateji BELLEKTE duruyordu. Kullanıcı "sıfırla" dedikten sonra
+            // ekranda hâlâ eski İSS'i ve "✓ doğrulanmış" stratejiyi görüyordu;
+            // silinmiş bir şeyin adı ekranda kalıyordu. Daha kötüsü: o hâliyle
+            // Başlat'a basmak, artık diskte karşılığı olmayan bir seçimi
             // yeniden kaydediyordu.
             _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
 
@@ -2400,17 +2400,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// winws'i durdurur ve sifreli DNS'i geri alir. BUTUN cikis yollarinin ortak adimi.
+    /// winws'i durdurur ve şifreli DNS'i geri alır. BÜTÜN çıkış yollarının ortak adımı.
     /// </summary>
     /// <remarks>
-    /// Ayri bir metot olmasinin sebebi olculmus bir hata: temizlik yalnizca "Çıkış"
-    /// dugmesinin icindeydi, pencereyi X ile kapatmanin hicbir islevi yoktu. Gercek
-    /// makinede koruma acikken pencere kapatildiginda winws ve dnscrypt-proxy oksuz
-    /// kaldi ve sistem DNS'i 127.0.0.1'i gostermeye devam etti. Bu, projedeki en kotu
-    /// sonuca acilan yol: dnscrypt sonradan olurse (yeniden baslatma, gorev yoneticisi,
-    /// cokme) makine hicbir adi cozemez. Kullanicilarin cogu pencereyi X ile kapatir.
+    /// Ayrı bir metot olmasının sebebi ölçülmüş bir hata: temizlik yalnızca "Çıkış"
+    /// düğmesinin içindeydi, pencereyi X ile kapatmanın hiçbir işlevi yoktu. Gerçek
+    /// makinede koruma açıkken pencere kapatıldığında winws ve dnscrypt-proxy öksüz
+    /// kaldı ve sistem DNS'i 127.0.0.1'i göstermeye devam etti. Bu, projedeki en kötü
+    /// sonuca açılan yol: dnscrypt sonradan ölürse (yeniden başlatma, Görev Yöneticisi,
+    /// çökme) makine hiçbir adı çözemez. Kullanıcıların çoğu pencereyi X ile kapatır.
     ///
-    /// Birden fazla kez cagrilabilir; ikinci cagri hicbir sey yapmaz.
+    /// Birden fazla kez çağrılabilir; ikinci çağrı hiçbir şey yapmaz.
     /// </remarks>
     public async Task ShutdownAsync()
     {
@@ -2421,9 +2421,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         _shutdownCompleted = true;
 
-        // Test surerken cikiliyorsa servis durdurulmus halde kalmamali: kaydi
-        // "auto" oldugu icin yeniden baslatmada geri gelirdi ama o zamana kadar
-        // kullanici korumasiz kalirdi.
+        // Test sürerken çıkılıyorsa servis durdurulmuş hâlde kalmamalı: kaydı
+        // "auto" olduğu için yeniden başlatmada geri gelirdi ama o zamana kadar
+        // kullanıcı korumasız kalırdı.
         _testCancellation?.Cancel();
         await ResumeServiceAfterTestAsync(newStrategyFound: false).ConfigureAwait(true);
 
@@ -2433,16 +2433,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             await _runner.StopAsync().ConfigureAwait(true);
         }
 
-        // DNS geri alinmadan cikmak, kullaniciyi ad cozemez bir makineyle
-        // birakmak demek. Cikis yolunda atlanabilecek bir adim degil.
+        // DNS geri alınmadan çıkmak, kullanıcıyı ad çözemez bir makineyle
+        // bırakmak demek. Çıkış yolunda atlanabilecek bir adım değil.
         await StopSecureDnsAsync().ConfigureAwait(true);
 
-        // SURUCU DE CEKIRDEKTEN DUSMELI.
+        // SÜRÜCÜ DE ÇEKİRDEKTEN DÜŞMELİ.
         //
-        // winws kapaninca WinDivert surucusu kendiliginden dusmuyor; olculdu:
-        // Duraklat'tan 20 saniye sonra hala RUNNING. Uygulamayi kapatan kullanici
-        // arkada hicbir sey kalmadigini dusunuyor. Otomatik baslatma servisi
-        // calisiyorsa surucu onun; dokunulmuyor.
+        // winws kapanınca WinDivert sürücüsü kendiliğinden düşmüyor; ölçüldü:
+        // Duraklat'tan 20 saniye sonra hâlâ RUNNING. Uygulamayı kapatan kullanıcı
+        // arkada hiçbir şey kalmadığını düşünüyor. Otomatik başlatma servisi
+        // çalışıyorsa sürücü onun; dokunulmuyor.
         try
         {
             var status = await ServiceManager.GetStatusAsync().ConfigureAwait(true);
@@ -2453,19 +2453,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception)
         {
-            // Cikis bir surucu hatasi yuzunden takilmamali.
+            // Çıkış bir sürücü hatası yüzünden takılmamalı.
         }
     }
 
     /// <summary>
-    /// "Çıkış" dugmesi. Temizligi KENDISI yapmiyor: cikis niyetini duyuruyor,
-    /// pencere kapaniyor ve temizlik pencerenin kapanma yolunda calisiyor.
+    /// "Çıkış" düğmesi. Temizliği KENDİSİ yapmıyor: çıkış niyetini duyuruyor,
+    /// pencere kapanıyor ve temizlik pencerenin kapanma yolunda çalışıyor.
     /// </summary>
     /// <remarks>
-    /// Pencereyi burada KAPATMIYORUZ. X ile kapatmak artik uygulamayi bildirim
-    /// alanina indiriyor; "gercek cikis" ile "gizle" ayrimini yalnizca pencere
-    /// bilebilir, cunku WPF ikisini de ayni Closing olayiyla bildiriyor.
-    /// Gorunum modeli niyeti duyuruyor, karari pencere veriyor.
+    /// Pencereyi burada KAPATMIYORUZ. X ile kapatmak artık uygulamayı bildirim
+    /// alanına indiriyor; "gerçek çıkış" ile "gizle" ayrımını yalnızca pencere
+    /// bilebilir, çünkü WPF ikisini de aynı Closing olayıyla bildiriyor.
+    /// Görünüm modeli niyeti duyuruyor, kararı pencere veriyor.
     /// </remarks>
     private Task ExitAsync()
     {
@@ -2473,7 +2473,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         return Task.CompletedTask;
     }
 
-    // --- Yardimcilar ------------------------------------------------------------
+    // --- Yardımcılar ------------------------------------------------------------
 
     private void LoadIspChoices()
     {
@@ -2484,8 +2484,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         IspChoices.Clear();
 
-        // "Bilmiyorum" birinci sinif secenek: kullanicilarin cogu ISS'ini teknik
-        // adiyla bilmiyor, ve bilmiyor olmak testi engellememelidir.
+        // "Bilmiyorum" birinci sınıf seçenek: kullanıcıların çoğu İSS'ini teknik
+        // adıyla bilmiyor ve bilmiyor olmak testi engellememelidir.
         IspChoices.Add(new IspChoice(null, "Bilmiyorum / otomatik tespit et"));
 
         foreach (var profile in _profiles.Profiles)
@@ -2493,19 +2493,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
             IspChoices.Add(new IspChoice(profile, profile.DisplayName));
         }
 
-        // Ilk acilista "Bilmiyorum" secili gelir, listedeki ilk profil DEGIL.
+        // İlk açılışta "Bilmiyorum" seçili gelir, listedeki ilk profil DEĞİL.
         //
-        // Onceden ilk gercek profil seciliyordu ve bu, kurulum paketiyle gercek bir
-        // makinede denendiginde goruldu: Turk Telekom hattinda uygulama acildiginda
-        // "Turkcell Superonline" secili geliyordu (priority'si en kucuk profil).
-        // Kullanicinin dogrudan Baslat'a basmasi, kendi hattinda HIC denenmemis bir
-        // stratejiyi trafige uygulamasi demekti. Uygulama, tespit etmedigi bir
-        // saglayiciyi secilmis gibi gostermemeli.
+        // Önceden ilk gerçek profil seçiliyordu ve bu, kurulum paketiyle gerçek bir
+        // makinede denendiğinde görüldü: Türk Telekom hattında uygulama açıldığında
+        // "Turkcell Superonline" seçili geliyordu (priority'si en küçük profil).
+        // Kullanıcının doğrudan Başlat'a basması, kendi hattında HİÇ denenmemiş bir
+        // stratejiyi trafiğe uygulaması demekti. Uygulama, tespit etmediği bir
+        // sağlayıcıyı seçilmiş gibi göstermemeli.
         //
-        // Tespit burada kendiliginden CALISTIRILMIYOR: ASN sorgusu kullanicinin
-        // IP'sini ucuncu bir servise gonderiyor ve bu, kullanici hicbir sey
-        // istemeden acilista yapilacak bir sey degil. "Bilmiyorum" secili haldeyken
-        // parametre testi baslatildiginda tespit zaten devreye giriyor.
+        // Tespit burada kendiliğinden ÇALIŞTIRILMIYOR: ASN sorgusu kullanıcının
+        // IP'sini üçüncü bir servise gönderiyor ve bu, kullanıcı hiçbir şey
+        // istemeden açılışta yapılacak bir şey değil. "Bilmiyorum" seçili hâldeyken
+        // parametre testi başlatıldığında tespit zaten devreye giriyor.
         SelectedIsp = IspChoices.FirstOrDefault(c => c.Profile is null)
                       ?? IspChoices.FirstOrDefault();
     }
@@ -2519,21 +2519,21 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             SelectedStrategy = null;
 
-            // RefreshIdlePresentation, UpdateStatusDetail DEGIL. Ikincisi
-            // ayrinti satirini "servis saglayicisi secilmedi · strateji yok"
-            // ile ezip siradaki adimi siliyordu -- yani kullanicinin tam da bu
-            // durumda gormesi gereken tek cumleyi. Ustuste iki hata vardi:
-            // yukaridaki atama zaten null'sa setter hic kosmuyor, dolayisiyla
-            // tazeleme burada ACIKCA cagrilmak zorunda.
+            // RefreshIdlePresentation, UpdateStatusDetail DEĞİL. İkincisi
+            // ayrıntı satırını "servis sağlayıcısı seçilmedi · strateji yok"
+            // ile ezip sıradaki adımı siliyordu; yani kullanıcının tam da bu
+            // durumda görmesi gereken tek cümleyi. Üst üste iki hata vardı:
+            // yukarıdaki atama zaten null'sa setter hiç koşmuyor, dolayısıyla
+            // tazeleme burada AÇIKÇA çağrılmak zorunda.
             RefreshIdlePresentation();
             return;
         }
 
-        // Yalnizca HTTPS adaylari listeleniyor. Kullanicinin "strateji" derken
-        // kastettigi sey bu; diger bolumler (HTTP, QUIC, Discord ses) profilin en
-        // yuksek agirlikli adaylariyla otomatik dolduruluyor. Dort bolumun adaylarini
-        // tek bir listede karistirmak, kullanicinin farkinda olmadan yalnizca 80
-        // portunu koruyan bir secim yapmasina yol aciyordu.
+        // Yalnızca HTTPS adayları listeleniyor. Kullanıcının "strateji" derken
+        // kastettiği şey bu; diğer bölümler (HTTP, QUIC, Discord ses) profilin en
+        // yüksek ağırlıklı adaylarıyla otomatik dolduruluyor. Dört bölümün adaylarını
+        // tek bir listede karıştırmak, kullanıcının farkında olmadan yalnızca 80
+        // portunu koruyan bir seçim yapmasına yol açıyordu.
         foreach (var candidate in profile.CandidatesFor(StrategySection.Tcp443))
         {
             var badge = candidate.Source == CandidateSource.Verified ? "✓ " : string.Empty;
@@ -2576,15 +2576,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 $"{report.Attempts.Count} aday denendi, hiçbiri açmadı.");
             Append($"{report.Attempts.Count} aday denendi, {report.Duration.TotalSeconds:F0} sn sürdü. Sonuç yok.");
 
-            // NEDEN olmadigini da soyle. Onceden yalnizca "hicbiri acmadi" yaziyordu
-            // ve bu iki cok farkli durumu ayni gosteriyordu: (a) stratejiler gercekten
-            // tutmadi, (b) winws hic calismadi -- ornegin WinDivert surucusu onceki
-            // kosumdan cekirdekte asili kaldigi icin. Gercek bir kullanicida (b)
-            // yasandi ve ekranda ayirt edilemedi: 176 aday, 1105 saniye, tek satir
-            // "sonuc yok".
+            // NEDEN olmadığını da söyle. Önceden yalnızca "hiçbiri açmadı" yazıyordu
+            // ve bu iki çok farklı durumu aynı gösteriyordu: (a) stratejiler gerçekten
+            // tutmadı, (b) winws hiç çalışmadı; örneğin WinDivert sürücüsü önceki
+            // koşumdan çekirdekte asılı kaldığı için. Gerçek bir kullanıcıda (b)
+            // yaşandı ve ekranda ayırt edilemedi: 176 aday, 1105 saniye, tek satır
+            // "sonuç yok".
             //
-            // Butun denemeler AYNI sebeple dustuyse bu neredeyse her zaman ortamla
-            // ilgilidir, stratejiyle degil.
+            // Bütün denemeler AYNI sebeple düştüyse bu neredeyse her zaman ortamla
+            // ilgilidir, stratejiyle değil.
             var reasons = report.Attempts
                 .GroupBy(a => a.Detail ?? "(sebep belirtilmedi)", StringComparer.Ordinal)
                 .OrderByDescending(g => g.Count())
@@ -2623,20 +2623,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 Append("       çalıştığını doğrulamaz. Sesi ancak Discord'da bir görüşmeyle deneyebilirsiniz.");
             }
 
-            // YALNIZCA tcp443 kazanani secim listesine girer. Bu liste HTTPS
-            // strateji listesi; diger bolumlerin kazananlari kullanicinin sectigi
-            // sey degil, RuntimeSelection'in profilden otomatik ekledigi sey.
+            // YALNIZCA tcp443 kazananı seçim listesine girer. Bu liste HTTPS
+            // strateji listesi; diğer bölümlerin kazananları kullanıcının seçtiği
+            // şey değil, RuntimeSelection'ın profilden otomatik eklediği şey.
             //
-            // Onceden dongu her kazanan icin SelectedStrategy'yi eziyordu ve
-            // bolumler tcp80 -> tcp443 -> quic sirasinda geldigi icin SONUNCUSU,
-            // yani QUIC stratejisi, HTTPS stratejisi olarak secili kaliyordu.
-            // Gercek makinede olculdu: winws "--filter-tcp=443 --dpi-desync=fake
+            // Önceden döngü her kazanan için SelectedStrategy'yi eziyordu ve
+            // bölümler tcp80 -> tcp443 -> quic sırasında geldiği için SONUNCUSU,
+            // yani QUIC stratejisi, HTTPS stratejisi olarak seçili kalıyordu.
+            // Gerçek makinede ölçüldü: winws "--filter-tcp=443 --dpi-desync=fake
             // --dpi-desync-any-protocol=1 --dpi-desync-cutoff=n2
-            // --dpi-desync-fake-quic=..." ile calisiyordu -- TCP bolumune QUIC
-            // komutu. Sonuc: test "3 bolum icin calisan parametre bulundu" diyor,
-            // Baslat'a basiliyor, tcp80 aciliyor ama discord.com HTTPS'te RST
-            // almaya devam ediyor. Yani kullanicinin gordugu sey ile uygulanan
-            // sey birbirinden ayrilmisti.
+            // --dpi-desync-fake-quic=..." ile çalışıyordu; TCP bölümüne QUIC
+            // komutu. Sonuç: test "3 bölüm için çalışan parametre bulundu" diyor,
+            // Başlat'a basılıyor, tcp80 açılıyor ama discord.com HTTPS'te RST
+            // almaya devam ediyor. Yani kullanıcının gördüğü şey ile uygulanan
+            // şey birbirinden ayrılmıştı.
             if (winner.Section != StrategySection.Tcp443)
             {
                 continue;
@@ -2654,15 +2654,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         PersistLearned(report);
 
-        // EKSIK KALAN KATEGORILERI SOYLE. Bir bolumde birden fazla hedef sinifi
-        // olabiliyor ve kazanan aday hepsini acmak zorunda degil: arama ilk
-        // basarida duruyor, "basari" ise en az bir sinifin acilmasi.
+        // EKSİK KALAN KATEGORİLERİ SÖYLE. Bir bölümde birden fazla hedef sınıfı
+        // olabiliyor ve kazanan aday hepsini açmak zorunda değil: arama ilk
+        // başarıda duruyor, "başarı" ise en az bir sınıfın açılması.
         //
-        // Gercek bir kullanicida bunun bedeli goruldu: test calisan strateji
-        // buldu, Zapret baslatildi, ama Discord istemcisi GUNCELLEME ekraninda
-        // takili kaldi. Sebep, istemcinin guncelleme icin ayri bir sunucuya
-        // gitmesi ve o sunucunun acilmamasiydi. Ekranda "strateji bulundu"
-        // yaziyordu ve eksik olan sey hicbir yerde gorunmuyordu.
+        // Gerçek bir kullanıcıda bunun bedeli görüldü: test çalışan strateji
+        // buldu, Zapret başlatıldı, ama Discord istemcisi GÜNCELLEME ekranında
+        // takılı kaldı. Sebep, istemcinin güncelleme için ayrı bir sunucuya
+        // gitmesi ve o sunucunun açılmamasıydı. Ekranda "strateji bulundu"
+        // yazıyordu ve eksik olan şey hiçbir yerde görünmüyordu.
         var eksikler = new List<string>();
         foreach (var winner in report.Winners)
         {
@@ -2699,14 +2699,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Test bittikten sonra SIRADAKI ADIMI yazar.
+    /// Test bittikten sonra SIRADAKİ ADIMI yazar.
     /// </summary>
     /// <remarks>
-    /// Test biten ekranda "STRATEJİ BULUNDU" yaziyordu ve orada kaliyordu. Bulunan
-    /// strateji KENDILIGINDEN uygulanmiyor -- kullanicinin ayrica Baslat'a basmasi,
-    /// kalici olmasini istiyorsa da servisi kurmasi gerekiyor. Bu iki adim hicbir
-    /// yerde soylenmedigi icin "test yaptim, buldu, ama hicbir sey degismedi"
-    /// tamamen makul bir kullanici deneyimiydi.
+    /// Test biten ekranda "STRATEJİ BULUNDU" yazıyordu ve orada kalıyordu. Bulunan
+    /// strateji KENDİLİĞİNDEN uygulanmıyor; kullanıcının ayrıca Başlat'a basması,
+    /// kalıcı olmasını istiyorsa da servisi kurması gerekiyor. Bu iki adım hiçbir
+    /// yerde söylenmediği için "test yaptım, buldu, ama hiçbir şey değişmedi"
+    /// tamamen makul bir kullanıcı deneyimiydi.
     /// </remarks>
     private void SuggestNextStep()
     {
@@ -2722,12 +2722,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Testte dogrulanan stratejileri diske yazar.
+    /// Testte doğrulanan stratejileri diske yazar.
     /// </summary>
     /// <remarks>
-    /// Bu olmadan test her acilista bastan kosulmak zorundaydi: kullanici 2-3
-    /// dakika bekleyip calisan bir strateji buluyor, uygulamayi kapatiyor ve
-    /// bulunan her sey kayboluyordu.
+    /// Bu olmadan test her açılışta baştan koşulmak zorundaydı: kullanıcı 2-3
+    /// dakika bekleyip çalışan bir strateji buluyor, uygulamayı kapatıyor ve
+    /// bulunan her şey kayboluyordu.
     /// </remarks>
     private void PersistLearned(ProbeReport report)
     {
@@ -2758,9 +2758,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        // Bellekteki profiller de tazelensin; yoksa hemen ardindan basilan Baslat
-        // yeni dogrulamayi gormuyor (bkz. CurrentProfile). Listeyi yeniden kurmuyoruz:
-        // secimi ve "test edildi" satirini silerdi.
+        // Bellekteki profiller de tazelensin; yoksa hemen ardından basılan Başlat
+        // yeni doğrulamayı görmüyor (bkz. CurrentProfile). Listeyi yeniden kurmuyoruz:
+        // seçimi ve "test edildi" satırını silerdi.
         try
         {
             _profiles = ProfileStore.Load(learned: ConfigStore.LoadLearned());
@@ -2778,11 +2778,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             switch (state)
             {
                 case WinwsState.Running:
-                    // Motor artik kendi surumunu bildirdi; alt bilgi tazelensin.
-                    // Burada yapiliyor cunku bu geri cagri zaten arayuz is
-                    // parcaciginda kosuyor -- surum, ciktiyi okuyan AYRI bir
-                    // is parcaciginda yakalaniyor ve oradan bildirim gondermek
-                    // WPF baglamasini patlatirdi.
+                    // Motor artık kendi sürümünü bildirdi; alt bilgi tazelensin.
+                    // Burada yapılıyor, çünkü bu geri çağrı zaten arayüz iş
+                    // parçacığında koşuyor; sürüm, çıktıyı okuyan AYRI bir
+                    // iş parçacığında yakalanıyor ve oradan bildirim göndermek
+                    // WPF bağlamasını patlatırdı.
                     Notify(nameof(EngineVersionText));
                     Notify(nameof(FooterText));
                     SetStatus(AppStatus.Running, "KORUMA AKTİF");
@@ -2791,8 +2791,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
                     SetStatus(AppStatus.Faulted, "BEKLENMEDİK DURUŞ",
                         "winws kendiliğinden kapandı. Ayrıntılar günlükte.");
 
-                    // Motor olse de sifreli DNS ve yonlendirme ayakta olabilir;
-                    // Duraklat onlari kapatabilsin.
+                    // Motor ölse de şifreli DNS ve yönlendirme ayakta olabilir;
+                    // Duraklat onları kapatabilsin.
                     _hasLeftovers = HasLeftoverProcessesOrRedirect();
                     RefreshCommands();
                     break;
@@ -2808,24 +2808,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Koruma calismiyorken durum bandini yazar.
+    /// Koruma çalışmıyorken durum bandını yazar.
     /// </summary>
     /// <remarks>
-    /// Burasi eskiden kosulsuz "SİSTEM HAZIR" diyordu ve bu, teknik olmayan bir
-    /// kullanici icin YANLIS bir cumleydi. Yeni kurulmus bir makinede tablo
-    /// suydu: servis saglayici "Bilmiyorum", strateji listesi bos, Baslat dugmesi
-    /// kapali, winws calismiyor, koruma yok -- ve ekranin en ustunde, en buyuk
-    /// puntoyla "SİSTEM HAZIR". Kullanicinin yapmasi gereken tek sey (parametre
-    /// testi) hicbir yerde soylenmiyordu. "Kurdum, calismadi" bildirimlerinin en
-    /// ucuz aciklamasi bu: uygulama hazir oldugunu soyluyor, kullanici da
-    /// inaniyor.
+    /// Burası eskiden koşulsuz "SİSTEM HAZIR" diyordu ve bu, teknik olmayan bir
+    /// kullanıcı için YANLIŞ bir cümleydi. Yeni kurulmuş bir makinede tablo
+    /// şuydu: servis sağlayıcı "Bilmiyorum", strateji listesi boş, Başlat düğmesi
+    /// kapalı, winws çalışmıyor, koruma yok; ve ekranın en üstünde, en büyük
+    /// puntoyla "SİSTEM HAZIR". Kullanıcının yapması gereken tek şey (parametre
+    /// testi) hiçbir yerde söylenmiyordu. "Kurdum, çalışmadı" bildirimlerinin en
+    /// ucuz açıklaması bu: uygulama hazır olduğunu söylüyor, kullanıcı da
+    /// inanıyor.
     ///
-    /// Baslik artik iki soruyu birden cevapliyor: koruma acik mi, ve acik degilse
-    /// SIRADAKI ADIM ne. Durum degeri <see cref="AppStatus.Ready"/> olarak
-    /// kaliyor -- degistirmek dugmelerin etkinligini bozardi; degisen yalnizca
-    /// kullaniciya soylenen sey.
+    /// Başlık artık iki soruyu birden cevaplıyor: koruma açık mı ve açık değilse
+    /// SIRADAKİ ADIM ne. Durum değeri <see cref="AppStatus.Ready"/> olarak
+    /// kalıyor; değiştirmek düğmelerin etkinliğini bozardı. Değişen yalnızca
+    /// kullanıcıya söylenen şey.
     /// </remarks>
-    /// <param name="note">Varsa basa eklenecek tek cumlelik baglam.</param>
+    /// <param name="note">Varsa başa eklenecek tek cümlelik bağlam.</param>
     private void SetIdleStatus(string? note = null)
     {
         string headline;
@@ -2833,7 +2833,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         if (IsServicePaused)
         {
-            // Durum degeri Paused: ana dugme "DEVAM ET" okunsun ve servisi geri acsin.
+            // Durum değeri Paused: ana düğme "DEVAM ET" okunsun ve servisi geri açsın.
             SetStatus(AppStatus.Paused, "DURAKLATILDI",
                 (string.IsNullOrWhiteSpace(note) ? string.Empty : note + " ")
                 + "Koruma ve şifreli DNS kapalı, DNS ayarınız eski hâlinde; VPN kullanabilirsiniz. "
@@ -2869,12 +2869,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Secim degistiginde durum bandini tazeler.
+    /// Seçim değiştiğinde durum bandını tazeler.
     /// </summary>
     /// <remarks>
-    /// Yalnizca ayrintiyi guncellemek yetmiyordu: kullanici listeden bir strateji
-    /// sectiginde ayrinti satiri degisiyor ama BASLIK "KURULUM YARIM" olarak
-    /// kaliyordu -- yani artik dogru olmayan bir cumle ekranda asili duruyordu.
+    /// Yalnızca ayrıntıyı güncellemek yetmiyordu: kullanıcı listeden bir strateji
+    /// seçtiğinde ayrıntı satırı değişiyor ama BAŞLIK "KURULUM YARIM" olarak
+    /// kalıyordu; yani artık doğru olmayan bir cümle ekranda asılı duruyordu.
     /// </remarks>
     private void RefreshIdlePresentation()
     {
@@ -2935,8 +2935,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             LogLines.Add(line);
 
-            // Gunluk sinirsiz buyumemeli: uzun bir test binlerce satir uretir ve
-            // arayuz yavaslamaya baslar.
+            // Günlük sınırsız büyümemeli: uzun bir test binlerce satır üretir ve
+            // arayüz yavaşlamaya başlar.
             while (LogLines.Count > 500)
             {
                 LogLines.RemoveAt(0);
@@ -2949,19 +2949,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         else
         {
-            // BEKLEMEDEN. Invoke idi ve bir kilitlenmenin yarisiydi: arayuz is
-            // parcacigi bir surecin ciktisinin bitmesini beklerken ciktiyi okuyan
-            // is parcacigi da burada arayuzu bekliyordu. Gerekcesi
-            // WinwsRunner.WaitForEarlyExit'te. Sira korunuyor: BeginInvoke ayni
-            // oncelikteki isleri geldigi sirayla calistiriyor.
+            // BEKLEMEDEN. Invoke idi ve bir kilitlenmenin yarısıydı: arayüz iş
+            // parçacığı bir sürecin çıktısının bitmesini beklerken çıktıyı okuyan
+            // iş parçacığı da burada arayüzü bekliyordu. Gerekçesi
+            // WinwsRunner.WaitForEarlyExit'te. Sıra korunuyor: BeginInvoke aynı
+            // öncelikteki işleri geldiği sırayla çalıştırıyor.
             Application.Current.Dispatcher.BeginInvoke(Add);
         }
     }
 
-    /// <summary>Bolumun kullaniciya gosterilen adi.</summary>
+    /// <summary>Bölümün kullanıcıya gösterilen adı.</summary>
     /// <remarks>
-    /// discord-voice icin "Discord ses" yaziyordu. Olculen sey ise STUN cevabi, yani
-    /// UDP yolu; ad, olcumun kanitlamadigi bir seyi vaat ediyordu. Gerekcesi
+    /// discord-voice için "Discord ses" yazıyordu. Ölçülen şey ise STUN cevabı, yani
+    /// UDP yolu; ad, ölçümün kanıtlamadığı bir şeyi vaat ediyordu. Gerekçesi
     /// <see cref="IspProfile.LearnedNote"/>'ta.
     /// </remarks>
     public static string SectionLabel(StrategySection section) => section switch
@@ -2973,7 +2973,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _ => section.ToString(),
     };
 
-    /// <summary>Uzun arguman dizgisini secim kutusuna sigacak kisa bir ada cevirir.</summary>
+    /// <summary>Uzun argüman dizgisini seçim kutusuna sığacak kısa bir ada çevirir.</summary>
     private static string Describe(string args)
     {
         var method = args.Split(' ')

@@ -3,13 +3,13 @@ using ZapretTr.Core.Engine;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// "Duraklat"tan sonra arkada kalanlarin tarifi.
+/// "Duraklat"tan sonra arkada kalanların tarifi.
 /// </summary>
 /// <remarks>
-/// Duraklat eskiden yalnizca uygulamanin kendi winws'i ile sifreli DNS'i kapatiyordu;
-/// WinDivert surucusu cekirdekte RUNNING kaliyordu ve arayuz yine "Duraklatıldı"
-/// diyordu. Artik duraklatmadan sonra olculuyor ve kalan HER SEY yaziliyor -- bir
-/// tanesi bile atlanirsa kullanici arkada hicbir sey kalmadigini sanar.
+/// Duraklat eskiden yalnızca uygulamanın kendi winws'i ile şifreli DNS'i kapatıyordu;
+/// WinDivert sürücüsü çekirdekte RUNNING kalıyordu ve arayüz yine "Duraklatıldı"
+/// diyordu. Artık duraklatmadan sonra ölçülüyor ve kalan HER ŞEY yazılıyor; bir
+/// tanesi bile atlanırsa kullanıcı arkada hiçbir şey kalmadığını sanar.
 /// </remarks>
 public sealed class PauseLeftoverTests
 {
@@ -22,7 +22,7 @@ public sealed class PauseLeftoverTests
     [Fact]
     public void Cekirdekte_kalan_surucu_tek_basina_kalinti_sayilir()
     {
-        // OLCULEN HATA: surecler kapanmis, DNS geri alinmis, ama surucu duruyor.
+        // ÖLÇÜLEN HATA: süreçler kapanmış, DNS geri alınmış, ama sürücü duruyor.
         var kalan = WinDivertCleanup.DescribeLeftovers(0, 0, ["windivert"], dnsRedirected: false, serviceRunning: false);
 
         var satir = Assert.Single(kalan);

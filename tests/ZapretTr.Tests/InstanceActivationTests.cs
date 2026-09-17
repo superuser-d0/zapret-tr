@@ -4,13 +4,13 @@ using ZapretTr.App;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Kisayola ikinci kez tiklandiginda calisan ornegin penceresini one getirme el sikismasi.
+/// Kısayola ikinci kez tıklandığında çalışan örneğin penceresini öne getirme el sıkışması.
 /// </summary>
 /// <remarks>
-/// Gercek uygulama Global\ adli olaylar kullaniyor; testler yonetici yetkisi olmadan
-/// kosabildigi icin Local\ ve her test icin ayri bir ad kullaniyor. Arayuz is
-/// parcacigi gercek bir STA Dispatcher: dinleyici pencereyi onun uzerinden gosteriyor
-/// ve uygulamadaki gibi ikinci ornek de STA is parcaciginda bekliyor.
+/// Gerçek uygulama Global\ adlı olaylar kullanıyor; testler yönetici yetkisi olmadan
+/// koşabildiği için Local\ ve her test için ayrı bir ad kullanıyor. Arayüz iş
+/// parçacığı gerçek bir STA Dispatcher: dinleyici pencereyi onun üzerinden gösteriyor
+/// ve uygulamadaki gibi ikinci örnek de STA iş parçacığında bekliyor.
 /// </remarks>
 public sealed class InstanceActivationTests
 {
@@ -34,7 +34,7 @@ public sealed class InstanceActivationTests
         Assert.Equal(ActivationResult.Shown, StaIcinde(() => InstanceActivation.TryActivateExisting(TimeSpan.FromSeconds(5), ad)));
         Assert.Equal(1, gosterildi);
 
-        // Ikinci tiklama da calismali (olaylar tek kullanimlik degil).
+        // İkinci tıklama da çalışmalı (olaylar tek kullanımlık değil).
         Assert.Equal(ActivationResult.Shown, StaIcinde(() => InstanceActivation.TryActivateExisting(TimeSpan.FromSeconds(5), ad)));
         Assert.Equal(2, gosterildi);
     }
@@ -66,7 +66,7 @@ public sealed class InstanceActivationTests
         var ad = YeniAd();
         using var serbest = new ManualResetEventSlim();
 
-        // Arayuz is parcacigi mesgul: gosterme istegi islenemez.
+        // Arayüz iş parçacığı meşgul: gösterme isteği işlenemez.
         arayuz.Dispatcher.BeginInvoke(() => serbest.Wait(TimeSpan.FromSeconds(10)));
         using var dinleyici = InstanceActivation.StartListening(arayuz.Dispatcher, () => ShowOutcome.Shown, ad);
 
@@ -87,13 +87,13 @@ public sealed class InstanceActivationTests
         Assert.NotNull(dinleyici);
         dinleyici!.Dispose();
 
-        // Kapatilan dinleyicinin arka plan is parcacigi kapali tutamaca dokunsaydi test
-        // sureci dusmus olurdu. Ad da artik kimse tarafindan tutulmuyor.
+        // Kapatılan dinleyicinin arka plan iş parçacığı kapalı tutamaca dokunsaydı test
+        // süreci düşmüş olurdu. Ad da artık kimse tarafından tutulmuyor.
         Thread.Sleep(200);
         Assert.Equal(ActivationResult.NoListener, InstanceActivation.TryActivateExisting(TimeSpan.FromSeconds(1), ad));
     }
 
-    /// <summary>Uygulamadaki gibi: ikinci ornek STA is parcaciginda bekler.</summary>
+    /// <summary>Uygulamadaki gibi: ikinci örnek STA iş parçacığında bekler.</summary>
     private static T StaIcinde<T>(Func<T> is_)
     {
         T sonuc = default!;

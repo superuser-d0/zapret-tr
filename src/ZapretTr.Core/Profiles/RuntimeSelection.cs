@@ -1,37 +1,37 @@
 namespace ZapretTr.Core.Profiles;
 
 /// <summary>
-/// Gunluk kullanimda winws'e verilecek bolum -> strateji esleismesini kurar.
+/// Günlük kullanımda winws'e verilecek bölüm -> strateji eşleşmesini kurar.
 /// </summary>
 /// <remarks>
-/// Kural tek cumlede: <b>sorunu olmayan yere dokunma.</b>
+/// Kural tek cümlede: <b>sorunu olmayan yere dokunma.</b>
 ///
-/// Ilk surumde bu boyle degildi. Kullanicinin sectigi HTTPS stratejisinin yanina
-/// diger butun bolumlerin en yuksek agirlikli adaylari da otomatik ekleniyordu --
-/// oysa o adaylar cogunlukla <see cref="CandidateSource.UpstreamPreset"/> ya da
-/// <see cref="CandidateSource.Hypothesis"/>, yani o baglantida hic denenmemis
-/// tahminler. Gercek bir kosumda bunun bedeli olculdu: QUIC sorunsuz calisirken
-/// uzerine denenmemis bir QUIC stratejisi uygulandi ve calisan baglanti bozuldu.
-/// Hicbir sey duzelmedi, bir sey bozuldu.
+/// İlk sürümde bu böyle değildi. Kullanıcının seçtiği HTTPS stratejisinin yanına
+/// diğer bütün bölümlerin en yüksek ağırlıklı adayları da otomatik ekleniyordu;
+/// oysa o adaylar çoğunlukla <see cref="CandidateSource.UpstreamPreset"/> ya da
+/// <see cref="CandidateSource.Hypothesis"/>, yani o bağlantıda hiç denenmemiş
+/// tahminler. Gerçek bir koşumda bunun bedeli ölçüldü: QUIC sorunsuz çalışırken
+/// üzerine denenmemiş bir QUIC stratejisi uygulandı ve çalışan bağlantı bozuldu.
+/// Hiçbir şey düzelmedi, bir şey bozuldu.
 ///
-/// Bu yuzden artik yalnizca su ikisi uygulaniyor:
-///   1. Kullanicinin acikca sectigi strateji (bilerek yaptigi tercih).
-///   2. Parametre testinde O BAGLANTIDA dogrulanmis adaylar.
+/// Bu yüzden artık yalnızca şu ikisi uygulanıyor:
+///   1. Kullanıcının açıkça seçtiği strateji (bilerek yaptığı tercih).
+///   2. Parametre testinde O BAĞLANTIDA doğrulanmış adaylar.
 ///
-/// Denenmemis bir aday, kullanici onu bilerek secmedikce calisan trafige
-/// uygulanmaz. Bunlar kaybedilmis bir imkan degil: parametre testi calistirildiginda
-/// dogrulanip kendiliginden devreye girerler.
+/// Denenmemiş bir aday, kullanıcı onu bilerek seçmedikçe çalışan trafiğe
+/// uygulanmaz. Bunlar kaybedilmiş bir imkân değil: parametre testi çalıştırıldığında
+/// doğrulanıp kendiliğinden devreye girerler.
 /// </remarks>
 public static class RuntimeSelection
 {
     /// <summary>
-    /// Kullanicinin sectigi HTTPS stratejisini, profildeki dogrulanmis diger
-    /// bolumlerle birlestirir.
+    /// Kullanıcının seçtiği HTTPS stratejisini, profildeki doğrulanmış diğer
+    /// bölümlerle birleştirir.
     /// </summary>
-    /// <param name="profile">Secili servis saglayici profili. null olabilir.</param>
+    /// <param name="profile">Seçili servis sağlayıcı profili. null olabilir.</param>
     /// <param name="selectedTcp443Args">
-    /// Kullanicinin listeden sectigi HTTPS stratejisi. Bilerek yapilmis bir tercih
-    /// oldugu icin dogrulanmamis olsa da uygulanir.
+    /// Kullanıcının listeden seçtiği HTTPS stratejisi. Bilerek yapılmış bir tercih
+    /// olduğu için doğrulanmamış olsa da uygulanır.
     /// </param>
     public static Dictionary<StrategySection, string> Build(
         IspProfile? profile, string selectedTcp443Args)
@@ -55,8 +55,8 @@ public static class RuntimeSelection
                      StrategySection.DiscordVoice,
                  })
         {
-            // Yalnizca dogrulanmis aday. Yoksa o bolum komuta hic girmez ve
-            // trafik dokunulmadan gecer.
+            // Yalnızca doğrulanmış aday. Yoksa o bölüm komuta hiç girmez ve
+            // trafik dokunulmadan geçer.
             var verified = profile
                 .CandidatesFor(section)
                 .FirstOrDefault(c => c.Source == CandidateSource.Verified);
@@ -71,19 +71,19 @@ public static class RuntimeSelection
     }
 
     /// <summary>
-    /// Secilen stratejilerin O BAGLANTIDA hangi hedef siniflarini actigi.
+    /// Seçilen stratejilerin O BAĞLANTIDA hangi hedef sınıflarını açtığı.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Hostlist'i daraltmak icin. Kaynak, adaylarin <c>verifiedFor</c> alani: yani
-    /// "bu hatta olculdu ve su kategoriyi acti" bilgisi. Tahmin degil, olcum.
+    /// Hostlist'i daraltmak için. Kaynak, adayların <c>verifiedFor</c> alanı: yani
+    /// "bu hatta ölçüldü ve şu kategoriyi açtı" bilgisi. Tahmin değil, ölçüm.
     /// </para>
     /// <para>
-    /// Kullanicinin elle sectigi strateji dogrulanmamis olabilir; o zaman hicbir
-    /// kategori bilinmez ve liste bos doner. Cagiran taraf bunu "daraltma yapma ya da
-    /// bilinen butun hedeflere in" diye yorumluyor (<see cref="HostlistStore.DomainsFor"/>);
-    /// burada uydurma bir kategori dondurmek, olculmemis bir seyi olculmus gibi
-    /// gostermek olurdu.
+    /// Kullanıcının elle seçtiği strateji doğrulanmamış olabilir; o zaman hiçbir
+    /// kategori bilinmez ve liste boş döner. Çağıran taraf bunu "daraltma yapma ya da
+    /// bilinen bütün hedeflere in" diye yorumluyor (<see cref="HostlistStore.DomainsFor"/>);
+    /// burada uydurma bir kategori döndürmek, ölçülmemiş bir şeyi ölçülmüş gibi
+    /// göstermek olurdu.
     /// </para>
     /// </remarks>
     public static IReadOnlyList<string> VerifiedCategories(
@@ -121,8 +121,8 @@ public static class RuntimeSelection
     }
 
     /// <summary>
-    /// Profilde dogrulanmis adayi olmadigi icin komuta girmeyen bolumler.
-    /// Arayuzde "bu bolumler icin once parametre testi calistirin" demek icin.
+    /// Profilde doğrulanmış adayı olmadığı için komuta girmeyen bölümler.
+    /// Arayüzde "bu bölümler için önce parametre testi çalıştırın" demek için.
     /// </summary>
     public static IReadOnlyList<StrategySection> UnprotectedSections(IspProfile? profile)
     {

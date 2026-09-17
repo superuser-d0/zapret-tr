@@ -5,19 +5,19 @@ using IoPath = System.IO.Path;
 namespace ZapretTr.Tests;
 
 /// <summary>
-/// Depodaki XML/XAML dosyalarinin gecerliligi.
+/// Depodaki XML/XAML dosyalarının geçerliliği.
 /// </summary>
 /// <remarks>
-/// Bu testin varlik sebebi ayni hatayi iki kez yapmis olmam. XML yorumlari cift
-/// tire iceremez ve bunu unutmak iki farkli yerde soruna yol acti:
+/// Bu testin var olma sebebi aynı hatayı iki kez yapmış olmam. XML yorumları çift
+/// tire içeremez ve bunu unutmak iki farklı yerde soruna yol açtı:
 ///
-///   app.manifest  -> uygulama "side-by-side configuration is incorrect" ile HIC
-///                    ACILMADI. Derleme bu hatayi yakalamiyor; manifest ancak
-///                    isletim sistemi surec olustururken ayristiriliyor.
-///   MainWindow.xaml -> derleme hatasi (bunu en azindan derleyici yakaladi).
+///   app.manifest  -> uygulama "side-by-side configuration is incorrect" ile HİÇ
+///                    AÇILMADI. Derleme bu hatayı yakalamıyor; manifest ancak
+///                    işletim sistemi süreç oluştururken ayrıştırılıyor.
+///   MainWindow.xaml -> derleme hatası (bunu en azından derleyici yakaladı).
 ///
-/// Tehlikeli olan birincisi: derlemesi gecen, testleri gecen, ama hic acilmayan
-/// bir uygulama. Bu test o bosluku kapatiyor.
+/// Tehlikeli olan birincisi: derlemesi geçen, testleri geçen, ama hiç açılmayan
+/// bir uygulama. Bu test o boşluğu kapatıyor.
 /// </remarks>
 public sealed class XmlCommentTests
 {
@@ -82,7 +82,7 @@ public sealed class XmlCommentTests
     {
         var path = IoPath.Combine(RepoRoot, relativePath);
 
-        // Ayristirma hatasi firlatirsa test duser; mesaj dosyayi ve konumu soyler.
+        // Ayrıştırma hata fırlatırsa test düşer; mesaj dosyayı ve konumu söyler.
         string? failure = null;
         try
         {
